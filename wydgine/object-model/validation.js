@@ -5,21 +5,31 @@ export class WydgitError extends Error {
 export function requireThat(ok, code, message) { if (!ok) throw new WydgitError(code, message); }
 export const record = x => x !== null && typeof x === 'object' && !Array.isArray(x);
 export function freeze(x) { if (x && typeof x === 'object') { Object.values(x).forEach(freeze); Object.freeze(x); } return x; }
-// The envelope's prototype field is the sole reserved-key exception.
-export function clean(value, { envelope = false } = {}, active = new Set(), depth = 0) {
+// Inspect descriptors before reading values; accept exactly JSON's data surface.
+export function jsonKeys(value) {
+  requireThat(value && typeof value === 'object', 'INPUT.JSON', 'Expected JSON container');
+  const array = Array.isArray(value);
+  requireThat(array ? Object.getPrototypeOf(value) === Array.prototype : [Object.prototype, null].includes(Object.getPrototypeOf(value)), 'INPUT.JSON', 'Expected plain JSON data');
+  const keys = Reflect.ownKeys(value).filter(k => !(array && k === 'length'));
+  requireThat(keys.every(k => typeof k === 'string'), 'INPUT.JSON', 'Symbol keys are not JSON');
+  requireThat(!array || (keys.length === value.length && keys.every((k, i) => k === String(i))), 'INPUT.JSON', 'Expected dense JSON array');
+  requireThat(keys.every(k => { const d = Object.getOwnPropertyDescriptor(value, k); return d.enumerable && Object.hasOwn(d, 'value'); }), 'INPUT.JSON', 'Expected enumerable JSON data');
+  return keys;
+}
+export function clean(value, active = new Set(), depth = 0) {
   requireThat(depth <= 128, 'INPUT.LIMIT', 'JSON nesting limit exceeded');
   if (value === null || ['string','boolean'].includes(typeof value)) return value;
-  if (typeof value === 'number') { requireThat(Number.isFinite(value), 'INPUT.JSON', 'Non-finite number'); return value; }
+  if (typeof value === 'number') { requireThat(Number.isFinite(value), 'INPUT.JSON', 'Non-finite number'); return Object.is(value, -0) ? 0 : value; }
   requireThat(value && typeof value === 'object', 'INPUT.JSON', 'Expected JSON data');
   requireThat(!active.has(value), 'OBJECT.CYCLE', 'Cyclic input');
-  requireThat(Array.isArray(value) || [Object.prototype, null].includes(Object.getPrototypeOf(value)), 'INPUT.JSON', 'Expected plain JSON data');
+  jsonKeys(value);
   active.add(value);
   const out = Array.isArray(value) ? [] : Object.create(null);
   for (const key of Object.keys(value).sort()) {
-    requireThat(!['__proto__','constructor','prototype'].includes(key) || (envelope && key === 'prototype'), 'INPUT.DANGEROUS_KEY', `Reserved key: ${key}`);
+    requireThat(!['__proto__','constructor','prototype'].includes(key), 'INPUT.DANGEROUS_KEY', `Reserved key: ${key}`);
     const descriptor = Object.getOwnPropertyDescriptor(value, key);
     requireThat(Object.hasOwn(descriptor, 'value'), 'INPUT.JSON', 'Accessors are not JSON');
-    out[key] = clean(descriptor.value, {}, active, depth + 1);
+    out[key] = clean(descriptor.value, active, depth + 1);
   }
   active.delete(value);
   return out;

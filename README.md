@@ -42,12 +42,13 @@ The result should be:
 
 Wydgit is currently in **early alpha development**.
 
-The current codebase implements the Wydgit 0.2-A object-model and SEAM foundation:
+The current codebase implements the Wydgit 0.2-B object-model, controlled mutation, and SEAM foundation:
 
 - Node.js / Express server
 - canonical App-rooted JSON and immutable hydrated Wydgit instances
 - single prototype inheritance with publisher boundaries and abstract bases
 - validated named slots and deny-by-default scoped traversal
+- authorized edit sessions, immutable commits, change sets and revision hooks
 - server-side rendering
 - Markdown content
 - sanitized output
@@ -56,11 +57,16 @@ The current codebase implements the Wydgit 0.2-A object-model and SEAM foundatio
 - nested App → Page → Section → Block composition
 - renderer and HTTP tests
 
-Implementation details: [object model](docs/object-model.md) and [SEAM](docs/seam.md). Executable third-party packages and later platform subsystems remain deferred.
+Implementation details: [object model](docs/object-model.md), [SEAM](docs/seam.md), and [mutation model](docs/mutation-model.md). Executable third-party packages and later platform subsystems remain deferred.
 
 The architectural contract is:
 
 [`docs/FOUNDING-ARCHITECTURE.md`](docs/FOUNDING-ARCHITECTURE.md)
+
+Current development version: **0.2.0-alpha.2**. Completed platform milestones
+update `package.json`, matching root metadata in `package-lock.json`, and
+`content/app.json` → `properties.revision` together. Version updates do not create
+Git tags or publish releases.
 
 Expect significant changes before 1.0.
 

@@ -1,4 +1,4 @@
-# Object model — 0.2-A
+# Object model — 0.2-B
 
 `wydgine/object-model/index.js` implements the portable model. It has no filesystem,
 HTTP or DOM dependency. The founding architecture remains unchanged.
@@ -27,8 +27,10 @@ ordered arrays; no unordered collection abstraction is needed yet.
 ## Canonical data and runtime
 
 Each envelope contains `schema: "wydgit/0.2"`, `id`, `prototype`, `properties`,
-`slots`, and `provenance`. Slots recursively embed envelopes. Other fields are
-rejected. IDs are supplied by the creator, never generated during hydration.
+`slots`, and `provenance`. All six must be own enumerable data fields. Slots
+recursively embed envelopes. Missing, inherited, hidden, symbol and extra envelope
+fields are rejected. `schema.js` defines this shared validation contract. IDs are
+supplied by the creator, never generated during hydration.
 They start with a letter and contain letters, digits, underscores, periods or
 hyphens. Friendly routes and titles are independent properties.
 
@@ -43,7 +45,9 @@ Instances are immutable snapshots with ID, prototype identity, properties,
 provenance, and slot arrays of child IDs. The host runtime's `get(id)` returns
 these frozen instances. Parent and sibling indexes are private hydration state.
 `scope(context)` supplies the mediated relationships described in [SEAM](seam.md).
-This milestone has no mutation API; edit persisted data and hydrate again.
+Use `runtime.edit(context)` for controlled edits that produce a new snapshot.
+See [mutation-model.md](mutation-model.md) for operations, grants, identity,
+change sets and revision semantics.
 
 `dehydrate(runtime)` returns an independent JSON-compatible tree; `serialize`
 returns its deterministic JSON. Default values and empty declared slots are
@@ -55,7 +59,10 @@ Reserved keys `__proto__`, `constructor`, and `prototype` are explicitly rejecte
 in property data, provenance, slot names and prototype definitions, including
 nested values. The envelope's required string `prototype` field is the necessary
 schema exception. Non-JSON values, non-plain objects, accessors and non-finite
-numbers are rejected. Hydration bounds object depth to 64 and count to 10,000;
+numbers are rejected. Hidden/symbol fields and sparse or extended arrays are
+also rejected throughout JSON data. Negative zero normalizes to zero, matching
+JSON serialization. Mutation inputs pass these same checks. Hydration bounds
+object depth to 64 and count to 10,000;
 JSON value nesting is bounded to 128. This is not a general hostile-JavaScript
 sandbox; use JSON at untrusted ingestion boundaries, not live proxies.
 
@@ -88,6 +95,6 @@ partially valid graph. Web presentation/link errors still degrade locally.
 Direct mutations in legacy renderer tests affect only DTOs, never the runtime.
 Home/About/Contact styling, navigation, sanitization and layout remain intact.
 
-Deferred: package installation, interface-type slots, object editing, service
+Deferred: package installation, interface-type slots, service
 execution, persistence adapters and other later-phase systems. No founding
 architecture revision or unresolved architectural decision is required.

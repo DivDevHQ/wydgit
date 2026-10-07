@@ -1,10 +1,10 @@
-# SEAM foundation — 0.2-A
+# SEAM foundation — 0.2-B
 
 Authority belongs to an execution context, not to the target object.
 
 The trusted host creates `ExecutionContext` with `publisher`, optional `package`,
-`self` (instance ID), `capabilities`, `visible` (instance IDs), `traversal`, and
-`limits`. Grants and metadata are copied and deeply frozen. Capability names must
+`self` (instance ID), `capabilities`, `visible` and `editable` (instance IDs),
+`traversal`, and `limits`. Grants and metadata are copied and deeply frozen. Capability names must
 have exactly the portable `domain.resource.action` shape. Matching is exact;
 there are no wildcards or implicit grants. Limits are non-negative integer
 metadata for future interpreters; no interpreter or execution budget is claimed.
@@ -55,3 +55,19 @@ forged contexts, sibling/root denial, and a confused-deputy fixture in which a
 low-authority caller reaches App but cannot use App's separate privileged context.
 These are foundation guarantees, not a claim that Wydgit is ready to run hostile
 third-party executable packages.
+
+## Mutation authority
+
+`runtime.edit(context)` is a host-only API that requires `object.instances.edit`.
+Its operations require every affected ID to be explicitly visible **and** editable;
+self is visible by default but is not editable by default. No publisher, ancestry,
+containment or provenance field contributes grants. Structural operations also
+check affected parents, slot occupants and affected subtrees; prospective IDs for
+new objects/clones require explicit grants before creation. Neither successful
+mutation nor commit modifies the context or its traversal rights.
+
+The edit session and commit's raw runtime result stay within trusted host code.
+Future package dispatch must retain caller authority and expose only scoped handles
+and safe results. See [mutation-model.md](mutation-model.md) for the exact operation
+checks, conservative scope policy and revision hook. No package dispatcher,
+capability-grant escalation API or persistence service is implemented.

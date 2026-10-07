@@ -1,10 +1,13 @@
-import { clean, freeze, parse, record, requireThat as check, WydgitError } from './validation.js';
+import { validateEnvelope, resolveProperties } from './schema.js';
+import { createEdit } from './mutation.js';
+import { clean, freeze, jsonKeys, parse, record, requireThat as check, WydgitError } from './validation.js';
 import { checkContext } from '../seam/context.js';
 export { PrototypeRegistry } from './prototypes.js';
 export { WydgitError } from './validation.js';
 export { ExecutionContext } from '../seam/context.js';
 const graphs = new WeakMap();
-export function hydrate(input, registry) {
+export function hydrate(input, registry, { revision = 0 } = {}) {
+  check(Number.isSafeInteger(revision) && revision >= 0, 'OBJECT.REVISION', 'Revision must be a non-negative safe integer');
   if (typeof input === 'string') input = parse(input);
   const nodes = new Map(), parents = new Map(), positions = new Map(), active = new Set(), seen = new Set();
   function visit(raw, parent, slot, index, depth = 0) {
@@ -13,37 +16,23 @@ export function hydrate(input, registry) {
     check(!active.has(raw), 'OBJECT.CYCLE', 'Containment cycle');
     check(!seen.has(raw), 'OBJECT.MULTIPLE_PARENTS', 'Object occurs in multiple containment positions');
     active.add(raw); seen.add(raw);
-    const descriptors = Object.getOwnPropertyDescriptors(raw);
-    check(Object.values(descriptors).every(d => Object.hasOwn(d, 'value')), 'INPUT.JSON', 'Accessors are not JSON');
-    check(Object.keys(raw).every(k => ['schema','id','prototype','properties','slots','provenance'].includes(k)), 'OBJECT.ENVELOPE', 'Unknown envelope field');
-    check([Object.prototype, null].includes(Object.getPrototypeOf(raw)), 'INPUT.JSON', 'Expected plain envelope');
-    check(raw.schema === 'wydgit/0.2' && typeof raw.id === 'string' && /^[A-Za-z][\w.-]*$/.test(raw.id) && typeof raw.prototype === 'string', 'OBJECT.ENVELOPE', 'Invalid schema or identity');
+    validateEnvelope(raw);
     check(!nodes.has(raw.id), 'OBJECT.DUPLICATE_ID', `Duplicate instance ID: ${raw.id}`);
     const definition = registry.get(raw.prototype);
     check(!definition.abstract, 'OBJECT.ABSTRACT', 'Cannot instantiate abstract prototype');
     check(parent ? !registry.isA(definition.id, 'wydgit.core/app') : registry.isA(definition.id, 'wydgit.core/app'), 'OBJECT.ROOT', 'Exactly one App must be the root');
-    check(record(raw.properties) && record(raw.slots) && record(raw.provenance), 'OBJECT.ENVELOPE', 'Properties, slots and provenance must be objects');
-    check([Object.prototype, null].includes(Object.getPrototypeOf(raw.slots)), 'INPUT.JSON', 'Expected plain slots');
-    check(Reflect.ownKeys(raw.slots).every(k => typeof k === 'string' && Object.getOwnPropertyDescriptor(raw.slots, k).enumerable && Object.hasOwn(Object.getOwnPropertyDescriptor(raw.slots, k), 'value')), 'INPUT.JSON', 'Expected JSON slot fields');
-    const properties = clean(raw.properties), provenance = clean(raw.provenance);
-    for (const key of Object.keys(properties)) check(Object.hasOwn(definition.properties, key), 'OBJECT.PROPERTY', `Unknown property: ${key}`);
-    for (const [key, rule] of Object.entries(definition.properties)) {
-      if (!Object.hasOwn(properties, key) && Object.hasOwn(rule, 'default')) properties[key] = clean(rule.default);
-      if (!Object.hasOwn(properties, key)) { check(!rule.required, 'OBJECT.PROPERTY', `Missing property: ${key}`); continue; }
-      const v = properties[key], type = v === null ? 'null' : Array.isArray(v) ? 'array' : typeof v;
-      check(type === rule.type && (!rule.enum || rule.enum.includes(v)), 'OBJECT.PROPERTY', `Invalid property: ${key}`);
-    }
+    jsonKeys(raw.slots);
+    const properties = resolveProperties(raw.properties, definition), provenance = clean(raw.provenance);
     const node = { id: raw.id, prototype: definition.id, properties: freeze(properties), provenance: freeze(provenance), slots: Object.create(null) };
     nodes.set(node.id, node); parents.set(node.id, parent); positions.set(node.id, { slot, index });
     for (const key of Object.keys(raw.slots)) {
       check(!['__proto__','constructor','prototype'].includes(key), 'INPUT.DANGEROUS_KEY', 'Reserved slot key');
       check(Object.hasOwn(definition.slots, key), 'OBJECT.UNKNOWN_SLOT', `Unknown slot: ${key}`);
-      check(Object.hasOwn(Object.getOwnPropertyDescriptor(raw.slots, key), 'value'), 'INPUT.JSON', 'Slot accessor rejected');
     }
     for (const key of Object.keys(definition.slots).sort()) {
       const rule = definition.slots[key], children = Object.hasOwn(raw.slots, key) ? raw.slots[key] : [];
       check(Array.isArray(children) && Object.getPrototypeOf(children) === Array.prototype, 'OBJECT.SLOT', 'Slot must be an array');
-      check(Reflect.ownKeys(children).length === children.length + 1 && Object.keys(children).length === children.length && Object.keys(children).every((k, i) => k === String(i) && Object.hasOwn(Object.getOwnPropertyDescriptor(children, k), 'value')), 'INPUT.JSON', 'Expected dense child array');
+      jsonKeys(children);
       check(children.length >= (rule.min ?? 0) && children.length <= (rule.max ?? Infinity), 'OBJECT.CARDINALITY', `Invalid cardinality: ${key}`);
       node.slots[key] = Object.freeze(children.map((child, i) => {
         const result = visit(child, node.id, key, i, depth + 1);
@@ -57,6 +46,8 @@ export function hydrate(input, registry) {
   const runtime = Object.freeze({
     // Host-only APIs: never hand this runtime or its context factory to package code.
     rootId: root.id,
+    revision,
+    edit(context) { return createEdit(runtime, context, registry, hydrate, dehydrate); },
     get(id) { check(nodes.has(id), 'OBJECT.UNKNOWN', 'Unknown object'); return nodes.get(id); },
     scope(context) {
       checkContext(context); check(nodes.has(context.self), 'SEAM.CONTEXT', 'Unknown self object');
