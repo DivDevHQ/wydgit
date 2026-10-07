@@ -42,19 +42,23 @@ The result should be:
 
 Wydgit is currently in **early alpha development**.
 
-The current codebase demonstrates the original Wydgine 0.1 architecture:
+The current codebase implements the Wydgit 0.2-A object-model and SEAM foundation:
 
 - Node.js / Express server
-- JSON-defined Wydgit prototypes and instances
+- canonical App-rooted JSON and immutable hydrated Wydgit instances
+- single prototype inheritance with publisher boundaries and abstract bases
+- validated named slots and deny-by-default scoped traversal
 - server-side rendering
 - Markdown content
 - sanitized output
 - navigation and page routing
 - skins and scoped presentation rules
-- nested Page → Section → Block composition
+- nested App → Page → Section → Block composition
 - renderer and HTTP tests
 
-This baseline is now being evolved into the broader Wydgit platform architecture described in:
+Implementation details: [object model](docs/object-model.md) and [SEAM](docs/seam.md). Executable third-party packages and later platform subsystems remain deferred.
+
+The architectural contract is:
 
 [`docs/FOUNDING-ARCHITECTURE.md`](docs/FOUNDING-ARCHITECTURE.md)
 
@@ -242,3 +246,7 @@ Install dependencies:
 
 ```sh
 npm ci
+npm start
+```
+
+Validate with `npm test` and `npm run check`.

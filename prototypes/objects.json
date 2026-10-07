@@ -1,0 +1,185 @@
+[
+  {
+    "id": "wydgit.core/object",
+    "publisher": "wydgit.core",
+    "public": true,
+    "abstract": true,
+    "properties": {
+      "order": {
+        "type": "number",
+        "default": 0
+      },
+      "position": {
+        "type": "string",
+        "default": "main",
+        "enum": [
+          "header",
+          "main",
+          "aside",
+          "footer"
+        ]
+      },
+      "format": {
+        "type": "object",
+        "default": {}
+      }
+    },
+    "slots": {}
+  },
+  {
+    "id": "wydgit.core/app",
+    "publisher": "wydgit.core",
+    "public": true,
+    "properties": {
+      "title": {
+        "type": "string",
+        "required": true
+      },
+      "home": {
+        "type": "string",
+        "required": true
+      },
+      "tagline": {
+        "type": "string",
+        "default": ""
+      },
+      "footer": {
+        "type": "string",
+        "default": ""
+      },
+      "revision": {
+        "type": "string",
+        "default": ""
+      },
+      "skin": {
+        "type": "string",
+        "description": "Optional skin ID. Its tokens override inherited site/page/section tokens; omitted tokens keep the parent values."
+      },
+      "logoText": {
+        "type": "string",
+        "default": "",
+        "description": "Optional decorative letter mark beside the site title."
+      }
+    },
+    "slots": {
+      "pages": {
+        "accepts": [
+          "wydgit.core/page"
+        ],
+        "ordered": true,
+        "min": 1
+      },
+      "navigation": {
+        "accepts": [
+          "wydgit.core/navigation"
+        ],
+        "ordered": true
+      }
+    },
+    "extends": "wydgit.core/object"
+  },
+  {
+    "id": "wydgit.core/page",
+    "publisher": "wydgit.core",
+    "public": true,
+    "properties": {
+      "title": {
+        "type": "string",
+        "required": true
+      },
+      "slug": {
+        "type": "string",
+        "required": true
+      },
+      "description": {
+        "type": "string",
+        "default": ""
+      },
+      "skin": {
+        "type": "string",
+        "description": "Optional skin ID. Its tokens override inherited site/page/section tokens; omitted tokens keep the parent values."
+      }
+    },
+    "slots": {
+      "sections": {
+        "accepts": [
+          "wydgit.core/section"
+        ],
+        "ordered": true
+      },
+      "navigation": {
+        "accepts": [
+          "wydgit.core/navigation"
+        ],
+        "ordered": true,
+        "max": 1
+      }
+    },
+    "extends": "wydgit.core/object"
+  },
+  {
+    "id": "wydgit.core/section",
+    "publisher": "wydgit.core",
+    "public": true,
+    "properties": {
+      "skin": {
+        "type": "string",
+        "description": "Optional skin ID. Its tokens override inherited site/page/section tokens; omitted tokens keep the parent values."
+      }
+    },
+    "slots": {
+      "blocks": {
+        "accepts": [
+          "wydgit.core/block"
+        ],
+        "ordered": true
+      }
+    },
+    "extends": "wydgit.core/object"
+  },
+  {
+    "id": "wydgit.core/block",
+    "publisher": "wydgit.core",
+    "public": true,
+    "properties": {
+      "anchors": {
+        "type": "array",
+        "default": []
+      },
+      "content": {
+        "type": "object",
+        "required": true,
+        "supported-types": [
+          "markdown"
+        ]
+      },
+      "skin": {
+        "type": "string",
+        "description": "Optional skin ID. Its tokens override inherited site/page/section tokens; omitted tokens keep the parent values."
+      },
+      "linkToPage": {
+        "type": "string",
+        "description": "Page ID, resolved like navigation.items[].page. Required for whole-card-link; optional for card (adds a separate page link)."
+      }
+    },
+    "slots": {},
+    "extends": "wydgit.core/object"
+  },
+  {
+    "id": "wydgit.core/navigation",
+    "publisher": "wydgit.core",
+    "public": true,
+    "properties": {
+      "label": {
+        "type": "string",
+        "default": "Navigation"
+      },
+      "items": {
+        "type": "array",
+        "required": true
+      }
+    },
+    "slots": {},
+    "extends": "wydgit.core/object"
+  }
+]

@@ -1,5 +1,7 @@
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import path from 'node:path';
+import { hydrate, PrototypeRegistry } from './object-model/index.js';
+import { webModel } from './web-model.js';
 
 const read = file => JSON.parse(readFileSync(file, 'utf8'));
 
@@ -11,22 +13,13 @@ export function loadRepository(root) {
     if (definition.prototype !== name) throw new Error(`Invalid ${name} prototype definition`);
     prototypes.set(name, definition);
   }
-  const site = read(path.join(root, 'content/site.json'));
+  const app = read(path.join(root, 'content/app.json'));
   const navigation = read(path.join(root, 'content/navigation.json'));
-  const pages = new Map();
+  app.slots.pages = readdirSync(path.join(root, 'content/pages')).filter(f => f.endsWith('.json')).sort().map(file => read(path.join(root, 'content/pages', file)));
+  app.slots.navigation = navigation;
+  const registry = new PrototypeRegistry(read(path.join(root, 'prototypes/objects.json')));
+  const runtime = hydrate(app, registry);
   const diagnostics = [];
-  for (const file of readdirSync(path.join(root, 'content/pages')).filter(f => f.endsWith('.json'))) {
-    const key = file.slice(0, -5);
-    try {
-      const page = read(path.join(root, 'content/pages', file));
-      if (page.id !== key) throw new Error(`Page id must match filename: ${file}`);
-      pages.set(key, page);
-    } catch (error) {
-      diagnostics.push(`${file}: ${error.message}`);
-      // Retain the damaged page's conventional route so it returns 500, not 404.
-      pages.set(key, { id: key, slug: key === site.home ? '' : key.replaceAll('--', '/'), loadError: true });
-    }
-  }
   const skins = new Map();
   const skinDirectory = path.join(root, 'content/skins');
   if (existsSync(skinDirectory)) for (const file of readdirSync(skinDirectory).filter(f => f.endsWith('.json'))) {
@@ -39,5 +32,5 @@ export function loadRepository(root) {
       diagnostics.push(`${file}: ${error.message}`);
     }
   }
-  return { prototypes, site, navigation, pages, skins, diagnostics };
+  return webModel(runtime, { prototypes, skins, diagnostics });
 }

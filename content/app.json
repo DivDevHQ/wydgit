@@ -1,0 +1,16 @@
+{
+  "schema": "wydgit/0.2",
+  "id": "boilerplate",
+  "prototype": "wydgit.core/app",
+  "properties": {
+    "title": "Example Site",
+    "tagline": "Lorem ipsum dolor sit amet.",
+    "home": "home",
+    "footer": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+    "revision": "Wydgit 0.1 alpha",
+    "skin": "default",
+    "logoText": ""
+  },
+  "slots": {},
+  "provenance": {}
+}

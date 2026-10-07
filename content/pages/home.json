@@ -1,140 +1,219 @@
 {
+  "schema": "wydgit/0.2",
   "id": "home",
-  "prototype": "page",
-  "title": "Home",
-  "slug": "",
-  "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-  "sections": [
-    {
-      "id": "hero",
-      "prototype": "section",
-      "blocks": [
-        {
-          "id": "hero-block-1",
-          "prototype": "block",
-          "content": {
-            "type": "markdown",
-            "value": "# Lorem Ipsum"
+  "prototype": "wydgit.core/page",
+  "properties": {
+    "title": "Home",
+    "slug": "",
+    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+  },
+  "slots": {
+    "sections": [
+      {
+        "schema": "wydgit/0.2",
+        "id": "hero",
+        "prototype": "wydgit.core/section",
+        "properties": {
+          "position": "header",
+          "format": {
+            "tone": "hero"
           }
         },
-        {
-          "id": "hero-block-2",
-          "prototype": "block",
-          "content": {
-            "type": "markdown",
-            "value": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
-          },
+        "slots": {
+          "blocks": [
+            {
+              "schema": "wydgit/0.2",
+              "id": "hero-block-1",
+              "prototype": "wydgit.core/block",
+              "properties": {
+                "content": {
+                  "type": "markdown",
+                  "value": "# Lorem Ipsum"
+                }
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "hero-block-2",
+              "prototype": "wydgit.core/block",
+              "properties": {
+                "content": {
+                  "type": "markdown",
+                  "value": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+                },
+                "format": {
+                  "presentation": "lead"
+                }
+              },
+              "slots": {},
+              "provenance": {}
+            }
+          ]
+        },
+        "provenance": {}
+      },
+      {
+        "schema": "wydgit/0.2",
+        "id": "overview",
+        "prototype": "wydgit.core/section",
+        "properties": {},
+        "slots": {
+          "blocks": [
+            {
+              "schema": "wydgit/0.2",
+              "id": "overview-title",
+              "prototype": "wydgit.core/block",
+              "properties": {
+                "content": {
+                  "type": "markdown",
+                  "value": "## Lorem Ipsum"
+                }
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "overview-copy",
+              "prototype": "wydgit.core/block",
+              "properties": {
+                "content": {
+                  "type": "markdown",
+                  "value": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+                }
+              },
+              "slots": {},
+              "provenance": {}
+            }
+          ]
+        },
+        "provenance": {}
+      },
+      {
+        "schema": "wydgit/0.2",
+        "id": "pages",
+        "prototype": "wydgit.core/section",
+        "properties": {
           "format": {
-            "presentation": "lead"
+            "layout": "cards"
           }
-        }
-      ],
-      "position": "header",
-      "format": {
-        "tone": "hero"
+        },
+        "slots": {
+          "blocks": [
+            {
+              "schema": "wydgit/0.2",
+              "id": "pages-title",
+              "prototype": "wydgit.core/block",
+              "properties": {
+                "content": {
+                  "type": "markdown",
+                  "value": "## Dolor Sit Amet"
+                }
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "pages-intro",
+              "prototype": "wydgit.core/block",
+              "properties": {
+                "content": {
+                  "type": "markdown",
+                  "value": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+                }
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "about-card",
+              "prototype": "wydgit.core/block",
+              "properties": {
+                "content": {
+                  "type": "markdown",
+                  "value": "### About\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+                },
+                "format": {
+                  "presentation": "whole-card-link"
+                },
+                "linkToPage": "about"
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "contact-card",
+              "prototype": "wydgit.core/block",
+              "properties": {
+                "content": {
+                  "type": "markdown",
+                  "value": "### Contact\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+                },
+                "format": {
+                  "presentation": "whole-card-link"
+                },
+                "linkToPage": "contact"
+              },
+              "slots": {},
+              "provenance": {}
+            }
+          ]
+        },
+        "provenance": {}
+      },
+      {
+        "schema": "wydgit/0.2",
+        "id": "details",
+        "prototype": "wydgit.core/section",
+        "properties": {
+          "format": {
+            "layout": "columns"
+          }
+        },
+        "slots": {
+          "blocks": [
+            {
+              "schema": "wydgit/0.2",
+              "id": "details-heading",
+              "prototype": "wydgit.core/block",
+              "properties": {
+                "content": {
+                  "type": "markdown",
+                  "value": "## Consectetur Adipiscing"
+                },
+                "format": {
+                  "column": "left"
+                }
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "details-copy",
+              "prototype": "wydgit.core/block",
+              "properties": {
+                "content": {
+                  "type": "markdown",
+                  "value": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+                },
+                "format": {
+                  "column": "right"
+                }
+              },
+              "slots": {},
+              "provenance": {}
+            }
+          ]
+        },
+        "provenance": {}
       }
-    },
-    {
-      "id": "overview",
-      "prototype": "section",
-      "blocks": [
-        {
-          "id": "overview-title",
-          "prototype": "block",
-          "content": {
-            "type": "markdown",
-            "value": "## Lorem Ipsum"
-          }
-        },
-        {
-          "id": "overview-copy",
-          "prototype": "block",
-          "content": {
-            "type": "markdown",
-            "value": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
-          }
-        }
-      ]
-    },
-    {
-      "id": "pages",
-      "prototype": "section",
-      "blocks": [
-        {
-          "id": "pages-title",
-          "prototype": "block",
-          "content": {
-            "type": "markdown",
-            "value": "## Dolor Sit Amet"
-          }
-        },
-        {
-          "id": "pages-intro",
-          "prototype": "block",
-          "content": {
-            "type": "markdown",
-            "value": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
-          }
-        },
-        {
-          "id": "about-card",
-          "prototype": "block",
-          "content": {
-            "type": "markdown",
-            "value": "### About\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
-          },
-          "format": {
-            "presentation": "whole-card-link"
-          },
-          "linkToPage": "about"
-        },
-        {
-          "id": "contact-card",
-          "prototype": "block",
-          "content": {
-            "type": "markdown",
-            "value": "### Contact\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
-          },
-          "format": {
-            "presentation": "whole-card-link"
-          },
-          "linkToPage": "contact"
-        }
-      ],
-      "format": {
-        "layout": "cards"
-      }
-    },
-    {
-      "id": "details",
-      "prototype": "section",
-      "blocks": [
-        {
-          "id": "details-heading",
-          "prototype": "block",
-          "content": {
-            "type": "markdown",
-            "value": "## Consectetur Adipiscing"
-          },
-          "format": {
-            "column": "left"
-          }
-        },
-        {
-          "id": "details-copy",
-          "prototype": "block",
-          "content": {
-            "type": "markdown",
-            "value": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
-          },
-          "format": {
-            "column": "right"
-          }
-        }
-      ],
-      "format": {
-        "layout": "columns"
-      }
-    }
-  ]
+    ]
+  },
+  "provenance": {}
 }

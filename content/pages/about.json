@@ -1,90 +1,144 @@
 {
+  "schema": "wydgit/0.2",
   "id": "about",
-  "prototype": "page",
-  "title": "About",
-  "slug": "about",
-  "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-  "sections": [
-    {
-      "id": "about-intro",
-      "prototype": "section",
-      "blocks": [
-        {
-          "id": "about-title",
-          "prototype": "block",
-          "content": {
-            "type": "markdown",
-            "value": "# About"
-          }
-        },
-        {
-          "id": "about-lead",
-          "prototype": "block",
-          "content": {
-            "type": "markdown",
-            "value": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
-          },
-          "format": {
-            "presentation": "lead"
-          }
-        }
-      ],
-      "position": "header"
-    },
-    {
-      "id": "about-details",
-      "prototype": "section",
-      "blocks": [
-        {
-          "id": "about-copy",
-          "prototype": "block",
-          "content": {
-            "type": "markdown",
-            "value": "## Lorem Ipsum\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
-          }
-        },
-        {
-          "id": "about-note",
-          "prototype": "block",
-          "content": {
-            "type": "markdown",
-            "value": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
-          },
-          "format": {
-            "presentation": "note"
-          }
-        }
-      ]
-    },
-    {
-      "id": "about-more",
-      "prototype": "section",
-      "blocks": [
-        {
-          "id": "about-more-copy",
-          "prototype": "block",
-          "content": {
-            "type": "markdown",
-            "value": "## Dolor Sit Amet\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
-          }
-        }
-      ]
-    }
-  ],
-  "navigation": {
-    "id": "about-toc",
-    "prototype": "navigation",
-    "position": "aside",
-    "label": "On this page",
-    "items": [
+  "prototype": "wydgit.core/page",
+  "properties": {
+    "title": "About",
+    "slug": "about",
+    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+  },
+  "slots": {
+    "sections": [
       {
-        "label": "Lorem Ipsum",
-        "section": "about-details"
+        "schema": "wydgit/0.2",
+        "id": "about-intro",
+        "prototype": "wydgit.core/section",
+        "properties": {
+          "position": "header"
+        },
+        "slots": {
+          "blocks": [
+            {
+              "schema": "wydgit/0.2",
+              "id": "about-title",
+              "prototype": "wydgit.core/block",
+              "properties": {
+                "content": {
+                  "type": "markdown",
+                  "value": "# About"
+                }
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "about-lead",
+              "prototype": "wydgit.core/block",
+              "properties": {
+                "content": {
+                  "type": "markdown",
+                  "value": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+                },
+                "format": {
+                  "presentation": "lead"
+                }
+              },
+              "slots": {},
+              "provenance": {}
+            }
+          ]
+        },
+        "provenance": {}
       },
       {
-        "label": "Dolor Sit Amet",
-        "section": "about-more"
+        "schema": "wydgit/0.2",
+        "id": "about-details",
+        "prototype": "wydgit.core/section",
+        "properties": {},
+        "slots": {
+          "blocks": [
+            {
+              "schema": "wydgit/0.2",
+              "id": "about-copy",
+              "prototype": "wydgit.core/block",
+              "properties": {
+                "content": {
+                  "type": "markdown",
+                  "value": "## Lorem Ipsum\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+                }
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "about-note",
+              "prototype": "wydgit.core/block",
+              "properties": {
+                "content": {
+                  "type": "markdown",
+                  "value": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+                },
+                "format": {
+                  "presentation": "note"
+                }
+              },
+              "slots": {},
+              "provenance": {}
+            }
+          ]
+        },
+        "provenance": {}
+      },
+      {
+        "schema": "wydgit/0.2",
+        "id": "about-more",
+        "prototype": "wydgit.core/section",
+        "properties": {},
+        "slots": {
+          "blocks": [
+            {
+              "schema": "wydgit/0.2",
+              "id": "about-more-copy",
+              "prototype": "wydgit.core/block",
+              "properties": {
+                "content": {
+                  "type": "markdown",
+                  "value": "## Dolor Sit Amet\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+                }
+              },
+              "slots": {},
+              "provenance": {}
+            }
+          ]
+        },
+        "provenance": {}
+      }
+    ],
+    "navigation": [
+      {
+        "schema": "wydgit/0.2",
+        "id": "about-toc",
+        "prototype": "wydgit.core/navigation",
+        "properties": {
+          "position": "aside",
+          "label": "On this page",
+          "items": [
+            {
+              "label": "Lorem Ipsum",
+              "section": "about-details"
+            },
+            {
+              "label": "Dolor Sit Amet",
+              "section": "about-more"
+            }
+          ]
+        },
+        "slots": {},
+        "provenance": {}
       }
     ]
-  }
+  },
+  "provenance": {}
 }

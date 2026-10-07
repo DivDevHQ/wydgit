@@ -1,3 +1,7 @@
+# Historical 0.1 web renderer notes
+
+For current canonical authoring and runtime APIs see [object-model.md](object-model.md) and [seam.md](seam.md). The examples below describe legacy web DTOs, not 0.2 persisted envelopes. Site is now a web projection of App; canonical structural errors fail hydration.
+
 # Wydgit model and renderer API
 
 ## Editing Wydgits

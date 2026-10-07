@@ -68,9 +68,9 @@ test('format and order properties apply without allowing arbitrary HTML or CSS i
  const invalid = renderSite(model); assert.equal(invalid.diagnostics.length,1); assert.doesNotMatch(invalid.html,/<script>/);
 });
 
-test('prototype defaults are applied from JSON', () => {
+test('resolved presentation properties are honored', () => {
  const model = fixture();
- model.prototypes.get('block').properties.position.default='aside';
+ model.pages.get('home').sections[0].blocks[0].position='aside';
  const result = renderSite(model); assert.deepEqual(result.diagnostics,[]);
  assert.match(result.html,/<aside id="hero-block-1"/);
 });
@@ -96,11 +96,11 @@ test('JSON edits are picked up on the next render; corrupt JSON fails gracefully
  const renderer=createRenderer({root});
  assert.equal(renderer.renderPage('/').status,200);
  const file=path.join(root,'content/pages/home.json');
- const page=JSON.parse(fs.readFileSync(file)); page.title='A changed title'; fs.writeFileSync(file,JSON.stringify(page));
+ const page=JSON.parse(fs.readFileSync(file)); page.properties.title='A changed title'; fs.writeFileSync(file,JSON.stringify(page));
  assert.match(renderer.renderPage('/').html,/A changed title/);
  fs.writeFileSync(file,'{broken'); assert.equal(renderer.renderPage('/').status,500);
- assert.equal(renderer.renderPage('/about/').status,200);
- fs.writeFileSync(path.join(root,'content/site.json'),'{broken'); assert.equal(renderer.renderPage('/').status,500);
+ assert.equal(renderer.renderPage('/about/').status,500);
+ fs.writeFileSync(path.join(root,'content/app.json'),'{broken'); assert.equal(renderer.renderPage('/').status,500);
 });
 
 test('Express serves HTML and CSS, returns HTTP errors and does not expose source files', async t => {
