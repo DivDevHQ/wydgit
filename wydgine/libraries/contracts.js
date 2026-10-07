@@ -26,7 +26,8 @@ export function validateConfig(input) {
   fields(config, ['schema', 'libraries'], code);
   ensure(config.schema === 'wydgit.host/0.1' && Array.isArray(config.libraries), code, 'Unsupported host config');
   for (const entry of config.libraries) {
-    fields(entry, ['id','package','enabled','version','publisher','trust'], code);
+    fields(entry, ['id','package','enabled','version','publisher','trust', ...(Object.hasOwn(entry, 'options') ? ['options'] : [])], code);
+    ensure(entry.options === undefined || record(entry.options), code, 'Library options must be an object');
     ensure(identity(entry.id) && packageName(entry.package) && typeof entry.enabled === 'boolean' && range(entry.version) && publisher(entry.publisher), code, 'Invalid library mapping');
     ensure(['canonical','approved'].includes(entry.trust), 'LIBRARY.UNTRUSTED', 'Host must explicitly approve a runtime library trust class');
     ensure(entry.trust !== 'canonical' || entry.publisher === 'wydgit.core', 'LIBRARY.UNTRUSTED', 'Canonical libraries require the official publisher');

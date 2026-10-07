@@ -1,9 +1,10 @@
-# SEAM foundation — 0.2-B
+# SEAM foundation — 0.2-D
 
 Authority belongs to an execution context, not to the target object.
 
 The trusted host creates `ExecutionContext` with `publisher`, optional `package`,
-`self` (instance ID), `capabilities`, `visible` and `editable` (instance IDs),
+optional `app` identity, `self` (instance ID), `capabilities`, `scopes`,
+`visible` and `editable` (instance IDs),
 `traversal`, and `limits`. Grants and metadata are copied and deeply frozen. Capability names must
 have exactly the portable `domain.resource.action` shape. Matching is exact;
 there are no wildcards or implicit grants. Limits are non-negative integer
@@ -41,14 +42,13 @@ const result = resultOf(() => card.related('nextSibling'));
 Host code must keep the runtime, registry and context constructor private and pass
 only scoped handles across a future package boundary. The constructor is a host
 policy primitive, not a package-accessible grant API. This is not a sandbox for
-arbitrary imported JavaScript. No package code, SEWN, method dispatcher or service
-provider is executed in this milestone. The capability guard proves context
-retention; future dispatch must preserve it and enforce operation requirements.
+arbitrary imported JavaScript. No arbitrary package code or SEWN is executed. The service dispatcher below
+preserves context and enforces operation requirements for approved libraries.
 
 Expected failures use `SEAM.CONTEXT`, `SEAM.CAPABILITY`, `SEAM.TRAVERSAL`,
 `SEAM.VISIBILITY`, or `SEAM.DENIED`. Wrap synchronous host operations in `resultOf`
 to emit safe structured errors without arbitrary internal exception details.
-Async dispatch and its error boundary remain deferred with execution itself.
+Async library dispatch has a separate JSON-only result/error boundary described below.
 
 Security tests cover separate traversal/visibility grants, immutable grants,
 forged contexts, sibling/root denial, and a confused-deputy fixture in which a
@@ -69,8 +69,8 @@ mutation nor commit modifies the context or its traversal rights.
 The edit session and commit's raw runtime result stay within trusted host code.
 Future package dispatch must retain caller authority and expose only scoped handles
 and safe results. See [mutation-model.md](mutation-model.md) for the exact operation
-checks, conservative scope policy and revision hook. No package dispatcher,
-capability-grant escalation API or persistence service is implemented.
+checks, conservative scope policy and revision hook. Storage dispatch does not
+expose the object edit session or add any capability-grant API.
 
 
 ## Runtime library availability
@@ -79,6 +79,33 @@ capability-grant escalation API or persistence service is implemented.
 **Libraries provide capabilities. SEAM grants authority.** Registered capability
 names do not become permissions on existing or future ExecutionContexts. Library
 registration receives no policy/context mutation API. The host registry and raw
-service implementations must remain private to trusted code; dispatch to ordinary
-Wydgits is deferred. See [library-model.md](library-model.md) for trust approval,
+service implementations must remain private to trusted code; only caller-bound
+facades cross a package boundary. See [library-model.md](library-model.md) for trust approval,
 explicit loading, registration and startup failure boundaries.
+
+
+## Caller-bound library services
+
+0.2-D adds `registry.bind(context)`. Its only method is asynchronous
+`call(library, service, input)`, returning `{ok:true,value}` or a structured failure.
+Binding requires a branded host-issued context, not a structurally similar object.
+Each call checks the service's declared capability and registered authorization
+policy, then invokes it with the original context. Input cannot supply a different
+caller. Both requests and successful results are copied, JSON-validated and deeply
+frozen; implementation functions, adapters and raw Node values cannot cross this
+boundary. Unexpected exceptions become `SERVICE.FAILED`, invalid request JSON
+becomes `SERVICE.INVALID_REQUEST`, and missing permissions become `SEAM.DENIED`.
+Libraries may produce safe codes through the host's `failure(code)` function.
+
+The library policy checks resource scope. For WydStore, `scopes.wydstore` contains
+exact `{store, collection}` grants. Capability means what action, scope means where.
+The configured store also requires the caller's `app`, `publisher` and `package`
+to match its ownership tuple. These host-issued identities are not copied from
+untrusted provenance. Missing scopes deny by default; no wildcard or implicit
+same-publisher access exists. The context's `scopes` are copied and frozen like
+all other grants. Storage access never expands object visibility, traversal,
+editable scope or capabilities. See [wydstore.md](wydstore.md) for exact operations.
+
+The registry, context constructor, Node imports and trusted service handlers still
+must not be given to ordinary packages. This is a narrow service boundary, not an
+in-process sandbox for hostile JavaScript or a package execution environment.

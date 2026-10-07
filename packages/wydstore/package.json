@@ -1,0 +1,9 @@
+{
+  "name": "@wydgit/store",
+  "version": "0.1.0-alpha.1",
+  "description": "WydStore adapter-neutral records with a local JSON provider",
+  "license": "MPL-2.0",
+  "type": "module",
+  "engines": { "node": ">=22.12.0" },
+  "exports": { ".": "./src/index.js", "./client": "./src/client.js", "./package.json": "./package.json" }
+}

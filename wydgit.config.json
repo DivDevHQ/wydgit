@@ -8,6 +8,14 @@
       "version": "^1.0.0",
       "publisher": "wydgit.core",
       "trust": "canonical"
+    },
+    {
+      "id": "wydstore",
+      "package": "@wydgit/store",
+      "enabled": false,
+      "version": "^0.1.0-alpha.1",
+      "publisher": "wydgit.core",
+      "trust": "canonical"
     }
   ]
 }

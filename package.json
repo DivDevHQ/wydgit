@@ -1,6 +1,6 @@
 {
   "name": "wydgit",
-  "version": "0.2.0-alpha.3",
+  "version": "0.2.0-alpha.4",
   "description": "A portable, capability-safe application platform for the open web",
   "license": "MPL-2.0",
   "private": true,

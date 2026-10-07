@@ -1,4 +1,4 @@
-# Canonical libraries — 0.2-C
+# Canonical libraries — 0.2-D
 
 **Libraries provide capabilities. SEAM grants authority.**
 
@@ -6,21 +6,22 @@ A Wyd runtime library is an independently versioned implementation package with 
 validated descriptor and one explicit registration entry point. It is trusted
 runtime infrastructure, not an ordinary Wydgit package. Ordinary Wydgit packages
 can declare requirements; they cannot install Node dependencies or approve runtime
-code. No WydStore, WydGate, or other production library is implemented here.
+code. [WydStore](wydstore.md) is the first implemented canonical library; other
+canonical libraries remain deferred.
 
 **Repository location is a development concern, not part of library identity.**
 
 ## Workspace and identities
 
 The root private `wydgit` package is the npm workspace host (`packages/*`). Existing
-Wydgine and demo code deliberately remain in place. The only initial workspace is
+Wydgine and demo code deliberately remain in place. The fixture workspace is
 `packages/test-library`, an independent `@wydgit/test-library@1.0.0` package with its
 own metadata and exports. It is explicitly a non-production fixture and marked
-private to prevent accidental publication. Real canonical libraries will have
-independent package release versions and publish settings; they need not match the
-platform version or remain in this repository.
+private to prevent accidental publication. `packages/wydstore` adds the independently versioned `@wydgit/store@0.1.0-alpha.1`.
+Canonical package versions need not match the platform version or remain in this
+repository.
 
-Example future mappings (names only; no implementation or publication):
+Canonical mappings (only WydStore and the fixture are implemented; none published):
 
 | Canonical identity | Node implementation package |
 | --- | --- |
@@ -78,11 +79,13 @@ Disabled packages are not resolved, imported or registered.
 }
 ```
 
-All fields are required; unknown fields are rejected. The library list makes
+The shown fields are required. An optional `options` JSON object supplies only that
+library’s host configuration to registration; each library validates its own shape.
+Unknown fields are rejected. The library list makes
 duplicate logical IDs detectable without relying on JSON object-key overwriting.
 Only bare npm package names are accepted: no subpaths, file/HTTP URLs, versioned
 specifiers or Node builtins. There are no secrets or Wydgit capability grants here.
-The demo ships with the fixture installed but **disabled**, and no requirements.
+The demo ships with the fixture and WydStore installed but **disabled**, and no requirements.
 
 Trust classes:
 
@@ -140,7 +143,11 @@ every capability must have at least one declared service. Capabilities follow th
 shared SEAM `domain.resource.action` grammar. A capability has exactly one provider
 in a loaded registry; duplicate providers fail instead of silently overriding.
 
-Registration receives only the frozen `{service(name, handler)}` API. It cannot
+Registration receives frozen `{service(name, handler, policy?), options, failure}`.
+`policy.authorize(request, context)` must return `true` to allow bound service
+dispatch; omitting it keeps a service host-only. `failure(code)` creates a branded,
+sanitized structured failure without accepting arbitrary messages or details.
+The options are copied, JSON-validated and deeply frozen. Registration cannot
 access the registry, runtime objects, other libraries or SEAM policy through this
 API. Handlers must be functions, registered exactly once under declared names.
 Registration may return a promise, which is awaited. Missing, extra or duplicate
@@ -149,9 +156,10 @@ closes after registration; retaining it cannot add services later.
 
 No global self-registration or automatic import registration exists. Lifecycle is
 host-owned: initialize once before accepting requests, discard the registry on
-failure, and end it with the host process. Libraries must avoid background work and
-resource acquisition during registration in this milestone; teardown/reload and
-cross-library service dependencies are not implemented.
+failure, and end it with the host process. Libraries must avoid background work or retained resources during registration.
+WydStore performs bounded initialization/validation and closes file handles before
+returning. Initialization may have external effects that are not rolled back when
+a later library fails. Teardown/reload and cross-library dependencies are deferred.
 
 ## Loader, registry and startup
 
@@ -175,13 +183,18 @@ Registry host API:
 - `list()` / `get(id)`: frozen metadata, including loaded version and trust class.
 - `capabilities()`: sorted capability/provider pairs; these are availability records.
 - `service(id, name)`: a raw **trusted-host-only** implementation function.
+- `bind(context)`: a frozen caller-bound dispatcher exposing only `call(library, service, input)`.
 - `resolve(requirements)`: validate/resolve additional portable requirements against
   this registry; returns frozen manifest records, without loading anything new.
 
-Raw services are not safe Wydgit handles. No package service dispatcher is supplied.
-Future dispatch must check the caller's SEAM grants and retain its authority; do
-not pass the registry or raw functions to ordinary packages. Loading or calling a
-host fixture service does not grant any capability to an ExecutionContext.
+Raw services are not safe Wydgit handles. Pass only a bound dispatcher or a library
+facade across a package boundary. Dispatch checks an authentic context, the declared
+capability and the registered authorization policy, retains the original caller,
+and copies/freezes JSON input and output. It returns `{ok:true,value}` or a safe
+structured failure. Unexpected exceptions and non-JSON results become
+`SERVICE.FAILED`; invalid input becomes `SERVICE.INVALID_REQUEST`; missing grants,
+services or authorization policies yield `SEAM.DENIED`. Branded failures retain
+only their safe code. Library registration/dispatch never grants capabilities.
 
 `initializeHost({root})` reads host config plus `content/requirements.json` and uses
 the platform package version. `createHostApp()` retains the resulting registry in
@@ -211,7 +224,7 @@ empty. No Node wiring is added to canonical App properties or provenance.
 
 Three versions are independent:
 
-- Platform version: `wydgit@0.2.0-alpha.3`.
+- Platform version: `wydgit@0.2.0-alpha.4`.
 - Library version: e.g. the fixture's `1.0.0`, equal to its npm package version.
 - Compatibility ranges: manifest `platform`, host-approved implementation `version`,
   and portable requirement `version` each constrain their respective version.
@@ -250,8 +263,8 @@ No partial registry escapes on failure. This does not roll back JavaScript modul
 side effects or external effects from vetted registration code. Node caches imported
 modules; repeated initializations use separate registries but are not module reloads.
 
-Deferred: every production Wyd library, package installation/approval UI,
-automatic dependency edits, restart orchestration, cryptographic package approval,
-service dispatch to Wydgits, resource lifecycle hooks, persistence, marketplace,
-client runtimes and other later-phase systems. No founding-contract revision or
+Deferred: canonical libraries other than WydStore, package installation/approval
+UI, automatic dependency edits, restart orchestration, cryptographic package
+approval, resource lifecycle hooks, marketplace, client runtimes and other
+later-phase systems. No founding-contract revision or
 human architectural decision is required by this implementation.
