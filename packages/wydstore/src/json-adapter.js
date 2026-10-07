@@ -1,5 +1,6 @@
+import { safeRoot } from './local-root.js';
 import { documentContract, applyOperation } from './json-records.js';
-import { open, lstat, realpath, rename, unlink } from 'node:fs/promises';
+import { open, rename, unlink } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
@@ -8,16 +9,6 @@ import { check, StoreError, json } from './data.js';
 // Serialize cooperating handles in this process; an exclusive local lock file
 // prevents another process from overlapping a read-modify-rename operation.
 const queues = new Map();
-async function safeRoot(root) {
-  check(typeof root === 'string' && path.isAbsolute(root) && path.normalize(root) === root && root !== path.parse(root).root, 'STORE.INVALID_CONFIG');
-  let current = path.parse(root).root;
-  for (const segment of root.slice(current.length).split(path.sep)) {
-    current = path.join(current, segment);
-    const info = await lstat(current);
-    check(info.isDirectory() && !info.isSymbolicLink(), 'STORE.INVALID_CONFIG');
-  }
-  check(await realpath(root) === root, 'STORE.INVALID_CONFIG');
-}
 const safeIO = error => error instanceof StoreError ? error : new StoreError('STORE.IO');
 export async function openJsonAdapter(root, owner, definitions) {
   try { await safeRoot(root); } catch (error) { throw error instanceof StoreError ? error : new StoreError('STORE.INVALID_CONFIG'); }

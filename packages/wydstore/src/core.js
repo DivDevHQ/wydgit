@@ -1,5 +1,6 @@
-import { check, StoreError, json, record, fields, schema, validateData, idValid, frozen } from './data.js';
+import { check, StoreError, json, record, fields, schema, idValid, frozen } from './data.js';
 import { openJsonAdapter } from './json-adapter.js';
+import { normalizeRequest } from './adapter-contract.js';
 
 export async function openStores(input) {
   let config;
@@ -9,7 +10,7 @@ export async function openStores(input) {
     const ids = new Set();
     for (const store of config.stores) {
       fields(store,['id','app','publisher','package','provider','root','collections'],[],'STORE.INVALID_CONFIG');
-      check(idValid(store.id) && idValid(store.app) && typeof store.publisher === 'string' && /^[a-z][a-z0-9.-]*$/.test(store.publisher) && typeof store.package === 'string' && store.package.length > 0 && store.provider === 'json','STORE.INVALID_CONFIG');
+      check(idValid(store.id) && idValid(store.app) && typeof store.publisher === 'string' && /^[a-z][a-z0-9.-]*$/.test(store.publisher) && typeof store.package === 'string' && store.package.length > 0 && ['json','sqlite'].includes(store.provider),'STORE.INVALID_CONFIG');
       check(!ids.has(store.id),'STORE.INVALID_CONFIG'); ids.add(store.id);
       check(Array.isArray(store.collections),'STORE.INVALID_CONFIG');
       const collections = new Set();
@@ -24,7 +25,8 @@ export async function openStores(input) {
   for (const definition of config.stores) {
     const definitions = new Map(definition.collections.map(c => [c.id,c.fields]));
     const owner = { app:definition.app, publisher:definition.publisher, package:definition.package, store:definition.id };
-    const adapter = await openJsonAdapter(definition.root,owner,definitions);
+    const openAdapter = definition.provider === 'json' ? openJsonAdapter : (await import('./sqlite-adapter.js')).openSqliteAdapter;
+    const adapter = await openAdapter(definition.root,owner,definitions);
     stores.set(definition.id,{definition,definitions,adapter});
   }
   const authorize = (request, caller) => {
@@ -38,24 +40,8 @@ export async function openStores(input) {
   };
   const execute = async (operation, raw, caller) => {
     const request = json(raw); authorize(request,caller);
-    const required = ['store','collection'];
-    const perOperation = { get:['id'], history:['id'], query:[], create:['id','data'], update:['id','data','version'], delete:['id','version'] };
-    check(Object.hasOwn(perOperation,operation),'STORE.INVALID_RECORD');
-    fields(request,[...required,...perOperation[operation]],operation === 'query' ? ['where','limit'] : []);
-    if(operation !== 'query')check(idValid(request.id),'STORE.INVALID_RECORD');
-    if(['update','delete'].includes(operation))check(Number.isSafeInteger(request.version) && request.version >= 1,'STORE.INVALID_RECORD');
-    const store = stores.get(request.store), definitions = store.definitions.get(request.collection);
-    let data;
-    if(['create','update'].includes(operation))data = validateData(request.data,definitions);
-    if(operation === 'query') {
-      const where = request.where ?? {}; check(record(where),'STORE.INVALID_FIELD');
-      for(const [key,value] of Object.entries(where)) {
-        check(Object.hasOwn(definitions,key),'STORE.INVALID_FIELD');
-        validateData({[key]:value},{[key]:definitions[key]});
-      }
-      check(request.limit === undefined || Number.isSafeInteger(request.limit) && request.limit >= 0 && request.limit <= 10000,'STORE.INVALID_RECORD');
-    }
-    return store.adapter.execute(operation,{...request,...(data === undefined ? {} : {data})});
+    const store = stores.get(request.store);
+    return store.adapter.execute(operation, normalizeRequest(operation, request, store.definitions.get(request.collection)));
   };
   return frozen({authorize,execute});
 }

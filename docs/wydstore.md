@@ -1,11 +1,11 @@
-# WydStore — 0.2-D
+# WydStore — 0.2-E
 
 **Libraries provide capabilities. SEAM grants authority.**
 
 WydStore is the first implemented canonical library: identity `wydstore`, Node
 package `@wydgit/store`, publisher `wydgit.core`, trust `canonical`, target `server`.
-It lives in `packages/wydstore` and has independent version `0.1.0-alpha.1`; the
-platform is `0.2.0-alpha.4`. It uses the existing explicit library loader. The demo
+It lives in `packages/wydstore` and has independent version `0.1.0-alpha.2`; the
+platform is `0.2.0-alpha.5`. It uses the existing explicit library loader. The demo
 installs but disables WydStore and remains file-content rendered.
 
 ## Host configuration
@@ -18,7 +18,7 @@ entry in `wydgit.config.json`. Replace the example absolute root with that direc
   "id": "wydstore",
   "package": "@wydgit/store",
   "enabled": true,
-  "version": "^0.1.0-alpha.1",
+  "version": "^0.1.0-alpha.2",
   "publisher": "wydgit.core",
   "trust": "canonical",
   "options": {
@@ -121,7 +121,7 @@ finalization can have an uncertain outcome; fetch before retrying. Fetch again t
 conflict; there is no automatic merge. Concurrent operations on one handle fail
 `STORE.BUSY` while a save/delete is pending.
 
-Deleting reserves the ID permanently in this initial adapter. Recreating that ID
+Deleting reserves the ID permanently in both adapters. Recreating that ID
 fails `STORE.DUPLICATE_ID`; tombstones preserve history and prevent stale handles
 from updating a different incarnation. Missing/deleted records cannot be fetched.
 
@@ -133,7 +133,7 @@ immutable `{version, data, deleted}` entries in ascending revision order, includ
 the current state or deletion tombstone. Insert begins at version 1. No-op saves
 produce no history entry. There is no pruning, restore API or history-disable flag.
 
-History is **not backup**: it lives in the same storage document as current records
+History is **not backup**: it lives in the same provider file as current records
 and cannot protect against loss or corruption of that file.
 
 `query({where?, limit?})` lists nondeleted records, sorted by case-sensitive lexical
@@ -165,14 +165,65 @@ its service. Request data cannot replace that context. Loading a library, receiv
 a result, changing records, inheritance, containment and provenance grant nothing.
 `visible`, `editable` and traversal grants are independent of storage scopes.
 
-## Adapter and JSON persistence
+## Internal adapter contract
 
-The core validates schemas, requests and ownership independently of the provider.
-The internal adapter contract is `execute(operation, request)` for the six operations
-above. It returns JSON record snapshots/history and implements authoritative
-revision comparison with atomic changes. It exposes no files or document operations
-to the core or facade. A later SQLite adapter can implement this contract without
-changing the public API; adapter selection currently accepts only `json`.
+`src/adapter-contract.js` defines normalized requests, snapshot shapes, exact JSON
+equality, ID ordering, revision transitions and shared record validation. It is
+internal to `@wydgit/store`, not a package export. The facade and SEAM policy did
+not change for SQLite. `core.js` chooses the provider from host configuration only.
+
+Adapters implement asynchronous `execute(operation, request)` and return JSON
+values. The core authenticates/authorizes the caller and validates the request and
+collection schema first. Every request contains logical `store` and `collection`;
+the following table lists the remaining fields. Extra fields are rejected.
+
+| Operation | Additional request fields | Result |
+| --- | --- | --- |
+| `get` | `id` | `{id, version, data}` for a live record |
+| `query` | optional `where`, `limit` | Array of live snapshots, sorted by ID |
+| `history` | `id` | Ascending `{version, data, deleted}` entries, including current/tombstone |
+| `create` | `id`, `data` | New snapshot at version 1 |
+| `update` | `id`, `data`, expected `version` | New snapshot, or unchanged snapshot for equal data |
+| `delete` | `id`, expected `version` | `{id, version, deleted:true}` |
+
+IDs are immutable and scoped to collections. Create never overwrites live records
+or tombstones. Missing IDs fail `STORE.NOT_FOUND`; duplicate creates fail
+`STORE.DUPLICATE_ID`. Updates/deletes of a tombstone or with a stale revision fail
+`STORE.CONFLICT`. The authoritative comparison and history/current-state write
+must be atomic. An update containing identical data checks the expected revision
+first, then returns without incrementing the version or adding history. The facade's
+local unchanged `save()` bypasses dispatch entirely, as documented above.
+
+The core materializes defaults before an adapter receives data. Providers preserve
+JSON types, exact equality, negative-zero normalization, lexical ID ordering and
+absent-field behavior; they do not apply database type coercion. Results contain no
+provider identity or implementation handles. Expected failures are `StoreError`
+codes, and unexpected provider failures are sanitized before crossing dispatch.
+
+`test/wydstore-conformance.test.js` is the executable definition of this contract:
+the same tests run against both providers through the real loader and facade.
+They cover lifecycle, CRUD, no-ops, tombstones, reopened history, conflicts, schema,
+identity, scopes and hostile inputs. A paired query test compares results for all
+six supported field types. Separate tests retain JSON file-security coverage and
+exercise SQLite-specific initialization, rollback, concurrent processes and safety.
+
+## Provider configuration and ownership
+
+Both providers use the host entry shown above. Set `provider` to `"json"` or
+`"sqlite"`; `root` remains a host-approved, existing absolute directory. There is
+no filename, connection string, URI, SQL, table, pragma or driver option in the
+configuration or portable request. Each provider derives its own filename from
+the ownership tuple; records cannot influence paths. SQLite uses `.sqlite`, JSON
+uses `.json`. Changing provider selects a different store file; it does **not**
+convert or migrate existing data.
+
+One library can host both providers in its `options.stores` array, for example
+`json-main` with provider `json` and `sqlite-main` with provider `sqlite`. They may
+share a host root, but their logical scopes and ownership remain independent.
+The same `STORES.get(id).collection(name)` facade accesses either. A grant to one
+does not grant access to the other, even when collection/record IDs are identical.
+
+## JSON provider
 
 The JSON adapter uses one file per ownership tuple, with a SHA-256-derived name;
 caller strings are never used as paths. It verifies an absolute normalized root,
@@ -194,9 +245,89 @@ must not be writable by untrusted OS users; these checks are not protection agai
 a malicious privileged process replacing directories during operations. Network
 filesystem locking/rename semantics are unsupported. File fsync plus rename avoids
 partial JSON writes but does not promise power-loss durability of the directory
-entry. Startup initialization is not a transaction across multiple stores. Records
-(including tombstones) are capped at 10,000 per collection, documents at 16 MiB,
-and accepted WydStore JSON nesting at 64 levels. There is no backup/recovery system.
+entry. Startup initialization is not a transaction across multiple stores. There is no backup/recovery system. Limits are distinguished below.
+
+## SQLite provider
+
+The canonical library alone depends on **better-sqlite3 13.0.3**, pinned in its
+workspace package and lockfile. It supports Node >=22, covering the platform's
+Node >=22.12 baseline, and supplies SQLite rather than requiring a system database
+server. Prepared statements and synchronous transactions keep revision checks and
+writes in one short atomic operation. There is no ORM or vendored engine. See the
+[driver API](https://github.com/WiseLibs/better-sqlite3/blob/v13.0.3/docs/api.md).
+A clean install was verified on Node 24.21.0 / npm 11.19.0. Native setup may invoke
+node-gyp and need Node headers, Python and make; deployments must permit the
+reviewed dependency setup. The installed driver is smoke-tested by the SQLite
+provider suite. The dependency is not exposed to ordinary Wydgits. The portable `/client` export
+has no Node/SQLite import. JSON-only initialization does not load the SQLite adapter.
+
+Private schema version **1** uses three fixed `STRICT` tables:
+
+- Metadata: ownership tuple and exact configured collection definitions.
+- Records: logical collection/record ID, current revision, canonical JSON data and
+  deletion marker; a composite primary key reserves identity.
+- History: prior live revisions and canonical JSON data, keyed by collection, ID
+  and version and referencing the current record/tombstone.
+
+SQLite `user_version` records the private schema version. Newly and exclusively
+created files are initialized transactionally. Existing empty, incompatible or
+newer databases are rejected, never reset. Startup verifies the version, fixed
+schema, metadata, integrity/foreign keys, records and history continuity. Every
+operation checks metadata/schema again; accessed values are validated and history
+checks detect revision gaps. Changed collection definitions require an explicit
+future migration; this milestone has no collection migration mechanism.
+
+All SQL identifiers are fixed implementation constants. Logical IDs, ownership,
+record JSON and revisions use bound parameters. The only assembled SQL execution
+is choosing among constant schema statements; fixed pragmas configure the private
+adapter. No caller-controlled SQL fragment or identifier is accepted.
+
+Writes run in a synchronous **BEGIN IMMEDIATE** transaction: read/compare the
+current revision, insert its prior state into history, update current state, commit.
+A conditional revision update is checked as well. Any exception rolls back both
+history and current-state changes. Simultaneous writers wait up to one second for
+the transaction; a writer whose expected revision is then stale gets
+`STORE.CONFLICT`. Lock timeout is sanitized to `STORE.BUSY`. Read operations use a
+consistent read transaction, so history and current state cannot straddle a write.
+Connections open per operation and always close; no pooling, lifecycle hook or
+background work was added. Synchronous work can block the host event loop.
+
+Queries scan records in binary ID order (identical to the permitted ASCII IDs'
+portable lexical order), evaluate the shared JSON equality predicate and apply the
+portable limit after filtering. JSON values are not coerced through SQL equality.
+History returns prior versions followed by current state/tombstone, exactly as JSON.
+
+The existing safe-root checks are shared unchanged. SQLite files are exclusively
+created with mode 0600; files and `-journal`, `-wal`, `-shm` sidecars must be regular,
+singly linked, nonsymlink files. The driver is opened with `fileMustExist`; a missing
+file during service execution fails rather than recreating data. Only rollback
+journal mode with 4096-byte pages is supported. Trusted-schema execution is disabled;
+extra triggers/views/tables or changed table definitions are rejected. No extension
+loading or caller-selected driver options exist.
+
+Use a private, host-controlled **local filesystem**. SQLite opens by pathname, so
+pre-open checks cannot defeat a privileged process replacing files/directories
+between check and open. An interrupted first-time initialization can leave an
+invalid file that requires operator inspection; it is not automatically deleted.
+An ordinary transaction crash uses SQLite's rollback journal recovery. Backups,
+restore, distributed coordination and network filesystems remain out of scope.
+
+## Limits
+
+Portable limits remain 128-character IDs, JSON nesting of 64, 10,000 records per
+collection including tombstones, and query limits 0–10,000. Provider capacities
+are implementation safeguards, not new query syntax or capabilities:
+
+| Provider | Additional limits |
+| --- | --- |
+| JSON | Entire store document, including history, at most 16 MiB |
+| SQLite | Database at most 65,536 4096-byte pages (256 MiB); each inspected sidecar at most 256 MiB; each serialized record data value at most 16 MiB |
+| SQLite results | At most 32 MiB of serialized record data per query/history response; history returns at most 10,000 versions including current |
+
+SQLite can hold more than 16 MiB across records/history. Oversized responses fail
+`STORE.LIMIT`, never silently truncate history. All retained versions remain stored;
+there is no pruning or history pagination. Provider capacity failures do not change
+identity, versions, equality or authority. No per-tenant quotas are implemented.
 
 ## Errors and deferred work
 
@@ -212,7 +343,7 @@ Missing service capability is `SEAM.DENIED`; invalid dispatch JSON is
 Normal error payloads omit host paths, exception messages and internal stacks.
 
 Tests use isolated temporary roots, removed afterward; they never write demo data.
-Deferred: all additional providers, migrations, cross-owner sharing, cross-store
+Deferred: providers beyond JSON/SQLite, migrations, cross-owner sharing, cross-store
 transactions, distributed locking, replication, backups, restore, query languages,
 admin UI, WydClient, and executable third-party package isolation. No founding
 architecture change or unresolved architectural decision was needed.

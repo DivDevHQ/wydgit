@@ -1,4 +1,4 @@
-# Canonical libraries — 0.2-D
+# Canonical libraries — 0.2-E
 
 **Libraries provide capabilities. SEAM grants authority.**
 
@@ -17,7 +17,7 @@ The root private `wydgit` package is the npm workspace host (`packages/*`). Exis
 Wydgine and demo code deliberately remain in place. The fixture workspace is
 `packages/test-library`, an independent `@wydgit/test-library@1.0.0` package with its
 own metadata and exports. It is explicitly a non-production fixture and marked
-private to prevent accidental publication. `packages/wydstore` adds the independently versioned `@wydgit/store@0.1.0-alpha.1`.
+private to prevent accidental publication. `packages/wydstore` adds the independently versioned `@wydgit/store@0.1.0-alpha.2`.
 Canonical package versions need not match the platform version or remain in this
 repository.
 
@@ -224,7 +224,7 @@ empty. No Node wiring is added to canonical App properties or provenance.
 
 Three versions are independent:
 
-- Platform version: `wydgit@0.2.0-alpha.4`.
+- Platform version: `wydgit@0.2.0-alpha.5`.
 - Library version: e.g. the fixture's `1.0.0`, equal to its npm package version.
 - Compatibility ranges: manifest `platform`, host-approved implementation `version`,
   and portable requirement `version` each constrain their respective version.
@@ -268,3 +268,11 @@ UI, automatic dependency edits, restart orchestration, cryptographic package
 approval, resource lifecycle hooks, marketplace, client runtimes and other
 later-phase systems. No founding-contract revision or
 human architectural decision is required by this implementation.
+
+
+WydStore 0.2-E uses the same library registration and caller-bound dispatcher for
+both JSON and SQLite. Its host-only `options.stores` selects the provider; manifest
+capabilities and portable requirements contain no database choice. The vetted
+`better-sqlite3` dependency belongs to the WydStore workspace, not Wydgine or the
+root package. SQLite connections close after each operation, so no library
+lifecycle API was added. See [WydStore](wydstore.md) for the adapter contract.

@@ -42,7 +42,7 @@ The result should be:
 
 Wydgit is currently in **early alpha development**.
 
-The current codebase implements the Wydgit 0.2-D WydStore core and JSON adapter on the object-model, mutation, and SEAM foundation:
+The current codebase implements the Wydgit 0.2-E WydStore JSON/SQLite providers and shared adapter contract on the object-model, mutation, and SEAM foundation:
 
 - Node.js / Express server
 - canonical App-rooted JSON and immutable hydrated Wydgit instances
@@ -65,7 +65,7 @@ The architectural contract is:
 
 [`docs/FOUNDING-ARCHITECTURE.md`](docs/FOUNDING-ARCHITECTURE.md)
 
-Current development version: **0.2.0-alpha.4**. Completed platform milestones
+Current development version: **0.2.0-alpha.5**. Completed platform milestones
 update `package.json`, matching root metadata in `package-lock.json`, and
 `content/app.json` → `properties.revision` together. Version updates do not create
 Git tags or publish releases.
@@ -149,7 +149,7 @@ Vanilla Wydgine and WydClient are intended to remain small.
 **Libraries provide capabilities. SEAM grants authority.**
 
 The library contract and explicit loader are implemented. `@wydgit/store` is the
-first real workspace library, with a JSON adapter; a separate non-production test
+first real workspace library, with JSON and SQLite adapters; a separate non-production test
 library exercises loading. Both are disabled in `wydgit.config.json` by default.
 `content/requirements.json` holds portable library requirements; it never names
 Node implementation packages. Repository location is a development concern, not
