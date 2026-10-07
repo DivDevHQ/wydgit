@@ -1,0 +1,42 @@
+[
+  {
+    "id": "main-navigation",
+    "prototype": "navigation",
+    "position": "header",
+    "label": "Main navigation",
+    "items": [
+      {
+        "label": "Home",
+        "page": "home"
+      },
+      {
+        "label": "About",
+        "page": "about"
+      },
+      {
+        "label": "Contact",
+        "page": "contact"
+      }
+    ]
+  },
+  {
+    "id": "footer-navigation",
+    "prototype": "navigation",
+    "position": "footer",
+    "label": "Footer navigation",
+    "items": [
+      {
+        "label": "Home",
+        "page": "home"
+      },
+      {
+        "label": "About",
+        "page": "about"
+      },
+      {
+        "label": "Contact",
+        "page": "contact"
+      }
+    ]
+  }
+]

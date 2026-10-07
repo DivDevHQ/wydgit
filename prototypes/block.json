@@ -1,0 +1,94 @@
+{
+  "prototype": "block",
+  "class": "WydgitBlock",
+  "version": "0.1",
+  "properties": {
+    "id": {
+      "type": "string",
+      "required": true
+    },
+    "order": {
+      "type": "number",
+      "default": 0
+    },
+    "position": {
+      "type": "string",
+      "default": "main",
+      "enum": [
+        "header",
+        "main",
+        "aside",
+        "footer"
+      ]
+    },
+    "format": {
+      "type": "object",
+      "default": {}
+    },
+    "anchors": {
+      "type": "array",
+      "default": []
+    },
+    "content": {
+      "type": "object",
+      "required": true,
+      "supported-types": [
+        "markdown"
+      ]
+    },
+    "skin": {
+      "type": "string",
+      "description": "Optional skin ID. Its tokens override inherited site/page/section tokens; omitted tokens keep the parent values."
+    },
+    "linkToPage": {
+      "type": "string",
+      "description": "Page ID, resolved like navigation.items[].page. Required for whole-card-link; optional for card (adds a separate page link)."
+    }
+  },
+  "format": {
+    "align": [
+      "start",
+      "center",
+      "end"
+    ],
+    "width": [
+      "normal",
+      "wide",
+      "narrow"
+    ],
+    "layout": [
+      "flow",
+      "cards",
+      "columns"
+    ],
+    "tone": [
+      "plain",
+      "hero",
+      "muted"
+    ],
+    "presentation": [
+      "prose",
+      "card",
+      "pullquote",
+      "whole-card-link",
+      "eyebrow",
+      "lead",
+      "button",
+      "panel",
+      "related",
+      "note",
+      "concept",
+      "relationship",
+      "metadata",
+      "glossary",
+      "assessment",
+      "summary",
+      "back"
+    ],
+    "column": [
+      "left",
+      "right",
+      "full"
+    ]
+  }
+}

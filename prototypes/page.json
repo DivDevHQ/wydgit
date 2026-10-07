@@ -1,0 +1,81 @@
+{
+  "prototype": "page",
+  "class": "WydgitPage",
+  "version": "0.1",
+  "properties": {
+    "id": {
+      "type": "string",
+      "required": true
+    },
+    "order": {
+      "type": "number",
+      "default": 0
+    },
+    "position": {
+      "type": "string",
+      "default": "main",
+      "enum": [
+        "header",
+        "main",
+        "aside",
+        "footer"
+      ]
+    },
+    "format": {
+      "type": "object",
+      "default": {}
+    },
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "slug": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "string",
+      "default": ""
+    },
+    "sections": {
+      "type": "array",
+      "required": true
+    },
+    "skin": {
+      "type": "string",
+      "description": "Optional skin ID. Its tokens override inherited site/page/section tokens; omitted tokens keep the parent values."
+    }
+  },
+  "format": {
+    "align": [
+      "start",
+      "center",
+      "end"
+    ],
+    "width": [
+      "normal",
+      "wide",
+      "narrow"
+    ],
+    "layout": [
+      "flow",
+      "cards",
+      "columns"
+    ],
+    "tone": [
+      "plain",
+      "hero",
+      "muted"
+    ],
+    "presentation": [
+      "prose",
+      "card",
+      "pullquote"
+    ]
+  },
+  "children": {
+    "property": "sections",
+    "prototype": "section",
+    "multiple": true
+  }
+}

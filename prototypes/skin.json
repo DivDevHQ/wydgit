@@ -1,0 +1,102 @@
+{
+  "prototype": "skin",
+  "class": "WydgitSkin",
+  "version": "0.1",
+  "properties": {
+    "id": {
+      "type": "string",
+      "required": true
+    },
+    "title": {
+      "type": "string",
+      "default": ""
+    },
+    "tokens": {
+      "type": "object",
+      "default": {}
+    }
+  },
+  "tokens": {
+    "ink": {
+      "type": "color"
+    },
+    "muted": {
+      "type": "color"
+    },
+    "paper": {
+      "type": "color"
+    },
+    "surface": {
+      "type": "color"
+    },
+    "accent": {
+      "type": "color"
+    },
+    "line": {
+      "type": "color"
+    },
+    "link": {
+      "type": "color"
+    },
+    "panel": {
+      "type": "color"
+    },
+    "panel-ink": {
+      "type": "color"
+    },
+    "body-size": {
+      "type": "length"
+    },
+    "content-width": {
+      "type": "length"
+    },
+    "reading-width": {
+      "type": "length"
+    },
+    "section-space": {
+      "type": "length"
+    },
+    "column-gap": {
+      "type": "length"
+    },
+    "card-padding": {
+      "type": "length"
+    },
+    "card-gap": {
+      "type": "length"
+    },
+    "font-family": {
+      "type": "choice",
+      "enum": [
+        "system-ui",
+        "Arial, Helvetica, sans-serif",
+        "Georgia, serif"
+      ]
+    },
+    "line-height": {
+      "type": "number",
+      "min": 1,
+      "max": 2.5
+    },
+    "card-columns": {
+      "type": "number",
+      "enum": [
+        1,
+        2,
+        3
+      ]
+    },
+    "link-hover": {
+      "type": "color"
+    },
+    "soft": {
+      "type": "color"
+    },
+    "quote-border": {
+      "type": "color"
+    },
+    "assessment-number": {
+      "type": "color"
+    }
+  }
+}

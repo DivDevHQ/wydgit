@@ -1,0 +1,69 @@
+{
+  "prototype": "navigation",
+  "class": "WydgitNavigation",
+  "version": "0.1",
+  "properties": {
+    "id": {
+      "type": "string",
+      "required": true
+    },
+    "order": {
+      "type": "number",
+      "default": 0
+    },
+    "position": {
+      "type": "string",
+      "default": "main",
+      "enum": [
+        "header",
+        "main",
+        "aside",
+        "footer"
+      ]
+    },
+    "format": {
+      "type": "object",
+      "default": {}
+    },
+    "label": {
+      "type": "string",
+      "default": "Navigation"
+    },
+    "items": {
+      "type": "array",
+      "required": true
+    }
+  },
+  "format": {
+    "align": [
+      "start",
+      "center",
+      "end"
+    ],
+    "width": [
+      "normal",
+      "wide",
+      "narrow"
+    ],
+    "layout": [
+      "flow",
+      "cards",
+      "columns"
+    ],
+    "tone": [
+      "plain",
+      "hero",
+      "muted"
+    ],
+    "presentation": [
+      "prose",
+      "card",
+      "pullquote"
+    ]
+  },
+  "targets": [
+    "page",
+    "section",
+    "url"
+  ]
+}

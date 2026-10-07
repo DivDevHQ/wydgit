@@ -1,0 +1,30 @@
+{
+  "id": "default",
+  "prototype": "skin",
+  "title": "Default neutral skin",
+  "tokens": {
+    "ink": "#243042",
+    "muted": "#64748b",
+    "paper": "#ffffff",
+    "surface": "#ffffff",
+    "accent": "#dbeafe",
+    "line": "#dce1e3",
+    "link": "#1d4ed8",
+    "panel": "#eff6ff",
+    "panel-ink": "#243042",
+    "font-family": "system-ui",
+    "body-size": "17px",
+    "line-height": 1.75,
+    "content-width": "1100px",
+    "reading-width": "780px",
+    "section-space": "64px",
+    "column-gap": "56px",
+    "card-padding": "26px",
+    "card-gap": "18px",
+    "card-columns": 2,
+    "link-hover": "#1e40af",
+    "soft": "#f8fafc",
+    "quote-border": "#93c5fd",
+    "assessment-number": "#1d4ed8"
+  }
+}

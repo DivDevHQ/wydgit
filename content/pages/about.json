@@ -1,0 +1,90 @@
+{
+  "id": "about",
+  "prototype": "page",
+  "title": "About",
+  "slug": "about",
+  "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+  "sections": [
+    {
+      "id": "about-intro",
+      "prototype": "section",
+      "blocks": [
+        {
+          "id": "about-title",
+          "prototype": "block",
+          "content": {
+            "type": "markdown",
+            "value": "# About"
+          }
+        },
+        {
+          "id": "about-lead",
+          "prototype": "block",
+          "content": {
+            "type": "markdown",
+            "value": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+          },
+          "format": {
+            "presentation": "lead"
+          }
+        }
+      ],
+      "position": "header"
+    },
+    {
+      "id": "about-details",
+      "prototype": "section",
+      "blocks": [
+        {
+          "id": "about-copy",
+          "prototype": "block",
+          "content": {
+            "type": "markdown",
+            "value": "## Lorem Ipsum\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+          }
+        },
+        {
+          "id": "about-note",
+          "prototype": "block",
+          "content": {
+            "type": "markdown",
+            "value": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+          },
+          "format": {
+            "presentation": "note"
+          }
+        }
+      ]
+    },
+    {
+      "id": "about-more",
+      "prototype": "section",
+      "blocks": [
+        {
+          "id": "about-more-copy",
+          "prototype": "block",
+          "content": {
+            "type": "markdown",
+            "value": "## Dolor Sit Amet\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+          }
+        }
+      ]
+    }
+  ],
+  "navigation": {
+    "id": "about-toc",
+    "prototype": "navigation",
+    "position": "aside",
+    "label": "On this page",
+    "items": [
+      {
+        "label": "Lorem Ipsum",
+        "section": "about-details"
+      },
+      {
+        "label": "Dolor Sit Amet",
+        "section": "about-more"
+      }
+    ]
+  }
+}

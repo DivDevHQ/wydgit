@@ -1,0 +1,140 @@
+{
+  "id": "home",
+  "prototype": "page",
+  "title": "Home",
+  "slug": "",
+  "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+  "sections": [
+    {
+      "id": "hero",
+      "prototype": "section",
+      "blocks": [
+        {
+          "id": "hero-block-1",
+          "prototype": "block",
+          "content": {
+            "type": "markdown",
+            "value": "# Lorem Ipsum"
+          }
+        },
+        {
+          "id": "hero-block-2",
+          "prototype": "block",
+          "content": {
+            "type": "markdown",
+            "value": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+          },
+          "format": {
+            "presentation": "lead"
+          }
+        }
+      ],
+      "position": "header",
+      "format": {
+        "tone": "hero"
+      }
+    },
+    {
+      "id": "overview",
+      "prototype": "section",
+      "blocks": [
+        {
+          "id": "overview-title",
+          "prototype": "block",
+          "content": {
+            "type": "markdown",
+            "value": "## Lorem Ipsum"
+          }
+        },
+        {
+          "id": "overview-copy",
+          "prototype": "block",
+          "content": {
+            "type": "markdown",
+            "value": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+          }
+        }
+      ]
+    },
+    {
+      "id": "pages",
+      "prototype": "section",
+      "blocks": [
+        {
+          "id": "pages-title",
+          "prototype": "block",
+          "content": {
+            "type": "markdown",
+            "value": "## Dolor Sit Amet"
+          }
+        },
+        {
+          "id": "pages-intro",
+          "prototype": "block",
+          "content": {
+            "type": "markdown",
+            "value": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+          }
+        },
+        {
+          "id": "about-card",
+          "prototype": "block",
+          "content": {
+            "type": "markdown",
+            "value": "### About\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+          },
+          "format": {
+            "presentation": "whole-card-link"
+          },
+          "linkToPage": "about"
+        },
+        {
+          "id": "contact-card",
+          "prototype": "block",
+          "content": {
+            "type": "markdown",
+            "value": "### Contact\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+          },
+          "format": {
+            "presentation": "whole-card-link"
+          },
+          "linkToPage": "contact"
+        }
+      ],
+      "format": {
+        "layout": "cards"
+      }
+    },
+    {
+      "id": "details",
+      "prototype": "section",
+      "blocks": [
+        {
+          "id": "details-heading",
+          "prototype": "block",
+          "content": {
+            "type": "markdown",
+            "value": "## Consectetur Adipiscing"
+          },
+          "format": {
+            "column": "left"
+          }
+        },
+        {
+          "id": "details-copy",
+          "prototype": "block",
+          "content": {
+            "type": "markdown",
+            "value": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+          },
+          "format": {
+            "column": "right"
+          }
+        }
+      ],
+      "format": {
+        "layout": "columns"
+      }
+    }
+  ]
+}
