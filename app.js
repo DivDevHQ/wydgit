@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRenderer, errorDocument } from './wydgine/index.js';
+import { initializeHost } from './wydgine/host.js';
 
 export const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 export function createApp({ root = projectRoot, logger = console } = {}) {
@@ -27,5 +28,14 @@ export function createApp({ root = projectRoot, logger = console } = {}) {
     logger.error(error.message);
     res.status(500).type('html').send(errorDocument());
   });
+  return app;
+}
+
+// Application startup goes through host validation. createApp remains the pure
+// web-adapter factory used by rendering/HTTP tests, not a library bootstrap API.
+export async function createHostApp(options = {}) {
+  const libraries = await initializeHost({ root: options.root ?? projectRoot });
+  const app = createApp(options);
+  app.locals.libraries = libraries; // Trusted host access only; never serialized.
   return app;
 }

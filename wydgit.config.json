@@ -1,0 +1,13 @@
+{
+  "schema": "wydgit.host/0.1",
+  "libraries": [
+    {
+      "id": "wydtest",
+      "package": "@wydgit/test-library",
+      "enabled": false,
+      "version": "^1.0.0",
+      "publisher": "wydgit.core",
+      "trust": "canonical"
+    }
+  ]
+}

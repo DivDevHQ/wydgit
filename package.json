@@ -1,6 +1,6 @@
 {
   "name": "wydgit",
-  "version": "0.2.0-alpha.2",
+  "version": "0.2.0-alpha.3",
   "description": "A portable, capability-safe application platform for the open web",
   "license": "MPL-2.0",
   "private": true,
@@ -17,11 +17,15 @@
   "dependencies": {
     "express": "^5.1.0",
     "marked": "^15.0.12",
-    "sanitize-html": "^2.18.0"
+    "sanitize-html": "^2.18.0",
+    "semver": "^7.8.5"
   },
   "devDependencies": {
     "cheerio": "1.0.0",
     "turndown": "^7.2.0",
     "turndown-plugin-gfm": "^1.0.2"
-  }
+  },
+  "workspaces": [
+    "packages/*"
+  ]
 }

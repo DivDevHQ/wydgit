@@ -1,9 +1,10 @@
+import { isCapability } from './capabilities.js';
 import { clean, freeze, record, requireThat as check } from '../object-model/validation.js';
 const contexts = new WeakSet();
 export class ExecutionContext {
   constructor({ publisher, package: packageId = null, self, capabilities = [], visible = [], editable = [], traversal = [], limits = {} }) {
     check(typeof publisher === 'string' && typeof self === 'string', 'SEAM.CONTEXT', 'Context requires publisher and self');
-    check(Array.isArray(capabilities) && capabilities.every(c => typeof c === 'string' && /^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*$/.test(c)), 'SEAM.CAPABILITY', 'Invalid capability name');
+    check(Array.isArray(capabilities) && capabilities.every(isCapability), 'SEAM.CAPABILITY', 'Invalid capability name');
     check(Array.isArray(visible) && visible.every(x => typeof x === 'string'), 'SEAM.CONTEXT', 'Invalid visible scope');
     check(Array.isArray(editable) && editable.every(x => typeof x === 'string'), 'SEAM.CONTEXT', 'Invalid editable scope');
     check(Array.isArray(traversal) && traversal.every(x => ['parent','root','children','previousSibling','nextSibling'].includes(x)), 'SEAM.CONTEXT', 'Invalid traversal permission');

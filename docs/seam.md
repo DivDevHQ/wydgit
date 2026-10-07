@@ -71,3 +71,14 @@ Future package dispatch must retain caller authority and expose only scoped hand
 and safe results. See [mutation-model.md](mutation-model.md) for the exact operation
 checks, conservative scope policy and revision hook. No package dispatcher,
 capability-grant escalation API or persistence service is implemented.
+
+
+## Runtime library availability
+
+0.2-C adds host-only library registration, separate from all context grants.
+**Libraries provide capabilities. SEAM grants authority.** Registered capability
+names do not become permissions on existing or future ExecutionContexts. Library
+registration receives no policy/context mutation API. The host registry and raw
+service implementations must remain private to trusted code; dispatch to ordinary
+Wydgits is deferred. See [library-model.md](library-model.md) for trust approval,
+explicit loading, registration and startup failure boundaries.

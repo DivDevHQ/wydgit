@@ -42,13 +42,14 @@ The result should be:
 
 Wydgit is currently in **early alpha development**.
 
-The current codebase implements the Wydgit 0.2-B object-model, controlled mutation, and SEAM foundation:
+The current codebase implements the Wydgit 0.2-C library packaging/loading contract on the object-model, mutation, and SEAM foundation:
 
 - Node.js / Express server
 - canonical App-rooted JSON and immutable hydrated Wydgit instances
 - single prototype inheritance with publisher boundaries and abstract bases
 - validated named slots and deny-by-default scoped traversal
 - authorized edit sessions, immutable commits, change sets and revision hooks
+- npm workspaces, explicit host-approved library loading, portable requirements
 - server-side rendering
 - Markdown content
 - sanitized output
@@ -57,13 +58,13 @@ The current codebase implements the Wydgit 0.2-B object-model, controlled mutati
 - nested App → Page → Section → Block composition
 - renderer and HTTP tests
 
-Implementation details: [object model](docs/object-model.md), [SEAM](docs/seam.md), and [mutation model](docs/mutation-model.md). Executable third-party packages and later platform subsystems remain deferred.
+Implementation details: [object model](docs/object-model.md), [SEAM](docs/seam.md), [mutation model](docs/mutation-model.md), and [library model](docs/library-model.md). Executable third-party packages and later platform subsystems remain deferred.
 
 The architectural contract is:
 
 [`docs/FOUNDING-ARCHITECTURE.md`](docs/FOUNDING-ARCHITECTURE.md)
 
-Current development version: **0.2.0-alpha.2**. Completed platform milestones
+Current development version: **0.2.0-alpha.3**. Completed platform milestones
 update `package.json`, matching root metadata in `package-lock.json`, and
 `content/app.json` → `properties.revision` together. Version updates do not create
 Git tags or publish releases.
@@ -143,6 +144,14 @@ A future human-friendly authoring language may be called **WydStitch**.
 ## Modular Capability Libraries
 
 Vanilla Wydgine and WydClient are intended to remain small.
+
+**Libraries provide capabilities. SEAM grants authority.**
+
+The library contract and explicit loader are implemented; the only workspace
+library is a non-production fixture, disabled in `wydgit.config.json`.
+`content/requirements.json` holds portable library requirements; it never names
+Node implementation packages. Repository location is a development concern, not
+part of library identity.
 
 Optional capabilities will be supplied through canonical Wyd libraries such as:
 
@@ -255,4 +264,6 @@ npm ci
 npm start
 ```
 
-Validate with `npm test` and `npm run check`.
+Validate with `npm test` and `npm run check`. Inspect workspace linking with
+`npm ls --workspaces --depth=0`. Startup validates enabled libraries and portable
+requirements before opening the HTTP listener.
