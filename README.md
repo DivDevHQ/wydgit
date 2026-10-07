@@ -231,7 +231,7 @@ Wydgit is licensed under the **Mozilla Public License 2.0 (MPL-2.0)**.
 
 Modifications to MPL-covered source files remain under the MPL, while Wydgit may be combined with separately licensed code in larger works.
 
-See [`LICENSE`](docs/LICENSE) for the full terms.
+See [`LICENSE`](LICENSE) for the full terms.
 
 ---
 
