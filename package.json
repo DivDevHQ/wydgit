@@ -1,10 +1,10 @@
 {
-  "name": "wydgit-platform",
-  "version": "0.1.0-alpha.1",
+  "name": "wydgit",
+  "version": "0.2.0-alpha.1-dev",
+  "description": "A portable, capability-safe application platform for the open web",
   "license": "MPL-2.0",
   "private": true,
   "type": "module",
-  "description": "Wydgine 0.1 alpha \u2014 JSON Wydgits rendered as server-side HTML",
   "engines": {
     "node": ">=22.12.0"
   },
