@@ -1,3 +1,4 @@
+import { ExecutionContext } from '../seam/context.js';
 import { bindServices, failure, isServiceFailure } from './dispatch.js';
 import { ensure, version, satisfies, validateConfig, validateManifest, validateRequirements } from './contracts.js';
 import { importNodePackage } from './node-package.js';
@@ -56,11 +57,45 @@ export async function loadLibraries({ config: input, requirements: requested = e
   };
   // Requirement incompatibility cannot run registration code.
   resolveRequirements(requirements);
+  // Resolve the complete dependency graph before running any registration.
+  const order = [], visiting = new Set(), visited = new Set();
+  const visit = id => {
+    ensure(!visiting.has(id), 'LIBRARY.DEPENDENCY_CYCLE', 'Cyclic runtime library requirements');
+    if (visited.has(id)) return;
+    visiting.add(id);
+    const requirements = staged.get(id).manifest.requirements ?? emptyRequirements();
+    resolveRequirements(requirements).forEach(dependency => visit(dependency.id));
+    visiting.delete(id); visited.add(id); order.push(id);
+  };
+  for (const id of staged.keys()) visit(id);
+  const approved = new Map();
+  for (const [id, {manifest}] of staged) {
+    const required = (manifest.requirements ?? emptyRequirements()).libraries.map(item => item.library);
+    const bindings = configured.get(id).bindings ?? [];
+    ensure(bindings.length === required.length && bindings.every(binding => required.includes(binding.library)),
+      'LIBRARY.DEPENDENCY_DENIED', 'Each dependency requires an explicit host binding');
+    approved.set(id,new Map(bindings.map(binding => {
+      const dependency = staged.get(binding.library).manifest;
+      ensure(binding.capabilities.every(cap => dependency.capabilities.includes(cap)), 'LIBRARY.DEPENDENCY_DENIED', 'Binding capability is not provided by dependency');
+      // The host grants a separate implementation identity. Libraries cannot
+      // choose its publisher/package or modify the application caller's grants.
+      return [binding.library,new ExecutionContext({publisher:manifest.publisher, package:`library:${id}`,
+        self:`library-${id}`, app:binding.app, capabilities:binding.capabilities, scopes:binding.scopes})];
+    })));
+  }
   const services = new Map();
-  for (const [id, { manifest, register }] of staged) {
+  for (const id of order) {
+    const {manifest,register} = staged.get(id);
     const handlers = new Map();
     let active = true, invalid = false;
-    const api = Object.freeze({ options: configured.get(id).options ?? Object.freeze({}), failure, service(name, handler, policy = {}) {
+    const api = Object.freeze({ options: configured.get(id).options ?? Object.freeze({}), failure,
+      dependency(library) {
+        ensure(approved.get(id).has(library), 'LIBRARY.DEPENDENCY_DENIED', 'Dependency binding is not approved');
+        const context = approved.get(id).get(library);
+        const dispatch = bindServices(context, (target,name) => services.get(target)?.get(name));
+        return Object.freeze({identity:Object.freeze({app:context.app,publisher:context.publisher,library:id}),
+          call(name,input) { return dispatch.call(library,name,input); }});
+      }, service(name, handler, policy = {}) {
       const valid = active && manifest.services.some(s => s.name === name) && !handlers.has(name) && typeof handler === 'function' && policy && Object.keys(policy).every(key => key === 'authorize') && (policy.authorize === undefined || typeof policy.authorize === 'function');
       if (!valid) { invalid = true; throw new WydgitError('LIBRARY.REGISTRATION_FAILED', 'Invalid service registration'); }
       handlers.set(name, { handler, authorize: policy.authorize, capability: manifest.services.find(s => s.name === name).capability });

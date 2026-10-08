@@ -11,6 +11,26 @@ No unreleased milestone changes yet.
 
 ---
 
+## 0.2.0-alpha.6 — 0.2-F
+### WydGate Core + Local Identity/Auth
+
+- Added independently versioned canonical library `@wydgit/gate@0.1.0-alpha.1`.
+- Added immutable user IDs, normalized unique usernames, display-name updates,
+  disabled accounts and local password authentication without sessions.
+- Added Argon2id password hashing, bounded hashing work and authorized password
+  changes; credentials never appear in portable identity results.
+- Added portable library dependencies, dependency-first registration and explicit
+  host-approved private service bindings without granting application authority.
+- Persisted WydGate through WydStore services using an isolated, atomic identity
+  directory, with shared JSON/SQLite tests for uniqueness and authentication.
+- Enforced distinct Gate capabilities and App scopes; ordinary storage grants do
+  not expose the Gate-owned credential directory.
+- Limited the initial directory to 256 users; WydStore history retains previous
+  credential versions privately. Sessions, federation and password reset remain deferred.
+- Updated platform metadata to `0.2.0-alpha.6`; WydStore remains `0.1.0-alpha.2`.
+
+---
+
 ## 0.2.0-alpha.5 — 0.2-E
 ### WydStore SQLite Adapter + Provider Contract Hardening
 

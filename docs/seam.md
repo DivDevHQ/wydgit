@@ -1,4 +1,4 @@
-# SEAM foundation — 0.2-D
+# SEAM foundation — 0.2-F
 
 Authority belongs to an execution context, not to the target object.
 
@@ -109,3 +109,21 @@ editable scope or capabilities. See [wydstore.md](wydstore.md) for exact operati
 The registry, context constructor, Node imports and trusted service handlers still
 must not be given to ordinary packages. This is a narrow service boundary, not an
 in-process sandbox for hostile JavaScript or a package execution environment.
+
+
+## WydGate and private implementation resources
+
+WydGate requires its declared Gate capability and an exact App grant in
+`scopes.wydgate`, matching the caller's `app`. Reading, creating, updating,
+authenticating and managing credentials have distinct capability checks. Returned
+users contain no hashes or persistence handles; authentication creates no session
+and grants no capabilities.
+
+A trusted host can separately approve a runtime library's dependency binding.
+The loader creates a private implementation context from that approval; for
+WydGate its package identity is `library:wydgate`. WydStore ownership and collection
+scope checks protect the credential directory even from ordinary callers that
+have generic storage capabilities. This private resource credential never replaces
+the caller context on public Gate calls and never crosses the portable boundary.
+Libraries cannot mint or change bindings. See [library-model.md](library-model.md)
+and [wydgate.md](wydgate.md) for the exact host configuration and limitations.

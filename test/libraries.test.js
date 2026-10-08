@@ -191,3 +191,33 @@ test('explicit loading never enumerates node_modules or any directory', async t 
  }
  assert.equal((await load()).get('wydtest').id,'wydtest');
 });
+
+test('runtime dependency requirements fail closed before registration and reject cycles',async t=>{
+ const root=temp(t),dependent={...fixtureManifest,requirements:requirements(need('missing'))};
+ install(root,{manifest:dependent,body:"throw Error('must not register');"});
+ await rejects(()=>load(config(entry()),root),'LIBRARY.UNKNOWN');
+ const self=temp(t);install(self,{manifest:{...fixtureManifest,requirements:requirements(need('wydtest'))},body:"throw Error('must not register');"});
+ await rejects(()=>load(config(entry()),self),'LIBRARY.DEPENDENCY_CYCLE');
+ const incompatible=temp(t);install(incompatible,{manifest:{...fixtureManifest,requirements:requirements(need('second','^2'))},body:"throw Error('must not register');"});
+ install(incompatible,{name:'@acme/second',manifest:{...fixtureManifest,id:'second',capabilities:['test.second.read'],services:[{name:'echo',capability:'test.second.read'}]},body:"throw Error('must not register');"});
+ await rejects(()=>load(config(entry(),entry({id:'second',package:'@acme/second'})),incompatible),'LIBRARY.VERSION_MISMATCH');
+ for(const requirements of [{schema:'bad',libraries:[]},{schema:'wydgit.requirements/0.1',libraries:[{library:'wydstore',version:'^1',grant:'*'}]}])code(()=>validateManifest({...fixtureManifest,requirements}),'LIBRARY.INVALID_MANIFEST');
+});
+
+test('host dependency bindings are scoped, explicit, dependency-first and never caller grants',async t=>{
+ const root=temp(t),base={...fixtureManifest,id:'zbase',capabilities:['base.data.read'],services:[{name:'read',capability:'base.data.read'}]};
+ install(root,{name:'@acme/base',manifest:base,source:`export const manifest=${JSON.stringify(base)};export function register({service}){service('read',(input,ctx)=>({publisher:ctx.publisher,package:ctx.package,app:ctx.app}),{authorize:(input,ctx)=>ctx.scopes.base==='private'});}`});
+ const consumer={...fixtureManifest,id:'aconsumer',requirements:requirements(need('zbase'))};
+ install(root,{name:'@acme/consumer',manifest:consumer,source:`export const manifest=${JSON.stringify(consumer)};export async function register({service,dependency}){const backend=dependency('zbase');const initial=await backend.call('read',{});if(!initial.ok)throw Error('dependency must already be registered');service('echo',async(input,caller)=>({backend:await backend.call('read',{}),caller:{publisher:caller.publisher,capabilities:caller.capabilities}}),{authorize:()=>true});}`});
+ const binding={library:'zbase',app:'appA',capabilities:['base.data.read'],scopes:{base:'private'}};
+ const consumerEntry=entry({id:'aconsumer',package:'@acme/consumer',bindings:[binding]}),baseEntry=entry({id:'zbase',package:'@acme/base'});
+ const registry=await load(config(consumerEntry,baseEntry),root);
+ const caller=new ExecutionContext({publisher:'ordinary',self:'object',capabilities:['test.echo.read']});
+ const result=await registry.bind(caller).call('aconsumer','echo',{});assert.equal(result.ok,true);assert.equal(result.value.backend.value.package,'library:aconsumer');assert.equal(result.value.backend.value.app,'appA');assert.equal(result.value.caller.publisher,'ordinary');assert.deepEqual(result.value.caller.capabilities,['test.echo.read']);
+ assert.equal((await registry.bind(caller).call('zbase','read',{})).code,'SEAM.DENIED');
+ await rejects(()=>load(config({...consumerEntry,bindings:[]},baseEntry),root),'LIBRARY.DEPENDENCY_DENIED');
+ await rejects(()=>load(config({...consumerEntry,bindings:[{...binding,capabilities:['store.records.write']}]},baseEntry),root),'LIBRARY.DEPENDENCY_DENIED');
+ await rejects(()=>load(config({...consumerEntry,bindings:[{...binding,scopes:{}}]},baseEntry),root),'LIBRARY.REGISTRATION_FAILED');
+ for(const bindings of [null,[binding,binding],[{...binding,publisher:'imposter'}],[{...binding,capabilities:['*']}]] )code(()=>validateConfig(config({...consumerEntry,bindings})),'LIBRARY.INVALID_CONFIG');
+ code(()=>validateConfig(config(null)),'LIBRARY.INVALID_CONFIG');
+});

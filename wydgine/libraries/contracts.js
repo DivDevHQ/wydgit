@@ -26,8 +26,19 @@ export function validateConfig(input) {
   fields(config, ['schema', 'libraries'], code);
   ensure(config.schema === 'wydgit.host/0.1' && Array.isArray(config.libraries), code, 'Unsupported host config');
   for (const entry of config.libraries) {
-    fields(entry, ['id','package','enabled','version','publisher','trust', ...(Object.hasOwn(entry, 'options') ? ['options'] : [])], code);
+    ensure(record(entry), code, 'Expected library mapping');
+    fields(entry, ['id','package','enabled','version','publisher','trust', ...['options','bindings'].filter(key => Object.hasOwn(entry,key))], code);
     ensure(entry.options === undefined || record(entry.options), code, 'Library options must be an object');
+    if (Object.hasOwn(entry,'bindings')) {
+      ensure(Array.isArray(entry.bindings), code, 'Expected dependency bindings');
+      for (const binding of entry.bindings) {
+        fields(binding, ['library','app','capabilities','scopes'], code);
+        ensure(identity(binding.library) && typeof binding.app === 'string' && binding.app.length > 0 &&
+          Array.isArray(binding.capabilities) && binding.capabilities.every(isCapability) && record(binding.scopes), code, 'Invalid dependency binding');
+        unique(binding.capabilities, x => x, code);
+      }
+      unique(entry.bindings, x => x.library, code);
+    }
     ensure(identity(entry.id) && packageName(entry.package) && typeof entry.enabled === 'boolean' && range(entry.version) && publisher(entry.publisher), code, 'Invalid library mapping');
     ensure(['canonical','approved'].includes(entry.trust), 'LIBRARY.UNTRUSTED', 'Host must explicitly approve a runtime library trust class');
     ensure(entry.trust !== 'canonical' || entry.publisher === 'wydgit.core', 'LIBRARY.UNTRUSTED', 'Canonical libraries require the official publisher');
@@ -38,7 +49,12 @@ export function validateConfig(input) {
 }
 export function validateManifest(input) {
   const code = 'LIBRARY.INVALID_MANIFEST', manifest = data(input, code);
-  fields(manifest, ['schema','id','version','publisher','trust','platform','targets','capabilities','services'], code);
+  ensure(record(manifest), code, 'Expected library manifest');
+  fields(manifest, ['schema','id','version','publisher','trust','platform','targets','capabilities','services', ...(Object.hasOwn(manifest,'requirements') ? ['requirements'] : [])], code);
+  if (Object.hasOwn(manifest,'requirements')) {
+    try { manifest.requirements = validateRequirements(manifest.requirements); }
+    catch { throw new WydgitError(code, 'Invalid library requirements'); }
+  }
   ensure(manifest.schema === 'wydgit.library/0.1' && identity(manifest.id) && publisher(manifest.publisher) && version(manifest.version) && range(manifest.platform), code, 'Invalid library identity or compatibility metadata');
   ensure(['canonical','approved'].includes(manifest.trust), 'LIBRARY.UNTRUSTED', 'Ordinary packages are not runtime libraries');
   ensure(manifest.trust !== 'canonical' || manifest.publisher === 'wydgit.core', 'LIBRARY.UNTRUSTED', 'Canonical libraries require the official publisher');

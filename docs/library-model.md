@@ -1,4 +1,4 @@
-# Canonical libraries — 0.2-E
+# Canonical libraries — 0.2-F
 
 **Libraries provide capabilities. SEAM grants authority.**
 
@@ -6,8 +6,8 @@ A Wyd runtime library is an independently versioned implementation package with 
 validated descriptor and one explicit registration entry point. It is trusted
 runtime infrastructure, not an ordinary Wydgit package. Ordinary Wydgit packages
 can declare requirements; they cannot install Node dependencies or approve runtime
-code. [WydStore](wydstore.md) is the first implemented canonical library; other
-canonical libraries remain deferred.
+code. [WydStore](wydstore.md) and [WydGate](wydgate.md) are implemented canonical
+libraries; other canonical libraries remain deferred.
 
 **Repository location is a development concern, not part of library identity.**
 
@@ -18,10 +18,11 @@ Wydgine and demo code deliberately remain in place. The fixture workspace is
 `packages/test-library`, an independent `@wydgit/test-library@1.0.0` package with its
 own metadata and exports. It is explicitly a non-production fixture and marked
 private to prevent accidental publication. `packages/wydstore` adds the independently versioned `@wydgit/store@0.1.0-alpha.2`.
+`packages/wydgate` adds `@wydgit/gate@0.1.0-alpha.1`.
 Canonical package versions need not match the platform version or remain in this
 repository.
 
-Canonical mappings (only WydStore and the fixture are implemented; none published):
+Canonical mappings (only WydStore, WydGate and the fixture are implemented; none published):
 
 | Canonical identity | Node implementation package |
 | --- | --- |
@@ -84,8 +85,10 @@ library’s host configuration to registration; each library validates its own s
 Unknown fields are rejected. The library list makes
 duplicate logical IDs detectable without relying on JSON object-key overwriting.
 Only bare npm package names are accepted: no subpaths, file/HTTP URLs, versioned
-specifiers or Node builtins. There are no secrets or Wydgit capability grants here.
-The demo ships with the fixture and WydStore installed but **disabled**, and no requirements.
+specifiers or Node builtins. There are no secrets or ordinary Wydgit capability grants here. Optional
+`bindings` approve private implementation-resource grants for declared library
+dependencies; see below.
+The demo ships with the fixture, WydStore and WydGate installed but **disabled**, and no requirements.
 
 Trust classes:
 
@@ -133,7 +136,8 @@ export function register({ service }) {
 }
 ```
 
-All manifest fields are required. Unknown fields, dangerous keys, accessors,
+The shown manifest fields are required. Optional `requirements` uses the portable
+requirement envelope below. Unknown fields, dangerous keys, accessors,
 non-JSON metadata, invalid/duplicate declarations and unsupported schemas fail.
 Targets can contain `server`, `client`, or both; this Wydgine loader requires
 `server`. Declaring client support does not implement WydClient.
@@ -143,13 +147,13 @@ every capability must have at least one declared service. Capabilities follow th
 shared SEAM `domain.resource.action` grammar. A capability has exactly one provider
 in a loaded registry; duplicate providers fail instead of silently overriding.
 
-Registration receives frozen `{service(name, handler, policy?), options, failure}`.
+Registration receives frozen `{service(name, handler, policy?), options, failure, dependency}`.
 `policy.authorize(request, context)` must return `true` to allow bound service
 dispatch; omitting it keeps a service host-only. `failure(code)` creates a branded,
 sanitized structured failure without accepting arbitrary messages or details.
 The options are copied, JSON-validated and deeply frozen. Registration cannot
-access the registry, runtime objects, other libraries or SEAM policy through this
-API. Handlers must be functions, registered exactly once under declared names.
+access the registry, runtime objects or SEAM policy through this API. Only explicitly
+approved dependency services are accessible through `dependency(library)`. Handlers must be functions, registered exactly once under declared names.
 Registration may return a promise, which is awaited. Missing, extra or duplicate
 registrations fail, including invalid attempts caught by library code. The API
 closes after registration; retaining it cannot add services later.
@@ -159,7 +163,7 @@ host-owned: initialize once before accepting requests, discard the registry on
 failure, and end it with the host process. Libraries must avoid background work or retained resources during registration.
 WydStore performs bounded initialization/validation and closes file handles before
 returning. Initialization may have external effects that are not rolled back when
-a later library fails. Teardown/reload and cross-library dependencies are deferred.
+a later library fails. Teardown/reload is deferred.
 
 ## Loader, registry and startup
 
@@ -170,8 +174,9 @@ a later library fails. Teardown/reload and cross-library dependencies are deferr
 3. Resolve **only** each configured package's exported metadata and root entry.
 4. Validate installed package identity/version, import the entry, verify manifest,
    publisher/trust expectations, platform compatibility, targets and uniqueness.
-5. Resolve requirements against staged manifests before invoking registrations.
-6. Register declared services sequentially into private staging maps.
+5. Resolve application and library requirements, reject dependency cycles, and
+   validate host bindings before invoking any registration.
+6. Register declared services in deterministic dependency-first order into private staging maps.
 7. Return the frozen registry only after all work succeeds.
 
 There is no `node_modules` enumeration, naming-prefix discovery, fallback loader,
@@ -224,7 +229,7 @@ empty. No Node wiring is added to canonical App properties or provenance.
 
 Three versions are independent:
 
-- Platform version: `wydgit@0.2.0-alpha.5`.
+- Platform version: `wydgit@0.2.0-alpha.6`.
 - Library version: e.g. the fixture's `1.0.0`, equal to its npm package version.
 - Compatibility ranges: manifest `platform`, host-approved implementation `version`,
   and portable requirement `version` each constrain their respective version.
@@ -256,6 +261,8 @@ The server logs that structured form and exits unsuccessfully without listening.
 | `LIBRARY.UNKNOWN` | Unconfigured required library or unknown registry lookup. |
 | `LIBRARY.NOT_ENABLED` | Required library explicitly disabled. |
 | `LIBRARY.NOT_LOADED` | Required configured library absent from the loaded set. |
+| `LIBRARY.DEPENDENCY_CYCLE` | Library requirements contain a cycle. |
+| `LIBRARY.DEPENDENCY_DENIED` | Missing or invalid host approval for dependency services. |
 | `LIBRARY.REGISTRATION_FAILED` | Registration throws, violates or omits declarations. |
 | `LIBRARY.INITIALIZATION_FAILED` | Unexpected server initialization error, sanitized at startup. |
 
@@ -263,7 +270,7 @@ No partial registry escapes on failure. This does not roll back JavaScript modul
 side effects or external effects from vetted registration code. Node caches imported
 modules; repeated initializations use separate registries but are not module reloads.
 
-Deferred: canonical libraries other than WydStore, package installation/approval
+Deferred: canonical libraries other than WydStore and WydGate, package installation/approval
 UI, automatic dependency edits, restart orchestration, cryptographic package
 approval, resource lifecycle hooks, marketplace, client runtimes and other
 later-phase systems. No founding-contract revision or
@@ -276,3 +283,26 @@ capabilities and portable requirements contain no database choice. The vetted
 `better-sqlite3` dependency belongs to the WydStore workspace, not Wydgine or the
 root package. SQLite connections close after each operation, so no library
 lifecycle API was added. See [WydStore](wydstore.md) for the adapter contract.
+
+
+## Approved library dependencies
+
+A library may declare portable `requirements` using the same envelope as App
+requirements. A requirement does not enable a library or grant access to it. The
+host must explicitly enable each implementation and supply one `bindings` entry
+per dependency: `{library, app, capabilities, scopes}`. Capabilities must be
+provided by that dependency. Duplicate, missing or undeclared bindings fail closed.
+
+During registration, `dependency(id)` returns only `{identity, call(service,input)}`.
+The loader binds it to a private host-issued implementation context with the
+consumer's publisher and package identity `library:<consumer-id>`, plus exactly the
+App, capabilities and scopes approved in host config. Calls use the normal JSON,
+capability and resource-scope checks. The library cannot choose a principal or
+alter those grants. This handle remains within trusted library code.
+
+Public service calls still receive their original application ExecutionContext.
+Their authorization is checked separately before a library uses its private
+implementation resources. Neither loading, dependency declaration nor an API call
+adds grants to an application caller. WydGate uses this mechanism to reach a
+WydGate-owned WydStore collection; ordinary packages receive only safe identity
+results. See [WydGate configuration](wydgate.md) for a complete host example.

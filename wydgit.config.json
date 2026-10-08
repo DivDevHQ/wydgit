@@ -16,6 +16,14 @@
       "version": "^0.1.0-alpha.2",
       "publisher": "wydgit.core",
       "trust": "canonical"
+    },
+    {
+      "id": "wydgate",
+      "package": "@wydgit/gate",
+      "enabled": false,
+      "version": "^0.1.0-alpha.1",
+      "publisher": "wydgit.core",
+      "trust": "canonical"
     }
   ]
 }
