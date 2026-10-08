@@ -1,4 +1,4 @@
-# Canonical libraries — 0.2-F
+# Canonical libraries — 0.2-G
 
 **Libraries provide capabilities. SEAM grants authority.**
 
@@ -18,7 +18,7 @@ Wydgine and demo code deliberately remain in place. The fixture workspace is
 `packages/test-library`, an independent `@wydgit/test-library@1.0.0` package with its
 own metadata and exports. It is explicitly a non-production fixture and marked
 private to prevent accidental publication. `packages/wydstore` adds the independently versioned `@wydgit/store@0.1.0-alpha.2`.
-`packages/wydgate` adds `@wydgit/gate@0.1.0-alpha.1`.
+`packages/wydgate` adds `@wydgit/gate@0.1.0-alpha.2`.
 Canonical package versions need not match the platform version or remain in this
 repository.
 
@@ -229,7 +229,7 @@ empty. No Node wiring is added to canonical App properties or provenance.
 
 Three versions are independent:
 
-- Platform version: `wydgit@0.2.0-alpha.6`.
+- Platform version: `wydgit@0.2.0-alpha.7`.
 - Library version: e.g. the fixture's `1.0.0`, equal to its npm package version.
 - Compatibility ranges: manifest `platform`, host-approved implementation `version`,
   and portable requirement `version` each constrain their respective version.

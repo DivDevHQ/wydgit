@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { passwords, validHash } from './passwords.js';
 import { GateError, check, fields, username, displayName, password, validId, safeUser } from './validation.js';
+import { validateAuthorization, authorizationOperations } from './authorization.js';
+import { validateSessions, sessionOperations, revokeUser, MAX_TTL } from './sessions.js';
 const MAX_USERS = 256;
 const directoryId = 'local-identity';
 const storageId = value => typeof value === 'string' && /^[A-Za-z][A-Za-z0-9_-]{0,127}$/.test(value) && !['constructor','prototype','__proto__'].includes(value);
@@ -11,8 +13,8 @@ function directory(snapshot) {
   try {
     check(snapshot.id === directoryId && Number.isSafeInteger(snapshot.version) && snapshot.version >= 1);
     const data=snapshot.data;
-    fields(data,['schema','users','credentials']);
-    check(data.schema === 'wydgate.local/0.1' && Array.isArray(data.users) && Array.isArray(data.credentials) && data.users.length <= MAX_USERS && data.credentials.length === data.users.length);
+    fields(data,['schema','users','credentials','roles','groups','assignments','profiles','sessions']);
+    check(data.schema === 'wydgate.local/0.2' && Array.isArray(data.users) && Array.isArray(data.credentials) && data.users.length <= MAX_USERS && data.credentials.length === data.users.length);
     const ids=new Set(),names=new Set();
     for(const user of data.users) {
       fields(user,['id','username','displayName','active']);
@@ -25,6 +27,7 @@ function directory(snapshot) {
       check(ids.has(credential.userId) && !credentials.has(credential.userId) && validHash(credential.passwordHash));
       credentials.add(credential.userId);
     }
+    validateAuthorization(data,ids);validateSessions(data.sessions,ids);
     return snapshot;
   } catch { throw new GateError('GATE.IO'); }
 }
@@ -32,9 +35,11 @@ function storeError(code) {
   return new GateError(({ 'STORE.CONFLICT':'GATE.CONFLICT', 'STORE.BUSY':'GATE.BUSY', 'STORE.LIMIT':'GATE.LIMIT' })[code] ?? 'GATE.IO');
 }
 export async function openGate(options, storage) {
-  fields(options,['app','store','collection'],[],'GATE.INVALID_CONFIG');
+  fields(options,['app','store','collection'],['sessionTtlMs'],'GATE.INVALID_CONFIG');
   check(storageId(options.app) && storageId(options.store) && storageId(options.collection),'GATE.INVALID_CONFIG');
   check(storage.identity?.app === options.app && storage.identity.publisher === 'wydgit.core' && storage.identity.library === 'wydgate','GATE.INVALID_CONFIG');
+  const ttl=Object.hasOwn(options,'sessionTtlMs')?options.sessionTtlMs:3600000;
+  check(Number.isSafeInteger(ttl)&&ttl>=1&&ttl<=MAX_TTL,'GATE.INVALID_CONFIG');
   const scope={store:options.store,collection:options.collection,id:directoryId};
   const call=(operation,extra={})=>storage.call(operation,{...scope,...extra});
   const read=async()=>{
@@ -44,7 +49,7 @@ export async function openGate(options, storage) {
   const initial=await call('get');
   if(!initial.ok) {
     if(initial.code !== 'STORE.NOT_FOUND')throw storeError(initial.code);
-    const created=await call('create',{data:{schema:'wydgate.local/0.1',users:[],credentials:[]}});
+    const created=await call('create',{data:{schema:'wydgate.local/0.2',users:[],credentials:[],roles:[],groups:[],assignments:[],profiles:[],sessions:[]}});
     if(!created.ok && created.code !== 'STORE.DUPLICATE_ID')throw storeError(created.code);
   }
   await read();
@@ -56,30 +61,35 @@ export async function openGate(options, storage) {
   const mutate=async change=>{
     for(let attempt=0;attempt<3;attempt++) {
       const current=await read(),data=JSON.parse(JSON.stringify(current.data));
-      const user=change(data);
+      const value=change(data);
+      directory({id:directoryId,version:current.version,data});
       const result=await call('update',{version:current.version,data});
-      if(result.ok)return safeUser(user);
+      if(result.ok)return value;
       if(result.code !== 'STORE.CONFLICT')throw storeError(result.code);
     }
     throw new GateError('GATE.CONFLICT');
   };
   const find=(data,id)=>{const user=data.users.find(user=>user.id === id);check(user,'GATE.USER_NOT_FOUND');return user;};
+  const authenticate=async request=>{
+    fields(request,['username','password']);
+    let name;
+    try {name=username(request.username);password(request.password);}catch{throw new GateError('GATE.AUTH_FAILED');}
+    const current=await read(),user=current.data.users.find(user=>user.username===name);
+    const credential=user&&current.data.credentials.find(value=>value.userId===user.id);
+    const verified=await hashing.verify(request.password,credential?.passwordHash);
+    check(verified&&user?.active,'GATE.AUTH_FAILED');
+    const fresh=await read(),latest=fresh.data.users.find(value=>value.id===user.id);
+    const latestCredential=fresh.data.credentials.find(value=>value.userId===user.id);
+    check(latest?.active&&latest.username===name&&latestCredential?.passwordHash===credential.passwordHash,'GATE.AUTH_FAILED');
+    return {user:safeUser(latest),hash:credential.passwordHash};
+  };
+  const sessions=sessionOperations({read,mutate,app:options.app,ttl,authenticate});
+  const authorization=authorizationOperations({read,mutate,find});
   const execute=async(operation,request,caller)=>{
     authorize(request,caller);
-    if(operation === 'authenticate') {
-      fields(request,['username','password']);
-      let name;
-      try {name=username(request.username);password(request.password);}catch{throw new GateError('GATE.AUTH_FAILED');}
-      const current=await read(),user=current.data.users.find(user=>user.username === name);
-      const credential=user && current.data.credentials.find(credential=>credential.userId === user.id);
-      const verified=await hashing.verify(request.password,credential?.passwordHash);
-      check(verified && user?.active,'GATE.AUTH_FAILED');
-      // Do not authenticate a credential or active state replaced during hashing.
-      const fresh=await read(),latest=fresh.data.users.find(value=>value.id === user.id);
-      const latestCredential=fresh.data.credentials.find(value=>value.userId === user.id);
-      check(latest?.active && latest.username === name && latestCredential?.passwordHash === credential.passwordHash,'GATE.AUTH_FAILED');
-      return {authenticated:true,user:safeUser(latest)};
-    }
+    if(operation==='authenticate'){const result=await authenticate(request);return {authenticated:true,user:result.user};}
+    const session=await sessions(operation,request);if(session!==undefined)return session;
+    const access=await authorization(operation,request);if(access!==undefined)return access;
     if(operation === 'create-user') {
       fields(request,['username','password'],['displayName']);
       const name=username(request.username),label=displayName(Object.hasOwn(request,'displayName') ? request.displayName : '');password(request.password);
@@ -88,7 +98,8 @@ export async function openGate(options, storage) {
         check(!data.users.some(user=>user.username === name),'GATE.USER_EXISTS');
         check(data.users.length < MAX_USERS,'GATE.LIMIT');check(!data.users.some(user=>user.id === id),'GATE.CONFLICT');
         const user={id,username:name,displayName:label,active:true};
-        data.users.push(user);data.credentials.push({userId:id,passwordHash:encoded});return user;
+        data.users.push(user);data.credentials.push({userId:id,passwordHash:encoded});
+        data.profiles.push({userId:id,bio:''});data.assignments.push({userId:id,roles:[],permissions:[]});return safeUser(user);
       });
     }
     if(operation === 'find-user') {
@@ -108,7 +119,7 @@ export async function openGate(options, storage) {
       return mutate(data=>{
         const user=find(data,request.id);
         if(patch.username)check(!data.users.some(other=>other.id !== user.id && other.username === patch.username),'GATE.USER_EXISTS');
-        Object.assign(user,patch);return user;
+        Object.assign(user,patch);if(patch.active===false)revokeUser(data,user.id);return safeUser(user);
       });
     }
     if(operation === 'change-password') {
@@ -118,7 +129,7 @@ export async function openGate(options, storage) {
       const encoded=await hashing.hash(request.password);
       return mutate(data=>{
         const user=find(data,request.id);
-        data.credentials.find(credential=>credential.userId === user.id).passwordHash=encoded;return user;
+        data.credentials.find(credential=>credential.userId === user.id).passwordHash=encoded;revokeUser(data,user.id);return safeUser(user);
       });
     }
     throw new GateError('GATE.INVALID_USER');

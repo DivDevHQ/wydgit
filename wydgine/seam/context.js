@@ -2,7 +2,7 @@ import { isCapability } from './capabilities.js';
 import { clean, freeze, record, requireThat as check } from '../object-model/validation.js';
 const contexts = new WeakSet();
 export class ExecutionContext {
-  constructor({ publisher, package: packageId = null, self, app = null, scopes = {}, capabilities = [], visible = [], editable = [], traversal = [], limits = {} }) {
+  constructor({ publisher, package: packageId = null, self, app = null, scopes = {}, identity = null, capabilities = [], visible = [], editable = [], traversal = [], limits = {} }) {
     check(typeof publisher === 'string' && typeof self === 'string', 'SEAM.CONTEXT', 'Context requires publisher and self');
     check(Array.isArray(capabilities) && capabilities.every(isCapability), 'SEAM.CAPABILITY', 'Invalid capability name');
     check(Array.isArray(visible) && visible.every(x => typeof x === 'string'), 'SEAM.CONTEXT', 'Invalid visible scope');
@@ -12,9 +12,19 @@ export class ExecutionContext {
     check(app === null || typeof app === 'string', 'SEAM.CONTEXT', 'Invalid App identity');
     const scopeData = clean(scopes);
     check(record(scopeData), 'SEAM.CONTEXT', 'Scopes must be a JSON object');
+    // Host-supplied identity metadata is not a capability or scope grant.
+    const subject = clean(identity);
+    if (subject !== null) {
+      const keys=['authenticated','app','userId','sessionId','createdAt','expiresAt','roles','groups','permissions'];
+      check(record(subject) && Object.keys(subject).length===keys.length && keys.every(key=>Object.hasOwn(subject,key)) &&
+        subject.authenticated===true && subject.app===app && typeof subject.userId==='string' && typeof subject.sessionId==='string' &&
+        Number.isSafeInteger(subject.createdAt) && subject.createdAt>=0 && Number.isSafeInteger(subject.expiresAt) && subject.expiresAt>subject.createdAt &&
+        ['roles','groups','permissions'].every(key=>Array.isArray(subject[key])&&subject[key].every(value=>typeof value==='string')),
+        'SEAM.CONTEXT','Invalid identity metadata');
+    }
     const resources = clean(limits);
     check(record(resources) && Object.values(resources).every(n => Number.isSafeInteger(n) && n >= 0), 'SEAM.CONTEXT', 'Limits must be non-negative integers');
-    Object.assign(this, { publisher, package: packageId, self, app, scopes: scopeData, capabilities: [...new Set(capabilities)], visible: [...new Set([self, ...visible])], editable: [...new Set(editable)], traversal: [...new Set(traversal)], limits: resources });
+    Object.assign(this, { publisher, package: packageId, self, app, identity: subject, scopes: scopeData, capabilities: [...new Set(capabilities)], visible: [...new Set([self, ...visible])], editable: [...new Set(editable)], traversal: [...new Set(traversal)], limits: resources });
     contexts.add(this); freeze(this);
   }
   allows(capability) { return this.capabilities.includes(capability); }

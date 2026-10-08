@@ -1,6 +1,6 @@
 {
   "name": "@wydgit/gate",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "description": "WydGate local identity and authentication through WydStore",
   "license": "MPL-2.0",
   "type": "module",

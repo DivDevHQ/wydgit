@@ -1,4 +1,4 @@
-# SEAM foundation — 0.2-F
+# SEAM foundation — 0.2-G
 
 Authority belongs to an execution context, not to the target object.
 
@@ -115,9 +115,10 @@ in-process sandbox for hostile JavaScript or a package execution environment.
 
 WydGate requires its declared Gate capability and an exact App grant in
 `scopes.wydgate`, matching the caller's `app`. Reading, creating, updating,
-authenticating and managing credentials have distinct capability checks. Returned
-users contain no hashes or persistence handles; authentication creates no session
-and grants no capabilities.
+authenticating and managing credentials have distinct capability checks. Session,
+role and group operations also require explicit capabilities. Returned
+users contain no hashes or persistence handles; `authenticate` creates no session,
+while `login` creates a revocable session. Neither grants capabilities.
 
 A trusted host can separately approve a runtime library's dependency binding.
 The loader creates a private implementation context from that approval; for
@@ -127,3 +128,12 @@ have generic storage capabilities. This private resource credential never replac
 the caller context on public Gate calls and never crosses the portable boundary.
 Libraries cannot mint or change bindings. See [library-model.md](library-model.md)
 and [wydgate.md](wydgate.md) for the exact host configuration and limitations.
+
+
+0.2-G adds optional frozen `ExecutionContext.identity` metadata from trusted host
+session resolution. Gate roles/groups/permissions describe domain authorization;
+they never populate capabilities, scopes, traversal or visibility. Even identical
+permission/capability strings are independent grants. The host must resolve the
+session again for each authenticated operation: identity metadata is a snapshot,
+not a live revocation mechanism. The context constructor remains host-only and does
+not verify an arbitrary supplied identity assertion. See [WydGate](wydgate.md).

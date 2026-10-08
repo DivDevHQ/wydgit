@@ -41,7 +41,7 @@ test('generic dispatcher retains context, requires authorization and sanitizes u
 
 test('platform metadata, workspace metadata and demo remain synchronized and portable',async()=>{
  const lock=JSON.parse(await fs.readFile(path.join(project,'package-lock.json'))),app=JSON.parse(await fs.readFile(path.join(project,'content/app.json')));
- assert.equal(platform.version,'0.2.0-alpha.6');assert.equal(lock.version,platform.version);assert.equal(lock.packages[''].version,platform.version);assert.equal(lock.packages[''].name,platform.name);assert.equal(lock.packages['packages/wydstore'].version,manifest.version);assert.equal(app.properties.revision,'Wydgit 0.2 alpha 6');assert.doesNotMatch(JSON.stringify(app),/node_modules|@wydgit\/store|filesystem|provider|sqlite|pragma|SELECT/i);
+ assert.equal(platform.version,'0.2.0-alpha.7');assert.equal(lock.version,platform.version);assert.equal(lock.packages[''].version,platform.version);assert.equal(lock.packages[''].name,platform.name);assert.equal(lock.packages['packages/wydstore'].version,manifest.version);assert.equal(app.properties.revision,'Wydgit 0.2 alpha 7');assert.doesNotMatch(JSON.stringify(app),/node_modules|@wydgit\/store|filesystem|provider|sqlite|pragma|SELECT/i);
 });
 
 test('equivalent record inputs persist deterministically and input aliases cannot change saved values',async t=>{

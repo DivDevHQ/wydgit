@@ -11,6 +11,28 @@ No unreleased milestone changes yet.
 
 ---
 
+## 0.2.0-alpha.7 — 0.2-G
+### WydGate Sessions + Roles/Groups/Permissions
+
+- Added opaque, server-side sessions with digest-only token storage, absolute
+  expiry, login/logout and administrative revocation through WydStore.
+- Disabling users and changing passwords atomically revoke their sessions;
+  login rechecks account and credential state during optimistic commit retries.
+- Added immutable roles/groups, explicit membership and additive direct/inherited
+  permissions with deterministic evaluation and immediate removal on fresh resolution.
+- Added separate minimal user profiles and distinct administration capabilities.
+- Added frozen session-derived ExecutionContext identity metadata for trusted host
+  construction; domain permissions never grant SEAM capabilities or scopes.
+- Shared JSON/SQLite tests cover sessions, authorization, concurrency, isolation
+  and profile separation; the demo remains unchanged with Gate disabled.
+- Advanced platform to `0.2.0-alpha.7` and WydGate to `0.1.0-alpha.2`.
+- Changed the private Gate directory schema to `wydgate.local/0.2`. Existing stores
+  fail closed and require an explicit future migration; no automatic reset occurs.
+- Retained the bounded single-record model and whole-directory history. Browser
+  transport, federation, MFA, nested groups and deny rules remain deferred.
+
+---
+
 ## 0.2.0-alpha.6 — 0.2-F
 ### WydGate Core + Local Identity/Auth
 
