@@ -14,7 +14,7 @@ const code=c=>e=>e.code===c;
 
 test('closed versioned package manifest validates identities, compatibility, resources and bounds',async t=>{
  const {manifest}=await packageFixture(t);assert.equal(validatePackageManifest(manifest).id,'divdev/guestbook');
- for(const change of [m=>m.schema='unknown',m=>m.id='bad',m=>m.publisher='wydgit.core',m=>m.publisher='other',m=>m.version='wat',m=>m.version='1',m=>m.platform='>=9',m=>m.resources.template='../outside.json',m=>m.resources.template='/tmp/file',m=>m.resources.template='.hidden/file',m=>m.resources.template=m.resources.prototypes,m=>m.resources.sources.refresh='startup.js',m=>m.hooks={},m=>m.storage[0].provider='sqlite',m=>m.resources.sources.refresh='a'.repeat(200),m=>m.permissions.capabilities=Array(129).fill('object.instances.edit')]){
+ for(const change of [m=>m.schema='unknown',m=>m.id='bad',m=>m.publisher='wydgit.core',m=>m.publisher='other',m=>m.version='wat',m=>m.version='1',m=>m.platform='>=9',m=>m.resources.template='../outside.json',m=>m.resources.template='/tmp/file',m=>m.resources.template='.hidden/file',m=>m.resources.template=m.resources.prototypes,m=>m.resources.sources.refresh='startup.js',m=>m.hooks={},m=>m.permissions.scopes=null,m=>m.permissions.scopes.prototypes=['divdev/*'],m=>m.storage[0].provider='sqlite',m=>m.resources.sources.refresh='a'.repeat(200),m=>m.permissions.capabilities=Array(129).fill('object.instances.edit')]){
   const m=structuredClone(manifest);change(m);assert.throws(()=>validatePackageManifest(m));
  }
  assert.throws(()=>validatePackageManifest(JSON.stringify(manifest).replace('"publisher":','"__proto__":{},"publisher":')));

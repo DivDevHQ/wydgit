@@ -194,3 +194,11 @@ object grant. They do not grant new capabilities, traversal rights, service
 authority, or package authority. Visibility and editability remain separate;
 mutations still require both plus `object.instances.edit`. Capabilities, prototype
 and resource scopes, event/action names, headers and cookies retain exact matching.
+
+
+Trusted package-installer infrastructure decisions are host policy, separate from
+SEAM runtime grants. Package requirements request services; explicit operator
+approval authorizes enabling an installed canonical library and JSON/SQLite storage
+provisioning. Those host actions do not grant the package any capabilities or object
+access. Runtime authority still requires separately approved capabilities, traversal,
+visibility/editability and resource scopes; logical mappings expose no provider/path.

@@ -15,7 +15,9 @@ export function permissions(input) {
   const p=clean(input);fields(p,['capabilities','traversal','visible','editable','scopes'],code);
   list(p.capabilities,LIMITS.permissions,isCapability);list(p.traversal,5,x=>['children','parent','root','previousSibling','nextSibling'].includes(x));
   for(const key of ['visible','editable'])list(p[key],LIMITS.templateNodes,x=>validObjectGrant(x)&&x.length<=128);
-  fields(p.scopes,['wydstore'],code);list(p.scopes.wydstore,LIMITS.storage,localName);
+  check(record(p.scopes),code,'Invalid scopes');
+  fields(p.scopes,['wydstore',...(Object.hasOwn(p.scopes,'prototypes')?['prototypes']:[])],code);list(p.scopes.wydstore,LIMITS.storage,localName);
+  if(p.scopes.prototypes!==undefined)list(p.scopes.prototypes,LIMITS.prototypes,qualified);
   check(p.editable.every(grant=>objectGrantCovers(p.visible,grant)),code,'Editable objects must be visible');
   return p;
 }

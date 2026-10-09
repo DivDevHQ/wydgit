@@ -106,7 +106,7 @@ test('Guestbook installation/activation use approved wildcard scopes for IDs bey
   assert.equal(manifest.permissions.visible.filter(id=>id.startsWith('guestbook-entry-')).join(),grant);
   assert.ok(options.installationContext.visible.includes(grant));assert.ok(options.installationContext.editable.includes(grant));
   const file=path.join(packagePath,'section.json'),template=JSON.parse(await fs.readFile(file,'utf8')),entries=template.slots.blocks.find(n=>n.id==='guestbook-entries');
-  for(let i=0;i<dynamicIds.length;i++)entries.slots.blocks.push({...structuredClone(entries.slots.blocks[0]),id:dynamicIds[i],properties:{ordinal:20+i}});
+  for(const id of dynamicIds)entries.slots.blocks.push({schema:'wydgit/0.2',id,prototype:'divdev/guestbook-entry',properties:{},slots:{},provenance:{}});
   await fs.writeFile(file,JSON.stringify(template));const plan=await planPackageInstall(options);assert.ok(plan.approved.visible.includes(grant));assert.ok(plan.approved.editable.includes(grant));
   await applyPackageInstall(plan);const model=loadRepository(root),active=activatePackages(model,await initializeHost({root}),root),ctx=active.context({pageId:'home',session:{},ids:[]});
   const edit=model.runtime.edit(ctx);for(const id of dynamicIds){assert.equal(model.runtime.scope(ctx,id).id,id);edit.setProperty(id,'content',{type:'markdown',value:'Dynamic entry'});}edit.commit();

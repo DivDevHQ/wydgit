@@ -40,8 +40,8 @@ export function packageBindings(entry,registry,runtime) {
   }
   return {handlers,actions};
 }
-async function resolveLibraries(root,manifest) {
-  const config=validateConfig(safeRead(root,'wydgit.config.json')),resolved=[],available=new Set(['object.instances.edit','app.forms.submit']);
+async function resolveLibraries(root,manifest,hostConfig) {
+  const config=validateConfig(hostConfig??safeRead(root,'wydgit.config.json')),resolved=[],available=new Set(['object.instances.edit','object.instances.construct','app.forms.submit']);
   for(const required of manifest.requires.libraries){const entry=config.libraries.find(x=>x.id===required.library);check(entry?.enabled,'PACKAGE.LIBRARY','Required library must already be enabled');
     const {module,packageVersion}=await importNodePackage(entry,root);const m=libraryManifest(module.manifest);
     check(m.id===entry.id&&m.publisher===entry.publisher&&m.trust===entry.trust&&m.version===packageVersion&&satisfies(m.version,required.version)&&satisfies(platform.version,m.platform)&&m.targets.includes('server'),'PACKAGE.LIBRARY','Incompatible library');resolved.push({id:m.id,version:m.version,package:entry.package});m.capabilities.forEach(cap=>available.add(cap));
@@ -66,7 +66,7 @@ function mapStorage(manifest,config,mappings,app) {
   }
   return {mappings:clean(mappings),scopes};
 }
-export async function planPackageInstall({root,packagePath,placement,approvals,storageMappings={},installationContext}) {
+export async function planPackageInstall({root,packagePath,placement,approvals,storageMappings={},installationContext,hostConfig}) {
   root=path.resolve(root);const base=baseFingerprint(root),head=stateFingerprint(root);const model=loadRepository(root),candidate=loadPackage(packagePath),{manifest,resources,definitions,template}=candidate;
   check(!(model.installed?.packages??[]).some(p=>p.manifest.id===manifest.id),'PACKAGE.ALREADY_INSTALLED','Package already installed');
   fields(placement,['page','parent','slot','index'],'PACKAGE.PLACEMENT');check(typeof placement.slot==='string'&&Number.isSafeInteger(placement.index),'PACKAGE.PLACEMENT','Invalid placement');
@@ -75,7 +75,7 @@ export async function planPackageInstall({root,packagePath,placement,approvals,s
   check(!(model.installed?.packages??[]).some(p=>p.placement.page===placement.page),'PACKAGE.PRINCIPALS','One authorized package principal per Page');
   const raw=JSON.parse(safeRead(root,'prototypes/objects.json'));for(const p of model.installed?.packages??[])raw.push(...JSON.parse(p.resources[p.manifest.resources.prototypes]));raw.push(...definitions);
   const registry=new PrototypeRegistry(compileDefinitions(raw));check(registry.isA(template.prototype,'wydgit.core/section'),'PACKAGE.TEMPLATE','Expected Section template');
-  const instanceIds=idsOf(template),approved=approve(manifest,approvals,instanceIds,idsOf(dehydrate(model.runtime))),{config,resolved,available}=await resolveLibraries(root,manifest),storage=mapStorage(manifest,config,storageMappings,model.runtime.rootId);
+  const instanceIds=idsOf(template),approved=approve(manifest,approvals,instanceIds,idsOf(dehydrate(model.runtime))),{config,resolved,available}=await resolveLibraries(root,manifest,hostConfig),storage=mapStorage(manifest,config,storageMappings,model.runtime.rootId);
   check(approved.capabilities.every(cap=>available.has(cap)),'PACKAGE.DENIED','Requested capability has no required provider');
   checkContext(installationContext);check(installationContext.app===model.runtime.rootId,'PACKAGE.DENIED','Wrong installation App');
   const runtime=hydrate(dehydrate(model.runtime,{includeSensitive:true}),registry,{revision:model.installed?.revision??0});const edit=runtime.edit(installationContext);edit.insertChild(placement.parent,placement.slot,placement.index,template);const result=edit.commit();
@@ -83,17 +83,43 @@ export async function planPackageInstall({root,packagePath,placement,approvals,s
   packageBindings(entry,registry,result.runtime);
   const plan=freeze({schema:'wydgit-install-plan/0.1',package:manifest.id,version:manifest.version,publisher:manifest.publisher,placement:clean(placement),instance:template.id,instanceIds,installable:entry.installable,prototypes:definitions.map(d=>d.id),resources:Object.fromEntries(Object.entries(resources).map(([file,text])=>[file,{bytes:Buffer.byteLength(text),sha256:digest(text)}])),libraries:resolved,requested:manifest.permissions,approved,storageMappings:storage.mappings,bindings:manifest.bindings,baseFingerprint:base,catalogFingerprint:head});
   check(base===baseFingerprint(root)&&head===stateFingerprint(root),'PACKAGE.STALE','State changed during planning');
-  plans.set(plan,{root,entry,app:JSON.stringify(dehydrate(result.runtime,{includeSensitive:true})),revision:result.revision,previous:model.installed?.packages??[]});return plan;
+  if(hostConfig)check(Buffer.byteLength(JSON.stringify(validateConfig(hostConfig),null,2)+'\n')<=LIMITS.resource,'PACKAGE.LIMIT','Prospective host config too large');
+  plans.set(plan,{root,hostConfig:hostConfig?JSON.stringify(validateConfig(hostConfig),null,2)+'\n':null,entry,app:JSON.stringify(dehydrate(result.runtime,{includeSensitive:true})),revision:result.revision,previous:model.installed?.packages??[]});return plan;
 }
-export async function applyPackageInstall(plan,{beforeReplace}={}) {
-  check(plans.has(plan),'PACKAGE.PLAN','Expected an original host plan');const data=plans.get(plan),{root}=data;const lock=path.join(root,'content/.package-install.lock');let handle,temp;
+export async function applyPackageInstall(plan,{beforeReplace,prepareInfrastructure,beforeConfigReplace,beforeStateReplace}={}) {
+  check(plans.has(plan),'PACKAGE.PLAN','Expected an original host plan');const data=plans.get(plan),{root}=data;const lock=path.join(root,'content/.package-install.lock');let handle,temp,configTemp,journal,rollbackInfrastructure,configChanged=false,committed=false;
+  const configPath=path.join(root,'wydgit.config.json'),journalPath=path.join(root,'content/.package-infrastructure.json');
+  let configBefore;
+  check(!data.hostConfig||typeof prepareInfrastructure==='function','PACKAGE.INFRASTRUCTURE','Host config apply requires trusted infrastructure preparation');
   try {handle=await fs.open(lock,'wx',0o600);
     const current=()=>check(baseFingerprint(root)===plan.baseFingerprint&&stateFingerprint(root)===plan.catalogFingerprint,'PACKAGE.STALE','App/catalog/config changed; plan again');current();
-    const receipt=freeze({schema:'wydgit-install-receipt/0.1',id:randomUUID(),package:plan.package,version:plan.version,publisher:plan.publisher,installedAt:new Date().toISOString(),revision:data.revision,instance:plan.instance,instanceIds:plan.instanceIds,installable:plan.installable,placement:plan.placement,resources:plan.resources,libraries:plan.libraries,approved:plan.approved,storageMappings:plan.storageMappings,bindings:plan.bindings,previousCatalog:plan.catalogFingerprint,baseFingerprint:plan.baseFingerprint});
-    const state={schema:'wydgit-installed/0.1',revision:data.revision,baseFingerprint:plan.baseFingerprint,app:data.app,packages:[...data.previous,{...data.entry,receipt}]};const text=JSON.stringify(state,null,2)+'\n';check(Buffer.byteLength(text)<=LIMITS.state,'PACKAGE.LIMIT','Installed state too large');
+    const acceptedBase=data.hostConfig?baseFingerprint(root,data.hostConfig):plan.baseFingerprint;
+    const receipt=freeze({schema:'wydgit-install-receipt/0.1',id:randomUUID(),package:plan.package,version:plan.version,publisher:plan.publisher,installedAt:new Date().toISOString(),revision:data.revision,instance:plan.instance,instanceIds:plan.instanceIds,installable:plan.installable,placement:plan.placement,resources:plan.resources,libraries:plan.libraries,approved:plan.approved,storageMappings:plan.storageMappings,bindings:plan.bindings,previousCatalog:plan.catalogFingerprint,baseFingerprint:acceptedBase});
+    const state={schema:'wydgit-installed/0.1',revision:data.revision,baseFingerprint:acceptedBase,app:data.app,packages:[...data.previous,{...data.entry,receipt}]};const text=JSON.stringify(state,null,2)+'\n';check(Buffer.byteLength(text)<=LIMITS.state,'PACKAGE.LIMIT','Installed state too large');
     temp=path.join(root,'content',`.package-${randomUUID()}.tmp`);const file=await fs.open(temp,'wx',0o600);try{await file.writeFile(text);await file.sync();}finally{await file.close();}
-    if(beforeReplace)await beforeReplace();current();await fs.rename(temp,path.join(root,STATE));temp=null;plans.delete(plan);return receipt;
-  } finally {if(temp)await fs.unlink(temp).catch(()=>{});if(handle){await handle.close();await fs.unlink(lock);}}
+    if(beforeReplace)await beforeReplace();current();
+    if(data.hostConfig){
+      configBefore=await fs.readFile(configPath,'utf8');
+      configTemp=path.join(root,`.host-${randomUUID()}.tmp`);
+      const file=await fs.open(configTemp,'wx',0o600);try{await file.writeFile(data.hostConfig);await file.sync();}finally{await file.close();}
+      const backup={config:configBefore,state:plan.catalogFingerprint?await fs.readFile(path.join(root,STATE),'utf8'):null};
+      journal=await fs.open(journalPath,'wx',0o600);try{await journal.writeFile(JSON.stringify(backup));await journal.sync();}finally{await journal.close();}
+      if(prepareInfrastructure)rollbackInfrastructure=await prepareInfrastructure();
+      current();if(beforeConfigReplace)await beforeConfigReplace();
+      await fs.rename(configTemp,configPath);configTemp=null;configChanged=true;
+    }
+    if(beforeStateReplace)await beforeStateReplace();
+    check(baseFingerprint(root)===acceptedBase&&stateFingerprint(root)===plan.catalogFingerprint,'PACKAGE.STALE','State changed before publication');
+    await fs.rename(temp,path.join(root,STATE));temp=null;committed=true;
+    if(journal){await fs.unlink(journalPath);journal=null;}plans.delete(plan);return receipt;
+  } catch(error){
+    if(!committed){
+      if(configChanged){const restore=path.join(root,`.restore-${randomUUID()}.tmp`);await fs.writeFile(restore,configBefore,{mode:0o600});await fs.rename(restore,configPath);}
+      if(rollbackInfrastructure)await rollbackInfrastructure();
+      if(journal){await fs.unlink(journalPath);journal=null;}
+    }
+    throw error;
+  } finally {if(configTemp)await fs.unlink(configTemp).catch(()=>{});if(temp)await fs.unlink(temp).catch(()=>{});if(handle){await handle.close();await fs.unlink(lock);}}
 }
 export async function installPackage(options) {return applyPackageInstall(await planPackageInstall(options));}
 export function activatePackages(model,libraries,root) {
@@ -111,6 +137,6 @@ export function activatePackages(model,libraries,root) {
     const bound=packageBindings(entry,model.registry,model.runtime);handlers.push(...bound.handlers);actions.push(...bound.actions);pages.set(entry.placement.page,entry);
   }
   return {handlers,actions,pages,context({pageId,session,ids}){const entry=pages.get(pageId);if(!entry)return new ExecutionContext({publisher:'wydgit.core',app:model.runtime.rootId,self:pageId,visible:ids,identity:session.identity??null});
-    const grant=entry.approved;return new ExecutionContext({publisher:entry.manifest.publisher,package:entry.manifest.id,app:model.runtime.rootId,self:pageId,identity:session.identity??null,capabilities:grant.capabilities,traversal:grant.traversal,visible:grant.visible,editable:grant.editable,scopes:{wydstore:entry.storageScopes}});
+    const grant=entry.approved;return new ExecutionContext({publisher:entry.manifest.publisher,package:entry.manifest.id,app:model.runtime.rootId,self:pageId,identity:session.identity??null,capabilities:grant.capabilities,traversal:grant.traversal,visible:grant.visible,editable:grant.editable,scopes:{...grant.scopes,wydstore:entry.storageScopes}});
   }};
 }

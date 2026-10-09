@@ -5,7 +5,7 @@
     "extends": "wydgit.core/section",
     "properties": {},
     "slots": {},
-    "behaviorSource": "SUB RefreshEntries()\n    DIM result = SERVICES.Call(\"wydstore\", \"query\", {\"store\":\"entries\", \"collection\":\"entries\", \"limit\":20})\n    DIM position AS Number = 0\n    DIM entries AS Wydgit\n    IF NOT result.ok THEN\n        FOR EACH item IN Me.related(\"children\", \"blocks\")\n            IF item.id = \"guestbook-status\" THEN\n                item.Set(\"content\", {\"type\":\"markdown\", \"value\":\"Guestbook entries are temporarily unavailable.\"})\n            END IF\n        NEXT item\n        RETURN\n    END IF\n    FOR EACH child IN Me.related(\"children\", \"blocks\")\n        IF child.id = \"guestbook-entries\" THEN\n            SET entries = child\n        END IF\n    NEXT child\n    FOR EACH record IN result.value\n        FOR EACH entry IN entries.related(\"children\", \"blocks\")\n            IF entry.properties.ordinal = position THEN\n                CALL entry.ShowEntry(record.data.name, record.data.message)\n            END IF\n        NEXT entry\n        position = position + 1\n    NEXT record\nEND SUB"
+    "behaviorSource": "SUB RefreshEntries()\n    DIM entries AS Wydgit\n    DIM entry AS Wydgit\n    DIM position AS Number = 0\n    FOR EACH child IN Me.related(\"children\", \"blocks\")\n        IF child.id = \"guestbook-entries\" THEN\n            SET entries = child\n        END IF\n    NEXT child\n    DIM result = SERVICES.Call(\"wydstore\", \"query\", {\"store\":\"entries\", \"collection\":\"entries\", \"limit\":20})\n    FOR EACH previous IN entries.related(\"children\", \"blocks\")\n        previous.Remove()\n    NEXT previous\n    IF NOT result.ok THEN\n        FOR EACH item IN Me.related(\"children\", \"blocks\")\n            IF item.id = \"guestbook-status\" THEN\n                item.Set(\"content\", {\"type\":\"markdown\", \"value\":\"Guestbook entries are temporarily unavailable.\"})\n            END IF\n        NEXT item\n        RETURN\n    END IF\n    FOR EACH record IN result.value\n        SET entry = NEW \"divdev/guestbook-entry\"(\"guestbook-entry-\" & NewId())\n        CALL entry.ShowEntry(record.data.name, record.data.message)\n        entries.Insert(\"blocks\", position, entry)\n        position = position + 1\n    NEXT record\nEND SUB"
   },
   {
     "id": "divdev/guestbook-form",
@@ -20,10 +20,6 @@
     "publisher": "divdev",
     "extends": "wydgit.core/block",
     "properties": {
-      "ordinal": {
-        "type": "number",
-        "required": true
-      },
       "content": {
         "type": "object",
         "default": {

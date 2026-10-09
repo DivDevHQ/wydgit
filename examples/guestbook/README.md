@@ -3,18 +3,23 @@
 Guestbook is server-authoritative and browser-POST-driven in the default web host.
 It installs through Wydgine and activates under normal `npm start`.
 
-1. Create a private existing data directory and enable the already installed
-   WydStore library in `wydgit.config.json`. Preserve other stores/configuration.
-2. Configure a store owned by App `boilerplate`, publisher `divdev`, package
-   `divdev/guestbook`, with collection fields `name` and `message`, both required
-   strings. Provider and root are operator choices; the package does not provision them.
-3. Create a host approval JSON file with the four fields shown below. Review requested
-   permissions in `manifest.json` and copy them into `approvals` only after approval.
-4. Run `node scripts/install-package.js examples/guestbook --approval /path/policy.json`
-   to inspect the plan. Add `--apply` to install.
-5. Run `npm start`, open http://127.0.0.1:3000/, and sign the Guestbook.
+Run the trusted installer, then follow its prompts:
 
-The operator policy example lives **outside** the reusable package:
+```sh
+node scripts/install-package.js examples/guestbook
+npm start
+```
+
+The installer shows package requirements and requested authority for explicit
+approval. It can enable the canonical WydStore already shipped with Wydgit, offer
+compatible existing storage, or provision new JSON/SQLite storage under the
+host-owned `.wydgit-data/` directory. Choose provider, approve provisioning, choose
+Page/parent/slot/index from discovered destinations, review the complete plan, and
+confirm applying it. Declining an approval writes nothing. No manual configuration,
+data directory creation or policy JSON is needed for ordinary installation.
+Open http://127.0.0.1:3000/ and sign the Guestbook.
+
+For advanced non-interactive operation, the operator policy example lives **outside** the reusable package:
 [`examples/guestbook-policy.example.json`](../guestbook-policy.example.json).
 It provides explicit grants for Page `home` → `sections[1]` in the default App and
 maps logical `entries` to host store `host-book`, collection `host-entries`.
@@ -27,21 +32,10 @@ node scripts/install-package.js examples/guestbook --approval /path/policy.json 
 npm start
 ```
 
-For the example policy, the enabled WydStore entry needs these `options` (replace
-`/srv/wydgit-data` with your private existing directory):
-
-```json
-{
-  "stores": [{
-    "id": "host-book", "app": "boilerplate", "publisher": "divdev",
-    "package": "divdev/guestbook", "provider": "json", "root": "/srv/wydgit-data",
-    "collections": [{"id": "host-entries", "fields": {
-      "name": {"type": "string", "required": true},
-      "message": {"type": "string", "required": true}
-    }}]
-  }]
-}
-```
+The example policy references already-provisioned `host-book / host-entries`.
+Automation can instead explicitly authorize infrastructure using the policy format
+in [packages.md](../../docs/packages.md). Infrastructure approval is separate from
+package permissions; no provider/path choice comes from the package.
 
 Installation needs prospective visibility/edit authority over every template ID
 (exact fixed IDs plus the approved `guestbook-entry-*` prefix),
@@ -54,7 +48,11 @@ is required before passing it to the trusted tool.
 
 The package contains `manifest.json`, `prototypes.json`, `section.json`, `refresh.bas`
 and `submit.bas`. Portable prototype methods create records using `NewId()`, query
-entries, and render up to 20 entry Blocks. The Submit action runs only after normal
+entries, and construct up to 20 request-local entry Blocks using portable NEW and
+Insert. The canonical entries Section is empty; rendering never persists App edits.
+Construction requires the explicitly approved `object.instances.construct` capability
+and exact `scopes.prototypes` grant for `divdev/guestbook-entry`. Dynamic object IDs
+use `"guestbook-entry-" & NewId()` and the approved object wildcard. The Submit action runs only after normal
 Form validation, clears on success, preserves invalid ordinary values, and shows
 status. PasswordInput values, if added, follow normal platform redaction. Markdown
 uses the existing safe renderer. Entries display in record-ID order; no pagination
@@ -62,7 +60,8 @@ or deletion UI is included. Each repeated valid POST creates a distinct record.
 
 Fixed canonical instance IDs mean one installation only. Another install is rejected.
 No privileged installation, host execution or server bootstrap file is needed.
-Core prototypes and host configuration are never rewritten by the installer.
+Core prototypes are never rewritten. Host configuration changes only under the
+operator-approved infrastructure plan.
 Accepted App/catalog/resources publish in `content/installed-packages.json`.
 
 The normal host supplies CSRF and Session checks. Automatic WydClient bootstrap and

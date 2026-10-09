@@ -23,10 +23,13 @@ never loaded. Local package paths are explicitly supplied by trusted operator co
 there is no package directory scan or automatic dependency installation.
 
 `requires` is the existing `wydgit.requirements/0.1` library envelope. Libraries must
-already be installed and host-enabled. `storage` declares `{name, fields}` logical
+already be installed; trusted operator policy may approve enabling canonical
+WydStore during installation. `storage` declares `{name, fields}` logical
 collections using WydStore field rules. It contains no provider, path, connection
 string or credentials. `permissions` explicitly requests capabilities, traversal,
 visible/editable object grants and logical `scopes.wydstore` resource names.
+Optional `scopes.prototypes` names exact construction prototypes under the existing
+SEAM rules; NEW also requires separately approved `object.instances.construct`.
 
 Bindings declare `owner`, `event`, named `source` and `kind`. For this milestone,
 handlers are Page lifecycle events; actions are semantic events with `method:POST`
@@ -71,6 +74,12 @@ prints a plan. Add `--apply` to commit; optional `--root` selects a site root. P
 JSON contains `placement`, `approvals`, `storageMappings` and the constructor data
 for `installationContext`. This file is operator policy and must never be supplied
 by package code. The CLI only constructs the host context and calls the real API.
+Without `--approval`, it shows package requests, asks explicit permission approval,
+collects placement and existing compatible storage mappings, then prints the plan
+and asks a separate final apply confirmation. Declining either approval writes
+nothing. Enablement and provisioning require additional explicit host approval; JSON and
+SQLite are the only supported providers. Numbered Page/parent/slot choices come
+from the current App, with canonical planning still validating placement.
 
 ## Catalog and accepted content
 
@@ -80,7 +89,8 @@ explicit `packages` array. Each entry records installed state, manifest, embedde
 resource texts, approved grants, resolved libraries, logical mappings/scopes,
 installed instance IDs, installable ID, placement and receipt. Source resources are
 copied into this catalog; startup never revisits the local source package directory.
-Core `prototypes/objects.json`, content source files and host config remain unchanged.
+Core `prototypes/objects.json` and content source files remain unchanged. Host config
+changes only under separately approved infrastructure policy.
 
 Receipts use `wydgit-install-receipt/0.1`: receipt ID, UTC installation time, revision,
 package identity/version, resource hashes, placement/IDs, libraries, approved grants,
@@ -112,7 +122,10 @@ reject intervening changes. A running host rejects catalog changes until restart
 Operators map logical names, for example
 `{entries: {store: 'host-book', collection: 'host-entries'}}`. The enabled host
 WydStore mapping must match the App/publisher/package ownership tuple and exact
-field schema. Installer never enables a library or changes its provider/root/schema.
+field schema. The package cannot enable a library or choose a provider/root. Trusted operator
+policy may enable the already installed canonical WydStore and create new storage
+from the declared fields. Existing stores are preserved; compatible reuse is offered
+first, and multiple compatible resources require an explicit selection.
 During activation Wydgine converts approved logical scopes into exact physical
 WydStore pairs. Portable behavior uses the logical name for both `store` and
 `collection`; the Page service facade resolves that pair before ordinary caller-bound
@@ -143,7 +156,7 @@ approved exact or prefix object grant for the generated ID. It is not a credenti
 
 Guestbook is server-authoritative and browser-POST-driven in the default web host.
 Automatic WydClient bootstrap/transport remains deferred. Remote packages, signatures,
-marketplace/discovery, uninstall, upgrade, migrations, provider provisioning,
+marketplace/discovery, uninstall, upgrade, migrations, remote provider provisioning,
 automatic ID rewriting and multiple instances/principals are outside 0.2-P.
 
 
@@ -155,3 +168,62 @@ patterns must be covered by visible grants, and requested patterns still require
 separate exact operator approval. Package prefixes may cover future IDs but cannot
 reach existing objects outside the installable. All other scopes remain exact.
 Wildcards add no capabilities, traversal, service or package authority.
+
+## Trusted infrastructure policy
+
+Package requirements are requests. Canonical library enablement and provider
+provisioning are host actions, approved by the operator separately from package
+execution grants. The CLI performs no downloads. Physical store IDs are generated
+from package identity and logical resource name; package behavior continues using
+only logical names. New roots must be unused safe site-relative directories without
+symlink ancestors or traversal; tracked application/resource directories are denied.
+The default host runtime root is `.wydgit-data/`, ignored by Git. WydStore receives
+absolute resolved roots and its existing collection/provider configuration. SQLite
+chooses its own hashed database filename in the approved store directory.
+
+Explicit policy files retain the existing four fields and may additionally contain:
+
+```json
+{
+  "infrastructure": {
+    "enableWydstore": true,
+    "stores": [{
+      "id": "divdev-guestbook-entries",
+      "provider": "json",
+      "location": ".wydgit-data/divdev-guestbook-entries",
+      "collections": [{"id": "entries", "fields": {
+        "name": {"type": "string", "required": true},
+        "message": {"type": "string", "required": true}
+      }}]
+    }]
+  }
+}
+```
+
+Use `provider: "sqlite"` for SQLite. The corresponding `storageMappings.entries`
+is `{store: "divdev-guestbook-entries", collection: "entries"}`. Omission of
+`infrastructure` authorizes no configuration changes or new storage. Interactive
+`--apply` never skips authority, infrastructure or final confirmation.
+
+The non-interactive trusted helper `scripts/package-infrastructure.js` constructs
+prospective host configuration and calls the kernel with `hostConfig`. Kernel
+planning validates the candidate App/registry/bindings/grants/mappings against that
+configuration without publishing it. The displayed operator plan includes both
+infrastructure choices and the exact package plan; catalog/receipt schemas are
+unchanged. Provider configuration reuses WydStore's internal schema validator;
+SQLite availability is checked with an in-memory probe, without creating site data.
+
+Apply holds the package installation lock, stages and fsyncs config and catalog,
+saves the old config/catalog in `content/.package-infrastructure.json`, then prepares
+new runtime directories/providers. It rechecks stale fingerprints before publishing
+config and catalog and only returns the receipt after successful publication.
+Caught config/catalog/provider failures restore config and remove newly created
+data; previous accepted App/catalog and existing provider data remain intact.
+A process crash or failed rollback leaves the recovery backup and startup fails
+closed with `PACKAGE.RECOVERY`, rather than serving mixed config/App state. After
+verifying no installer/host is running, an operator can restore the backup's `config`
+and `state` texts to their original files (remove the catalog if `state` is null),
+inspect/remove orphan new data and temporary files, then remove the recovery backup
+and stale lock. This is a local staged operation, not a distributed transaction;
+filesystem power-loss guarantees remain limited as described above. Stop the host
+while applying infrastructure changes and restart after installation.

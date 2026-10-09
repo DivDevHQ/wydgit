@@ -352,3 +352,13 @@ architecture change or unresolved architectural decision was needed.
 ## 0.2-P local packages
 
 Packages declare logical collection fields and receive separately approved mappings to already configured stores/collections. Providers/roots remain host-owned. `NewId()` supplies a portable explicit record ID; ordinary create authority still applies. See [packages](packages.md).
+
+
+For local declarative packages, the trusted interactive installer can enable the
+already installed canonical WydStore and provision JSON or SQLite after separate
+operator approval. No manual directory or config editing is needed for this path.
+It offers compatible reuse first, translates package logical fields into existing
+WydStore collection rules and uses host-owned `.wydgit-data/` by default. The package
+cannot select provider, filesystem root or physical resource IDs. Planning writes
+nothing; staged apply creates infrastructure only after final confirmation. See
+[trusted infrastructure policy](packages.md#trusted-infrastructure-policy).

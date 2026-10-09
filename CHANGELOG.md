@@ -16,10 +16,22 @@ breaking architectural changes.
   WydBASIC and canonically attached Section templates through authorized insertChild.
 - Published catalog, embedded resources and accepted App together using stale-state
   checks, an exclusive local lock and a single fsynced temporary/replace operation.
-  Core prototype files and host library/provider configuration are not rewritten.
+  Core prototype files remain distinct; host infrastructure changes require separate
+  operator approval.
 - Activated declared Page lifecycle bindings and semantic POST actions under normal
   startup, with actual Session identity and exact approved grants. No package JS,
-  runtime package scanning, provider provisioning or permission union is introduced.
+  runtime package scanning, package-controlled provisioning or permission union is
+  introduced.
+- Guestbook now constructs and inserts dynamic request-local entry drafts instead
+  of twenty persistent placeholders, with explicit construction capability/scope
+  approval. The CLI builds operator policy interactively when `--approval` is absent,
+  with separate permission and final apply confirmations.
+- Extended the trusted interactive installer with explicit authority/infrastructure
+  approval, canonical installed WydStore enablement, operator-selected JSON/SQLite
+  provisioning, host-owned storage mappings and discovered placement choices.
+  Complete prospective validation precedes mutation; staged config/catalog apply
+  rolls back caught failures and blocks startup on interrupted recovery state.
+  Explicit non-interactive policy mode remains supported; no downloads are added.
 - Added restricted trailing-wildcard object grants for visible/editable; exact
   matches remain intact, with no general glob/regex support. Guestbook grants use
   guestbook-entry-* instead of enumerating a finite set of entry IDs.
@@ -32,8 +44,10 @@ breaking architectural changes.
   and automatic WydClient bootstrap/transport remain deferred.
 - Advanced platform/lockfile/App metadata to 0.2.0-alpha.16; independent library
   contracts and versions remain unchanged.
-- Verification: full `npm test` (251 passing tests), `npm run check` and
-  `git diff --check`; legacy Guestbook runtime dependency search has no matches.
+- Verification: full `npm test` (268 passing tests), `npm run check` and
+  `git diff --check`; terminal JSON/SQLite installs from disabled WydStore,
+  final-decline/no-write checks and normal-host POST/restart persistence exercised
+  in isolated patched-baseline copies. Legacy Guestbook dependency search has no matches.
 
 ## 0.2.0-alpha.15 — 0.2-O
 ### Remove Legacy Form fields Slot

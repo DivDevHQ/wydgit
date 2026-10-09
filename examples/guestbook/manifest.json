@@ -42,6 +42,7 @@
   "permissions": {
     "capabilities": [
       "object.instances.edit",
+      "object.instances.construct",
       "app.forms.submit",
       "store.records.read",
       "store.records.create"
@@ -73,6 +74,9 @@
     "scopes": {
       "wydstore": [
         "entries"
+      ],
+      "prototypes": [
+        "divdev/guestbook-entry"
       ]
     }
   },

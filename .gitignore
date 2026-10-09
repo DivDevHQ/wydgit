@@ -10,3 +10,6 @@ node_modules/
 
 Agents.md
 AGENTS.md
+
+# Host runtime/provider data
+.wydgit-data/

@@ -2,7 +2,7 @@ import { check, StoreError, json, record, fields, schema, idValid, frozen } from
 import { openJsonAdapter } from './json-adapter.js';
 import { normalizeRequest } from './adapter-contract.js';
 
-export async function openStores(input) {
+export function validateStoreConfig(input) {
   let config;
   try {
     config = json(input); fields(config,['stores'],[],'STORE.INVALID_CONFIG');
@@ -21,6 +21,11 @@ export async function openStores(input) {
       }
     }
   } catch { throw new StoreError('STORE.INVALID_CONFIG'); }
+  return config;
+}
+
+export async function openStores(input) {
+  const config = validateStoreConfig(input);
   const stores = new Map();
   for (const definition of config.stores) {
     const definitions = new Map(definition.collections.map(c => [c.id,c.fields]));

@@ -12,12 +12,13 @@ export function safeRead(root,relative,max=LIMITS.resource) {
   const stat=lstatSync(file);check(stat.isFile()&&stat.nlink===1&&stat.size<=max,'PACKAGE.LIMIT','Invalid or oversized resource');
   check(realpathSync(file).startsWith(base+path.sep),'PACKAGE.PATH','Resource escapes root');return readFileSync(file,'utf8');
 }
-export function baseFingerprint(root) {
+export function baseFingerprint(root,configText) {
   const names=['content/app.json','content/navigation.json','content/requirements.json','wydgit.config.json','prototypes/objects.json'];
   for(const dir of ['content/pages','content/skins','prototypes'])if(existsSync(path.join(root,dir)))for(const file of readdirSync(path.join(root,dir)).sort())if(file.endsWith('.json'))names.push(dir+'/'+file);
-  return digest([...new Set(names)].sort().map(name=>name+'\0'+safeRead(root,name,LIMITS.state)).join('\0'));
+  return digest([...new Set(names)].sort().map(name=>name+'\0'+(name==='wydgit.config.json'&&configText!==undefined?configText:safeRead(root,name,LIMITS.state))).join('\0'));
 }
 export function readInstalledState(root) {
+  check(!existsSync(path.join(root,'content/.package-infrastructure.json')),'PACKAGE.RECOVERY','Interrupted infrastructure install; recover saved host state before startup');
   if(!existsSync(path.join(root,STATE)))return null;
   const state=clean(JSON.parse(safeRead(root,STATE,LIMITS.state)));
   check(state.schema==='wydgit-installed/0.1'&&Array.isArray(state.packages)&&state.packages.length<=32&&Number.isSafeInteger(state.revision)&&state.revision>0,'PACKAGE.CATALOG','Invalid installed state');
