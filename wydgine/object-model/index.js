@@ -49,7 +49,7 @@ export function hydrate(input, registry, { revision = 0 } = {}) {
     revision,
     edit(context) { return createEdit(runtime, context, registry, hydrate, dehydrate); },
     get(id) { check(nodes.has(id), 'OBJECT.UNKNOWN', 'Unknown object'); return nodes.get(id); },
-    scope(context) {
+    scope(context, startId = context.self) {
       checkContext(context); check(nodes.has(context.self), 'SEAM.CONTEXT', 'Unknown self object');
       const handles = new Map();
       const handle = id => {
@@ -79,7 +79,7 @@ export function hydrate(input, registry, { revision = 0 } = {}) {
         });
         handles.set(id, result); return result;
       };
-      return handle(context.self);
+      return handle(startId);
     }
   });
   graphs.set(runtime, { nodes, root }); return runtime;

@@ -9,7 +9,7 @@ try {
   const host = process.env.HOST || '127.0.0.1';
   const server = app.listen(port, host, () => console.log(`Wydgit ${platform.version}: http://${host}:${server.address().port}`));
   server.on('error', () => { console.error('HTTP startup failed'); process.exitCode = 1; });
-  for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => server.close());
+  for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => server.close(async()=>{await app.locals.lifecycle.stop();}));
 } catch (error) {
   console.error(JSON.stringify(error instanceof WydgitError ? error.toJSON() : { ok: false, code: 'LIBRARY.INITIALIZATION_FAILED', message: 'Host initialization failed', details: {} }));
   process.exitCode = 1;

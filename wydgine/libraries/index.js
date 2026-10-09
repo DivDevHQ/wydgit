@@ -2,13 +2,13 @@ import { ExecutionContext } from '../seam/context.js';
 import { bindServices, failure, isServiceFailure } from './dispatch.js';
 import { ensure, version, satisfies, validateConfig, validateManifest, validateRequirements } from './contracts.js';
 import { importNodePackage } from './node-package.js';
-import { freeze, WydgitError } from '../object-model/validation.js';
+import { clean as validateLifecycle, freeze, WydgitError } from '../object-model/validation.js';
 export { validateConfig, validateManifest, validateRequirements } from './contracts.js';
 const emptyRequirements = () => ({ schema: 'wydgit.requirements/0.1', libraries: [] });
 
 // The registry is published only after every enabled library and requirement
 // succeeds. Package functions and registry mutation never cross into Wydgits.
-export async function loadLibraries({ config: input, requirements: requested = emptyRequirements(), platformVersion, root }) {
+export async function loadLibraries({ config: input, requirements: requested = emptyRequirements(), platformVersion, root, lifecycle = async () => {} }) {
   const config = validateConfig(input), requirements = validateRequirements(requested);
   ensure(version(platformVersion), 'LIBRARY.VERSION_MISMATCH', 'Invalid host platform version');
   ensure(typeof root === 'string' && root.length > 0, 'LIBRARY.INVALID_CONFIG', 'Host resolution root is required');
@@ -89,6 +89,7 @@ export async function loadLibraries({ config: input, requirements: requested = e
     const handlers = new Map();
     let active = true, invalid = false;
     const api = Object.freeze({ options: configured.get(id).options ?? Object.freeze({}), failure,
+      async lifecycle(event) { return lifecycle(id, freeze(validateLifecycle(event))); },
       dependency(library) {
         ensure(approved.get(id).has(library), 'LIBRARY.DEPENDENCY_DENIED', 'Dependency binding is not approved');
         const context = approved.get(id).get(library);

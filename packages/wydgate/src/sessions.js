@@ -41,7 +41,7 @@ export function sessionOperations({read,mutate,app,ttl,authenticate}) {
       return {authenticated:true,app,sessionId:session.id,createdAt:session.createdAt,expiresAt:session.expiresAt,...effective(data,session.userId)};
     }
     if(operation==='logout') {
-      fields(request,['token']);return mutate(data=>{const session=lookup(data,request.token);session.revoked=true;return {revoked:true};});
+      fields(request,['token']);return mutate(data=>{const session=lookup(data,request.token);session.revoked=true;return {revoked:true};},'Logout');
     }
     if(operation==='revoke-session') {
       fields(request,['id']);check(entityId(request.id,'s'),'GATE.SESSION_INVALID');

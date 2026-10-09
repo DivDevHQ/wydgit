@@ -71,7 +71,7 @@ for(const provider of ['json','sqlite']) {
 }
 
 test('Gate package declares portable requirements and dependency failures stop initialization',async t=>{
- const require=createRequire(import.meta.url),pkg=require('@wydgit/gate/package.json');assert.equal(pkg.version,'0.1.0-alpha.2');assert.equal(pkg.version,manifest.version);assert.equal(pkg.dependencies.argon2,'0.45.1');
+ const require=createRequire(import.meta.url),pkg=require('@wydgit/gate/package.json');assert.equal(pkg.version,'0.1.0-alpha.3');assert.equal(pkg.version,manifest.version);assert.equal(pkg.dependencies.argon2,'0.45.1');
  assert.equal(await fs.realpath(path.dirname(require.resolve('@wydgit/gate/package.json'))),path.join(project,'packages/wydgate'));
  assert.deepEqual(manifest.requirements,{schema:'wydgit.requirements/0.1',libraries:[{library:'wydstore',version:'^0.1.0-alpha.2'}]});
  const root=await temp(t),config=configuration(root);config.libraries.pop();await reject(()=>load(config),'LIBRARY.UNKNOWN');
@@ -137,6 +137,6 @@ test('password hashing is bounded and missing accounts use the same verification
 test('platform and Gate versions are synchronized and canonical App data has no authentication wiring',async()=>{
  const read=async name=>JSON.parse(await fs.readFile(path.join(project,name),'utf8'));
  const [pkg,lock,app]=await Promise.all(['package.json','package-lock.json','content/app.json'].map(read));
- assert.equal(pkg.version,'0.2.0-alpha.7');assert.equal(lock.version,pkg.version);assert.equal(lock.packages[''].version,pkg.version);assert.equal(lock.packages['packages/wydgate'].version,manifest.version);assert.equal(app.properties.revision,'Wydgit 0.2 alpha 7');
+ assert.equal(pkg.version,'0.2.0-alpha.8');assert.equal(lock.version,pkg.version);assert.equal(lock.packages[''].version,pkg.version);assert.equal(lock.packages['packages/wydgate'].version,manifest.version);assert.equal(app.properties.revision,'Wydgit 0.2 alpha 8');
  assert.doesNotMatch(JSON.stringify(app),/argon2|password|credential|@wydgit|sqlite|identity/i);
 });

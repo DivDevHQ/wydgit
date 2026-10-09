@@ -1,4 +1,4 @@
-# Canonical libraries — 0.2-G
+# Canonical libraries — 0.2-H
 
 **Libraries provide capabilities. SEAM grants authority.**
 
@@ -18,7 +18,7 @@ Wydgine and demo code deliberately remain in place. The fixture workspace is
 `packages/test-library`, an independent `@wydgit/test-library@1.0.0` package with its
 own metadata and exports. It is explicitly a non-production fixture and marked
 private to prevent accidental publication. `packages/wydstore` adds the independently versioned `@wydgit/store@0.1.0-alpha.2`.
-`packages/wydgate` adds `@wydgit/gate@0.1.0-alpha.2`.
+`packages/wydgate` adds `@wydgit/gate@0.1.0-alpha.3`.
 Canonical package versions need not match the platform version or remain in this
 repository.
 
@@ -147,7 +147,7 @@ every capability must have at least one declared service. Capabilities follow th
 shared SEAM `domain.resource.action` grammar. A capability has exactly one provider
 in a loaded registry; duplicate providers fail instead of silently overriding.
 
-Registration receives frozen `{service(name, handler, policy?), options, failure, dependency}`.
+Registration receives frozen `{service(name, handler, policy?), options, failure, dependency, lifecycle}`.
 `policy.authorize(request, context)` must return `true` to allow bound service
 dispatch; omitting it keeps a service host-only. `failure(code)` creates a branded,
 sanitized structured failure without accepting arbitrary messages or details.
@@ -229,7 +229,7 @@ empty. No Node wiring is added to canonical App properties or provenance.
 
 Three versions are independent:
 
-- Platform version: `wydgit@0.2.0-alpha.7`.
+- Platform version: `wydgit@0.2.0-alpha.8`.
 - Library version: e.g. the fixture's `1.0.0`, equal to its npm package version.
 - Compatibility ranges: manifest `platform`, host-approved implementation `version`,
   and portable requirement `version` each constrain their respective version.
@@ -306,3 +306,11 @@ implementation resources. Neither loading, dependency declaration nor an API cal
 adds grants to an application caller. WydGate uses this mechanism to reach a
 WydGate-owned WydStore collection; ordinary packages receive only safe identity
 results. See [WydGate configuration](wydgate.md) for a complete host example.
+
+
+0.2-H adds a narrow `lifecycle(event)` registration hook and optional host
+`loadLibraries({lifecycle(libraryId,event)})` observer. It copies/freezes JSON and
+provides no grant or registry access. WydGate uses it after committed Session
+transitions; Wydgine dispatches under explicitly chosen host authority. It is not a
+global package event bus or durable queue. Observer failure cannot undo committed
+revocation; Gate continues terminal cleanup notifications. See [events.md](events.md).

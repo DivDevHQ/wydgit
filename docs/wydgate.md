@@ -1,8 +1,8 @@
-# WydGate — 0.2-G
+# WydGate — 0.2-H
 
 **Libraries provide capabilities. SEAM grants authority.**
 
-`@wydgit/gate@0.1.0-alpha.2` is the independently versioned canonical library
+`@wydgit/gate@0.1.0-alpha.3` is the independently versioned canonical library
 `wydgate`, with publisher identity `wydgit.core`, trust `canonical`, target `server`. It
 requires WydStore `^0.1.0-alpha.2` through the portable library requirement contract.
 No provider, filesystem or database API is imported by WydGate. The same service
@@ -152,7 +152,7 @@ or `sqlite` and a private root there. WydGate's host entry is:
 ```json
 {
   "id": "wydgate", "package": "@wydgit/gate", "enabled": true,
-  "version": "^0.1.0-alpha.2", "publisher": "wydgit.core", "trust": "canonical",
+  "version": "^0.1.0-alpha.3", "publisher": "wydgit.core", "trust": "canonical",
   "options": {"app":"appA", "store":"identity", "collection":"directory"},
   "bindings": [{
     "library": "wydstore", "app": "appA",
@@ -370,3 +370,28 @@ including sensitive old credential hashes and session digests. JSON's 16 MiB
 whole-store bound can therefore be reached quickly with frequent logins; this is
 not a high-volume session backend. No pruning of history, scalable session store,
 rate-limiting service, purge or migration framework is claimed.
+
+
+## 0.2-H Session lifecycle integration
+
+Gate 0.1.0-alpha.3 emits safe `Start`, `Authenticated`, `Logout`, `Timeout`, `End`
+notifications after successful storage commits through the library host lifecycle
+hook. Login emits Start/Authenticated; logout marks revoked before Logout/End.
+Every authorized Gate call detects expired live Sessions and records revocation
+before Timeout/End. Thus timeout processing is authoritative and request/service
+triggered, not a Page-owned timer. Repeated or racing resolutions do not emit End
+again because only the winning transition from unrevoked state emits events.
+Administrative revocation, disable and credential changes emit End without Logout.
+
+No token/digest/hash is in the notification. Host handlers receive Session metadata
+under separately supplied SEAM authority; notification identity grants nothing.
+Notifications are post-commit best effort and not replayed after process failure;
+a failed observer cannot reactivate the Session or suppress subsequent End attempts.
+The private directory schema remains `wydgate.local/0.2`; no migration/reset occurs.
+Expiry now produces a retained WydStore revision when it changes state.
+
+Wydgine can resolve a host-owned auth cookie using an explicitly supplied Gate
+resolver context and recheck it before privileged Page service calls. It does not
+implement an auth-cookie issuance/login endpoint. In-flight committed operations
+are not cancelled by logout. See [events.md](events.md) for request and lifecycle
+integration, reserved-cookie rules and browser verification limits.

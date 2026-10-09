@@ -32,5 +32,5 @@ export function loadRepository(root) {
       diagnostics.push(`${file}: ${error.message}`);
     }
   }
-  return webModel(runtime, { prototypes, skins, diagnostics });
+  return webModel(runtime, { prototypes, skins, diagnostics, registry });
 }

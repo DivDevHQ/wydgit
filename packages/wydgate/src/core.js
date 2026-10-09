@@ -34,7 +34,7 @@ function directory(snapshot) {
 function storeError(code) {
   return new GateError(({ 'STORE.CONFLICT':'GATE.CONFLICT', 'STORE.BUSY':'GATE.BUSY', 'STORE.LIMIT':'GATE.LIMIT' })[code] ?? 'GATE.IO');
 }
-export async function openGate(options, storage) {
+export async function openGate(options, storage, lifecycle = async () => {}) {
   fields(options,['app','store','collection'],['sessionTtlMs'],'GATE.INVALID_CONFIG');
   check(storageId(options.app) && storageId(options.store) && storageId(options.collection),'GATE.INVALID_CONFIG');
   check(storage.identity?.app === options.app && storage.identity.publisher === 'wydgit.core' && storage.identity.library === 'wydgate','GATE.INVALID_CONFIG');
@@ -58,13 +58,22 @@ export async function openGate(options, storage) {
     check(caller.app === options.app && Array.isArray(caller.scopes?.wydgate) && caller.scopes.wydgate.includes(options.app),'GATE.DENIED');
     return true;
   };
-  const mutate=async change=>{
+  const mutate=async (change, reason='End')=>{
     for(let attempt=0;attempt<3;attempt++) {
       const current=await read(),data=JSON.parse(JSON.stringify(current.data));
       const value=change(data);
       directory({id:directoryId,version:current.version,data});
       const result=await call('update',{version:current.version,data});
-      if(result.ok)return value;
+      if(result.ok){
+        const notifications=[];
+        for(const session of data.sessions) {
+          const before=current.data.sessions.find(old=>old.id===session.id);
+          if(!before)notifications.push(['Start',session],['Authenticated',session]);
+          else if(!before.revoked&&session.revoked){if(reason==='Logout'||reason==='Timeout')notifications.push([reason,session]);notifications.push(['End',session]);}
+        }
+        for(const [type,session] of notifications)try{await lifecycle({type,app:options.app,session:{id:session.id,userId:session.userId,createdAt:session.createdAt,expiresAt:session.expiresAt,authenticated:!session.revoked}});}catch{/* Committed state stays terminal; subsequent cleanup notifications still run. */}
+        return value;
+      }
       if(result.code !== 'STORE.CONFLICT')throw storeError(result.code);
     }
     throw new GateError('GATE.CONFLICT');
@@ -87,6 +96,8 @@ export async function openGate(options, storage) {
   const authorization=authorizationOperations({read,mutate,find});
   const execute=async(operation,request,caller)=>{
     authorize(request,caller);
+    if((await read()).data.sessions.some(session=>!session.revoked&&session.expiresAt<=Date.now()))
+      await mutate(data=>{for(const session of data.sessions)if(!session.revoked&&session.expiresAt<=Date.now())session.revoked=true;return null;},'Timeout');
     if(operation==='authenticate'){const result=await authenticate(request);return {authenticated:true,user:result.user};}
     const session=await sessions(operation,request);if(session!==undefined)return session;
     const access=await authorization(operation,request);if(access!==undefined)return access;

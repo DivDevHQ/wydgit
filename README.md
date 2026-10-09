@@ -42,7 +42,7 @@ The result should be:
 
 Wydgit is currently in **early alpha development**.
 
-The current codebase implements Wydgit 0.2-G local sessions and authorization through WydGate, backed by the provider-neutral WydStore and existing object-model, mutation, and SEAM foundation:
+The current codebase implements the Wydgit 0.2-H event, lifecycle and request/response foundation, integrated with WydGate sessions, WydStore and the existing object-model/mutation/SEAM foundation:
 
 - Node.js / Express server
 - canonical App-rooted JSON and immutable hydrated Wydgit instances
@@ -52,6 +52,9 @@ The current codebase implements Wydgit 0.2-G local sessions and authorization th
 - npm workspaces, explicit host-approved library loading, portable requirements
 - scoped storage services, typed records, optimistic concurrency and record history
 - local users, Argon2id passwords, revocable sessions, roles/groups and explicit permissions
+- Session-owned request-local Page lifecycles and bounded contextual events
+- safe request/response, Markdown/file delivery and scoped headers/cookies
+- WydClient lifecycle and semantic browser-event adapter (trusted host integration)
 - server-side rendering
 - Markdown content
 - sanitized output
@@ -60,13 +63,13 @@ The current codebase implements Wydgit 0.2-G local sessions and authorization th
 - nested App → Page → Section → Block composition
 - renderer and HTTP tests
 
-Implementation details: [object model](docs/object-model.md), [SEAM](docs/seam.md), [mutation model](docs/mutation-model.md), [library model](docs/library-model.md), [WydStore](docs/wydstore.md), and [WydGate](docs/wydgate.md). Executable third-party packages and later platform subsystems remain deferred.
+Implementation details: [object model](docs/object-model.md), [SEAM](docs/seam.md), [mutation model](docs/mutation-model.md), [library model](docs/library-model.md), [WydStore](docs/wydstore.md), [WydGate](docs/wydgate.md), and [events/HTTP execution](docs/events.md). Executable third-party packages and later platform subsystems remain deferred.
 
 The architectural contract is:
 
 [`docs/FOUNDING-ARCHITECTURE.md`](docs/FOUNDING-ARCHITECTURE.md)
 
-Current development version: **0.2.0-alpha.7**. Completed platform milestones
+Current development version: **0.2.0-alpha.8**. Completed platform milestones
 update `package.json`, matching root metadata in `package-lock.json`, and
 `content/app.json` → `properties.revision` together. Version updates do not create
 Git tags or publish releases. Completed milestones also update [CHANGELOG.md](CHANGELOG.md).
@@ -153,7 +156,7 @@ The library contract and explicit loader are implemented. `@wydgit/store` is the
 first real workspace library, with JSON and SQLite adapters. `@wydgit/gate` adds
 local identity/authentication through host-approved WydStore services; a separate
 non-production fixture exercises loading. All three are disabled in
-`wydgit.config.json` by default. Federation and browser transport integration remain deferred. Gate permissions
+`wydgit.config.json` by default. Federation and login UI/auth-cookie issuance remain deferred. Gate permissions
 never automatically grant SEAM capabilities.
 `content/requirements.json` holds portable library requirements; it never names
 Node implementation packages. Repository location is a development concern, not

@@ -1,6 +1,6 @@
 # @wydgit/gate
 
-Canonical server library `wydgate`, independently versioned at `0.1.0-alpha.2`.
+Canonical server library `wydgate`, independently versioned at `0.1.0-alpha.3`.
 
 Provides local users and Argon2id username/password authentication. Persistence uses
 host-approved `wydstore` services and works with JSON or SQLite. WydGate never
@@ -24,3 +24,8 @@ separate minimal profiles. Session-derived identity is metadata; it never grants
 SEAM runtime authority. The private directory schema is now `wydgate.local/0.2`;
 existing 0.2-F stores require an explicit future migration and are never reset.
 See the platform documentation for APIs, host-only configuration and capacity limits.
+
+
+0.2-H adds post-commit Session lifecycle notifications to the trusted library host,
+including idempotent authoritative expiry/revocation processing. No storage schema
+change or new authority grant is introduced. Notifications are not a durable queue.

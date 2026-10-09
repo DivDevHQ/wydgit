@@ -11,6 +11,31 @@ No unreleased milestone changes yet.
 
 ---
 
+## 0.2.0-alpha.8 — 0.2-H
+### Event, Lifecycle, Request/Response Foundation
+
+- Added schema-validated contextual events, parameterless trusted handler bridges,
+  deterministic FIFO dispatch, cancellation/default rules and execution bounds.
+- Integrated App Start/Stop and post-commit WydGate Session lifecycle notifications,
+  with authoritative expiry and idempotent revocation/terminal transitions.
+- Routed HTTP Pages through resolved Sessions, isolated request-local trees,
+  deterministic lifecycle traversal, mutation snapshots and reverse cleanup ledgers.
+- Added semantic Form/Field validation and registered POST actions with Session-bound
+  anti-forgery checks and explicit capability-controlled persistence.
+- Added safe REQUEST/RESPONSE facades, terminal Markdown/file responses, scoped
+  headers/cookies and a narrow host-approved streaming file-resource adapter.
+- Added WydClient Mount/Ready/Unmount and native-to-semantic event adaptation without
+  native event/DOM exposure or automatic server authority.
+- Disabled raw HTML Markdown tokens while retaining the existing trusted sanitizer;
+  host CSP, reserved credential cookies and file typing remain protected.
+- Added integrated HTTP, Gate, client adapter, lifecycle and hostile-input tests.
+  Browser visual verification remains unavailable in the supplied environment.
+- Advanced platform to `0.2.0-alpha.8` and WydGate to `0.1.0-alpha.3`; retained the
+  existing Gate storage schema. No language compiler, durable event queue, WydFiles
+  package, auth-cookie issuance endpoint or distributed coordination was added.
+
+---
+
 ## 0.2.0-alpha.7 — 0.2-G
 ### WydGate Sessions + Roles/Groups/Permissions
 

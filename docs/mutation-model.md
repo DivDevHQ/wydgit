@@ -132,3 +132,10 @@ Revision is external snapshot metadata, not an object property and not serialize
 in the six-field canonical envelope. A host must preserve it separately when
 rehydrating. App's display `properties.revision` is project release text and is
 unrelated to this concurrency hook. No WydStore coupling is introduced.
+
+
+0.2-H wraps these host edit operations in scoped request-local Page handles. Each
+operation still validates an immutable snapshot; request-wide retired IDs remain
+reserved across operations. No commit publishes canonical state. Renderer/Unload
+phases deny edits, and authoritative services require independent grants. See
+[events.md](events.md) for the separate lifecycle initialization/cleanup ledger.

@@ -98,3 +98,10 @@ Home/About/Contact styling, navigation, sanitization and layout remain intact.
 Deferred: package installation, interface-type slots, service
 execution, persistence adapters and other later-phase systems. No founding
 architecture revision or unresolved architectural decision is required.
+
+
+0.2-H adds a request-local execution layer without changing canonical App ownership.
+Hydration remains immutable. `scope(context,startId)` can select another already
+visible object for trusted host adapters, without changing self or any grants.
+Minimal Form/Field prototypes use semantic values and validation data; renderer
+HTML stays outside the model. See [events.md](events.md) for Session/Page execution.

@@ -1,4 +1,4 @@
-import { marked } from 'marked';
+import { marked, Renderer } from 'marked';
 import sanitizeHtml from 'sanitize-html';
 import { loadRepository } from './repository.js';
 import { skinAttribute, renderSkinCss } from './skins.js';
@@ -11,9 +11,10 @@ const safeExternal = url => {
   return new URL(url).href;
 };
 
+const markdownRenderer=new Renderer();markdownRenderer.html=()=>'';
 export function renderMarkdown(value) {
   if (typeof value !== 'string') throw new Error('Markdown content must be a string');
-  return sanitizeHtml(marked.parse(value, { async: false, gfm: true }), {
+  return sanitizeHtml(marked.parse(value, { async: false, gfm: true, renderer: markdownRenderer }), {
     allowedTags: ['p','br','hr','h1','h2','h3','h4','h5','h6','strong','em','del','s','blockquote','ul','ol','li','pre','code','a','table','thead','tbody','tr','th','td','caption','sup','sub','dl','dt','dd'],
     allowedAttributes: { a: ['href','title'], ol: ['start'], th: ['align'], td: ['align'] },
     allowedSchemes: ['http','https','mailto'], allowProtocolRelative: false
@@ -68,7 +69,7 @@ export function errorDocument(status = 500) {
 }
 
 // Pure rendering API: accepts an in-memory model, knows nothing about Express or HTTP.
-export function renderSite(model, requestPath = '/') {
+export function renderSite(model, requestPath = '/', {csrf=''} = {}) {
   const diagnostics = [...(model.diagnostics || [])];
   const guard = fn => { try { return fn(); } catch (error) { diagnostics.push(error.message); return placeholder(); } };
   try {
@@ -104,6 +105,7 @@ export function renderSite(model, requestPath = '/') {
       });
     }
     function block(raw) {
+      if(raw.prototype==='form')return `<form id="${escapeHtml(raw.id)}" method="post" data-wydgit="${escapeHtml(raw.id)}"><input type="hidden" name="_target" value="${escapeHtml(raw.id)}"><input type="hidden" name="_action" value="Submit"><input type="hidden" name="_csrf" value="${escapeHtml(csrf)}">${(raw.fields??[]).map(field=>`<label>${escapeHtml(field.label)}<input data-wydgit="${escapeHtml(field.id)}" name="${escapeHtml(field.name)}" value="${escapeHtml(field.value)}"${field.required?' required':''}${field.valid===false?' aria-invalid="true"':''}></label>${field.errors.map(error=>`<p role="alert">${escapeHtml(error)}</p>`).join('')}`).join('')}<button type="submit">${escapeHtml(raw.label)}</button></form>`;
       return guard(() => {
         const node = resolve(raw, 'block', model);
         const allowed = model.prototypes.get('block').properties.content['supported-types'];

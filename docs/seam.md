@@ -1,4 +1,4 @@
-# SEAM foundation — 0.2-G
+# SEAM foundation — 0.2-H
 
 Authority belongs to an execution context, not to the target object.
 
@@ -137,3 +137,19 @@ permission/capability strings are independent grants. The host must resolve the
 session again for each authenticated operation: identity metadata is a snapshot,
 not a live revocation mechanism. The context constructor remains host-only and does
 not verify an arbitrary supplied identity assertion. See [WydGate](wydgate.md).
+
+
+## Events and request execution
+
+**Dispatch carries authority. It never manufactures it.** The 0.2-H dispatcher uses
+an existing branded ExecutionContext; handler registration and Session identity
+cannot union grants or select another principal. Page execution rejects mismatched
+App/Session identities. Handles are limited to the request-local Page subtree and
+expire with their invocation/request. Local edit intent uses the existing capability
+and visibility/edit checks; no snapshot is automatically persisted.
+
+REQUEST/RESPONSE cookie and header methods, file delivery and custom event raises
+require capabilities and exact resource scopes. Reserved credential cookies and
+host security headers remain inaccessible even with ordinary matching name grants.
+WydClient has separate authority and never sends it as proof of server authority.
+See [events.md](events.md) for bounds, context lifetimes and the complete contract.
