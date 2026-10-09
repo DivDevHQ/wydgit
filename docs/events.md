@@ -256,7 +256,7 @@ for server forms. No browser automation framework was present or added.
 
 ## Compatibility, verification and deferred work
 
-Platform is 0.2.0-alpha.11; Gate is independently 0.1.0-alpha.3. Gate's private
+Platform is 0.2.0-alpha.12; Gate is independently 0.1.0-alpha.3. Gate's private
 `wydgate.local/0.2` schema remains unchanged; expiry now records revocation/history.
 The pre-existing 0.2-F→G storage incompatibility remains; no destructive migration.
 There was no prior public event/handler/HTTP facade to migrate. Existing pure
@@ -273,3 +273,36 @@ reported no browsers and opening the in-app browser failed. HTTP startup/navigat
 request flows and native EventTarget adapter tests are separate verification; they
 are not represented as visual browser results. This leaves manual browser acceptance
 unverified, even when the automated repository checks pass.
+
+## 0.2-L source-declared event modules
+
+Handler records now select exactly one of `run`, `workflow`, `wydBasic`, or
+`wydBasicModule`. A module record is `{owner:'home', wydBasicModule:source}` and
+contains parameterless `EVENT Page.Load ... END EVENT` (or other registered events)
+plus shared SUB/FUNCTION declarations. Modules omit the registration `type`, because
+the source declares it. `prepareHandlers(records, registry)` expands these at setup
+into ordinary `{owner,type,workflow}` records; only canonical `sewn/0.2` executes.
+HTTP setup, direct Page preparation, server lifecycle construction and WydClient
+construction compile before dispatch. The HTTP runtime module allowlist includes
+the browser-safe compiler/executor dependency closure; host/provider modules stay
+private. Existing body-source, workflow and trusted JS
+registrations continue working. See [WydBASIC](wydbasic.md) for syntax.
+
+Registry `resolve(name)` requires exactly one case-insensitive match. Unknown custom
+events must be defined first; ambiguous case variants fail, as do duplicate EVENT
+blocks within one module. Lifecycle owner/source selection, FIFO order, cancellation,
+defaults and cleanup are unchanged. ME remains the owner; EVENT.Source and Target
+remain dispatch metadata. Procedures reuse the exact caller contexts and authority.
+Registration does not fabricate client/server contexts or cause events to dispatch.
+
+For an HTTP action, `{page,target,type,method,capability,wydBasicModule}` can declare
+exactly the one routed EVENT (e.g. Submit), with any shared procedures. Its ME is the
+routed target; an explicit different owner is rejected. `prepareAction` selects that
+validated workflow. Page/target/HTTP method, Session authorization, required SEAM
+capabilities, anti-forgery and semantic validation still belong to trusted action
+metadata and the existing Page pipeline. Source cannot weaken these gates.
+A multi-event handler module and action metadata remain distinct registration forms.
+
+The real HTTP proof in `test/wydbasic-module-integration.test.js` uses only portable
+module source for Submit behavior: FUNCTIONs validate/save a form value through
+WydStore and a SUB replaces the request-local form with rendered Thank you.

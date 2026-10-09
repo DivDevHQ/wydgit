@@ -1,8 +1,9 @@
 import { randomBytes,createHash } from 'node:crypto';
-import { createDispatcher,safeError } from '../events/index.js';
+import { createDispatcher,safeError,prepareHandlers } from '../events/index.js';
 import { freeze,clean,requireThat as check } from '../object-model/validation.js';
 import { ExecutionContext } from '../seam/context.js';
 export function createLifecycle({app,handlers=[],context=new ExecutionContext({publisher:'wydgit.core',self:app,app})}) {
+  handlers=prepareHandlers(handlers);
   check(context.app===app,'EVENT.DENIED','Wrong lifecycle App');
   let started=false,stopped=false,chain=Promise.resolve();const errors=[];
   const emit=(family,type,session)=>{

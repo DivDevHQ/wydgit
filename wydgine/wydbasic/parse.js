@@ -1,7 +1,7 @@
 import { tokenize } from './tokenize.js';
 import { fail } from './errors.js';
 // AST nodes retain spelling and token locations; no executor consumes this tree.
-export function parse(source) {
+export function parse(source,{module=false}={}) {
   const tokens=tokenize(source);let index=0,depth=0;
   const token=()=>tokens[index],is=v=>['identifier','symbol'].includes(token().kind)&&String(token().value).toUpperCase()===v;
   const take=()=>tokens[index++],eat=v=>is(v)?take():null;
@@ -45,10 +45,28 @@ export function parse(source) {
     if(eat('DIM')) {const name=identifier();let type=null,value=null;if(eat('AS'))type=identifier().value;if(eat('='))value=expression();result=node('declare',start,{name:name.value,type,value});}
     else if(eat('IF'))return branch(start,nesting);
     else if(eat('FOR')){expect('EACH');const name=identifier();expect('IN');const items=expression();endLine();const body=block(['NEXT'],nesting+1);expect('NEXT');if(token().kind==='identifier'){const next=take();if(next.value.toLowerCase()!==name.value.toLowerCase())fail('NAME','NEXT variable does not match.',next.location);}endLine();return node('forEach',start,{name:name.value,items,body});}
-    else if(eat('RETURN'))result=node('return',start,{value:expression()});
+    else if(eat('RETURN'))result=node('return',start,{value:['newline','eof'].includes(token().kind)?null:expression()});
+    else if(eat('CALL'))result=node('procedureCall',start,{value:expression()});
     else if(eat('STOP'))result=node('stop',start,{value:['newline','eof'].includes(token().kind)?null:expression()});
     else {const reference=!!eat('SET');if(token().kind==='identifier'&&tokens[index+1].value==='='){const name=take();take();result=node('set',start,{name:name.value,reference,value:expression()});}else{if(reference)fail('SYNTAX','SET requires a variable assignment.',start.location);if(['SUB','FUNCTION','MODULE','EVENT','ASYNC','AWAIT','GOTO','REM','DO','WHILE','SELECT','IMPORT','NEW','TRY','THROW','ON'].some(is)&&tokens[index+1].value!=='.')fail('UNSUPPORTED',`Unsupported statement '${token().value}'.`,start.location);result=node('call',start,{value:expression()});}}
     endLine();return result;
   }
-  const body=block();return {kind:'program',location:{line:1,column:1,offset:0},body};
+  const location={line:1,column:1,offset:0};
+  if(!module){const body=block();return {kind:'program',location,body};}
+  const procedures=[],events=[];blank();
+  while(token().kind!=='eof'){
+    const start=token();
+    if(is('SUB')||is('FUNCTION')){
+      const kind=take().value.toUpperCase(),name=identifier(),params=[];expect('(');blank();
+      if(!is(')'))do{blank();const param=identifier();expect('AS');const type=identifier();params.push(node('parameter',param,{name:param.value,type:type.value}));blank();}while(eat(','));expect(')');
+      let returns=null;if(kind==='FUNCTION'){expect('AS');returns=identifier().value;}endLine();
+      const body=block(['END']);expect('END');expect(kind);endLine();procedures.push(node('procedure',start,{name:name.value,procedureKind:kind.toLowerCase(),params,returns,body}));
+    }else if(eat('EVENT')){
+      const name=identifier();let type=name.value;if(eat('.'))type+='.'+identifier().value;endLine();
+      const body=block(['END']);expect('END');expect('EVENT');endLine();events.push(node('event',start,{type,body}));
+    }else fail('SYNTAX','Modules contain only SUB, FUNCTION and EVENT declarations.',start.location);
+  }
+  return {kind:'module',location,procedures,events};
 }
+
+export const parseModule=source=>parse(source,{module:true});

@@ -1,4 +1,4 @@
-# WydBASIC — 0.2-K
+# WydBASIC — 0.2-L
 
 WydBASIC is the first WydStitch dialect. **WydBASIC should feel like VB6 evolved
 into a portable, capability-safe application language.** Make common application
@@ -48,11 +48,11 @@ cannot be called until assigned a valid handle.
 
 Variables must be declared before use. Names are at most 64 ASCII letters, digits
 or underscores, starting with a letter or underscore. Keywords, context and reserved security
-names cannot be declared. Declaration names are unique across the whole source,
+names cannot be declared. Declaration names are unique within each handler or procedure frame,
 even across mutually exclusive branches and loops. Branch declarations are visible
 only while compiling that branch and cannot be referenced after END IF. Loop
 variables are fresh, exist only within the loop and cannot shadow existing names.
-These conservative rules avoid SEWN's invocation-wide redeclaration ambiguity.
+These conservative rules avoid SEWN's frame-wide redeclaration ambiguity.
 DIM inside FOR EACH is deferred; initialize accumulators before the loop.
 
 ## Values and expressions
@@ -148,10 +148,11 @@ IF result.ok THEN
 END IF
 ```
 
-SERVICES.Call is accepted as a standalone statement or directly as a DIM initializer.
+In handler-body `compile(source)`, SERVICES.Call is accepted as a standalone statement or directly as a DIM initializer.
 Library and service names must be literal strings; inputs must be JSON-safe.
-Nested service expressions and assignment of service results to existing variables
-are deferred because SEWN service `into` declares a new variable. Compilation
+That compatibility path still targets `sewn/0.1`, whose service `into` declares a new variable.
+Module compilation targets `sewn/0.2` and additionally lowers nested service expressions,
+including FUNCTION returns and assignment, to explicit SEWN `serviceCall` expressions. Compilation
 neither discovers libraries nor grants permissions. The existing dispatcher
 returns `{ok,value}` or a structured failure under the original caller authority.
 
@@ -185,13 +186,112 @@ validation apply SEWN-compatible limits. Output has no timestamps, random IDs or
 machine paths. SEWN owns execution limits and errors.
 
 No generated JavaScript, eval, Function construction, raw host/runtime calls,
-imports, modules, sockets, filesystem, DOM or authority shortcuts exist. Host names
+imports, sockets, filesystem, DOM or authority shortcuts exist. Host names
 such as process/globalThis/window/document/require/fs are undefined source names.
 Trusted JavaScript registrations remain a separate host API.
 
+## Procedures and event modules
+
+`compileModule(source, {registry = new EventRegistry()})` and `parseModule(source)`
+are separate APIs from handler-body `compile`/`parse`. A module contains only
+module-level SUB, FUNCTION and EVENT declarations; their order is immaterial to
+procedure resolution. It returns frozen `{events:[{type,workflow}]}` metadata.
+Every workflow is independently validated, frozen `sewn/0.2`, containing the shared
+procedure table. Metadata and ASTs never execute. There is no WydBASIC VM or call stack.
+
+```basic
+FUNCTION HasName(value AS String) AS Boolean
+    RETURN value <> ""
+END FUNCTION
+
+SUB SetHeading(value AS String)
+    Me.Set("title", value)
+    RETURN
+END SUB
+
+EVENT Page.Load
+    DIM name = REQUEST.Query.Get("name")
+    IF name <> NULL THEN
+        IF HasName(name) THEN
+            CALL SetHeading(name)
+        END IF
+    END IF
+END EVENT
+```
+
+Parameters require `AS String|Number|Boolean|Null|Array|Object|Wydgit` and are ByVal.
+Zero or multiple parameters are supported; names are case-insensitive and unique
+in the frame. Procedures normalize to lowercase, cannot overload or collide with
+reserved language/context/security names, and resolve statically within this document.
+Use `CALL Name(args)` for SUBs and `Name(args)` in expressions for FUNCTIONs.
+Calling a FUNCTION as a SUB or using a SUB as an expression fails compilation.
+Statically known argument counts/types and result types are checked; dynamic inputs
+and results receive the corresponding small SEWN runtime type checks.
+
+Each call gets parameters and its own DIM/local variables. It cannot read caller
+locals or leak its locals back to callers. Local data is copied/frozen; an opaque
+Wydgit reference retains its existing invocation guard and scope, without JSON
+serialization. Wydgit assignment still requires SET. A nullable Wydgit parameter
+may receive NULL; calling methods on it still fails safely. Functions may return
+scoped Wydgit references within execution, but workflow results/services/JSON
+containers cannot serialize them.
+
+FUNCTION requires explicit `RETURN expression`; obvious fallthrough is rejected by
+the compiler and all fallthrough is rejected by SEWN at runtime. SUB can complete
+normally or use bare RETURN for early exit. SUB cannot return a value. STOP is
+workflow-only; procedures use RETURN. RETURN from a procedure ends only that call.
+FUNCTION name assignment as an implicit result is unsupported.
+
+Direct and indirect recursion are rejected through a static call graph, including
+unused procedures and unreachable calls. SEWN additionally bounds calls to 256,
+active procedure depth to 16 and parameters per call to 16. The existing 64-variable
+bound counts all live locals, loop variables and parameters across active frames.
+`sewnProcedureCalls`, `sewnProcedureDepth`, `sewnParameters`, and `sewnVariables`
+in ExecutionContext can reduce these bounds. Steps, loops, services and the deadline
+are shared for the whole execution; calls obtain no fresh budget or authority.
+DIM inside FOR EACH remains deferred, including inside a procedure.
+
+EVENT blocks have no parameters. Built-in or custom names resolve case-insensitively
+against the supplied registry; unknown or ambiguous matches and duplicate EVENT
+blocks fail with located WYDBASIC errors. Custom events must already be defined.
+ME is the registered owner; EVENT.Source/Target retain existing dispatcher meanings.
+EVENT, REQUEST, RESPONSE, SESSION, PAGE, SERVER, CLIENT and SERVICES retain their
+existing availability, safe facade and authority checks inside calls. A server
+procedure using CLIENT still fails EVENT.CONTEXT. Functions can mutate or call
+services sequentially if authorized; FUNCTION does not promise purity.
+
+Handler registration:
+
+```js
+{owner:'home', wydBasicModule: source}
+```
+
+Modules choose exactly one implementation, expand deterministically into ordinary
+workflow records during setup, and are never compiled during dispatch. Raw handler
+`wydBasic` stays a body, not an ambiguous module. Use the normal `workflow` records
+from `compileModule` when explicit manual registration is useful.
+
+Action registration can use a module declaring exactly its one routed event:
+
+```js
+{page:'home', target:'form', type:'Submit', method:'POST',
+ capability:'app.forms.submit', wydBasicModule: submitSource}
+```
+
+The action target is ME. The host still owns page/target/method, capability/domain
+policy, CSRF and validation gates. EVENT Submit supplies behavior and cannot redefine
+routing. A handler module can declare multiple events sharing procedures; an action
+module must declare exactly its routed event to prevent silently unused registrations.
+Page execution and WydClient support the same module mechanism through their existing
+facades; registration does not cause unavailable events or contexts to exist.
+
+`test/wydbasic-module-integration.test.js` proves real HTTP Submit → HasName/SaveName/
+ShowThankYou → WydStore → request-local replacement → rendered Thank you, including
+CSRF/capability denial and subsequent/concurrent request isolation. The independent
+`test/sewn-procedures.test.js` imports no WydBASIC and proves SEWN owns execution.
+
 Deferred: REM, line numbers, semicolons, array indexing syntax, arbitrary dynamic
-methods, procedures (SUB/FUNCTION), MODULE, source-declared EVENT, ASYNC/AWAIT,
-TRY/CATCH/THROW, NEW/classes, GOTO, DO/LOOP, WHILE, SELECT CASE, lambdas, imports,
-recursion, formatter/debugger/LSP and other source dialects. Future syntax may add
-procedures and natural service facades only by compiling to canonical SEWN under
-SEAM; none of it is available in this foundation.
+methods, cross-file modules/imports, ByRef/Optional/ParamArray/default parameters,
+overloads, recursion, nested procedures, lambdas/closures/delegates, classes/NEW/
+inheritance, ASYNC/AWAIT, threads/parallelism, TRY/CATCH/THROW, GOTO, DO/LOOP,
+WHILE, SELECT CASE, formatter/debugger/LSP and other source dialects.

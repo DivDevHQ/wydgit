@@ -200,7 +200,7 @@ test('demo renders from an edited snapshot and version metadata stays synchroniz
  const pkg=JSON.parse(fs.readFileSync(new URL('../package.json',import.meta.url)));
  const lock=JSON.parse(fs.readFileSync(new URL('../package-lock.json',import.meta.url)));
  const app=JSON.parse(fs.readFileSync(new URL('../content/app.json',import.meta.url)));
- assert.equal(pkg.version,'0.2.0-alpha.11');assert.equal(pkg.name,'wydgit');assert.equal(app.properties.revision,'Wydgit 0.2 alpha 11');
+ assert.equal(pkg.version,'0.2.0-alpha.12');assert.equal(pkg.name,'wydgit');assert.equal(app.properties.revision,'Wydgit 0.2 alpha 12');
  assert.equal(lock.version,pkg.version);assert.equal(lock.packages[''].version,pkg.version);assert.equal(lock.name,pkg.name);assert.equal(lock.packages[''].name,pkg.name);
 });
 

@@ -58,6 +58,23 @@ test('Hono TCP host preserves routes, HEAD, security, asset cache and approved r
   for (const module of ['wydclient/index.js', 'wydgine/events/index.js', 'wydgine/object-model/validation.js', 'wydgine/seam/context.js', 'wydgine/seam/capabilities.js', 'wydgine/http/input.js']) {
     const response = await fetch(url + '/runtime/' + module); assert.equal(response.status, 200); assert.match(response.headers.get('content-type'), /javascript/); security(response); assert.equal(await response.text(), await fs.readFile(path.join(projectRoot, module), 'utf8'));
   }
+  // Follow actual imports: the browser must be able to load the entire portable
+  // compiler/executor graph, while host-only implementation routes remain private.
+  const pending = [url + '/runtime/wydclient/index.js'], visited = new Set();
+  while (pending.length) {
+    const moduleUrl = pending.shift(); if (visited.has(moduleUrl)) continue; visited.add(moduleUrl);
+    const response = await fetch(moduleUrl); assert.equal(response.status, 200, moduleUrl);
+    assert.match(response.headers.get('content-type'), /javascript/);
+    const source = await response.text();
+    for (const [, dependency] of source.matchAll(/(?:import|export)[^\n]*?from\s+['"]([^'"]+)['"]/g)) {
+      assert.match(dependency, /^\./, 'Portable runtime must not import native/package APIs');
+      pending.push(new URL(dependency, moduleUrl).href);
+    }
+  }
+  assert.ok(visited.has(url + '/runtime/wydgine/events/registry.js'));
+  assert.ok(visited.has(url + '/runtime/wydgine/wydbasic/compile.js'));
+  assert.ok(visited.has(url + '/runtime/wydgine/sewn/execute.js'));
+  for (const module of ['wydgine/execution/page.js', 'wydgine/http/transport/hono.js', 'packages/wydstore/src/core.js']) assert.equal((await fetch(url + '/runtime/' + module)).status, 404);
 });
 
 test('bounded forms, cookies, Change payload, explicit responses and concurrent isolation cross real Hono transport', async t => {
@@ -134,6 +151,6 @@ for (const signal of ['SIGINT', 'SIGTERM']) test(`server entrypoint gracefully e
   const exited = once(child, 'exit');
   let output = '';
   await new Promise((resolve, reject) => { child.stdout.on('data', chunk => { output += chunk; if (/http:\/\/127\.0\.0\.1:\d+/.test(output)) resolve(); }); child.once('error', reject); child.once('exit', () => reject(new Error('Server exited before listen'))); });
-  assert.match(output, /Wydgit 0\.2\.0-alpha\.11/); child.kill(signal);
+  assert.match(output, /Wydgit 0\.2\.0-alpha\.12/); child.kill(signal);
   const [code, termination] = await exited; assert.equal(code, 0); assert.equal(termination, null);
 });

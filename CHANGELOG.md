@@ -7,6 +7,41 @@ breaking architectural changes.
 
 ## Unreleased
 
+## 0.2.0-alpha.12 — 0.2-L
+### WydBASIC Procedures + Event Modules
+
+- Added closed canonical `sewn/0.2` procedure declarations, SUB calls, FUNCTION
+  expressions and sequential service expressions; preserved `sewn/0.1` grammar,
+  execution and existing handler-body/run/workflow/wydBasic registrations.
+- SEWN owns typed ByVal parameters, isolated local frames, explicit return signals,
+  fail-closed FUNCTION completion and shared step/loop/service/deadline budgets.
+  Added call-count/depth/parameter limits and aggregate live-variable bounds;
+  static call graphs reject direct/indirect recursion before execution.
+- Added located WydBASIC SUB/FUNCTION, CALL, RETURN and parameterless EVENT parsing,
+  case-insensitive static procedure resolution, kind/arity/type diagnostics,
+  duplicate-name/event checks and compile-time obvious missing-result detection.
+- Added separate compileModule and exclusive wydBasicModule registration, expanded
+  into validated SEWN workflows at setup for Pages, server lifecycle and WydClient.
+  Registry-backed event normalization rejects unknown/ambiguous names. Completed
+  the explicit browser-safe runtime module allowlist and tested its import closure. HTTP action
+  modules supply only behavior; routing, validation, CSRF and capability policy remain
+  in host metadata and the existing pipeline.
+- Preserved the exact caller ExecutionContext and scoped/stale Wydgit handles through
+  nested calls. No JavaScript generation, WydBASIC interpreter, native access,
+  reflective invocation, closure or authority union was introduced.
+- Added independent hand-authored SEWN procedure tests (no compiler import), source
+  diagnostics/runtime tests, Page/client/server event integration and real HTTP
+  EVENT Submit → FUNCTION/SUB → WydStore → request-local replacement → rendered
+  success, including denial, CSRF, deterministic compilation and request isolation.
+- Advanced platform/lockfile/App/current-version metadata to `0.2.0-alpha.12`;
+  WydStore, WydGate and other workspace versions remain unchanged. Updated SEWN,
+  WydBASIC, event and current-version documentation.
+- Deferred recursion, ByRef/Optional/ParamArray/defaults/overloads, nested procedures,
+  classes/NEW/inheritance, lambdas/closures, async/parallelism, cross-file imports,
+  debugger/formatter/LSP, additional control-flow syntax and DIM inside FOR EACH.
+- Verification: focused procedure/compiler/HTTP tests; full `npm test`,
+  `npm run check` and `git diff --check`. Manual browser verification not performed.
+
 ## 0.2.0-alpha.11 — 0.2-K
 ### WydBASIC Compiler Foundation
 

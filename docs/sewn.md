@@ -1,11 +1,11 @@
-# SEWN — 0.2-J
+# SEWN — 0.2-L
 
 SEWN means **SEAM Execution Workflow Notation**. WydStitch writes it. SEWN describes
 it. SEAM constrains it. Wydgine or WydClient runs it. [WydBASIC](wydbasic.md)
 compiles to SEWN in 0.2-K; future WydStitch dialects may use the same boundary.
 
-A document is exactly `{ "schema": "sewn/0.1", "body": [] }`. The closed executable
-grammar is defined in `wydgine/sewn/schema.js` and validated by `validate.js`.
+A historical `sewn/0.1` document is exactly `{ "schema": "sewn/0.1", "body": [] }`.
+The closed executable grammar is defined in `wydgine/sewn/schema.js` and validated by `validate.js`.
 Unknown fields/operations, accessors, functions, native objects, cycles, sparse
 arrays and reserved `__proto__`, `constructor`, `prototype` keys are rejected.
 Programs are copied and frozen before execution. They contain only JSON data.
@@ -48,8 +48,9 @@ AND/OR short circuit. There is no coercion or source expression parsing.
 branches do not create a separate namespace. Loops cannot reuse an existing name.
 Return/Stop terminate only the current workflow, not the event lifecycle. The
 executor returns `{status: 'completed'|'returned'|'stopped', value}`; event dispatch
-ignores this value. There are no procedures, recursion, unbounded loops or parallel
-execution. All statements, expressions, arguments and service calls run in order.
+ignores this value. Version 0.1 has no procedures. Neither version permits recursion,
+unbounded loops or parallel execution. All statements, expressions, arguments and
+service calls run in order.
 
 ## Context and authority
 
@@ -117,5 +118,75 @@ workflow through WydClient; client mutations/services beyond existing bindings a
 not claimed. Trusted JS remains kernel/test code, never portable package source.
 
 Additional source languages, durable replay/queues, debugger, dynamic imports, arbitrary
-networking, general reflection, user procedures and full client feature parity
-remain deferred. WydBASIC adds only a compiler front end.
+networking, general reflection and full client feature parity remain deferred.
+WydBASIC adds only a compiler front end.
+
+## Version 0.2: procedure semantics
+
+`sewn/0.1` retains its closed grammar and execution behavior. `sewn/0.2` is exactly
+`{schema:'sewn/0.2', procedures:{...}, body:[...]}`. Its procedure table maps static
+canonical lowercase names to one of:
+
+```json
+{
+  "hasname": {
+    "kind": "function",
+    "params": [{"name":"value", "type":"String"}],
+    "returns": "Boolean",
+    "body": [{"op":"return", "value":{
+      "op":"binary", "operator":"!=",
+      "left":{"op":"variable", "name":"value"},
+      "right":{"op":"literal", "value":""}
+    }}]
+  },
+  "noop": {"kind":"sub", "params":[], "body":[]}
+}
+```
+
+The validator checks declaration shape, unique parameters, known source types,
+static targets, kind/arity and the complete call graph. Unknown procedures and any
+cycle fail SEWN.INVALID before execution, even in unused code. Reserved language,
+context/security and prototype names cannot declare procedures. There are no host
+functions, closures, reflection, dynamic names or method pointers in the table.
+
+0.2 adds these closed operations:
+
+| operation | fields / meaning |
+| --- | --- |
+| procedureCall statement | name, args: call a SUB with no result |
+| functionCall expression | name, args: call a FUNCTION and obtain a typed result |
+| serviceCall expression | library, method, input: sequential canonical SERVICES.Call result |
+
+Facade `call`/`invoke` remain separate allowlisted operations. The old `service`
+statement remains available. Service expressions use the same caller-bound dispatcher,
+result envelope, JSON validation, service counter and deadline; they add no authority.
+
+Arguments evaluate sequentially in the caller frame before a fresh callee frame is
+created. Parameters are ByVal; data is copied/frozen and Wydgit parameters retain
+opaque scoped tokens. Types are String, Number, Boolean, Null, Array, Object and
+nullable Wydgit; parameters and FUNCTION results are runtime checked without coercion.
+Callee locals never see caller locals, and frame restoration happens on return or
+failure. Only contextual bindings (including SERVICES through service operations)
+remain shared. Wydgit results can flow between procedure frames but cannot escape
+as a workflow JSON result or service payload.
+
+In a SUB, `return` has no value and terminates the call; reaching the end also
+completes the SUB. In a FUNCTION, `return` requires a value of the declared type;
+fallthrough fails SEWN.TYPE. A workflow RETURN still requires JSON data. STOP is
+workflow-only, so it cannot ambiguously terminate a procedure's caller. Return signals
+are internal to SEWN, never WydBASIC AST execution.
+
+All calls retain the same ExecutionContext, facade guards, reference tokens and
+whole-execution counters/deadline. Hard maxima are 256 procedure calls, 16 active
+procedure frames and 16 parameters per call. `sewnProcedureCalls`,
+`sewnProcedureDepth`, `sewnParameters` reduce these maxima, including to zero.
+`sewnVariables` limits all simultaneously live variables/parameters/loop variables
+across active frames (64 by default). Frame exit releases locals; repeat calls are
+bounded by call/step budgets. Existing expression and value/string limits apply
+within every frame; structured statement nesting is carried through calls; loops, services, steps and time remain
+shared. Calls cannot reset budgets or union callee grants.
+
+Independent hand-authored `test/sewn-procedures.test.js` covers schema/kind/arity,
+frames, parameters/results, completion, cycles, bounds, services, authority and
+opaque/stale handles. It does not import the WydBASIC compiler. Both schema versions
+execute through the same `execute.js` evaluator and existing SEAM-constrained facades.

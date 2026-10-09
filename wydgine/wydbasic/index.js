@@ -1,3 +1,3 @@
 export { tokenize } from './tokenize.js';
-export { parse } from './parse.js';
-export { compile } from './compile.js';
+export { parse,parseModule } from './parse.js';
+export { compile,compileModule } from './compile.js';

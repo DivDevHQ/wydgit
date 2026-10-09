@@ -1,46 +1,19 @@
-import { compile as compileWydBasic } from '../wydbasic/index.js';
+import { compile as compileWydBasic,compileModule } from '../wydbasic/index.js';
 import { validate as validateWorkflow } from '../sewn/validate.js';
 import { execute as executeWorkflow } from '../sewn/execute.js';
-import { clean, freeze, record, requireThat as check, WydgitError } from '../object-model/validation.js';
+import { freeze, requireThat as check, WydgitError } from '../object-model/validation.js';
 import { checkContext } from '../seam/context.js';
 export const fail = (code='EVENT.INVALID') => { throw new WydgitError(code,'Event operation failed'); };
 export const safeError = error => new WydgitError(error instanceof WydgitError ? error.code : 'EVENT.HANDLER_FAILED','Execution failed');
-const types=['string','number','boolean','object','array','null','json'];
-export class EventRegistry {
-  #events=new Map();
-  constructor() {
-    for(const [family,names] of Object.entries({Server:['Start','Stop'],Session:['Start','Authenticated','Logout','Timeout','End'],Page:['Start','Initialize','Load','Validate','PreRender','Unload'],Client:['Mount','Ready','Unmount']}))
-      for(const name of names)this.define(`${family}.${name}`,{family,fields:{},cancelable:false});
-    this.define('Activate',{family:'Semantic',cancelable:true,fields:{Command:{type:'string',optional:true}}});
-    this.define('Change',{family:'Semantic',cancelable:true,fields:{OldValue:{type:'json'},NewValue:{type:'json'}}});
-    this.define('Submit',{family:'Semantic',cancelable:true,fields:{}});
-  }
-  define(name,input) {
-    check(typeof name==='string'&&/^[A-Za-z][A-Za-z0-9]*(?:\.[A-Za-z][A-Za-z0-9]*)?$/.test(name)&&!this.#events.has(name),'EVENT.INVALID','Invalid event definition');
-    const d=clean(input);check(record(d)&&Object.keys(d).every(k=>['family','cancelable','fields'].includes(k))&&['Server','Session','Page','Client','Semantic','Custom'].includes(d.family)&&typeof d.cancelable==='boolean'&&record(d.fields),'EVENT.INVALID','Invalid event schema');
-    for(const rule of Object.values(d.fields))check(record(rule)&&Object.keys(rule).every(k=>['type','optional'].includes(k))&&types.includes(rule.type)&&(rule.optional===undefined||typeof rule.optional==='boolean'),'EVENT.INVALID','Invalid payload rule');
-    check(['Semantic','Custom'].includes(d.family)||!d.cancelable,'EVENT.INVALID','Lifecycle cannot cancel');
-    this.#events.set(name,freeze(d));return this;
-  }
-  get(name){check(this.#events.has(name),'EVENT.INVALID','Unknown event');return this.#events.get(name);}
-  payload(name,input) {
-    const value=clean(input),d=this.get(name);check(record(value)&&JSON.stringify(value).length<=16384,'EVENT.LIMIT','Payload limit');
-    function depth(v,n=0){check(n<=16,'EVENT.LIMIT','Payload depth');if(v&&typeof v==='object')Object.values(v).forEach(x=>depth(x,n+1));}depth(value);
-    check(Object.keys(value).every(k=>Object.hasOwn(d.fields,k)),'EVENT.INVALID','Unknown payload field');
-    for(const [key,rule] of Object.entries(d.fields)) {
-      if(!Object.hasOwn(value,key)){check(rule.optional===true,'EVENT.INVALID','Missing payload field');continue;}
-      const v=value[key],type=v===null?'null':Array.isArray(v)?'array':typeof v;
-      check(rule.type==='json'||rule.type===type,'EVENT.INVALID','Invalid payload type');
-    }
-    return freeze(value);
-  }
-}
+export { EventRegistry } from './registry.js';
+import { EventRegistry } from './registry.js';
 export function handler(fn) {
   // Trusted JS bridge only; portable source uses the separate SEWN compiler.
   const source=typeof fn==='function'?Function.prototype.toString.call(fn):'';
   check(/^(?:async\s+)?(?:function(?:\s+[\w$]+)?\s*)?\(\s*\)/.test(source)&&fn.length===0,'EVENT.INVALID','Handlers must declare no parameters');return fn;
 }
 export function prepareHandler(record) {
+  check(record.wydBasicModule===undefined,'EVENT.INVALID','Modules require registration preparation');
   check(['run','workflow','wydBasic'].filter(key=>record[key]!==undefined).length===1,'EVENT.INVALID','Choose one handler implementation');
   if(record.wydBasic!==undefined) {
     const {wydBasic,...rest}=record;
@@ -48,9 +21,27 @@ export function prepareHandler(record) {
   }
   return record.workflow!==undefined?{...record,workflow:validateWorkflow(record.workflow)}:{...record,run:handler(record.run)};
 }
+// Expand modules once at setup. The resulting records use only the existing workflow path.
+export function prepareHandlers(records,registry=new EventRegistry()) {
+  return records.flatMap(record=>{
+    if(record.wydBasicModule===undefined)return [prepareHandler(record)];
+    check(['run','workflow','wydBasic','wydBasicModule'].filter(key=>record[key]!==undefined).length===1,'EVENT.INVALID','Choose one handler implementation');
+    check(typeof record.owner==='string'&&record.type===undefined,'EVENT.INVALID','A module declares its own event types and requires an owner');
+    const {wydBasicModule,...rest}=record;
+    return compileModule(wydBasicModule,{registry}).events.map(event=>({...rest,...event}));
+  });
+}
+export function prepareAction(record,registry=new EventRegistry()) {
+  if(record.wydBasicModule===undefined)return prepareHandler(record);
+  check(['run','workflow','wydBasic','wydBasicModule'].filter(key=>record[key]!==undefined).length===1,'EVENT.INVALID','Choose one action implementation');
+  check(record.owner===undefined||record.owner===record.target,'EVENT.INVALID','Action owner must be the routed target');
+  const {wydBasicModule,...rest}=record,events=compileModule(wydBasicModule,{registry}).events;
+  check(events.length===1&&events[0].type===record.type,'EVENT.INVALID','Action modules must declare exactly the routed event');
+  return {...rest,workflow:events[0].workflow};
+}
 export function createDispatcher({registry=new EventRegistry(),handlers=[],context,handle,contexts=()=>({}),exists=()=>true,defaults={},limit={},completed=()=>false,runtimeTarget='server',identifiers={},reusable=false,canRaise=exists}) {
   checkContext(context);
-  const records=handlers.map((r)=>{const d=registry.get(r.type);check(['Semantic','Custom'].includes(d.family)||r.source===undefined||r.source===r.owner,'EVENT.INVALID','Lifecycle handler owner must be recipient');check(typeof r.owner==='string','EVENT.INVALID','Missing owner');return prepareHandler(r);});
+  const records=prepareHandlers(handlers,registry).map((r)=>{const d=registry.get(r.type);check(['Semantic','Custom'].includes(d.family)||r.source===undefined||r.source===r.owner,'EVENT.INVALID','Lifecycle handler owner must be recipient');check(typeof r.owner==='string','EVENT.INVALID','Missing owner');return r;});
   const bounds={queue:64,dispatches:256,handlers:2048,depth:16,timeMs:5000,...limit};
   for(const key of Object.keys(bounds)){const grant=context.limits[`event${key[0].toUpperCase()+key.slice(1)}`];if(grant!==undefined)bounds[key]=Math.min(bounds[key],grant);check(Number.isSafeInteger(bounds[key])&&bounds[key]>0,'EVENT.LIMIT','Invalid limit');}
   let deadline=Date.now()+bounds.timeMs;

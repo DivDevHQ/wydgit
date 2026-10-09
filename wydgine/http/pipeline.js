@@ -1,4 +1,4 @@
-import { prepareHandler } from '../events/index.js';
+import { prepareHandlers,prepareAction } from '../events/index.js';
 import { loadRepository } from '../repository.js';
 import { executePage } from '../execution/page.js';
 import { createLifecycle,createSessionResolver } from '../execution/lifecycle.js';
@@ -7,7 +7,7 @@ import { ExecutionContext } from '../seam/context.js';
 import { createGate } from '@wydgit/gate/client';
 import { errorDocument,pagePath } from '../index.js';
 export function createPipeline({root,libraries,execution={},lifecycle}) {
-  execution={...execution,handlers:(execution.handlers??[]).map(prepareHandler),actions:(execution.actions??[]).map(prepareHandler)};
+  execution={...execution,handlers:prepareHandlers(execution.handlers??[],execution.events),actions:(execution.actions??[]).map(record=>prepareAction(record,execution.events))};
   const model=loadRepository(root),app=model.runtime.rootId;
   lifecycle??=createLifecycle({app,handlers:execution.lifecycleHandlers,context:execution.lifecycleContext});
   const ready=lifecycle.start();
@@ -33,7 +33,7 @@ export function createPipeline({root,libraries,execution={},lifecycle}) {
         input.action={target:single('_target'),type:single('_action'),csrf:single('_csrf'),payload:{}};
         if(input.action.type==='Change')input.action.payload={OldValue:model.runtime.get(input.action.target).properties.value,NewValue:single('value')};
       }
-      result=await executePage({model,pageId:page.id,session,input,context,handlers:execution.handlers,actions:execution.actions,files:execution.files,libraries,csrf:session.csrf});
+      result=await executePage({model,pageId:page.id,session,input,context,handlers:execution.handlers,actions:execution.actions,events:execution.events,files:execution.files,libraries,csrf:session.csrf});
       await result.response.send(res,req.method==='HEAD');
     }catch{if(!res.headersSent){res.statusCode=400;res.setHeader('Content-Type','text/html; charset=utf-8');res.end(errorDocument());}else res.destroy();}
     finally{await result?.response.close();}
