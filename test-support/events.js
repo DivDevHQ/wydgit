@@ -5,7 +5,7 @@ import { ExecutionContext } from '../wydgine/seam/context.js';
 import { executePage } from '../wydgine/execution/page.js';
 import { EventEmitter } from 'node:events';
 export const envelope=(id,kind,properties={},slots={})=>({schema:'wydgit/0.2',id,prototype:`wydgit.core/${kind}`,properties,slots,provenance:{}});
-export function modelFixture(){const base=loadRepository(process.cwd()),raw=dehydrate(base.runtime);raw.slots.pages=[envelope('home','page',{title:'Test',slug:''},{sections:[envelope('section','section',{}, {blocks:[envelope('form','form',{}, {fields:[envelope('name','field',{name:'name',label:'Name',required:true}),envelope('note','field',{name:'note',label:'Note'})]})]})]})];raw.properties.home='home';raw.slots.navigation=[];return webModel(hydrate(raw,base.registry),base);}
+export function modelFixture(){const base=loadRepository(process.cwd()),raw=dehydrate(base.runtime);raw.slots.pages=[envelope('home','page',{title:'Test',slug:''},{sections:[envelope('section','section',{}, {blocks:[envelope('form','form',{}, {blocks:[envelope('name','field',{name:'name',label:'Name',required:true}),envelope('note','field',{name:'note',label:'Note'})]})]})]})];raw.properties.home='home';raw.slots.navigation=[];return webModel(hydrate(raw,base.registry),base);}
 export const session={view:{id:'sessionA',app:'app',authenticated:false},active:()=>true,authorize:async()=>{}};
 export function fixture(extra={}){
  const model=modelFixture(),app=model.runtime.rootId,ids=['home','section','form','name','note','thanks','extra'];

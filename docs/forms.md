@@ -1,11 +1,13 @@
-# Portable Forms — 0.2-N
+# Portable Forms — 0.2-O
 
 `wydgit.core/form` inherits `wydgit.core/section`. Form is a first-class semantic
 Wydgit and submission scope, independent of HTTP, HTML, Node and DOM. Sections
 retain their `blocks` slot, now accepting Blocks, Sections and Fields. Blocks gain
-an optional `children` slot with those same types. Forms retain the legacy `fields`
-slot as ordinary containment for 0.2-H compatibility; it is neither required nor a
-parallel index. Normal content, help text and layout can surround fields.
+an optional `children` slot with those same types. Form inherits Section and fields
+participate in the ordinary containment tree. Form behavior discovers descendant
+Fields recursively by containment ancestry. Normal content, help text and layout
+can surround fields. The removed `Form.fields` slot fails as an unknown slot;
+there is no alias, translation or migration compatibility.
 
 Every descendant Field belongs to its nearest containing Form. Traversal visits
 slots in lexical order and children in canonical array order. Fields need not be
@@ -143,7 +145,7 @@ uses existing action authority. These hooks/elements stay in trusted host code;
 portable handlers receive no native objects. The client adapter does not implement
 canonical tree attachment or storage. Windows/mobile controls and renderers,
 automatic client bootstrap, Reset, advanced validators and cross-field rules are
-deferred. The Guestbook reference applet is deferred to 0.2-O.
+deferred. The Guestbook reference applet remains deferred.
 
 `test/forms.test.js` provides the ProfileForm vertical fixture and direct hostile
 object/mutation/draft, shared rule, portable source/Page and client tests. Existing

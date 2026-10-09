@@ -7,6 +7,17 @@ breaking architectural changes.
 
 ## Unreleased
 
+## 0.2.0-alpha.15 — 0.2-O
+### Remove Legacy Form fields Slot
+
+- Removed `Form.fields`; Form continues to inherit Section, with normal containment
+  as the sole structural model. Recursive descendant field semantics remain unchanged.
+- Nested Forms remain forbidden through hydration, mutations and draft construction.
+  Old slot content fails as an unknown slot; no migration compatibility is retained
+  because no external content depends on this pre-release shape.
+- Updated Form/event fixtures, rejection regressions, docs and platform/lockfile/App
+  metadata to `0.2.0-alpha.15`; independently versioned libraries are unchanged.
+
 ## 0.2.0-alpha.14 — 0.2-N
 ### Portable Form Wydgit + Semantic Field Primitives
 

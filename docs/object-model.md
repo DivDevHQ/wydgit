@@ -178,3 +178,12 @@ automatic IDs/persistence, remote loading and slot-property sugar are deferred.
 ## 0.2-N portable Forms
 
 Form now inherits Section. Section blocks and optional Block children accept nested layout and semantic Fields. All Form descendants share ownership; duplicate names and nested Forms fail canonical validation, including draft graphs. Property rules can declare a nonempty array of JSON types for nullable and single/multi values. Default exports redact PasswordInput values; trusted internal edits explicitly preserve sensitive state. See [forms.md](forms.md).
+
+
+## 0.2-O: one Form containment model
+
+Form inherits Section and fields participate in the ordinary containment tree,
+through inherited `blocks` and permitted descendant slots. Form behavior discovers
+descendant Fields recursively by containment ancestry. `Form.fields` is removed;
+persisted content using that slot fails with `OBJECT.UNKNOWN_SLOT`. No alias or
+migration is retained. Recursive field semantics and nested-Form denial are unchanged.

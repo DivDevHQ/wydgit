@@ -223,14 +223,7 @@
         "default": []
       }
     },
-    "slots": {
-      "fields": {
-        "accepts": [
-          "wydgit.core/field"
-        ],
-        "ordered": true
-      }
-    },
+    "slots": {},
     "behaviorSource": "FUNCTION Validate() AS Boolean\n RETURN Me.FormState(\"validate\")\nEND FUNCTION\nFUNCTION IsValid() AS Boolean\n RETURN Me.FormState(\"isValid\")\nEND FUNCTION\nFUNCTION Values() AS Object\n RETURN Me.FormState(\"values\")\nEND FUNCTION\nSUB Bind(data AS Object)\n Me.FormState(\"bind\", data)\nEND SUB\nSUB Clear()\n Me.FormState(\"clear\")\nEND SUB"
   },
   {

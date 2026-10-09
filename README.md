@@ -71,7 +71,7 @@ The architectural contract is:
 
 [`docs/FOUNDING-ARCHITECTURE.md`](docs/FOUNDING-ARCHITECTURE.md)
 
-Current development version: **0.2.0-alpha.14**. Completed platform milestones
+Current development version: **0.2.0-alpha.15**. Completed platform milestones
 update `package.json`, matching root metadata in `package-lock.json`, and
 `content/app.json` → `properties.revision` together. Version updates do not create
 Git tags or publish releases. Completed milestones also update [CHANGELOG.md](CHANGELOG.md).

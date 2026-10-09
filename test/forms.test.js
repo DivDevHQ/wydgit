@@ -27,6 +27,26 @@ test('Form is Section, owns recursive fields through ordinary Blocks/Sections, d
  assert.equal(fieldOwner(f.runtime,f.base.registry,'password'),'profile');assert.equal(fieldOwner(f.runtime,f.base.registry,'intro'),'profile');
  const dup=structuredClone(f.raw);dup.slots.pages[0].slots.sections[0].slots.blocks[1].slots.blocks[0].properties.name='name';assert.throws(()=>hydrate(dup,f.base.registry),{code:'FORM.NAME'});
 });
+test('Form uses only inherited blocks; legacy fields fail hydration, mutation and draft insertion',()=>{
+ const f=fixture(),definition=f.base.registry.get('wydgit.core/form');
+ assert.deepEqual(Object.keys(definition.slots),['blocks']);
+ assert.deepEqual(definition.slots,f.base.registry.get('wydgit.core/section').slots);
+ const direct=envelope('replacement','field',{name:'direct'}),edit=f.runtime.edit(f.context);
+ edit.insertChild('profile','blocks',0,direct);const runtime=edit.commit().runtime;
+ assert.deepEqual(descendantFields(runtime,f.base.registry,'profile').map(n=>n.id),['replacement','name','password','bio','subscribe','contact','interests','state','states']);
+ assert.equal(fieldOwner(runtime,f.base.registry,'replacement'),'profile');
+ assert.equal(Object.hasOwn(dehydrate(runtime).slots.pages[0].slots.sections[0].slots,'fields'),false);
+ for(const children of [[],[direct]]){
+  const raw=structuredClone(f.raw);raw.slots.pages[0].slots.sections[0].slots.fields=children;
+  assert.throws(()=>hydrate(raw,f.base.registry),{code:'OBJECT.UNKNOWN_SLOT'});
+ }
+ const denied=f.runtime.edit(f.context);assert.throws(()=>denied.insertChild('profile','fields',0,direct),{code:'MUTATION.INVALID_SLOT'});
+ assert.equal(denied.commit().runtime.get('profile').slots.blocks.length,2);
+ const drafts=construction(f.base.registry,f.context,{...MAXIMA},()=>{}),form=drafts.create('wydgit.core/form','draftForm'),section=drafts.create('wydgit.core/section','draftSection');
+ assert.throws(()=>form.Insert('fields',0,section),{code:'OBJECT.UNKNOWN_SLOT'});
+ form.Insert('blocks',0,section);assert.equal(drafts.envelope(form).slots.blocks[0].id,'draftSection');
+ drafts.close();
+});
 test('nested Form hydration, insertion, move, replacement and draft subtree are atomically forbidden',()=>{
  const f=fixture(),nested=envelope('nested','form');f.form.slots.blocks.push(envelope('wrapper','section',{}, {blocks:[nested]}));assert.throws(()=>hydrate(f.raw,f.base.registry),{code:'FORM.NESTED'});
  for(const op of [e=>e.insertChild('preferences','blocks',0,nested),e=>e.replaceChild('intro',envelope('replacement','section',{}, {blocks:[nested]}))]){const e=f.runtime.edit(f.context);assert.throws(()=>op(e),{code:'FORM.NESTED'});assert.equal(e.commit().runtime.get('intro').id,'intro');}

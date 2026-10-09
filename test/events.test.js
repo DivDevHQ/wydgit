@@ -23,7 +23,7 @@ test('Page GET lifecycle is deterministic, root-only Start, reverse cleanup, and
 
 test('phase snapshots initialize additions once, skip removed recipients, and unload removed nodes',async()=>{
  const trace=[];const handlers=[
-  {type:'Page.Load',owner:'form',run:function(){this.ME.related('children','fields')[1].Remove();this.ME.Insert('fields',1,envelope('extra','field',{name:'extra'}));}},
+  {type:'Page.Load',owner:'form',run:function(){this.ME.related('children','blocks')[1].Remove();this.ME.Insert('blocks',1,envelope('extra','field',{name:'extra'}));}},
   {type:'Page.PreRender',owner:'section',run:function(){this.ME.Insert('blocks',1,envelope('thanks','block',{content:{type:'markdown',value:'Late'}}));}},
   ...['home','section','form','name','note','extra','thanks'].flatMap(owner=>['Initialize','Load','Validate','PreRender','Unload'].map(p=>({type:`Page.${p}`,owner,run:function(){trace.push(`${p}:${this.ME.id}`);}})))
  ];const result=await runPage({handlers});assert.equal(result.error,null);assert.match(result.transport.text,/Late/);
@@ -87,7 +87,7 @@ test('lifecycle Handled cannot suppress structural traversal and Cancel is inval
 });
 
 test('request-local deleted IDs stay reserved and custom field validation suppresses submission defaults',async()=>{
- const identity=await runPage({handlers:[{type:'Page.Load',owner:'form',run:function(){this.ME.related('children','fields')[1].Remove();assert.throws(()=>this.ME.Insert('fields',1,envelope('note','field',{name:'note'})),e=>e.code==='MUTATION.IDENTITY');}}]});assert.equal(identity.error,null);
+ const identity=await runPage({handlers:[{type:'Page.Load',owner:'form',run:function(){this.ME.related('children','blocks')[1].Remove();assert.throws(()=>this.ME.Insert('blocks',1,envelope('note','field',{name:'note'})),e=>e.code==='MUTATION.IDENTITY');}}]});assert.equal(identity.error,null);
  let defaults=0;
  const invalid=await runPage({input:{method:'POST',form:'name=Alice',action:{target:'form',type:'Submit',csrf:'c'.repeat(64),payload:{}}},handlers:[{type:'Page.Validate',owner:'name',run:function(){this.ME.Set('valid',false);this.ME.Set('errors',['Not accepted']);}}],actions:[{page:'home',target:'form',type:'Submit',method:'POST',capability:'app.forms.submit',run:function(){defaults++;}}]});assert.equal(invalid.error,null);assert.equal(defaults,0);assert.match(invalid.transport.text,/Not accepted/);
 });
