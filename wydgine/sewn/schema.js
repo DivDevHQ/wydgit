@@ -12,8 +12,8 @@ export const PROCEDURE_SCHEMA='sewn/0.2';
 export const sourceTypes=Object.freeze(['String','Number','Boolean','Null','Array','Object','Wydgit']);
 export const procedureStatements=Object.freeze({...statements,procedureCall:['name','args'],return:['value?']});
 export const procedureExpressions=Object.freeze({...expressions,functionCall:['name','args'],serviceCall:['library','method','input']});
-export const reservedNames=Object.freeze([...contextNames,'SERVICES','DIM','AS','SET','IF','THEN','ELSE','ELSEIF','END','FOR','EACH','IN','NEXT','RETURN','STOP','TRUE','FALSE','NULL','AND','OR','NOT','SUB','FUNCTION','CALL','EVENT','MODULE','ASYNC','AWAIT','GOTO','REM','DO','LOOP','WHILE','SELECT','TRY','CATCH','THROW','ON','CLASS','NEW','IMPORT','BYREF','OPTIONAL','PARAMARRAY','PROCESS','GLOBALTHIS','WINDOW','DOCUMENT','REQUIRE','EVAL','FS','CHILD_PROCESS']);
+export const reservedNames=Object.freeze([...contextNames,'SERVICES','NEWID','DIM','AS','SET','IF','THEN','ELSE','ELSEIF','END','FOR','EACH','IN','NEXT','RETURN','STOP','TRUE','FALSE','NULL','AND','OR','NOT','SUB','FUNCTION','CALL','EVENT','MODULE','ASYNC','AWAIT','GOTO','REM','DO','LOOP','WHILE','SELECT','TRY','CATCH','THROW','ON','CLASS','NEW','IMPORT','BYREF','OPTIONAL','PARAMARRAY','PROCESS','GLOBALTHIS','WINDOW','DOCUMENT','REQUIRE','EVAL','FS','CHILD_PROCESS']);
 
 export const OBJECT_SCHEMA='sewn/0.3';
 export const objectStatements=Object.freeze({...procedureStatements,methodCall:['target','name','args']});
-export const objectExpressions=Object.freeze({...procedureExpressions,methodValue:['target','name','args'],construct:['type','id']});
+export const objectExpressions=Object.freeze({...procedureExpressions,methodValue:['target','name','args'],construct:['type','id'],newId:[]});

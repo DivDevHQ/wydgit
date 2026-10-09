@@ -1,0 +1,89 @@
+{
+  "placement": {
+    "page": "home",
+    "parent": "home",
+    "slot": "sections",
+    "index": 1
+  },
+  "approvals": {
+    "capabilities": [
+      "object.instances.edit",
+      "app.forms.submit",
+      "store.records.read",
+      "store.records.create"
+    ],
+    "traversal": [
+      "children",
+      "parent"
+    ],
+    "visible": [
+      "guestbook",
+      "guestbook-heading",
+      "guestbook-form",
+      "guestbook-name",
+      "guestbook-message",
+      "guestbook-status",
+      "guestbook-entries",
+      "guestbook-entry-*"
+    ],
+    "editable": [
+      "guestbook",
+      "guestbook-heading",
+      "guestbook-form",
+      "guestbook-name",
+      "guestbook-message",
+      "guestbook-status",
+      "guestbook-entries",
+      "guestbook-entry-*"
+    ],
+    "scopes": {
+      "wydstore": [
+        "entries"
+      ]
+    }
+  },
+  "storageMappings": {
+    "entries": {
+      "store": "host-book",
+      "collection": "host-entries"
+    }
+  },
+  "installationContext": {
+    "publisher": "operator",
+    "app": "boilerplate",
+    "self": "home",
+    "capabilities": [
+      "object.instances.edit"
+    ],
+    "visible": [
+      "home",
+      "hero",
+      "overview",
+      "pages",
+      "details",
+      "guestbook",
+      "guestbook-heading",
+      "guestbook-form",
+      "guestbook-name",
+      "guestbook-message",
+      "guestbook-status",
+      "guestbook-entries",
+      "guestbook-entry-*"
+    ],
+    "editable": [
+      "home",
+      "hero",
+      "overview",
+      "pages",
+      "details",
+      "guestbook",
+      "guestbook-heading",
+      "guestbook-form",
+      "guestbook-name",
+      "guestbook-message",
+      "guestbook-status",
+      "guestbook-entries",
+      "guestbook-entry-*"
+    ]
+  }
+}

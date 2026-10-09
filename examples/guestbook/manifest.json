@@ -1,0 +1,101 @@
+{
+  "schema": "wydgit-package/0.1",
+  "id": "divdev/guestbook",
+  "publisher": "divdev",
+  "version": "0.1.0",
+  "platform": ">=0.2.0-alpha.16 <0.3.0",
+  "runtime": [
+    "server"
+  ],
+  "resources": {
+    "prototypes": "prototypes.json",
+    "template": "section.json",
+    "sources": {
+      "refresh": "refresh.bas",
+      "submit": "submit.bas"
+    }
+  },
+  "requires": {
+    "schema": "wydgit.requirements/0.1",
+    "libraries": [
+      {
+        "library": "wydstore",
+        "version": "^0.1.0-alpha.2"
+      }
+    ]
+  },
+  "storage": [
+    {
+      "name": "entries",
+      "fields": {
+        "name": {
+          "type": "string",
+          "required": true
+        },
+        "message": {
+          "type": "string",
+          "required": true
+        }
+      }
+    }
+  ],
+  "permissions": {
+    "capabilities": [
+      "object.instances.edit",
+      "app.forms.submit",
+      "store.records.read",
+      "store.records.create"
+    ],
+    "traversal": [
+      "children",
+      "parent"
+    ],
+    "visible": [
+      "guestbook",
+      "guestbook-heading",
+      "guestbook-form",
+      "guestbook-name",
+      "guestbook-message",
+      "guestbook-status",
+      "guestbook-entries",
+      "guestbook-entry-*"
+    ],
+    "editable": [
+      "guestbook",
+      "guestbook-heading",
+      "guestbook-form",
+      "guestbook-name",
+      "guestbook-message",
+      "guestbook-status",
+      "guestbook-entries",
+      "guestbook-entry-*"
+    ],
+    "scopes": {
+      "wydstore": [
+        "entries"
+      ]
+    }
+  },
+  "bindings": [
+    {
+      "owner": "guestbook",
+      "event": "Page.PreRender",
+      "source": "refresh",
+      "kind": "handler"
+    },
+    {
+      "owner": "guestbook-form",
+      "event": "Submit",
+      "source": "submit",
+      "kind": "action",
+      "method": "POST",
+      "capability": "app.forms.submit"
+    }
+  ],
+  "installables": [
+    {
+      "id": "guestbook-section",
+      "kind": "section-template"
+    }
+  ]
+}

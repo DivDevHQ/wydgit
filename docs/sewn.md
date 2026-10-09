@@ -252,3 +252,8 @@ ID-only handles also do not pretend to be full Wydgit receivers.
 ## 0.2-N portable Forms
 
 The handle allowlist adds `FormState(operation, data?)`, the closed scoped Form kernel binding used by WydBASIC prototype wrappers. All schema versions retain their existing operations. Form methods use normal sewn/0.3 dispatch; no new executable schema is introduced. See [forms.md](forms.md).
+
+
+## 0.2-P local packages
+
+`sewn/0.3` adds the closed expression `{op:"newId"}`. No operands are accepted. It returns a 33-character opaque String using the secure runtime UUID facility; unavailable secure generation raises SEWN.DENIED. Identity grants no authority. See [packages](packages.md).

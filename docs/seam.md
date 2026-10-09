@@ -6,8 +6,8 @@ The trusted host creates `ExecutionContext` with `publisher`, optional `package`
 optional `app` identity, `self` (instance ID), `capabilities`, `scopes`,
 `visible` and `editable` (instance IDs),
 `traversal`, and `limits`. Grants and metadata are copied and deeply frozen. Capability names must
-have exactly the portable `domain.resource.action` shape. Matching is exact;
-there are no wildcards or implicit grants. Limits are non-negative integer metadata. Event and [SEWN](sewn.md) execution enforce resource budgets.
+have exactly the portable `domain.resource.action` shape. Capability matching is exact;
+there are no capability wildcards or implicit grants. Limits are non-negative integer metadata. Event and [SEWN](sewn.md) execution enforce resource budgets.
 
 `runtime.scope(context)` returns a context-bound handle for `self`. Handles expose
 only immutable identity, properties and provenance, `related(relation, slot?)`,
@@ -175,3 +175,22 @@ persisted. Limits only reduce the maxima listed in [SEWN](sewn.md).
 ## 0.2-N portable Forms
 
 Form prototype methods use a closed FormState kernel binding, children traversal, visibility of every descendant and ordinary edit grants. Form inheritance supplies no authority. Traversal has fixed/reducible node bounds and never walks outside the receiver. Generic values/properties/exports redact PasswordInput. See [forms.md](forms.md).
+
+
+## 0.2-P local packages
+
+Packages request grants in manifests; only separate operator approval authorizes activation. Actual Session identity is retained, and one package principal per Page prevents grant union. `NewId()` grants no authority. See [packages](packages.md).
+
+
+Object authorization grants in `visible` and `editable` accept `exact-id` or a
+nonempty trailing prefix such as `guestbook-entry-*`. Matching treats the prefix
+literally: only one final `*` is allowed; bare/middle/multiple wildcards, `?`,
+classes, regex syntax and brace expansion are rejected during context/policy
+validation. Prefixes use the canonical object-ID grammar. Exact matches remain
+unchanged. `self` remains a concrete ID, never a grant pattern.
+
+Wildcards broaden only the set of object IDs matched by a specific approved
+object grant. They do not grant new capabilities, traversal rights, service
+authority, or package authority. Visibility and editability remain separate;
+mutations still require both plus `object.instances.edit`. Capabilities, prototype
+and resource scopes, event/action names, headers and cookies retain exact matching.

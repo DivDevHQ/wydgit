@@ -7,6 +7,34 @@ breaking architectural changes.
 
 ## Unreleased
 
+## 0.2.0-alpha.16 — 0.2-P
+### Native Local Package Installation + Activation
+
+- Added closed declarative local package manifests, read-only installation plans,
+  explicit host approvals/storage mappings and durable installation receipts.
+- Composed core and cataloged package prototypes in the existing registry; compiled
+  WydBASIC and canonically attached Section templates through authorized insertChild.
+- Published catalog, embedded resources and accepted App together using stale-state
+  checks, an exclusive local lock and a single fsynced temporary/replace operation.
+  Core prototype files and host library/provider configuration are not rewritten.
+- Activated declared Page lifecycle bindings and semantic POST actions under normal
+  startup, with actual Session identity and exact approved grants. No package JS,
+  runtime package scanning, provider provisioning or permission union is introduced.
+- Added restricted trailing-wildcard object grants for visible/editable; exact
+  matches remain intact, with no general glob/regex support. Guestbook grants use
+  guestbook-entry-* instead of enumerating a finite set of entry IDs.
+- Added portable argument-free NewId() → sewn/0.3 newId String intrinsic; IDs carry
+  no authority and retain ordinary construction/storage/edit checks.
+- Migrated Guestbook to manifest/prototypes/template/WydBASIC resources; removed its
+  privileged installer, context/UUID hook, special server and optional JS adapter.
+- Documented local catalog snapshot/drift rules and one principal per Page; remote
+  packages, upgrades/uninstall, migrations, multiple instances, automatic ID rewriting
+  and automatic WydClient bootstrap/transport remain deferred.
+- Advanced platform/lockfile/App metadata to 0.2.0-alpha.16; independent library
+  contracts and versions remain unchanged.
+- Verification: full `npm test` (251 passing tests), `npm run check` and
+  `git diff --check`; legacy Guestbook runtime dependency search has no matches.
+
 ## 0.2.0-alpha.15 — 0.2-O
 ### Remove Legacy Form fields Slot
 

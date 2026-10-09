@@ -1,3 +1,4 @@
+import { matchesObjectGrant } from '../seam/context.js';
 import { descendantFields,formOperation,fieldKind,fieldValidation,publicProperties } from '../object-model/forms.js';
 import { hydrate,dehydrate } from '../object-model/index.js';
 import { clean,freeze,requireThat as check } from '../object-model/validation.js';
@@ -7,7 +8,7 @@ import { createResponse } from '../http/response.js';
 import { webModel } from '../web-model.js';
 import { renderSite,errorDocument } from '../index.js';
 
-export async function executePage({model,pageId,session,input,context,handlers=[],actions=[],events=new EventRegistry(),files,libraries,csrf,render=renderSite}) {
+export async function executePage({model,pageId,session,input,context,handlers=[],actions=[],events=new EventRegistry(),files,libraries,serviceMappings,csrf,render=renderSite}) {
   handlers=prepareHandlers(handlers,events);actions=actions.map(record=>prepareAction(record,events));
   check(context.app===session.view.app&&session.active(),'EVENT.DENIED','Invalid owning Session');
   check((context.identity?.sessionId??null)===(session.identity?.sessionId??null),'EVENT.DENIED','Wrong Session identity');
@@ -20,7 +21,7 @@ export async function executePage({model,pageId,session,input,context,handlers=[
   const caches=new WeakMap(),ownedHandles=new WeakSet();
   const handle=(id,invocation=()=>{})=>{
     let cache=caches.get(invocation);if(!cache){cache=new Map();caches.set(invocation,cache);}if(cache.has(id))return cache.get(id);
-    const guard=()=>{invocation();check(alive&&context.visible.includes(id)&&(exists(id)||unloading&&archive.has(id)),'EVENT.DENIED','Stale or invisible Page handle');};
+    const guard=()=>{invocation();check(alive&&matchesObjectGrant(context.visible, id)&&(exists(id)||unloading&&archive.has(id)),'EVENT.DENIED','Stale or invisible Page handle');};
     guard();
     const node=()=>exists(id)?runtime.get(id):archive.get(id);
     const edit=(operation,...args)=>{
@@ -34,7 +35,7 @@ export async function executePage({model,pageId,session,input,context,handlers=[
       check(added.every(value=>!reserved.has(value)),'MUTATION.IDENTITY','Request IDs cannot be reused');added.forEach(value=>reserved.add(value));runtime=next;
     };
     const result=Object.freeze({get id(){guard();return id;},get prototype(){guard();return node().prototype;},get properties(){guard();return publicProperties(node(),model.registry);},
-      FormState(operation,data){guard();check(model.registry.isA(node().prototype,'wydgit.core/form'),'FORM.OPERATION','Receiver must be Form');check(context.traversal.includes('children'),'SEAM.TRAVERSAL','Form traversal denied');const fields=descendantFields(runtime,model.registry,id,context);check(fields.every(f=>context.visible.includes(f.id)),'SEAM.VISIBILITY','Invisible Form field');const changes=[];const value=formOperation(fields,model.registry,operation,data,(id,p)=>changes.push([id,p]));if(operation==='validate')changes.push([id,{valid:value}]);if(operation==='clear')changes.push([id,{valid:true}]);if(changes.length){guard();check(writable&&!unloading&&response.state==='Open','EVENT.DENIED','Tree is read-only');const edit=runtime.edit(context);for(const [id,p] of changes)for(const [key,v] of Object.entries(p))edit.setProperty(id,key,v);runtime=edit.commit().runtime;}return value;},
+      FormState(operation,data){guard();check(model.registry.isA(node().prototype,'wydgit.core/form'),'FORM.OPERATION','Receiver must be Form');check(context.traversal.includes('children'),'SEAM.TRAVERSAL','Form traversal denied');const fields=descendantFields(runtime,model.registry,id,context);check(fields.every(f=>matchesObjectGrant(context.visible, f.id)),'SEAM.VISIBILITY','Invisible Form field');const changes=[];const value=formOperation(fields,model.registry,operation,data,(id,p)=>changes.push([id,p]));if(operation==='validate')changes.push([id,{valid:value}]);if(operation==='clear')changes.push([id,{valid:true}]);if(changes.length){guard();check(writable&&!unloading&&response.state==='Open','EVENT.DENIED','Tree is read-only');const edit=runtime.edit(context);for(const [id,p] of changes)for(const [key,v] of Object.entries(p))edit.setProperty(id,key,v);runtime=edit.commit().runtime;}return value;},
       related(relation,slot){guard();check(exists(id),'EVENT.DENIED','Removed object');const related=runtime.scope(context,id).related(relation,slot);const wrap=value=>{check(exists(value.id),'EVENT.DENIED','Outside Page');return handle(value.id,invocation);};return Array.isArray(related)?Object.freeze(related.map(wrap)):related?wrap(related):null;},
       Set(name,value){edit('setProperty',name,value);},Insert(slot,index,envelope){edit('insertChild',slot,index,envelope);},Remove(){check(id!==pageId,'EVENT.DENIED','Page root immutable');edit('remove');},Replace(envelope){check(id!==pageId,'EVENT.DENIED','Page root immutable');edit('replaceChild',envelope);},Move(parent,slot,index){check(ownedHandles.has(parent),'EVENT.DENIED','Foreign handle');check(id!==pageId,'EVENT.DENIED','Page root immutable');edit('moveChild',parent.id,slot,index);}
     });ownedHandles.add(result);cache.set(id,result);return result;
@@ -43,7 +44,7 @@ export async function executePage({model,pageId,session,input,context,handlers=[
   const request=requestFacade(requestData,context);
   const contexts=guard=>({PAGE:handle(pageId,guard),SESSION:freeze(clean(session.view)),REQUEST:requestFacade(requestData,context,guard),RESPONSE:response.facade(guard),SERVER:Object.freeze({App:context.app}),
     FILESYS:Object.freeze({Get(id){guard();check(files,'FILE.DENIED','No approved files');return files.get(id,context,guard);}}),
-    SERVICES:Object.freeze({async Call(library,name,input){guard();await session.authorize();guard();check(libraries,'SEAM.DENIED','No services');return libraries.bind(context).call(library,name,input);}})
+    SERVICES:Object.freeze({async Call(library,name,input){guard();await session.authorize();guard();check(libraries,'SEAM.DENIED','No services');if(library==='wydstore'&&serviceMappings){const mapping=serviceMappings[input?.store];check(mapping&&input.collection===input.store,'PACKAGE.STORAGE','Unknown logical storage resource');input={...input,...mapping};}return libraries.bind(context).call(library,name,input);}})
   });
   const action=actions.find(a=>a.page===pageId&&a.target===input.action?.target&&a.type===input.action?.type);
   const defaults={};
@@ -69,7 +70,7 @@ export async function executePage({model,pageId,session,input,context,handlers=[
   try {
     check(exists(pageId),'EVENT.INVALID','Page missing');
     if(input.method==='POST') {
-      check(action&&action.method==='POST'&&exists(action.target)&&context.visible.includes(action.target),'EVENT.DENIED','Action denied');
+      check(action&&action.method==='POST'&&exists(action.target)&&matchesObjectGrant(context.visible, action.target),'EVENT.DENIED','Action denied');
       check(input.action.csrf===csrf&&typeof csrf==='string'&&csrf.length>=32,'REQUEST.FORGERY','Invalid action origin');
       check(session.active(),'EVENT.DENIED','Session ended');events.payload(action.type,input.action.payload??{});
     } else check(!input.action,'EVENT.DENIED','GET cannot invoke action');

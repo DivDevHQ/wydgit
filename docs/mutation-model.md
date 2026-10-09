@@ -164,3 +164,8 @@ construction authority and [SEWN](sewn.md) for hard bounds.
 ## 0.2-N portable Forms
 
 Every accepted candidate also validates Form ancestry and unique descendant field names. Insert, Replace, Move and private draft assembly cannot conceal a Form beneath another Form, even through Blocks/Sections. Bind/Validate/Clear use existing atomic edit validation and authority; edits preserve transient sensitive state internally. See [forms.md](forms.md).
+
+
+## 0.2-P local packages
+
+Native package installation uses the existing host-authorized insertChild operation and complete App validation before atomically publishing catalog/resources/content. NewId does not automatically grant prospective edit scopes. See [packages](packages.md).

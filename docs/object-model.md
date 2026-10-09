@@ -187,3 +187,8 @@ through inherited `blocks` and permitted descendant slots. Form behavior discove
 descendant Fields recursively by containment ancestry. `Form.fields` is removed;
 persisted content using that slot fails with `OBJECT.UNKNOWN_SLOT`. No alias or
 migration is retained. Recursive field semantics and nested-Form denial are unchanged.
+
+
+## 0.2-P local packages
+
+Installed-package prototypes compose with core definitions in the normal registry; core source files remain distinct. Package templates attach through canonical mutations. See [packages](packages.md).

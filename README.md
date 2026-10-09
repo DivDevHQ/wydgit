@@ -71,7 +71,7 @@ The architectural contract is:
 
 [`docs/FOUNDING-ARCHITECTURE.md`](docs/FOUNDING-ARCHITECTURE.md)
 
-Current development version: **0.2.0-alpha.15**. Completed platform milestones
+Current development version: **0.2.0-alpha.16**. Completed platform milestones
 update `package.json`, matching root metadata in `package-lock.json`, and
 `content/app.json` → `properties.revision` together. Version updates do not create
 Git tags or publish releases. Completed milestones also update [CHANGELOG.md](CHANGELOG.md).
@@ -278,3 +278,6 @@ npm start
 Validate with `npm test` and `npm run check`. Inspect workspace linking with
 `npm ls --workspaces --depth=0`. Startup validates enabled libraries and portable
 requirements before opening the HTTP listener.
+
+
+Native local declarative packages now install through Wydgine plans and atomic receipts/catalogs, then activate under normal `npm start`. See [package format and operator API](docs/packages.md) and the [Guestbook package](examples/guestbook/README.md). WydStore must already be host-enabled and mapped; packages cannot approve their own grants.

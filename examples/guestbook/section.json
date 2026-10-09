@@ -1,0 +1,287 @@
+{
+  "schema": "wydgit/0.2",
+  "id": "guestbook",
+  "prototype": "divdev/guestbook",
+  "properties": {},
+  "slots": {
+    "blocks": [
+      {
+        "schema": "wydgit/0.2",
+        "id": "guestbook-heading",
+        "prototype": "wydgit.core/block",
+        "properties": {
+          "content": {
+            "type": "markdown",
+            "value": "## Guestbook"
+          }
+        },
+        "slots": {},
+        "provenance": {}
+      },
+      {
+        "schema": "wydgit/0.2",
+        "id": "guestbook-form",
+        "prototype": "divdev/guestbook-form",
+        "properties": {
+          "label": "Sign guestbook"
+        },
+        "slots": {
+          "blocks": [
+            {
+              "schema": "wydgit/0.2",
+              "id": "guestbook-name",
+              "prototype": "wydgit.core/text-input",
+              "properties": {
+                "name": "name",
+                "label": "Name",
+                "required": true,
+                "maxLength": 80
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "guestbook-message",
+              "prototype": "wydgit.core/text-area",
+              "properties": {
+                "name": "message",
+                "label": "Message (Markdown supported)",
+                "required": true,
+                "maxLength": 2000
+              },
+              "slots": {},
+              "provenance": {}
+            }
+          ]
+        },
+        "provenance": {}
+      },
+      {
+        "schema": "wydgit/0.2",
+        "id": "guestbook-status",
+        "prototype": "wydgit.core/block",
+        "properties": {
+          "content": {
+            "type": "markdown",
+            "value": "Shows up to 20 entries in record-ID order. Messages support sanitized Markdown."
+          }
+        },
+        "slots": {},
+        "provenance": {}
+      },
+      {
+        "schema": "wydgit/0.2",
+        "id": "guestbook-entries",
+        "prototype": "wydgit.core/section",
+        "properties": {},
+        "slots": {
+          "blocks": [
+            {
+              "schema": "wydgit/0.2",
+              "id": "guestbook-entry-0",
+              "prototype": "divdev/guestbook-entry",
+              "properties": {
+                "ordinal": 0
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "guestbook-entry-1",
+              "prototype": "divdev/guestbook-entry",
+              "properties": {
+                "ordinal": 1
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "guestbook-entry-2",
+              "prototype": "divdev/guestbook-entry",
+              "properties": {
+                "ordinal": 2
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "guestbook-entry-3",
+              "prototype": "divdev/guestbook-entry",
+              "properties": {
+                "ordinal": 3
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "guestbook-entry-4",
+              "prototype": "divdev/guestbook-entry",
+              "properties": {
+                "ordinal": 4
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "guestbook-entry-5",
+              "prototype": "divdev/guestbook-entry",
+              "properties": {
+                "ordinal": 5
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "guestbook-entry-6",
+              "prototype": "divdev/guestbook-entry",
+              "properties": {
+                "ordinal": 6
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "guestbook-entry-7",
+              "prototype": "divdev/guestbook-entry",
+              "properties": {
+                "ordinal": 7
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "guestbook-entry-8",
+              "prototype": "divdev/guestbook-entry",
+              "properties": {
+                "ordinal": 8
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "guestbook-entry-9",
+              "prototype": "divdev/guestbook-entry",
+              "properties": {
+                "ordinal": 9
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "guestbook-entry-10",
+              "prototype": "divdev/guestbook-entry",
+              "properties": {
+                "ordinal": 10
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "guestbook-entry-11",
+              "prototype": "divdev/guestbook-entry",
+              "properties": {
+                "ordinal": 11
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "guestbook-entry-12",
+              "prototype": "divdev/guestbook-entry",
+              "properties": {
+                "ordinal": 12
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "guestbook-entry-13",
+              "prototype": "divdev/guestbook-entry",
+              "properties": {
+                "ordinal": 13
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "guestbook-entry-14",
+              "prototype": "divdev/guestbook-entry",
+              "properties": {
+                "ordinal": 14
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "guestbook-entry-15",
+              "prototype": "divdev/guestbook-entry",
+              "properties": {
+                "ordinal": 15
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "guestbook-entry-16",
+              "prototype": "divdev/guestbook-entry",
+              "properties": {
+                "ordinal": 16
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "guestbook-entry-17",
+              "prototype": "divdev/guestbook-entry",
+              "properties": {
+                "ordinal": 17
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "guestbook-entry-18",
+              "prototype": "divdev/guestbook-entry",
+              "properties": {
+                "ordinal": 18
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "guestbook-entry-19",
+              "prototype": "divdev/guestbook-entry",
+              "properties": {
+                "ordinal": 19
+              },
+              "slots": {},
+              "provenance": {}
+            }
+          ]
+        },
+        "provenance": {}
+      }
+    ]
+  },
+  "provenance": {}
+}

@@ -366,3 +366,8 @@ slot-property sugar, closures and all automatic persistence/ID generation.
 ## 0.2-N portable Forms
 
 Form supplies public prototype methods `Bind(Object)`, `Validate() AS Boolean`, `IsValid() AS Boolean`, `Values() AS Object` and `Clear()`. Calls dispatch through sewn/0.3 and inherited prototype behavior; the closed FormState binding handles bounded traversal and semantic rules without HTTP/DOM assumptions. See [forms.md](forms.md) for examples, configuration and sensitive values.
+
+
+## 0.2-P local packages
+
+`DIM id AS String = NewId()` returns a bounded collision-resistant opaque ID with no arguments, host objects or authority. It compiles to the `sewn/0.3` newId intrinsic. Use for WydStore create or explicit NEW IDs; existing capability/scope checks remain required. See [packages](packages.md).

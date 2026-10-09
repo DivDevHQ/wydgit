@@ -101,7 +101,7 @@ a WydClient implementation or a browser transport.
 IDs are caller-supplied ASCII letters followed by letters, digits, `_` or `-`,
 1–128 characters, excluding `constructor`, `prototype`, and `__proto__`. Store,
 collection and App identifiers use the same rule. Record IDs are unique within a
-collection and do not derive from mutable display fields. No ID generator exists.
+collection and do not derive from mutable display fields. Portable WydBASIC `NewId()` can supply an explicit ID; it grants no storage authority.
 
 - New: `version === 0`, `original === null`, `dirty === true`; save inserts at 1.
 - Unchanged: current equals original; save returns the same handle without I/O,
@@ -347,3 +347,8 @@ Deferred: providers beyond JSON/SQLite, migrations, cross-owner sharing, cross-s
 transactions, distributed locking, replication, backups, restore, query languages,
 admin UI, WydClient, and executable third-party package isolation. No founding
 architecture change or unresolved architectural decision was needed.
+
+
+## 0.2-P local packages
+
+Packages declare logical collection fields and receive separately approved mappings to already configured stores/collections. Providers/roots remain host-owned. `NewId()` supplies a portable explicit record ID; ordinary create authority still applies. See [packages](packages.md).

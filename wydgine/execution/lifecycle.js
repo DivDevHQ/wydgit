@@ -1,3 +1,4 @@
+import { matchesObjectGrant } from '../seam/context.js';
 import { randomBytes,createHash } from 'node:crypto';
 import { createDispatcher,safeError,prepareHandlers } from '../events/index.js';
 import { freeze,clean,requireThat as check } from '../object-model/validation.js';
@@ -8,8 +9,8 @@ export function createLifecycle({app,handlers=[],context=new ExecutionContext({p
   let started=false,stopped=false,chain=Promise.resolve();const errors=[];
   const emit=(family,type,session)=>{
     chain=chain.catch(()=>{}).then(async()=>{
-      const caches=new WeakMap();const handle=(id,guard)=>{check(context.visible.includes(id),'EVENT.DENIED','Invisible lifecycle owner');let cache=caches.get(guard);if(!cache){cache=new Map();caches.set(guard,cache);}if(!cache.has(id))cache.set(id,Object.freeze({get id(){guard();return id;}}));return cache.get(id);};
-      const dispatcher=createDispatcher({handlers,context,handle,exists:id=>context.visible.includes(id),contexts:()=>({SERVER:Object.freeze({App:app}),...(session?{SESSION:freeze(clean(session))}:{})})});
+      const caches=new WeakMap();const handle=(id,guard)=>{check(matchesObjectGrant(context.visible, id),'EVENT.DENIED','Invisible lifecycle owner');let cache=caches.get(guard);if(!cache){cache=new Map();caches.set(guard,cache);}if(!cache.has(id))cache.set(id,Object.freeze({get id(){guard();return id;}}));return cache.get(id);};
+      const dispatcher=createDispatcher({handlers,context,handle,exists:id=>matchesObjectGrant(context.visible, id),contexts:()=>({SERVER:Object.freeze({App:app}),...(session?{SESSION:freeze(clean(session))}:{})})});
       try{await dispatcher.dispatch({type:`${family}.${type}`,source:app,target:app,payload:{}});}catch(error){if(errors.length<256)errors.push(safeError(error).toJSON());}finally{dispatcher.close();}
     });return chain;
   };

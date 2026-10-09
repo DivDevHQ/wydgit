@@ -40,6 +40,7 @@ function compileAst(ast,registry,prototype=false) {
         }else if(!['Object','Unknown'].includes(target.type))error(n,'TYPE','Member reads require an Object or facade.');
         return value({op:'read',target:target.sewn,key:name},type,kind);}
       case 'invoke':{
+        if(n.target.kind==='name'&&n.target.name.toUpperCase()==='NEWID'){if(n.args.length)error(n,'TYPE','NewId takes no arguments.');objects=true;return value({op:'newId'},'String');}
         if(n.target.kind==='name'&&modern)return procedureCall(n,'function');
         if(modern){const svc=service(n);if(svc)return value({...svc,op:'serviceCall'},'Object');}
         if(n.target.kind!=='member')error(n,'UNSUPPORTED','Only safe facade methods can be called.');const target=expression(n.target.target);key(n,n.target.key);const method=canonical(Object.keys(methods[target.kind]??{}),n.target.key);if(!method){if(target.kind!=='handle')error(n,'UNSUPPORTED',`Unsupported method '${n.target.key}'.`);objects=true;return value({op:'methodValue',target:target.sewn,name:n.target.key.toLowerCase(),args:n.args.map(x=>expression(x).sewn)});}const args=n.args.map(expression),arity=methods[target.kind][method];if(args.length<arity[0]||args.length>arity[1])error(n,'TYPE',`Invalid argument count for ${method}.`);args.forEach((v,i)=>{if(v.kind&&!(method==='Move'&&i===0||method==='Raise'&&i===1||method==='Insert'&&i===2||method==='Replace'&&i===0))error(n,'TYPE','This argument requires JSON data.');});

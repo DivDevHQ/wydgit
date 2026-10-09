@@ -229,7 +229,7 @@ empty. No Node wiring is added to canonical App properties or provenance.
 
 Three versions are independent:
 
-- Platform version: `wydgit@0.2.0-alpha.15`.
+- Platform version: `wydgit@0.2.0-alpha.16`.
 - Library version: e.g. the fixture's `1.0.0`, equal to its npm package version.
 - Compatibility ranges: manifest `platform`, host-approved implementation `version`,
   and portable requirement `version` each constrain their respective version.
@@ -314,3 +314,8 @@ provides no grant or registry access. WydGate uses it after committed Session
 transitions; Wydgine dispatches under explicitly chosen host authority. It is not a
 global package event bus or durable queue. Observer failure cannot undo committed
 revocation; Gate continues terminal cleanup notifications. See [events.md](events.md).
+
+
+## 0.2-P local packages
+
+Local packages declare required libraries; they cannot enable/install them. Operators separately map logical resources and approve grants. Startup resolves cataloged requirements; library versions/contracts remain unchanged. See [packages](packages.md).

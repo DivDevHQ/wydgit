@@ -1,3 +1,4 @@
+import { matchesObjectGrant } from '../seam/context.js';
 import { clean, freeze, requireThat as check, WydgitError } from './validation.js';
 import { validId, copyEnvelope } from './schema.js';
 import { checkContext } from '../seam/context.js';
@@ -7,7 +8,7 @@ import { checkContext } from '../seam/context.js';
 export function createEdit(original, context, registry, hydrate, dehydrate) {
   checkContext(context);
   const authorize = ids => {
-    check(context.capabilities.includes('object.instances.edit') && ids.every(id => context.visible.includes(id) && context.editable.includes(id)), 'MUTATION.DENIED', 'Mutation denied');
+    check(context.capabilities.includes('object.instances.edit') && ids.every(id => matchesObjectGrant(context.visible, id) && matchesObjectGrant(context.editable, id)), 'MUTATION.DENIED', 'Mutation denied');
   };
   authorize([]);
   original.get(context.self);

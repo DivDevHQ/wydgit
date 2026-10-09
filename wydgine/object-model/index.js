@@ -1,3 +1,4 @@
+import { matchesObjectGrant } from '../seam/context.js';
 import { formTree,publicProperties } from './forms.js';
 import { validateEnvelope, resolveProperties } from './schema.js';
 import { createEdit } from './mutation.js';
@@ -57,7 +58,7 @@ export function hydrate(input, registry, { revision = 0 } = {}) {
       checkContext(context); check(nodes.has(context.self), 'SEAM.CONTEXT', 'Unknown self object');
       const handles = new Map();
       const handle = id => {
-        check(context.visible.includes(id), 'SEAM.VISIBILITY', 'Object is not visible');
+        check(matchesObjectGrant(context.visible, id), 'SEAM.VISIBILITY', 'Object is not visible');
         check(nodes.has(id), 'OBJECT.UNKNOWN', 'Unknown object');
         if (handles.has(id)) return handles.get(id);
         const node = nodes.get(id);
@@ -68,7 +69,7 @@ export function hydrate(input, registry, { revision = 0 } = {}) {
             if (relation === 'children') {
               check(slotName === undefined || Object.hasOwn(node.slots, slotName), 'OBJECT.UNKNOWN_SLOT', 'Unknown slot');
               ids = slotName === undefined ? Object.values(node.slots).flat() : node.slots[slotName];
-              return Object.freeze(ids.filter(x => context.visible.includes(x)).map(handle));
+              return Object.freeze(ids.filter(x => matchesObjectGrant(context.visible, x)).map(handle));
             }
             let target;
             if (relation === 'root') target = root.id;

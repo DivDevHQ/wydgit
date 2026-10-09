@@ -1,3 +1,4 @@
+import { matchesObjectGrant } from '../seam/context.js';
 // Portable semantic field rules. No host, transport or presentation dependencies.
 import { clean, requireThat as check } from './validation.js';
 export const sensitive = (type, registry) => registry.isA(type, 'wydgit.core/password-input');
@@ -22,7 +23,7 @@ export function fieldConfiguration(p) {
 }
 export function descendantFields(runtime,registry,id,context) {
   const out=[];let count=0;
-  const walk=id=>{check(++count<=Math.min(10000,context?.limits.formNodes??10000),'FORM.LIMIT','Field traversal limit');if(context)check(context.visible.includes(id),'SEAM.VISIBILITY','Invisible Form descendant');const n=runtime.get(id);if(registry.isA(n.prototype,'wydgit.core/field'))out.push(n);for(const key of Object.keys(n.slots).sort())n.slots[key].forEach(walk);};walk(id);return out;
+  const walk=id=>{check(++count<=Math.min(10000,context?.limits.formNodes??10000),'FORM.LIMIT','Field traversal limit');if(context)check(matchesObjectGrant(context.visible, id),'SEAM.VISIBILITY','Invisible Form descendant');const n=runtime.get(id);if(registry.isA(n.prototype,'wydgit.core/field'))out.push(n);for(const key of Object.keys(n.slots).sort())n.slots[key].forEach(walk);};walk(id);return out;
 }
 export function formOperation(fields,registry,operation,data,set) {
   check(['validate','isValid','values','bind','clear'].includes(operation),'FORM.OPERATION','Unknown Form operation');
