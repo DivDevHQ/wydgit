@@ -14,7 +14,8 @@ export function parse(source,{module=false}={}) {
   function expression(min=0) {
     if(++depth>32)fail('SYNTAX','Expression nesting limit.',token().location);
     const start=take();let left;
-    if(['string','number'].includes(start.kind))left=node('literal',start,{value:start.value});
+    if(start.kind==='identifier'&&String(start.value).toUpperCase()==='NEW'){const proto=take();if(proto.kind!=='string')fail('TYPE','NEW requires a literal qualified prototype identity.',proto.location);expect('(');const id=expression();expect(')');left=node('construct',start,{prototype:proto.value,id});}
+    else if(['string','number'].includes(start.kind))left=node('literal',start,{value:start.value});
     else if(['TRUE','FALSE','NULL'].includes(String(start.value).toUpperCase()))left=node('literal',start,{value:start.value.toUpperCase()==='NULL'?null:start.value.toUpperCase()==='TRUE'});
     else if(start.value==='('){left=expression();expect(')');}
     else if(['NOT','-','+'].includes(String(start.value).toUpperCase()))left=node('unary',start,{operator:start.value.toUpperCase(),value:expression(start.value.toUpperCase()==='NOT'?3:7)});

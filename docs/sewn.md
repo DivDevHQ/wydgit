@@ -1,4 +1,4 @@
-# SEWN — 0.2-L
+# SEWN — 0.2-M
 
 SEWN means **SEAM Execution Workflow Notation**. WydStitch writes it. SEWN describes
 it. SEAM constrains it. Wydgine or WydClient runs it. [WydBASIC](wydbasic.md)
@@ -190,3 +190,60 @@ Independent hand-authored `test/sewn-procedures.test.js` covers schema/kind/arit
 frames, parameters/results, completion, cycles, bounds, services, authority and
 opaque/stale handles. It does not import the WydBASIC compiler. Both schema versions
 execute through the same `execute.js` evaluator and existing SEAM-constrained facades.
+
+
+## Version 0.3: prototype dispatch and construction
+
+`sewn/0.1` and `sewn/0.2` remain closed and unchanged. `sewn/0.3` has the same
+`{schema,procedures,body}` envelope as 0.2 and adds three closed operations:
+
+| Operation | Fields | Meaning |
+| --- | --- | --- |
+| `methodCall` statement | `target`, `name`, `args` | Invoke a prototype SUB on an opaque Wydgit reference. |
+| `methodValue` expression | `target`, `name`, `args` | Invoke a prototype FUNCTION and runtime-check its declared result. |
+| `construct` expression | `type`, `id` | Literal qualified prototype identity plus a String ID expression; return an opaque draft. |
+
+Method names are static canonical lowercase identifiers, never expressions.
+`type` avoids the reserved data key `prototype`; canonical envelope identity is
+still `prototype`. Kernel `call`/`invoke` stay allowlisted. Missing methods produce
+`PROTOTYPE.METHOD`; wrong kind/arity/parameter/result/completion produce `SEWN.TYPE`.
+Method lookup uses the actual receiver prototype's frozen registry chain. Trusted
+hosts explicitly pass `prototypeRegistry` to `execute`/`createDispatcher`; it is not
+a contextual binding available to portable code. Pages supply their model registry.
+WydClient can supply the same runtime-neutral registry for read-only methods.
+
+Methods run via the existing procedure frame machinery, with an explicit receiver
+and lexical procedure table. Arguments evaluate sequentially in the caller frame
+before Me/table changes. Frame exit restores locals, receiver and table even on
+failure. Procedures invoked from methods retain that receiver. All methods and
+procedures share 256 calls, 16 active frames, 16 parameters, live-variable bounds,
+steps, nesting, loops, services and one deadline. Existing `sewnProcedureCalls`,
+`sewnProcedureDepth` and `sewnParameters` reductions apply to their combined budget.
+Static procedure cycles and known Me method cycles (including derived overrides)
+are rejected at setup. An active callable-identity guard rejects dynamic cycles
+across receivers as `SEWN.LIMIT`; no recursion is enabled.
+
+Draft maxima per invocation are 64 constructed builders, graph depth 32, aggregate
+256 live draft nodes, 512 construction operations and 65,536 serialized characters
+of candidate data. `sewnDrafts`, `sewnDraftDepth`, `sewnDraftNodes`,
+`sewnConstructionOperations`, `sewnConstructionSize` may only reduce these bounds,
+including to zero. A construction operation also spends ordinary SEWN steps and
+checks the shared deadline. Construction count is cumulative even after consumption.
+
+Drafts are opaque handle-kind executor tokens. They can flow through Wydgit
+parameters/results between frames, but cannot flow through JSON arrays/objects,
+service inputs, workflow results or persistence. Draft reads/operations/dispatch
+check invocation lifetime and consumption. Set validates prototype property rules;
+nested Insert consumes a complete child builder. Runtime Insert/Replace consumes
+a root builder only after the existing atomic mutation succeeds. No draft is a
+canonical runtime object until attachment. Required fields/minimum cardinalities
+are completed before containment; final runtime validation remains authoritative.
+
+`test/sewn-objects.test.js` hand-authors these operations without importing a source
+compiler. It tests dispatch, override signatures, typed results, opaque receivers,
+caller authority, construction grants, defaults, nesting/consumption, atomic denial,
+cycles and limits. WydClient's current adapter supplies prototype/properties for
+read-only method execution; it does not supply server tree mutation or storage.
+Private drafts are portable when a trusted client host supplies a registry/grants,
+but this client adapter cannot attach them to its presentation tree. Server lifecycle
+ID-only handles also do not pretend to be full Wydgit receivers.

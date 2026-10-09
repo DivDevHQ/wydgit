@@ -105,3 +105,71 @@ Hydration remains immutable. `scope(context,startId)` can select another already
 visible object for trusted host adapters, without changing self or any grants.
 Minimal Form/Field prototypes use semantic values and validation data; renderer
 HTML stays outside the model. See [events.md](events.md) for Session/Page execution.
+
+
+## 0.2-M: portable prototype methods
+
+**Prototype = class; Wydgit instance = object.** There is one inheritance model.
+A trusted registry definition may carry `behavior`, a validated `sewn/0.3` program
+with an empty workflow body. Its procedure declarations are the prototype's public
+methods. They retain their lexical procedure table, so a method can call other
+procedures in its module. All declared procedures are public methods in this first
+version; there is no partial access-modifier system.
+
+The repository explicitly associates source through `behaviorSource` strings in
+`prototypes/objects.json`. `loadRepository` compiles these with `compilePrototype`
+before registration. There is no directory scan, executable file discovery, remote
+loading or portable JavaScript callback. Other trusted hosts can compile explicit
+source definitions or supply canonical SEWN behavior directly. Prototype modules
+contain SUB/FUNCTION declarations and cannot contain EVENT blocks. Definitions
+without behavior retain their existing semantics.
+
+Method names are canonical lowercase and source names are case insensitive.
+Duplicates and names colliding with kernel facade methods are rejected. Lookup
+starts at the actual prototype, following the existing single `extends` chain.
+Derived definitions must explicitly list inherited names in `overrides`, e.g.
+`"overrides":["setmessage"]`. Kind, parameter count, each parameter type and FUNCTION
+return type must match exactly; no coercion or overloads. Cross-publisher rules are
+unchanged. Resolved behavior is frozen and cannot be modified by portable code.
+
+`Me` is the receiver, including when it is a draft. Methods reuse SEWN's typed ByVal
+parameters, isolated frames, completion rules and whole-execution budgets. They
+retain the caller's exact ExecutionContext and contextual service bindings.
+**A prototype provides behavior. It does not provide authority.** Publisher,
+public/core status, method ownership and inheritance confer no grants.
+
+## Construction drafts
+
+`NEW` creates an invocation-local builder, never a detached canonical runtime
+instance. Its private candidate envelope materializes the same inherited defaults
+used by hydration. Unknown/abstract prototypes, App roots, invalid IDs, unknown
+properties, wrong types/enums and dangerous keys fail before attachment. Required
+properties without defaults and minimum slot cardinalities may remain incomplete
+while building; child insertion and final attachment require a complete subtree.
+
+Drafts have immutable explicit IDs and prototype identities. They expose property
+reads, validated `Set`, prototype methods and nested draft `Insert`. There are no
+fabricated parent/root/sibling relationships, traversal into the App, independent
+authority, persistence or cross-request heap. Nested insertion copies a complete
+child into the parent builder and consumes the child's token. Final Insert/Replace
+uses the ordinary validated containment mutation and consumes the root token only
+on success. Every alias of a consumed token becomes stale, including after nested
+insertion. To use the attached object, reacquire a normal scoped handle through an
+already-authorized relationship; attachment grants no visibility or traversal.
+
+Failed operations leave the accepted builder/tree intact and the token usable until
+invocation exit. WydBASIC has no TRY/CATCH yet, so an unhandled failure ends that
+invocation. All builders expire on executor completion/failure/deadline. Their
+opaque references cannot appear in JSON, service payloads or workflow results.
+Only containment makes their data canonical; there is no detached object table.
+
+The explicit host grant is `object.instances.construct` plus exact prototype IDs
+in `context.scopes.prototypes`. It authorizes private builder edits, not edits to
+existing objects. Attachment still needs `object.instances.edit` and every existing
+and prospective ID's ordinary visibility/edit scopes. No implicit persistence is
+added. `acme/message-panel` and its derived important panel are explicit demo
+prototypes; their portable source and HTTP integration prove this model.
+
+Base calls, access modifiers, nominal prototype types, multiple inheritance,
+interfaces/mixins, overloads/static members, reflection/dynamic names, closures,
+automatic IDs/persistence, remote loading and slot-property sugar are deferred.

@@ -7,6 +7,42 @@ breaking architectural changes.
 
 ## Unreleased
 
+## 0.2.0-alpha.13 — 0.2-M
+### Prototype Methods + WydBASIC Object Construction
+
+- Added prototype-owned portable behavior compiled from explicit WydBASIC source
+  declarations, using the existing prototype hierarchy rather than language classes.
+  Methods inherit and dynamically dispatch most-derived overrides; explicit override
+  declarations require identical kind/parameter/result signatures.
+- Added closed `sewn/0.3` method statement/function expression and construction
+  expression operations. Preserved `sewn/0.1`, `sewn/0.2`, body/module/event source,
+  descriptor Insert/Replace and behavior-free prototype compatibility.
+- Reused SEWN typed ByVal frames, completion rules, opaque references, combined
+  call/depth/live-local/step/service/deadline budgets; added setup cycle rejection
+  and active-call defense across dynamic receivers. Me binds the receiver while
+  the caller's exact SEAM context/service authority remains unchanged.
+- Added explicit-ID `NEW "publisher/prototype"("id")` and invocation-scoped bounded
+  transient drafts with inherited defaults, validated Set and nested draft Insert.
+  Explicit construction capability/prototype scopes grant no canonical edit rights.
+  Existing atomic containment mutation consumes drafts only after successful
+  attachment; consumed aliases are stale. No detached canonical heap, persistence,
+  portable JS, fabricated relationships or authority grants were introduced.
+- Added explicit base/derived message-panel source definitions, inherited/overridden
+  behavior and renderer projection of primitive subtypes. Page/real HTTP Submit
+  proves NEW → draft → portable methods → validated containment → local rendering,
+  request isolation and denial. WydClient supports read-only prototype dispatch;
+  its current adapter does not implement canonical tree attachment.
+- Added independent hand-authored SEWN dispatch/construction/security/bounds tests,
+  WydBASIC compiler/module/client/Page/HTTP tests and real WydStore caller-authority
+  denial. Updated object, mutation, SEAM, SEWN and WydBASIC docs.
+- Advanced platform/lockfile/App/current metadata to `0.2.0-alpha.13`; WydStore,
+  WydGate and unrelated workspace versions remain unchanged.
+- Verification: full `npm test`, `npm run check` and `git diff --check`;
+  manual browser visual verification not performed.
+- Deferred BASE calls, access modifiers, multiple inheritance/interfaces/mixins,
+  overloads/static members, full nominal typing, reflection/dynamic names, closures,
+  slot sugar, remote/package discovery, implicit IDs and automatic persistence.
+
 ## 0.2.0-alpha.12 — 0.2-L
 ### WydBASIC Procedures + Event Modules
 

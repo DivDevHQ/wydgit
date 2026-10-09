@@ -152,3 +152,21 @@ require capabilities and exact resource scopes. Reserved credential cookies and
 host security headers remain inaccessible even with ordinary matching name grants.
 WydClient has separate authority and never sends it as proof of server authority.
 See [events.md](events.md) for bounds, context lifetimes and the complete contract.
+
+
+## 0.2-M behavior and construction
+
+Prototype method calls use the caller's exact context and existing safe bindings.
+Changing the receiver `Me` changes no grants. Trusted/core/public prototypes and
+inherited behavior cannot borrow publisher authority or strengthen a caller's
+storage, mutation, traversal or persistence permissions.
+
+Private construction requires `object.instances.construct` and an exact prototype
+identity in the frozen `scopes.prototypes` array, for example
+`['acme/message-panel','acme/important-message-panel']`. There are no publisher
+wildcards, enumeration or grants implied by holding a handle. This capability
+permits bounded draft property/nested-child construction; it grants no access to
+existing objects. Canonical Insert/Replace retains every existing mutation check,
+including explicit prospective ID visibility/editability. Draft methods use the
+same caller service bindings. Opaque builder references cannot be serialized or
+persisted. Limits only reduce the maxima listed in [SEWN](sewn.md).

@@ -11,12 +11,12 @@ export function validateEnvelope(raw) {
   check(raw.schema === SCHEMA && validId(raw.id) && typeof raw.prototype === 'string', 'OBJECT.ENVELOPE', 'Invalid schema or identity');
   check(record(raw.properties) && record(raw.slots) && record(raw.provenance), 'OBJECT.ENVELOPE', 'Properties, slots and provenance must be objects');
 }
-export function resolveProperties(input, definition) {
+export function resolveProperties(input, definition, { incomplete = false } = {}) {
   const properties = clean(input);
   for (const key of Object.keys(properties)) check(Object.hasOwn(definition.properties, key), 'OBJECT.PROPERTY', `Unknown property: ${key}`);
   for (const [key, rule] of Object.entries(definition.properties)) {
     if (!Object.hasOwn(properties, key) && Object.hasOwn(rule, 'default')) properties[key] = clean(rule.default);
-    if (!Object.hasOwn(properties, key)) { check(!rule.required, 'OBJECT.PROPERTY', `Missing property: ${key}`); continue; }
+    if (!Object.hasOwn(properties, key)) { check(incomplete || !rule.required, 'OBJECT.PROPERTY', `Missing property: ${key}`); continue; }
     const v = properties[key], type = v === null ? 'null' : Array.isArray(v) ? 'array' : typeof v;
     check(type === rule.type && (!rule.enum || rule.enum.includes(v)), 'OBJECT.PROPERTY', `Invalid property: ${key}`);
   }

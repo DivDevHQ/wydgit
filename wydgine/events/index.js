@@ -39,7 +39,7 @@ export function prepareAction(record,registry=new EventRegistry()) {
   check(events.length===1&&events[0].type===record.type,'EVENT.INVALID','Action modules must declare exactly the routed event');
   return {...rest,workflow:events[0].workflow};
 }
-export function createDispatcher({registry=new EventRegistry(),handlers=[],context,handle,contexts=()=>({}),exists=()=>true,defaults={},limit={},completed=()=>false,runtimeTarget='server',identifiers={},reusable=false,canRaise=exists}) {
+export function createDispatcher({registry=new EventRegistry(),handlers=[],context,handle,contexts=()=>({}),exists=()=>true,defaults={},limit={},completed=()=>false,runtimeTarget='server',identifiers={},reusable=false,canRaise=exists,prototypeRegistry}) {
   checkContext(context);
   const records=prepareHandlers(handlers,registry).map((r)=>{const d=registry.get(r.type);check(['Semantic','Custom'].includes(d.family)||r.source===undefined||r.source===r.owner,'EVENT.INVALID','Lifecycle handler owner must be recipient');check(typeof r.owner==='string','EVENT.INVALID','Missing owner');return r;});
   const bounds={queue:64,dispatches:256,handlers:2048,depth:16,timeMs:5000,...limit};
@@ -71,7 +71,7 @@ export function createDispatcher({registry=new EventRegistry(),handlers=[],conte
       const provided={ME:handle(record.owner,guard),EVENT:Object.freeze(event),...contexts(guard,task)};
       const scope=new Proxy(Object.freeze(provided),{get(target,key){guard();check(Object.hasOwn(target,key),'EVENT.CONTEXT','Context unavailable');return target[key];}});
       let timer;
-      try {await Promise.race([Promise.resolve().then(()=>record.workflow?executeWorkflow(record.workflow,{scope,context}):record.run.call(scope)),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new WydgitError('EVENT.LIMIT','Handler time limit')),Math.max(1,deadline-Date.now()));})]);}
+      try {await Promise.race([Promise.resolve().then(()=>record.workflow?executeWorkflow(record.workflow,{scope,context,prototypeRegistry}):record.run.call(scope)),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new WydgitError('EVENT.LIMIT','Handler time limit')),Math.max(1,deadline-Date.now()));})]);}
       catch(error){throw safeError(error);}finally{active=false;clearTimeout(timer);}
       if(completed()||!structural&&(cancelled||handled))break;
     }

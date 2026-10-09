@@ -256,7 +256,7 @@ for server forms. No browser automation framework was present or added.
 
 ## Compatibility, verification and deferred work
 
-Platform is 0.2.0-alpha.12; Gate is independently 0.1.0-alpha.3. Gate's private
+Platform is 0.2.0-alpha.13; Gate is independently 0.1.0-alpha.3. Gate's private
 `wydgate.local/0.2` schema remains unchanged; expiry now records revocation/history.
 The pre-existing 0.2-F→G storage incompatibility remains; no destructive migration.
 There was no prior public event/handler/HTTP facade to migrate. Existing pure
@@ -281,7 +281,7 @@ Handler records now select exactly one of `run`, `workflow`, `wydBasic`, or
 contains parameterless `EVENT Page.Load ... END EVENT` (or other registered events)
 plus shared SUB/FUNCTION declarations. Modules omit the registration `type`, because
 the source declares it. `prepareHandlers(records, registry)` expands these at setup
-into ordinary `{owner,type,workflow}` records; only canonical `sewn/0.2` executes.
+into ordinary `{owner,type,workflow}` records; canonical `sewn/0.2` or `sewn/0.3` executes.
 HTTP setup, direct Page preparation, server lifecycle construction and WydClient
 construction compile before dispatch. The HTTP runtime module allowlist includes
 the browser-safe compiler/executor dependency closure; host/provider modules stay
@@ -306,3 +306,13 @@ A multi-event handler module and action metadata remain distinct registration fo
 The real HTTP proof in `test/wydbasic-module-integration.test.js` uses only portable
 module source for Submit behavior: FUNCTIONs validate/save a form value through
 WydStore and a SUB replaces the request-local form with rendered Thank you.
+
+
+0.2-M Page dispatch supplies the model's trusted prototype registry to SEWN,
+including action/default/cleanup dispatch. Methods preserve the invocation guard
+and caller context. Modules using NEW/prototype calls select `sewn/0.3`; older
+modules retain `sewn/0.2`. WydClient can explicitly supply `prototypeRegistry` and
+portable prototype/property projections for read-only method dispatch, without
+server mutation/service facades. See [object model](object-model.md) for transient
+draft consumption and [WydBASIC](wydbasic.md) for the source API. The real HTTP
+construction proof is `test/wydbasic-construction-http.test.js`.

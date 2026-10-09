@@ -48,10 +48,10 @@ export async function executePage({model,pageId,session,input,context,handlers=[
   if(action)defaults[action.type]=async()=>{
     context.require(action.capability);await session.authorize();
     // Default is a trusted registered adapter; receives the same safe contexts, no grants.
-    const dispatcher=createDispatcher({registry:events,handlers:[{type:action.type,owner:action.target,...(action.workflow!==undefined?{workflow:action.workflow}:{run:action.run})}],context,handle,contexts,exists});
+    const dispatcher=createDispatcher({prototypeRegistry:model.registry,registry:events,handlers:[{type:action.type,owner:action.target,...(action.workflow!==undefined?{workflow:action.workflow}:{run:action.run})}],context,handle,contexts,exists});
     try{await dispatcher.dispatch({type:action.type,source:action.target,target:action.target,payload:input.action.payload??{}});}finally{dispatcher.close();}
   };
-  const dispatcher=createDispatcher({registry:events,handlers,context,handle,contexts,exists,canRaise:id=>initialized.has(id),defaults,completed:()=>response.explicit,identifiers:{session:session.view.id,page:pageId}});
+  const dispatcher=createDispatcher({prototypeRegistry:model.registry,registry:events,handlers,context,handle,contexts,exists,canRaise:id=>initialized.has(id),defaults,completed:()=>response.explicit,identifiers:{session:session.view.id,page:pageId}});
   const dispatch=(type,id,payload={},valid=true)=>dispatcher.dispatch({type,source:type.startsWith('Page.')?pageId:id,target:id,payload,valid});
   const initialize=async()=>{
     let rounds=0;
@@ -106,7 +106,7 @@ export async function executePage({model,pageId,session,input,context,handlers=[
   }catch(error){failure=safeError(error);}
   finally {
     writable=false;unloading=true;response.beginCleanup();dispatcher.close();
-    const cleanup=createDispatcher({registry:events,handlers,context,handle,contexts,exists:id=>exists(id)||archive.has(id)});
+    const cleanup=createDispatcher({prototypeRegistry:model.registry,registry:events,handlers,context,handle,contexts,exists:id=>exists(id)||archive.has(id)});
     for(const id of [...ledger].reverse())try{await cleanup.dispatch({type:'Page.Unload',source:pageId,target:id,payload:{}});}catch(error){errors.push(safeError(error).toJSON());}
     cleanup.close();alive=false;
   }

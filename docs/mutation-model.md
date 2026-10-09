@@ -139,3 +139,23 @@ operation still validates an immutable snapshot; request-wide retired IDs remain
 reserved across operations. No commit publishes canonical state. Renderer/Unload
 phases deny edits, and authoritative services require independent grants. See
 [events.md](events.md) for the separate lifecycle initialization/cleanup ledger.
+
+
+## 0.2-M construction consumption
+
+SEWN may pass an opaque invocation-local draft to scoped `Insert` or `Replace` in
+addition to the existing JSON descriptor. The executor materializes a complete
+validated candidate subtree; the existing edit session remains the only runtime
+attachment path. No mutation or prototype-resolution hierarchy is duplicated.
+ID reservation, slot types/cardinality, permission checks and atomic commits are
+unchanged. A denied/invalid insertion never consumes the draft or partially attaches
+its data. Successful attachment consumes the token; aliases cannot insert or mutate
+it again. The attached instance is reached with normal scoped handles and unchanged
+caller grants. Request-local attachment does not modify persisted App state.
+
+Draft-to-draft `Insert` is a private builder operation: it validates the complete
+child, slot acceptance, maximum cardinality, graph IDs/depth/count and total size,
+then copies it into the parent and consumes the child token atomically. The parent
+can still be incomplete until final attachment. These are transient builders, not
+detached runtime edit sessions. See [object model](object-model.md) for lifecycle,
+construction authority and [SEWN](sewn.md) for hard bounds.

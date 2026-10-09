@@ -12,7 +12,7 @@ const policy = "default-src 'none'; style-src 'self'; img-src 'self'; base-uri '
 // Explicit browser-safe dependency closure; no server/provider modules are exposed.
 const clientModules = [
   'wydclient/index.js', 'wydgine/events/index.js', 'wydgine/events/registry.js',
-  'wydgine/object-model/validation.js', 'wydgine/seam/context.js',
+  'wydgine/object-model/validation.js', 'wydgine/object-model/schema.js', 'wydgine/object-model/construction.js', 'wydgine/object-model/prototypes.js', 'wydgine/seam/context.js',
   'wydgine/seam/capabilities.js', 'wydgine/http/input.js',
   'wydgine/sewn/schema.js', 'wydgine/sewn/validate.js',
   'wydgine/sewn/execute.js', 'wydgine/sewn/bindings.js',

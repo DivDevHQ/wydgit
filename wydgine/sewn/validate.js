@@ -1,5 +1,5 @@
 import { clean,freeze,jsonKeys,WydgitError } from '../object-model/validation.js';
-import {SCHEMA,MAXIMA,statements,expressions,operators,contextNames,safeKey,PROCEDURE_SCHEMA,procedureStatements,procedureExpressions,sourceTypes,reservedNames} from './schema.js';
+import {SCHEMA,MAXIMA,statements,expressions,operators,contextNames,safeKey,PROCEDURE_SCHEMA,procedureStatements,procedureExpressions,sourceTypes,reservedNames,OBJECT_SCHEMA,objectStatements,objectExpressions} from './schema.js';
 export const fail=code=>{throw new WydgitError(`SEWN.${code}`,'SEWN execution failed');};
 export const ensure=(v,code='INVALID')=>{if(!v)fail(code);};
 export const name=n=>ensure(safeKey(n)&&/^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(n));
@@ -9,9 +9,9 @@ export function validate(document) {
  let p;try{p=clean(document);}catch{fail('INVALID');}
  let nodes=0;const size=(v,d=0)=>{ensure(d<=64,'LIMIT');ensure(++nodes<=MAXIMA.programNodes,'LIMIT');if(v&&typeof v==='object')Object.values(v).forEach(x=>size(x,d+1));};size(p);ensure(JSON.stringify(p).length<=MAXIMA.programSize,'LIMIT');
  const shape=(n,fields)=>{ensure(n&&typeof n==='object'&&!Array.isArray(n));ensure(Object.keys(n).every(k=>k==='op'||fields.some(f=>f.replace('?','')===k)));for(const f of fields)if(!f.endsWith('?'))ensure(Object.hasOwn(n,f));};
- const modern=p?.schema===PROCEDURE_SCHEMA;
- const statementGrammar=modern?procedureStatements:statements,expressionGrammar=modern?procedureExpressions:expressions;
- ensure(p&&[SCHEMA,PROCEDURE_SCHEMA].includes(p.schema)&&Object.keys(p).every(k=>(modern?['schema','body','procedures']:['schema','body']).includes(k)));
+ const objects=p?.schema===OBJECT_SCHEMA,modern=objects||p?.schema===PROCEDURE_SCHEMA;
+ const statementGrammar=objects?objectStatements:modern?procedureStatements:statements,expressionGrammar=objects?objectExpressions:modern?procedureExpressions:expressions;
+ ensure(p&&[SCHEMA,PROCEDURE_SCHEMA,OBJECT_SCHEMA].includes(p.schema)&&Object.keys(p).every(k=>(modern?['schema','body','procedures']:['schema','body']).includes(k)));
  const procedures=modern?p.procedures:{};
  ensure(procedures&&typeof procedures==='object'&&!Array.isArray(procedures));
  const graph=new Map();let current=null;
@@ -20,6 +20,8 @@ export function validate(document) {
  const service=n=>ensure(safeKey(n.library)&&safeKey(n.method));
  const expr=(n,d=0)=>{ensure(d<=MAXIMA.expressionDepth,'LIMIT');ensure(n&&Object.hasOwn(expressionGrammar,n.op));shape(n,expressionGrammar[n.op]);
   if(n.op==='array'){ensure(Array.isArray(n.items));n.items.forEach(x=>expr(x,d+1));}if(n.op==='object'){ensure(n.fields&&typeof n.fields==='object'&&!Array.isArray(n.fields));Object.values(n.fields).forEach(x=>expr(x,d+1));}
+  if(n.op==='construct'){ensure(typeof n.type==='string'&&/^[a-z][a-z0-9.-]*\/[a-z][a-z0-9-]*$/.test(n.type));expr(n.id,d+1);}
+  if(n.op==='methodValue'){procedureName(n.name);expr(n.target,d+1);ensure(Array.isArray(n.args)&&n.args.length<=MAXIMA.parameters);n.args.forEach(x=>expr(x,d+1));}
   if(n.op==='functionCall')procedureCall(n,'function',d);if(n.op==='serviceCall'){service(n);expr(n.input,d+1);}
   if(n.op==='variable')name(n.name);if(n.op==='context')ensure(contextNames.includes(n.name));
   if(n.op==='read'){ensure(safeKey(n.key)||Number.isSafeInteger(n.key)&&n.key>=0);expr(n.target,d+1);}
@@ -28,6 +30,7 @@ export function validate(document) {
  };
  const body=(b,d=0)=>{ensure(d<=MAXIMA.nesting,'LIMIT');ensure(Array.isArray(b));for(const n of b){ensure(n&&Object.hasOwn(statementGrammar,n.op));shape(n,statementGrammar[n.op]);
   if(['declare','set','forEach'].includes(n.op))name(n.name);if(Object.hasOwn(n,'into'))name(n.into);
+  if(n.op==='methodCall'){procedureName(n.name);expr(n.target);ensure(Array.isArray(n.args)&&n.args.length<=MAXIMA.parameters);n.args.forEach(x=>expr(x));}
   if(n.op==='procedureCall')procedureCall(n,'sub',0);
   if(n.op==='return'){ensure(current?procedures[current].kind==='sub'?!Object.hasOwn(n,'value'):Object.hasOwn(n,'value'):Object.hasOwn(n,'value'));}
   if(n.op==='stop')ensure(!current);

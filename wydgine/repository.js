@@ -1,3 +1,5 @@
+import { requireThat as check } from './object-model/validation.js';
+import { compilePrototype } from './wydbasic/index.js';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { hydrate, PrototypeRegistry } from './object-model/index.js';
@@ -17,7 +19,8 @@ export function loadRepository(root) {
   const navigation = read(path.join(root, 'content/navigation.json'));
   app.slots.pages = readdirSync(path.join(root, 'content/pages')).filter(f => f.endsWith('.json')).sort().map(file => read(path.join(root, 'content/pages', file)));
   app.slots.navigation = navigation;
-  const registry = new PrototypeRegistry(read(path.join(root, 'prototypes/objects.json')));
+  const definitions=read(path.join(root, 'prototypes/objects.json')).map(({behaviorSource,...definition})=>{check(behaviorSource===undefined||definition.behavior===undefined,'PROTOTYPE.METHOD','Choose source or canonical behavior');return {...definition,...(behaviorSource===undefined?{}:{behavior:compilePrototype(behaviorSource)})};});
+  const registry = new PrototypeRegistry(definitions);
   const runtime = hydrate(app, registry);
   const diagnostics = [];
   const skins = new Map();

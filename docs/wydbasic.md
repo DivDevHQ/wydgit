@@ -1,4 +1,4 @@
-# WydBASIC — 0.2-L
+# WydBASIC — 0.2-M
 
 WydBASIC is the first WydStitch dialect. **WydBASIC should feel like VB6 evolved
 into a portable, capability-safe application language.** Make common application
@@ -8,7 +8,8 @@ and runtime. **WydBASIC compiles to SEWN. It does not own execution semantics.**
 **WydStitch writes it. SEWN describes it. SEAM constrains it. Wydgine or WydClient runs it.**
 
 `compile(source)` from `wydgine/wydbasic/index.js` synchronously returns a copied,
-frozen, canonically validated `{schema:'sewn/0.1',body:[...]}` without executing it.
+frozen, canonically validated workflow without executing it. Existing body source
+uses `sewn/0.1`; object operations select `sewn/0.3`.
 `tokenize(source)` and `parse(source)` expose located tokens and AST nodes for
 inspection. The hand-written lexer, precedence parser and semantic lowering have
 no parser dependencies. The AST is never an executable representation.
@@ -113,7 +114,7 @@ for the canonical service instruction, not an additional readable global.
 
 Member reads and method calls lower to `read`/`invoke` (or statement `call`).
 Known facade members, methods and arities come directly from SEWN `bindings.js`.
-Unknown facade methods/members and `__proto__`, `constructor`, `prototype` are
+Unknown non-Wydgit facade methods/members and `__proto__`, `constructor`, `prototype` are
 compile errors. Data reads remain own-property runtime checks. No reflection or
 arbitrary data-object calls are supported.
 
@@ -126,7 +127,7 @@ END IF
 Me.Set("title", "Hello")
 ```
 
-Current methods are exactly SEWN's allowlist: handle related/Set/Insert/Remove/
+Kernel facade methods are exactly SEWN's allowlist: handle related/Set/Insert/Remove/
 Replace/Move, EVENT Cancel/Raise, Form/Query Get/GetAll, scoped Cookies methods,
 Headers Set/Remove and RESPONSE WriteMarkdown. Insert takes slot, index, descriptor;
 Replace takes a descriptor `{id,type,properties?,slots?}`. Move takes a scoped
@@ -151,7 +152,7 @@ END IF
 In handler-body `compile(source)`, SERVICES.Call is accepted as a standalone statement or directly as a DIM initializer.
 Library and service names must be literal strings; inputs must be JSON-safe.
 That compatibility path still targets `sewn/0.1`, whose service `into` declares a new variable.
-Module compilation targets `sewn/0.2` and additionally lowers nested service expressions,
+Module compilation targets `sewn/0.2` (or `sewn/0.3` for object operations) and additionally lowers nested service expressions,
 including FUNCTION returns and assignment, to explicit SEWN `serviceCall` expressions. Compilation
 neither discovers libraries nor grants permissions. The existing dispatcher
 returns `{ok,value}` or a structured failure under the original caller authority.
@@ -196,7 +197,7 @@ Trusted JavaScript registrations remain a separate host API.
 are separate APIs from handler-body `compile`/`parse`. A module contains only
 module-level SUB, FUNCTION and EVENT declarations; their order is immaterial to
 procedure resolution. It returns frozen `{events:[{type,workflow}]}` metadata.
-Every workflow is independently validated, frozen `sewn/0.2`, containing the shared
+Every workflow is independently validated, frozen `sewn/0.2` or `sewn/0.3`, containing the shared
 procedure table. Metadata and ASTs never execute. There is no WydBASIC VM or call stack.
 
 ```basic
@@ -291,7 +292,72 @@ CSRF/capability denial and subsequent/concurrent request isolation. The independ
 `test/sewn-procedures.test.js` imports no WydBASIC and proves SEWN owns execution.
 
 Deferred: REM, line numbers, semicolons, array indexing syntax, arbitrary dynamic
-methods, cross-file modules/imports, ByRef/Optional/ParamArray/default parameters,
-overloads, recursion, nested procedures, lambdas/closures/delegates, classes/NEW/
-inheritance, ASYNC/AWAIT, threads/parallelism, TRY/CATCH/THROW, GOTO, DO/LOOP,
+cross-file modules/imports, ByRef/Optional/ParamArray/default parameters,
+overloads, recursion, nested procedures, lambdas/closures/delegates, unrelated language classes, ASYNC/AWAIT, threads/parallelism, TRY/CATCH/THROW, GOTO, DO/LOOP,
 WHILE, SELECT CASE, formatter/debugger/LSP and other source dialects.
+
+
+## 0.2-M prototype methods and NEW
+
+WydBASIC authors behavior on Wydgit prototypes, without a second class system.
+`compilePrototype(source)` accepts a declaration-only SUB/FUNCTION module and
+returns canonical `sewn/0.3` behavior for trusted registration. The repository
+explicitly maps `behaviorSource` in `prototypes/objects.json`; all its declarations
+are public methods, and can also call module procedures lexically. A derived
+prototype lists overridden lowercase names in its `overrides` array and must retain
+compatible signatures. No portable WydBASIC AST or JavaScript callback executes.
+
+```basic
+' Behavior for acme/message-panel (content is the inherited Markdown object).
+SUB SetMessage(value AS String)
+    Me.Set("content", {"type":"markdown", "value":value})
+END SUB
+FUNCTION HasMessage() AS Boolean
+    RETURN Me.properties.content.value <> ""
+END FUNCTION
+```
+
+Application/event source can construct and attach it:
+
+```basic
+EVENT Submit
+    DIM panel AS Wydgit
+    SET panel = NEW "acme/message-panel"("result-panel")
+    CALL panel.SetMessage(REQUEST.Form.Get("name"))
+    IF panel.HasMessage() THEN
+        Me.Insert("blocks", 0, panel)
+    END IF
+END EVENT
+```
+
+`NEW` requires a literal fully qualified prototype ID and exactly one explicit
+String instance-ID expression. It returns an invocation-scoped transient draft,
+not a detached runtime instance. `SET` remains required for Wydgit assignment.
+No automatic random ID, friendly-name resolution or nominal-type syntax is added.
+Unknown/abstract prototypes and invalid IDs fail at runtime, under construction
+grants; compiler syntax/type errors retain line/column locations.
+
+Known kernel methods remain statically allowlisted. Other member invocations on
+Wydgit values lower to `methodCall` for statements (with or without CALL) or
+`methodValue` for expressions. Names are case insensitive and statically spelled;
+there is no callable-property lookup. Generic Wydgit calls resolve signatures and
+dispatch at runtime, so the receiver's most-derived override wins. A SUB cannot
+supply an expression value and a FUNCTION cannot be used as a SUB statement.
+
+Drafts support `properties`, `Set`, prototype methods and nested draft `Insert`.
+They cannot navigate runtime relationships. Runtime Insert/Replace attaches through
+the existing mutation validator, consumes all aliases of the root token and grants
+no visibility. Reacquire a normal handle through authorized traversal afterward.
+Existing descriptor Insert/Replace remains valid. Methods bind Me to their receiver
+and retain the caller's exact context/service authority, isolated typed ByVal frames
+and shared bounds. Construction requires `object.instances.construct` plus exact
+prototype scope; attachment requires ordinary edit/ID grants. There is no implicit
+persistence. See [object model](object-model.md) and [SEWN](sewn.md) for lifecycle,
+incomplete construction rules, atomicity, limits and client limitations.
+
+The repository's base/derived message panel source, independent SEWN tests,
+WydBASIC module tests and real HTTP Submit integration prove construction → dynamic
+portable behavior → validated request-local containment → rendered output, including
+request isolation and capability denial. BASE calls are explicitly deferred, along
+with access modifiers, overloads/static members, reflection, full nominal typing,
+slot-property sugar, closures and all automatic persistence/ID generation.

@@ -3,7 +3,7 @@ import { clean,freeze,requireThat as check } from '../wydgine/object-model/valid
 import { cookieReader,parseCookies } from '../wydgine/http/input.js';
 // Browser primitives are accepted only at this trusted renderer-adapter boundary.
 // No native object is passed to handler contexts or payloads.
-export function mountClient({nodes,context,handlers=[],readCookies=()=>'',submit=async()=>{}}) {
+export function mountClient({nodes,context,handlers=[],readCookies=()=>'',submit=async()=>{},prototypeRegistry}) {
   const supplied=[...nodes],ids=new Set(supplied.map(node=>node.id));
   let ordered=supplied;
   check(ids.size===ordered.length&&ordered.length<=1000,'EVENT.LIMIT','Invalid client tree');
@@ -14,9 +14,9 @@ export function mountClient({nodes,context,handlers=[],readCookies=()=>'',submit
   let active=true,accepting=false,chain=Promise.resolve(),lastError=null;const listeners=[],mounted=[],values=new Map(ordered.map(n=>[n.id,n.value??''])),handles=new WeakMap();
   const handle=(id,guard)=>{
     check(ids.has(id)&&context.visible.includes(id),'EVENT.DENIED','Invisible client object');let cache=handles.get(guard);if(!cache){cache=new Map();handles.set(guard,cache);}
-    if(!cache.has(id))cache.set(id,Object.freeze({get id(){guard();check(active,'EVENT.INVALID','Unmounted handle');return id;},get Value(){guard();return freeze(clean(values.get(id)));}}));return cache.get(id);
+    if(!cache.has(id))cache.set(id,Object.freeze({get id(){guard();check(active,'EVENT.INVALID','Unmounted handle');return id;},get Value(){guard();return freeze(clean(values.get(id)));},get prototype(){guard();const node=ordered.find(n=>n.id===id);check(typeof node.prototype==='string','EVENT.CONTEXT','Client prototype unavailable');return node.prototype;},get properties(){guard();return freeze(clean(ordered.find(n=>n.id===id).properties??{}));}}));return cache.get(id);
   };
-  const dispatcher=createDispatcher({reusable:true,runtimeTarget:'client',handlers,context,handle,exists:id=>active&&ids.has(id),contexts:guard=>({CLIENT:Object.freeze({Cookies:cookieReader(context,parseCookies(readCookies()),'client.cookies.read',guard)})}),defaults:{
+  const dispatcher=createDispatcher({prototypeRegistry,reusable:true,runtimeTarget:'client',handlers,context,handle,exists:id=>active&&ids.has(id),contexts:guard=>({CLIENT:Object.freeze({Cookies:cookieReader(context,parseCookies(readCookies()),'client.cookies.read',guard)})}),defaults:{
     Change:async(task,payload)=>{values.set(task.target,payload.NewValue);ordered.find(n=>n.id===task.target).element.value=payload.NewValue;},
     Submit:async(task)=>{context.require('client.actions.submit');check(context.scopes.actions?.includes(task.target),'EVENT.DENIED','Client action denied');await submit(freeze({target:task.target,type:'Submit',payload:{}}));}
   }});

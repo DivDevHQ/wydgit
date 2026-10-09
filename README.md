@@ -42,7 +42,7 @@ The result should be:
 
 Wydgit is currently in **early alpha development**.
 
-The current codebase implements the Wydgit 0.2-L procedures/event modules, 0.2-K WydBASIC compiler and 0.2-J SEWN execution foundation, 0.2-I transport boundary and 0.2-H event, lifecycle and request/response foundation, integrated with WydGate sessions, WydStore and the existing object-model/mutation/SEAM foundation:
+The current codebase implements the Wydgit 0.2-M prototype methods/construction, 0.2-L procedures/event modules, 0.2-K WydBASIC compiler and 0.2-J SEWN execution foundation, 0.2-I transport boundary and 0.2-H event, lifecycle and request/response foundation, integrated with WydGate sessions, WydStore and the existing object-model/mutation/SEAM foundation:
 
 - validated bounded portable [SEWN workflows](docs/sewn.md) with procedures, safe contexts and service calls
 - WydBASIC SUB/FUNCTION and source-declared EVENT modules compiled to canonical SEWN
@@ -71,7 +71,7 @@ The architectural contract is:
 
 [`docs/FOUNDING-ARCHITECTURE.md`](docs/FOUNDING-ARCHITECTURE.md)
 
-Current development version: **0.2.0-alpha.12**. Completed platform milestones
+Current development version: **0.2.0-alpha.13**. Completed platform milestones
 update `package.json`, matching root metadata in `package-lock.json`, and
 `content/app.json` → `properties.revision` together. Version updates do not create
 Git tags or publish releases. Completed milestones also update [CHANGELOG.md](CHANGELOG.md).

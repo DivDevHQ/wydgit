@@ -257,5 +257,29 @@
       }
     },
     "slots": {}
+  },
+  {
+    "id": "acme/message-panel",
+    "publisher": "acme",
+    "extends": "wydgit.core/block",
+    "properties": {
+      "content": {
+        "type": "object",
+        "default": {
+          "type": "markdown",
+          "value": ""
+        }
+      }
+    },
+    "behaviorSource": "SUB SetMessage(value AS String)\n    Me.Set(\"content\", {\"type\":\"markdown\", \"value\":value})\nEND SUB\nFUNCTION HasMessage() AS Boolean\n    RETURN Me.properties.content.value <> \"\"\nEND FUNCTION"
+  },
+  {
+    "id": "acme/important-message-panel",
+    "publisher": "acme",
+    "extends": "acme/message-panel",
+    "overrides": [
+      "setmessage"
+    ],
+    "behaviorSource": "SUB SetMessage(value AS String)\n    Me.Set(\"content\", {\"type\":\"markdown\", \"value\":\"Important: \" & value})\nEND SUB"
   }
 ]
