@@ -361,3 +361,8 @@ portable behavior → validated request-local containment → rendered output, i
 request isolation and capability denial. BASE calls are explicitly deferred, along
 with access modifiers, overloads/static members, reflection, full nominal typing,
 slot-property sugar, closures and all automatic persistence/ID generation.
+
+
+## 0.2-N portable Forms
+
+Form supplies public prototype methods `Bind(Object)`, `Validate() AS Boolean`, `IsValid() AS Boolean`, `Values() AS Object` and `Clear()`. Calls dispatch through sewn/0.3 and inherited prototype behavior; the closed FormState binding handles bounded traversal and semantic rules without HTTP/DOM assumptions. See [forms.md](forms.md) for examples, configuration and sensitive values.

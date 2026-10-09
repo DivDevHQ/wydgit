@@ -151,6 +151,6 @@ for (const signal of ['SIGINT', 'SIGTERM']) test(`server entrypoint gracefully e
   const exited = once(child, 'exit');
   let output = '';
   await new Promise((resolve, reject) => { child.stdout.on('data', chunk => { output += chunk; if (/http:\/\/127\.0\.0\.1:\d+/.test(output)) resolve(); }); child.once('error', reject); child.once('exit', () => reject(new Error('Server exited before listen'))); });
-  assert.match(output, /Wydgit 0\.2\.0-alpha\.13/); child.kill(signal);
+  assert.match(output, /Wydgit 0\.2\.0-alpha\.14/); child.kill(signal);
   const [code, termination] = await exited; assert.equal(code, 0); assert.equal(termination, null);
 });

@@ -130,7 +130,9 @@
     "slots": {
       "blocks": {
         "accepts": [
-          "wydgit.core/block"
+          "wydgit.core/block",
+          "wydgit.core/section",
+          "wydgit.core/field"
         ],
         "ordered": true
       }
@@ -162,7 +164,16 @@
         "description": "Page ID, resolved like navigation.items[].page. Required for whole-card-link; optional for card (adds a separate page link)."
       }
     },
-    "slots": {},
+    "slots": {
+      "children": {
+        "accepts": [
+          "wydgit.core/block",
+          "wydgit.core/section",
+          "wydgit.core/field"
+        ],
+        "ordered": true
+      }
+    },
     "extends": "wydgit.core/object"
   },
   {
@@ -186,7 +197,7 @@
     "id": "wydgit.core/form",
     "publisher": "wydgit.core",
     "public": true,
-    "extends": "wydgit.core/block",
+    "extends": "wydgit.core/section",
     "properties": {
       "content": {
         "type": "object",
@@ -219,7 +230,8 @@
         ],
         "ordered": true
       }
-    }
+    },
+    "behaviorSource": "FUNCTION Validate() AS Boolean\n RETURN Me.FormState(\"validate\")\nEND FUNCTION\nFUNCTION IsValid() AS Boolean\n RETURN Me.FormState(\"isValid\")\nEND FUNCTION\nFUNCTION Values() AS Object\n RETURN Me.FormState(\"values\")\nEND FUNCTION\nSUB Bind(data AS Object)\n Me.FormState(\"bind\", data)\nEND SUB\nSUB Clear()\n Me.FormState(\"clear\")\nEND SUB"
   },
   {
     "id": "wydgit.core/field",
@@ -254,6 +266,18 @@
       "warnings": {
         "type": "array",
         "default": []
+      },
+      "enabled": {
+        "type": "boolean",
+        "default": true
+      },
+      "visible": {
+        "type": "boolean",
+        "default": true
+      },
+      "validationMessage": {
+        "type": "string",
+        "default": ""
       }
     },
     "slots": {}
@@ -281,5 +305,149 @@
       "setmessage"
     ],
     "behaviorSource": "SUB SetMessage(value AS String)\n    Me.Set(\"content\", {\"type\":\"markdown\", \"value\":\"Important: \" & value})\nEND SUB"
+  },
+  {
+    "id": "wydgit.core/text-input",
+    "publisher": "wydgit.core",
+    "public": true,
+    "extends": "wydgit.core/field",
+    "properties": {
+      "placeholder": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "default": null
+      },
+      "maxLength": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "default": null
+      }
+    },
+    "slots": {}
+  },
+  {
+    "id": "wydgit.core/password-input",
+    "publisher": "wydgit.core",
+    "public": true,
+    "extends": "wydgit.core/field",
+    "properties": {
+      "placeholder": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "default": null
+      },
+      "maxLength": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "default": null
+      }
+    },
+    "slots": {}
+  },
+  {
+    "id": "wydgit.core/text-area",
+    "publisher": "wydgit.core",
+    "public": true,
+    "extends": "wydgit.core/field",
+    "properties": {
+      "placeholder": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "default": null
+      },
+      "maxLength": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "default": null
+      }
+    },
+    "slots": {}
+  },
+  {
+    "id": "wydgit.core/checkbox",
+    "publisher": "wydgit.core",
+    "public": true,
+    "extends": "wydgit.core/field",
+    "properties": {
+      "value": {
+        "type": "boolean",
+        "default": false
+      }
+    },
+    "slots": {}
+  },
+  {
+    "id": "wydgit.core/radio-group",
+    "publisher": "wydgit.core",
+    "public": true,
+    "extends": "wydgit.core/field",
+    "properties": {
+      "options": {
+        "type": "array",
+        "default": []
+      },
+      "value": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "default": null
+      }
+    },
+    "slots": {}
+  },
+  {
+    "id": "wydgit.core/checkbox-group",
+    "publisher": "wydgit.core",
+    "public": true,
+    "extends": "wydgit.core/field",
+    "properties": {
+      "options": {
+        "type": "array",
+        "default": []
+      },
+      "value": {
+        "type": "array",
+        "default": []
+      }
+    },
+    "slots": {}
+  },
+  {
+    "id": "wydgit.core/select",
+    "publisher": "wydgit.core",
+    "public": true,
+    "extends": "wydgit.core/field",
+    "properties": {
+      "options": {
+        "type": "array",
+        "default": []
+      },
+      "value": {
+        "type": [
+          "string",
+          "null",
+          "array"
+        ],
+        "default": null
+      },
+      "multiple": {
+        "type": "boolean",
+        "default": false
+      }
+    },
+    "slots": {}
   }
 ]

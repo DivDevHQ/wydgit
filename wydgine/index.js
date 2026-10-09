@@ -1,3 +1,4 @@
+import { renderField } from './form-renderer.js';
 import { marked, Renderer } from 'marked';
 import sanitizeHtml from 'sanitize-html';
 import { loadRepository } from './repository.js';
@@ -105,7 +106,9 @@ export function renderSite(model, requestPath = '/', {csrf=''} = {}) {
       });
     }
     function block(raw) {
-      if(raw.prototype==='form')return `<form id="${escapeHtml(raw.id)}" method="post" data-wydgit="${escapeHtml(raw.id)}"><input type="hidden" name="_target" value="${escapeHtml(raw.id)}"><input type="hidden" name="_action" value="Submit"><input type="hidden" name="_csrf" value="${escapeHtml(csrf)}">${(raw.fields??[]).map(field=>`<label>${escapeHtml(field.label)}<input data-wydgit="${escapeHtml(field.id)}" name="${escapeHtml(field.name)}" value="${escapeHtml(field.value)}"${field.required?' required':''}${field.valid===false?' aria-invalid="true"':''}></label>${field.errors.map(error=>`<p role="alert">${escapeHtml(error)}</p>`).join('')}`).join('')}<button type="submit">${escapeHtml(raw.label)}</button></form>`;
+      if(raw.prototype==='field')return renderField(raw,escapeHtml,claim);
+      if(raw.prototype==='section')return nestedSection(raw);
+      if(raw.prototype==='form'){const presentation=resolve({...raw,prototype:'section'},'section',model);claim(raw.id);return `<form class="${classes(presentation)}"${skinAttribute(presentation,model)} id="${escapeHtml(raw.id)}" method="post" data-wydgit="${escapeHtml(raw.id)}"><input type="hidden" name="_target" value="${escapeHtml(raw.id)}"><input type="hidden" name="_action" value="Submit"><input type="hidden" name="_csrf" value="${escapeHtml(csrf)}">${raw.content?.value?renderMarkdown(raw.content.value):''}${sectionContent(presentation)}${(raw.fields??[]).map(block).join('')}<button type="submit">${escapeHtml(raw.label)}</button></form>`;}
       return guard(() => {
         const node = resolve(raw, 'block', model);
         const allowed = model.prototypes.get('block').properties.content['supported-types'];
@@ -128,32 +131,24 @@ export function renderSite(model, requestPath = '/', {csrf=''} = {}) {
         if (ids.some(id => !validId(id) || usedIds.has(id)) || new Set(ids).size !== ids.length) throw new Error(`Invalid or duplicate block anchors: ${node.id}`);
         ids.forEach(claim);
         const tag = presentation === 'whole-card-link' ? 'a' : node.position === 'aside' ? 'aside' : node.position === 'header' ? 'header' : node.position === 'footer' ? 'footer' : 'div';
-        return `<${tag} ${attrs(node)}${skin}${tag === 'a' ? ` href="${escapeHtml(href)}"` : ''}>${node.anchors.map(id => `<span id="${escapeHtml(id)}" class="anchor"></span>`).join('')}${markup}${presentation === 'whole-card-link' ? '<span class="card-arrow" aria-hidden="true">↗</span>' : href ? `<a class="card-page-link" href="${escapeHtml(href)}">Explore ${escapeHtml(model.pages.get(node.linkToPage).title)} <span aria-hidden="true">↗</span></a>` : ''}</${tag}>`;
+        return `<${tag} ${attrs(node)}${skin}${tag === 'a' ? ` href="${escapeHtml(href)}"` : ''}>${node.anchors.map(id => `<span id="${escapeHtml(id)}" class="anchor"></span>`).join('')}${markup}${(raw.children??[]).map(block).join('')}${presentation === 'whole-card-link' ? '<span class="card-arrow" aria-hidden="true">↗</span>' : href ? `<a class="card-page-link" href="${escapeHtml(href)}">Explore ${escapeHtml(model.pages.get(node.linkToPage).title)} <span aria-hidden="true">↗</span></a>` : ''}</${tag}>`;
       });
     }
-    const pageChildren = model.prototypes.get('page').children;
-    if (pageChildren.prototype !== 'section') throw new Error('Unsupported page child prototype');
-    const orderedSections = ordered(page[pageChildren.property]);
-    const renderedSections = orderedSections.map(raw => guard(() => {
-      const section = resolve(raw, 'section', model); claim(section.id);
-      const children = model.prototypes.get('section').children;
-      if (children.prototype !== 'block') throw new Error('Unsupported section child prototype');
-      const skin = skinAttribute(section, model);
-      const blocks = ordered(section[children.property]);
-      let content;
-      if (section.format.layout === 'columns' && blocks.some(b => b?.format?.column)) {
-        // Group adjacent placements only; DOM reading order always matches content order.
-        const groups = [];
-        for (const rawBlock of blocks) {
-          const column = rawBlock?.format?.column || 'left';
-          if (!['left','right','full'].includes(column)) throw new Error(`Unsupported column: ${column}`);
-          if (groups.at(-1)?.column !== column) groups.push({ column, blocks: [] });
-          groups.at(-1).blocks.push(rawBlock);
-        }
-        content = groups.map(group => `<div class="wyd-column-${group.column}">${group.blocks.map(block).join('')}</div>`).join('');
-      } else content = blocks.map(block).join('');
-      return `<section ${attrs(section)}${skin}>${content}</section>`;
-    }));
+    function sectionContent(raw) {
+      const children=model.prototypes.get('section').children;if(children.prototype!=='block')throw new Error('Unsupported section child prototype');
+      const blocks=ordered(raw[children.property]??[]);
+      if(raw.format?.layout==='columns'&&blocks.some(b=>b?.format?.column)){
+        const groups=[];
+        for(const child of blocks){const column=child?.format?.column||'left';if(!['left','right','full'].includes(column))throw new Error(`Unsupported column: ${column}`);if(groups.at(-1)?.column!==column)groups.push({column,blocks:[]});groups.at(-1).blocks.push(child);}
+        return groups.map(group=>`<div class="wyd-column-${group.column}">${group.blocks.map(block).join('')}</div>`).join('');
+      }
+      return blocks.map(block).join('');
+    }
+    function nestedSection(raw){return guard(()=>{const node=resolve(raw,'section',model);claim(node.id);return `<section ${attrs(node)}${skinAttribute(node,model)}>${sectionContent(node)}</section>`;});}
+    const pageChildren=model.prototypes.get('page').children;
+    if(pageChildren.prototype!=='section')throw new Error('Unsupported page child prototype');
+    const orderedSections=ordered(page[pageChildren.property]);
+    const renderedSections=orderedSections.map(raw=>raw.prototype==='form'?block(raw):nestedSection(raw));
     const headerCount = orderedSections.findIndex(section => section.position !== 'header');
     const introCount = headerCount === -1 ? orderedSections.length : headerCount;
     const introduction = renderedSections.slice(0, introCount).join('');

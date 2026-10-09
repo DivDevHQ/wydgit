@@ -7,6 +7,35 @@ breaking architectural changes.
 
 ## Unreleased
 
+## 0.2.0-alpha.14 — 0.2-N
+### Portable Form Wydgit + Semantic Field Primitives
+
+- Form now inherits Section and owns recursive descendant Fields through ordinary
+  containment; nested Forms and duplicate field names are rejected by canonical
+  hydration/mutation and draft subtree validation. Legacy fields slots remain valid.
+- Added TextInput, PasswordInput, TextArea, Checkbox, RadioGroup, CheckboxGroup and
+  Select under Field, with semantic labels, typed values, enabled/visible state,
+  text placeholders and nullable character limits, and shared safe option groups.
+- Added inherited WydBASIC Bind/Values/Validate/IsValid/Clear methods through normal
+  prototype dispatch and a closed, bounded, scoped kernel binding. Binding changes
+  values only; clear empties values while preserving configuration and layout.
+- Shared renderer-neutral rules validate required/type/cardinality/option/length
+  semantics on Page and WydClient. Web POST maps to typed values before validation
+  and Submit, retaining ordinary invalid values and request isolation.
+- PasswordInput values are redacted from generic collection, scoped properties,
+  default exports, diagnostics, client Change payloads and web redisplay. Trusted
+  internal edits preserve sensitive request state; no secret-management system added.
+- Web mapping adds accessible labels, group legends, validation association,
+  placeholders, limits, disabled state, secure entry and single/multiple selection.
+  Core semantics contain no HTTP/Node/DOM/HTML control configuration.
+- Added ProfileForm object/draft/mutation/rule/Page/source/client/renderer tests and
+  forms documentation; preserved existing schemas, content, methods and libraries.
+- Advanced platform/lockfile/App/current metadata to 0.2.0-alpha.14; WydStore,
+  WydGate and unrelated package versions remain unchanged.
+- Verification: full `npm test` (229 tests), `npm run check`, and `git diff --check`.
+- Deferred Guestbook to 0.2-O, native renderers, advanced validators, Reset,
+  automatic persistence and client tree attachment. Manual browser QA not performed.
+
 ## 0.2.0-alpha.13 — 0.2-M
 ### Prototype Methods + WydBASIC Object Construction
 

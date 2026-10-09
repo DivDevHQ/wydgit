@@ -12,7 +12,7 @@ export function createEdit(original, context, registry, hydrate, dehydrate) {
   authorize([]);
   original.get(context.self);
   const baseRevision = original.revision;
-  let working = dehydrate(original), closed = false;
+  let working = dehydrate(original,{includeSensitive:true}), closed = false;
   const index = root => {
     const entries = new Map();
     const visit = (node, parent = null, slot = null, position = 0) => {
@@ -59,9 +59,9 @@ export function createEdit(original, context, registry, hydrate, dehydrate) {
   // operations can alias or damage the accepted working snapshot.
   const apply = operation => {
     open();
-    const candidate = dehydrate(validated(working));
+    const candidate = dehydrate(validated(working),{includeSensitive:true});
     operation(candidate, index(candidate));
-    const next = dehydrate(validated(candidate));
+    const next = dehydrate(validated(candidate),{includeSensitive:true});
     const ids = [...index(next).keys()];
     working = next;
     ids.forEach(id => reserved.add(id));

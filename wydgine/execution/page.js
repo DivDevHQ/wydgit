@@ -1,3 +1,4 @@
+import { descendantFields,formOperation,fieldKind,fieldValidation,publicProperties } from '../object-model/forms.js';
 import { hydrate,dehydrate } from '../object-model/index.js';
 import { clean,freeze,requireThat as check } from '../object-model/validation.js';
 import { createDispatcher,EventRegistry,safeError,prepareHandlers,prepareAction } from '../events/index.js';
@@ -10,7 +11,7 @@ export async function executePage({model,pageId,session,input,context,handlers=[
   handlers=prepareHandlers(handlers,events);actions=actions.map(record=>prepareAction(record,events));
   check(context.app===session.view.app&&session.active(),'EVENT.DENIED','Invalid owning Session');
   check((context.identity?.sessionId??null)===(session.identity?.sessionId??null),'EVENT.DENIED','Wrong Session identity');
-  let runtime=hydrate(dehydrate(model.runtime),model.registry),alive=true,writable=true,unloading=false;
+  let runtime=hydrate(dehydrate(model.runtime,{includeSensitive:true}),model.registry),alive=true,writable=true,unloading=false;
   const ledger=[],initialized=new Set(),archive=new Map(),errors=[];let failure;
   const response=createResponse(context),requestData={...input,route:{page:pageId}};
   const tree=(state=runtime)=>{const ids=[];const walk=id=>{ids.push(id);for(const slot of Object.keys(state.get(id).slots).sort())state.get(id).slots[slot].forEach(walk);};walk(pageId);return ids;};
@@ -32,7 +33,8 @@ export async function executePage({model,pageId,session,input,context,handlers=[
       const oldIds=new Set(tree()),added=tree(next).filter(value=>!oldIds.has(value));
       check(added.every(value=>!reserved.has(value)),'MUTATION.IDENTITY','Request IDs cannot be reused');added.forEach(value=>reserved.add(value));runtime=next;
     };
-    const result=Object.freeze({get id(){guard();return id;},get prototype(){guard();return node().prototype;},get properties(){guard();return node().properties;},
+    const result=Object.freeze({get id(){guard();return id;},get prototype(){guard();return node().prototype;},get properties(){guard();return publicProperties(node(),model.registry);},
+      FormState(operation,data){guard();check(model.registry.isA(node().prototype,'wydgit.core/form'),'FORM.OPERATION','Receiver must be Form');check(context.traversal.includes('children'),'SEAM.TRAVERSAL','Form traversal denied');const fields=descendantFields(runtime,model.registry,id,context);check(fields.every(f=>context.visible.includes(f.id)),'SEAM.VISIBILITY','Invisible Form field');const changes=[];const value=formOperation(fields,model.registry,operation,data,(id,p)=>changes.push([id,p]));if(operation==='validate')changes.push([id,{valid:value}]);if(operation==='clear')changes.push([id,{valid:true}]);if(changes.length){guard();check(writable&&!unloading&&response.state==='Open','EVENT.DENIED','Tree is read-only');const edit=runtime.edit(context);for(const [id,p] of changes)for(const [key,v] of Object.entries(p))edit.setProperty(id,key,v);runtime=edit.commit().runtime;}return value;},
       related(relation,slot){guard();check(exists(id),'EVENT.DENIED','Removed object');const related=runtime.scope(context,id).related(relation,slot);const wrap=value=>{check(exists(value.id),'EVENT.DENIED','Outside Page');return handle(value.id,invocation);};return Array.isArray(related)?Object.freeze(related.map(wrap)):related?wrap(related):null;},
       Set(name,value){edit('setProperty',name,value);},Insert(slot,index,envelope){edit('insertChild',slot,index,envelope);},Remove(){check(id!==pageId,'EVENT.DENIED','Page root immutable');edit('remove');},Replace(envelope){check(id!==pageId,'EVENT.DENIED','Page root immutable');edit('replaceChild',envelope);},Move(parent,slot,index){check(ownedHandles.has(parent),'EVENT.DENIED','Foreign handle');check(id!==pageId,'EVENT.DENIED','Page root immutable');edit('moveChild',parent.id,slot,index);}
     });ownedHandles.add(result);cache.set(id,result);return result;
@@ -62,7 +64,7 @@ export async function executePage({model,pageId,session,input,context,handlers=[
   const phase=async name=>{const snapshot=tree();for(const id of snapshot){if(exists(id)){await dispatch(`Page.${name}`,id);if(response.explicit)return;}}await initialize();};
   const systemSet=(id,properties)=>{
     // Trusted input binding only touches declared semantic fields, not arbitrary data.
-    const raw=dehydrate(runtime);const walk=node=>{if(node.id===id)Object.assign(node.properties,properties);Object.values(node.slots).flat().forEach(walk);};walk(raw);runtime=hydrate(raw,model.registry);
+    const raw=dehydrate(runtime,{includeSensitive:true});const walk=node=>{if(node.id===id)Object.assign(node.properties,properties);Object.values(node.slots).flat().forEach(walk);};walk(raw);runtime=hydrate(raw,model.registry);
   };
   try {
     check(exists(pageId),'EVENT.INVALID','Page missing');
@@ -75,25 +77,26 @@ export async function executePage({model,pageId,session,input,context,handlers=[
     await dispatch('Page.Start',pageId);
     if(!response.explicit)await initialize();
     if(!response.explicit) {
-      for(const id of tree())if(model.registry.isA(runtime.get(id).prototype,'wydgit.core/form')){
-        const names=runtime.get(id).slots.fields.map(child=>runtime.get(child).properties.name);
-        check(names.every(name=>/^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(name)&&!['constructor','prototype'].includes(name))&&new Set(names).size===names.length,'REQUEST.INVALID','Invalid semantic field names');
-      }
       if(input.method==='POST') {
-        const values=parseMap(input.form),fields=runtime.get(action.target).slots.fields??[];
-        check(Object.keys(values).every(name=>['_action','_target','_csrf'].includes(name)||(action.type==='Change'&&name==='value')||fields.some(id=>runtime.get(id).properties.name===name)),'REQUEST.INVALID','Forbidden submitted field');
+        const values=parseMap(input.form),fields=model.registry.isA(runtime.get(action.target).prototype,'wydgit.core/form')?descendantFields(runtime,model.registry,action.target):[];
+        check(Object.keys(values).every(name=>['_action','_target','_csrf'].includes(name)||(action.type==='Change'&&name==='value')||fields.some(f=>f.properties.name===name)),'REQUEST.INVALID','Forbidden submitted field');
         if(action.type==='Change')check(Object.keys(values).every(name=>['_action','_target','_csrf','value'].includes(name)),'REQUEST.INVALID','Forbidden Change field');
-        for(const id of fields){const field=runtime.get(id),value=request.Form.Get(field.properties.name)??'';systemSet(id,{value});}
+        for(const field of fields){if(!field.properties.enabled)continue;const kind=fieldKind(field.prototype,model.registry),all=request.Form.GetAll(field.properties.name);let value;
+          if(kind==='checkbox')value=all.length>0;
+          else if(kind==='checkbox-group'||kind==='select'&&field.properties.multiple)value=all;
+          else {check(all.length<=1,'REQUEST.INVALID','Multiple values for single field');value=all[0]??(['radio-group','select'].includes(kind)?null:'');}
+          if(kind==='select'&&!field.properties.multiple&&value==='')value=null;systemSet(field.id,{value});
+        }
       }
       await phase('Load');
     }
     if(!response.explicit) {
-      for(const id of tree())if(model.registry.isA(runtime.get(id).prototype,'wydgit.core/field')) {
-        const field=runtime.get(id).properties,errors=field.required&&!field.value.trim()?['Required']:[];systemSet(id,{valid:!errors.length,errors,warnings:[]});
+      for(const id of tree())if(model.registry.isA(runtime.get(id).prototype,'wydgit.core/field')){
+        const field=runtime.get(id);systemSet(id,fieldValidation(fieldKind(field.prototype,model.registry),field.properties));
       }
-      for(const id of tree())if(model.registry.isA(runtime.get(id).prototype,'wydgit.core/form'))systemSet(id,{valid:(runtime.get(id).slots.fields??[]).every(child=>runtime.get(child).properties.valid),errors:[],warnings:[]});
+      for(const id of tree())if(model.registry.isA(runtime.get(id).prototype,'wydgit.core/form'))systemSet(id,{valid:descendantFields(runtime,model.registry,id).every(field=>field.properties.valid),errors:[],warnings:[]});
       await phase('Validate');
-      for(const id of tree())if(model.registry.isA(runtime.get(id).prototype,'wydgit.core/form'))systemSet(id,{valid:runtime.get(id).properties.valid&&(runtime.get(id).slots.fields??[]).every(child=>runtime.get(child).properties.valid)});
+      for(const id of tree())if(model.registry.isA(runtime.get(id).prototype,'wydgit.core/form'))systemSet(id,{valid:runtime.get(id).properties.valid&&descendantFields(runtime,model.registry,id).every(child=>child.properties.valid)});
     }
     if(!response.explicit&&input.action) {
       context.require(action.capability);await session.authorize();

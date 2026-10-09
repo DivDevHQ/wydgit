@@ -159,3 +159,8 @@ then copies it into the parent and consumes the child token atomically. The pare
 can still be incomplete until final attachment. These are transient builders, not
 detached runtime edit sessions. See [object model](object-model.md) for lifecycle,
 construction authority and [SEWN](sewn.md) for hard bounds.
+
+
+## 0.2-N portable Forms
+
+Every accepted candidate also validates Form ancestry and unique descendant field names. Insert, Replace, Move and private draft assembly cannot conceal a Form beneath another Form, even through Blocks/Sections. Bind/Validate/Clear use existing atomic edit validation and authority; edits preserve transient sensitive state internally. See [forms.md](forms.md).

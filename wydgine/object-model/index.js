@@ -1,3 +1,4 @@
+import { formTree,publicProperties } from './forms.js';
 import { validateEnvelope, resolveProperties } from './schema.js';
 import { createEdit } from './mutation.js';
 import { clean, freeze, jsonKeys, parse, record, requireThat as check, WydgitError } from './validation.js';
@@ -24,6 +25,7 @@ export function hydrate(input, registry, { revision = 0 } = {}) {
     jsonKeys(raw.slots);
     const properties = resolveProperties(raw.properties, definition), provenance = clean(raw.provenance);
     const node = { id: raw.id, prototype: definition.id, properties: freeze(properties), provenance: freeze(provenance), slots: Object.create(null) };
+    Object.defineProperty(node,'toJSON',{value:()=>({...node,properties:publicProperties(node,registry)})});
     nodes.set(node.id, node); parents.set(node.id, parent); positions.set(node.id, { slot, index });
     for (const key of Object.keys(raw.slots)) {
       check(!['__proto__','constructor','prototype'].includes(key), 'INPUT.DANGEROUS_KEY', 'Reserved slot key');
@@ -43,6 +45,8 @@ export function hydrate(input, registry, { revision = 0 } = {}) {
     active.delete(raw); return freeze(node);
   }
   const root = visit(input, null, null, 0);
+  const semantic=id=>{const n=nodes.get(id);return {prototype:n.prototype,properties:n.properties,slots:Object.fromEntries(Object.entries(n.slots).map(([key,ids])=>[key,ids.map(semantic)]))};};
+  formTree(semantic(root.id),registry);
   const runtime = Object.freeze({
     // Host-only APIs: never hand this runtime or its context factory to package code.
     rootId: root.id,
@@ -57,7 +61,7 @@ export function hydrate(input, registry, { revision = 0 } = {}) {
         check(nodes.has(id), 'OBJECT.UNKNOWN', 'Unknown object');
         if (handles.has(id)) return handles.get(id);
         const node = nodes.get(id);
-        const result = Object.freeze({ id, prototype: node.prototype, properties: node.properties, provenance: node.provenance,
+        const result = Object.freeze({ id, prototype: node.prototype, properties: freeze(clean(publicProperties(node,registry))), provenance: node.provenance,
           related(relation, slotName) {
             check(context.traversal.includes(relation), 'SEAM.TRAVERSAL', 'Traversal denied');
             let ids;
@@ -82,12 +86,12 @@ export function hydrate(input, registry, { revision = 0 } = {}) {
       return handle(startId);
     }
   });
-  graphs.set(runtime, { nodes, root }); return runtime;
+  graphs.set(runtime, { nodes, root, registry }); return runtime;
 }
-export function dehydrate(runtime) {
+export function dehydrate(runtime, { includeSensitive = false } = {}) {
   check(graphs.has(runtime), 'OBJECT.RUNTIME', 'Expected hydrated runtime');
-  const { nodes, root } = graphs.get(runtime);
-  const emit = node => ({ schema: 'wydgit/0.2', id: node.id, prototype: node.prototype, properties: clean(node.properties), slots: Object.fromEntries(Object.entries(node.slots).map(([key, ids]) => [key, ids.map(id => emit(nodes.get(id)))])), provenance: clean(node.provenance) });
+  const { nodes, root, registry } = graphs.get(runtime);
+  const emit = node => ({ schema: 'wydgit/0.2', id: node.id, prototype: node.prototype, properties: clean(includeSensitive?node.properties:publicProperties(node,registry)), slots: Object.fromEntries(Object.entries(node.slots).map(([key, ids]) => [key, ids.map(id => emit(nodes.get(id)))])), provenance: clean(node.provenance) });
   return emit(root);
 }
 export function serialize(runtime) { return JSON.stringify(dehydrate(runtime)); }

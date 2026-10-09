@@ -18,8 +18,10 @@ export function resolveProperties(input, definition, { incomplete = false } = {}
     if (!Object.hasOwn(properties, key) && Object.hasOwn(rule, 'default')) properties[key] = clean(rule.default);
     if (!Object.hasOwn(properties, key)) { check(incomplete || !rule.required, 'OBJECT.PROPERTY', `Missing property: ${key}`); continue; }
     const v = properties[key], type = v === null ? 'null' : Array.isArray(v) ? 'array' : typeof v;
-    check(type === rule.type && (!rule.enum || rule.enum.includes(v)), 'OBJECT.PROPERTY', `Invalid property: ${key}`);
+    check((Array.isArray(rule.type)?rule.type:[rule.type]).includes(type) && (!rule.enum || rule.enum.includes(v)), 'OBJECT.PROPERTY', `Invalid property: ${key}`);
   }
+  // Multi-select has an empty collection default; explicit authored values remain intact.
+  if((definition.id==='wydgit.core/select'||definition.ancestors?.includes('wydgit.core/select'))&&properties.multiple&&!Object.hasOwn(input,'value')&&definition.properties.value.default===null)properties.value=[];
   return properties;
 }
 

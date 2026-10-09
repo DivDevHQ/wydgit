@@ -42,7 +42,7 @@ export class PrototypeRegistry {
       check((d.overrides??[]).every(name=>Object.hasOwn(behavior?.procedures??{},name)),'PROTOTYPE.METHOD','Override must declare a method');
       const properties = { ...base?.properties, ...d.properties }, slots = { ...base?.slots, ...d.slots };
       for (const rule of Object.values(properties)) {
-        check(record(rule) && ['string','number','boolean','object','array','null'].includes(rule.type), 'PROTOTYPE.DEFINITION', 'Invalid property rule');
+        check(record(rule) && (!Array.isArray(rule.type)||rule.type.length>0)&& (Array.isArray(rule.type)?rule.type:[rule.type]).every(type=>['string','number','boolean','object','array','null'].includes(type)), 'PROTOTYPE.DEFINITION', 'Invalid property rule');
         check(rule.enum === undefined || Array.isArray(rule.enum), 'PROTOTYPE.DEFINITION', 'Invalid enum');
       }
       for (const rule of Object.values(slots)) {

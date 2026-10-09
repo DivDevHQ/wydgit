@@ -229,7 +229,7 @@ empty. No Node wiring is added to canonical App properties or provenance.
 
 Three versions are independent:
 
-- Platform version: `wydgit@0.2.0-alpha.13`.
+- Platform version: `wydgit@0.2.0-alpha.14`.
 - Library version: e.g. the fixture's `1.0.0`, equal to its npm package version.
 - Compatibility ranges: manifest `platform`, host-approved implementation `version`,
   and portable requirement `version` each constrain their respective version.

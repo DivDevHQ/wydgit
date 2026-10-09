@@ -173,3 +173,8 @@ prototypes; their portable source and HTTP integration prove this model.
 Base calls, access modifiers, nominal prototype types, multiple inheritance,
 interfaces/mixins, overloads/static members, reflection/dynamic names, closures,
 automatic IDs/persistence, remote loading and slot-property sugar are deferred.
+
+
+## 0.2-N portable Forms
+
+Form now inherits Section. Section blocks and optional Block children accept nested layout and semantic Fields. All Form descendants share ownership; duplicate names and nested Forms fail canonical validation, including draft graphs. Property rules can declare a nonempty array of JSON types for nullable and single/multi values. Default exports redact PasswordInput values; trusted internal edits explicitly preserve sensitive state. See [forms.md](forms.md).

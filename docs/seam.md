@@ -170,3 +170,8 @@ existing objects. Canonical Insert/Replace retains every existing mutation check
 including explicit prospective ID visibility/editability. Draft methods use the
 same caller service bindings. Opaque builder references cannot be serialized or
 persisted. Limits only reduce the maxima listed in [SEWN](sewn.md).
+
+
+## 0.2-N portable Forms
+
+Form prototype methods use a closed FormState kernel binding, children traversal, visibility of every descendant and ordinary edit grants. Form inheritance supplies no authority. Traversal has fixed/reducible node bounds and never walks outside the receiver. Generic values/properties/exports redact PasswordInput. See [forms.md](forms.md).

@@ -247,3 +247,8 @@ read-only method execution; it does not supply server tree mutation or storage.
 Private drafts are portable when a trusted client host supplies a registry/grants,
 but this client adapter cannot attach them to its presentation tree. Server lifecycle
 ID-only handles also do not pretend to be full Wydgit receivers.
+
+
+## 0.2-N portable Forms
+
+The handle allowlist adds `FormState(operation, data?)`, the closed scoped Form kernel binding used by WydBASIC prototype wrappers. All schema versions retain their existing operations. Form methods use normal sewn/0.3 dispatch; no new executable schema is introduced. See [forms.md](forms.md).

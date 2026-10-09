@@ -256,7 +256,7 @@ for server forms. No browser automation framework was present or added.
 
 ## Compatibility, verification and deferred work
 
-Platform is 0.2.0-alpha.13; Gate is independently 0.1.0-alpha.3. Gate's private
+Platform is 0.2.0-alpha.14; Gate is independently 0.1.0-alpha.3. Gate's private
 `wydgate.local/0.2` schema remains unchanged; expiry now records revocation/history.
 The pre-existing 0.2-F→G storage incompatibility remains; no destructive migration.
 There was no prior public event/handler/HTTP facade to migrate. Existing pure
@@ -316,3 +316,8 @@ portable prototype/property projections for read-only method dispatch, without
 server mutation/service facades. See [object model](object-model.md) for transient
 draft consumption and [WydBASIC](wydbasic.md) for the source API. The real HTTP
 construction proof is `test/wydbasic-construction-http.test.js`.
+
+
+## 0.2-N portable Forms
+
+POST population now discovers every descendant Field of the target Form and adapts input into typed semantic values. Validation precedes Submit; invalid submission preserves ordinary values and validation messages while suppressing the action default. PasswordInput is never echoed in web output. WydClient uses the same semantic rules and validates before Submit. See [forms.md](forms.md).
