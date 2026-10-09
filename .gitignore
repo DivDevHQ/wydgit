@@ -8,4 +8,5 @@ node_modules/
 *.sqlite-wal
 *.sqlite-shm
 
-Agents.mdAGENTS.md
+Agents.md
+AGENTS.md
