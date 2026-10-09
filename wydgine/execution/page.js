@@ -47,7 +47,7 @@ export async function executePage({model,pageId,session,input,context,handlers=[
   if(action)defaults[action.type]=async()=>{
     context.require(action.capability);await session.authorize();
     // Default is a trusted registered adapter; receives the same safe contexts, no grants.
-    const dispatcher=createDispatcher({registry:events,handlers:[{type:action.type,owner:action.target,run:action.run}],context,handle,contexts,exists});
+    const dispatcher=createDispatcher({registry:events,handlers:[{type:action.type,owner:action.target,...(action.workflow!==undefined?{workflow:action.workflow}:{run:action.run})}],context,handle,contexts,exists});
     try{await dispatcher.dispatch({type:action.type,source:action.target,target:action.target,payload:input.action.payload??{}});}finally{dispatcher.close();}
   };
   const dispatcher=createDispatcher({registry:events,handlers,context,handle,contexts,exists,canRaise:id=>initialized.has(id),defaults,completed:()=>response.explicit,identifiers:{session:session.view.id,page:pageId}});

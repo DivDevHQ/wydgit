@@ -4,7 +4,7 @@
 
 This implements the runtime contract in `docs/milestones/0.2-H`. Wydgine owns
 transport and server execution (see the [0.2-I transport boundary](http-transport.md)); WydClient owns browser adaptation; SEAM owns
-runtime authority. No WydBASIC parser/compiler or SEWN interpreter exists. The
+runtime authority. SEWN workflows execute through the shared bounded interpreter (see [SEWN](sewn.md)). No WydBASIC parser/compiler exists. The
 parameterless JavaScript bridge below is trusted implementation/test code, not a
 way to load arbitrary executable Wydgit packages.
 
@@ -47,7 +47,7 @@ invocation. Payloads are deeply frozen. Activate permits optional string `Comman
 Change requires `OldValue` and `NewValue`; Submit has an empty payload and reads
 semantic field/validation state through scoped handles.
 
-Host registrations use `{type,owner,source?,capability?,run}` in declaration order.
+Host registrations use `{type,owner,source?,capability?,run}` or replace `run` with a validated SEWN `workflow` in declaration order.
 `source` selects named-source delivery; it defaults to owner. The optional capability
 adds a requirement; it never grants authority. All handlers use the dispatch caller's
 existing context. No privileged owner context is unioned into it.
@@ -253,7 +253,7 @@ for server forms. No browser automation framework was present or added.
 
 ## Compatibility, verification and deferred work
 
-Platform is 0.2.0-alpha.9; Gate is independently 0.1.0-alpha.3. Gate's private
+Platform is 0.2.0-alpha.10; Gate is independently 0.1.0-alpha.3. Gate's private
 `wydgate.local/0.2` schema remains unchanged; expiry now records revocation/history.
 The pre-existing 0.2-F→G storage incompatibility remains; no destructive migration.
 There was no prior public event/handler/HTTP facade to migrate. Existing pure
@@ -261,7 +261,7 @@ renderer APIs remain, while createApp/createHostApp now use the Page pipeline.
 Raw HTML tokens inside Markdown are deliberately disabled across both response and
 content rendering. Default demo routes/appearance are otherwise retained.
 
-No SEWN/WydBASIC/WydStitch compiler, WydFiles package, distributed event transport,
+No WydBASIC/WydStitch compiler, WydFiles package, distributed event transport,
 WebSockets, new renderer, arbitrary HTTP client, uploads, cookie login UI, cache,
 redirect/JSON response API, capture/bubbling, or unrestricted host execution is added.
 

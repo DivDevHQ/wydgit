@@ -7,7 +7,27 @@ breaking architectural changes.
 
 ## Unreleased
 
-No unreleased milestone changes yet.
+## 0.2.0-alpha.10 — 0.2-J
+### SEWN Foundation + Safe Execution Engine
+
+- Added closed `sewn/0.1` JSON grammar/validation and a runtime-neutral sequential
+  executor with literals, variables, member reads, structured expressions, branches,
+  bounded for-each loops, return/stop and controlled facade calls.
+- Added portable workflow handler/action records to existing event dispatch and
+  caller-preserving canonical library service dispatch; reused scoped Page mutation,
+  Session authorization and safe HTTP/client contexts without capability union.
+- Enforced program/value size, expression/statement depth, steps, variables, loops,
+  service-call and deadline bounds with sanitized errors and reduced context limits.
+- Added hostile schema/prototype/type, scope/stale handle, concurrent isolation,
+  determinism and limit tests; real HTTP SEWN form → WydStore → local success
+  replacement coverage plus a simple WydClient Ready workflow.
+- Advanced platform/App to `0.2.0-alpha.10`; workspace package versions unchanged.
+  Added `docs/sewn.md` and updated event/SEAM documentation.
+- Deferred source compilers including WydBASIC, procedures, durable workflows,
+  debugger, SEWN file responses/status assignment and full client feature parity.
+  Service timeouts do not roll back in-flight provider operations.
+- Verified `npm test` and `npm run check`; manual browser verification not performed.
+
 
 ---
 

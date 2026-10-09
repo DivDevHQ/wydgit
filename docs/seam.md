@@ -7,8 +7,7 @@ optional `app` identity, `self` (instance ID), `capabilities`, `scopes`,
 `visible` and `editable` (instance IDs),
 `traversal`, and `limits`. Grants and metadata are copied and deeply frozen. Capability names must
 have exactly the portable `domain.resource.action` shape. Matching is exact;
-there are no wildcards or implicit grants. Limits are non-negative integer
-metadata for future interpreters; no interpreter or execution budget is claimed.
+there are no wildcards or implicit grants. Limits are non-negative integer metadata. Event and [SEWN](sewn.md) execution enforce resource budgets.
 
 `runtime.scope(context)` returns a context-bound handle for `self`. Handles expose
 only immutable identity, properties and provenance, `related(relation, slot?)`,
@@ -42,7 +41,7 @@ const result = resultOf(() => card.related('nextSibling'));
 Host code must keep the runtime, registry and context constructor private and pass
 only scoped handles across a future package boundary. The constructor is a host
 policy primitive, not a package-accessible grant API. This is not a sandbox for
-arbitrary imported JavaScript. No arbitrary package code or SEWN is executed. The service dispatcher below
+arbitrary imported JavaScript. Portable SEWN uses the bounded executor and safe event facades. No arbitrary package JavaScript is executed. The service dispatcher below
 preserves context and enforces operation requirements for approved libraries.
 
 Expected failures use `SEAM.CONTEXT`, `SEAM.CAPABILITY`, `SEAM.TRAVERSAL`,

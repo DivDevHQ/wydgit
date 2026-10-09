@@ -1,3 +1,5 @@
+import { validate as validateWorkflow } from '../sewn/validate.js';
+import { execute as executeWorkflow } from '../sewn/execute.js';
 import { clean, freeze, record, requireThat as check, WydgitError } from '../object-model/validation.js';
 import { checkContext } from '../seam/context.js';
 export const fail = (code='EVENT.INVALID') => { throw new WydgitError(code,'Event operation failed'); };
@@ -39,7 +41,7 @@ export function handler(fn) {
 }
 export function createDispatcher({registry=new EventRegistry(),handlers=[],context,handle,contexts=()=>({}),exists=()=>true,defaults={},limit={},completed=()=>false,runtimeTarget='server',identifiers={},reusable=false,canRaise=exists}) {
   checkContext(context);
-  const records=handlers.map((r)=>{const d=registry.get(r.type);check(['Semantic','Custom'].includes(d.family)||r.source===undefined||r.source===r.owner,'EVENT.INVALID','Lifecycle handler owner must be recipient');check(typeof r.owner==='string','EVENT.INVALID','Missing owner');return {...r,run:handler(r.run)};});
+  const records=handlers.map((r)=>{const d=registry.get(r.type);check(['Semantic','Custom'].includes(d.family)||r.source===undefined||r.source===r.owner,'EVENT.INVALID','Lifecycle handler owner must be recipient');check(typeof r.owner==='string','EVENT.INVALID','Missing owner');check((r.workflow!==undefined)!==(r.run!==undefined),'EVENT.INVALID','Choose one handler implementation');return r.workflow!==undefined?{...r,workflow:validateWorkflow(r.workflow)}:{...r,run:handler(r.run)};});
   const bounds={queue:64,dispatches:256,handlers:2048,depth:16,timeMs:5000,...limit};
   for(const key of Object.keys(bounds)){const grant=context.limits[`event${key[0].toUpperCase()+key.slice(1)}`];if(grant!==undefined)bounds[key]=Math.min(bounds[key],grant);check(Number.isSafeInteger(bounds[key])&&bounds[key]>0,'EVENT.LIMIT','Invalid limit');}
   let deadline=Date.now()+bounds.timeMs;
@@ -69,7 +71,7 @@ export function createDispatcher({registry=new EventRegistry(),handlers=[],conte
       const provided={ME:handle(record.owner,guard),EVENT:Object.freeze(event),...contexts(guard,task)};
       const scope=new Proxy(Object.freeze(provided),{get(target,key){guard();check(Object.hasOwn(target,key),'EVENT.CONTEXT','Context unavailable');return target[key];}});
       let timer;
-      try {await Promise.race([Promise.resolve().then(()=>record.run.call(scope)),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new WydgitError('EVENT.LIMIT','Handler time limit')),Math.max(1,deadline-Date.now()));})]);}
+      try {await Promise.race([Promise.resolve().then(()=>record.workflow?executeWorkflow(record.workflow,{scope,context}):record.run.call(scope)),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new WydgitError('EVENT.LIMIT','Handler time limit')),Math.max(1,deadline-Date.now()));})]);}
       catch(error){throw safeError(error);}finally{active=false;clearTimeout(timer);}
       if(completed()||!structural&&(cancelled||handled))break;
     }
