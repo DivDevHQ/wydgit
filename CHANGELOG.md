@@ -11,6 +11,31 @@ No unreleased milestone changes yet.
 
 ---
 
+## 0.2.0-alpha.9 — 0.2-I
+### Express → Hono Transport Decoupling
+
+- Removed Express and its middleware/dependency tree; added pinned `hono` and
+  `@hono/node-server` as private HTTP transport dependencies.
+- Introduced a replaceable adapter with plain kernel request data and a narrow
+  output port; no Hono/native host objects enter ordinary Wydgit contexts.
+- Preserved 0.2-H Page/Event/Session/REQUEST/RESPONSE behavior, CSRF/SEAM boundaries,
+  response commitment, Markdown/file streaming, cookies and cleanup semantics.
+- Moved generated/static CSS and allowlisted runtime routes behind the adapter,
+  retaining content types, cache policy, conditional delivery and HEAD handling;
+  denied hidden files, traversal and symlink escapes outside approved roots.
+- Retained locked CSP/nosniff policy and decoded 32 KB form bounds, including
+  compressed/chunked bodies; malformed character bytes now fail closed.
+- Added graceful listener/Server Stop integration and startup-error cleanup.
+  The trusted host retains listen/locals; Express middleware/router APIs are removed.
+- Added real TCP transport regressions and SIGINT/SIGTERM subprocess tests;
+  verified the full `npm test` suite and `npm run check`. Manual browser verification
+  remains unavailable without a connected browser.
+- Advanced platform/App metadata to `0.2.0-alpha.9`; workspace library APIs,
+  versions and minimum platform compatibility ranges remain unchanged.
+  Documented the boundary/replacement strategy; no other runtime adapter added.
+
+---
+
 ## 0.2.0-alpha.8 — 0.2-H
 ### Event, Lifecycle, Request/Response Foundation
 

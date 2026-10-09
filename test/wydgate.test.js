@@ -137,6 +137,6 @@ test('password hashing is bounded and missing accounts use the same verification
 test('platform and Gate versions are synchronized and canonical App data has no authentication wiring',async()=>{
  const read=async name=>JSON.parse(await fs.readFile(path.join(project,name),'utf8'));
  const [pkg,lock,app]=await Promise.all(['package.json','package-lock.json','content/app.json'].map(read));
- assert.equal(pkg.version,'0.2.0-alpha.8');assert.equal(lock.version,pkg.version);assert.equal(lock.packages[''].version,pkg.version);assert.equal(lock.packages['packages/wydgate'].version,manifest.version);assert.equal(app.properties.revision,'Wydgit 0.2 alpha 8');
+ assert.equal(pkg.version,'0.2.0-alpha.9');assert.equal(lock.version,pkg.version);assert.equal(lock.packages[''].version,pkg.version);assert.equal(lock.packages['packages/wydgate'].version,manifest.version);assert.equal(app.properties.revision,'Wydgit 0.2 alpha 9');
  assert.doesNotMatch(JSON.stringify(app),/argon2|password|credential|@wydgit|sqlite|identity/i);
 });

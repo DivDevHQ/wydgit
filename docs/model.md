@@ -52,7 +52,7 @@ const renderer = createRenderer({ root: '/absolute/path/to/wydgine-alpha' });
 const { html, status, diagnostics } = renderer.renderPage('/about/');
 ```
 
-`renderSite(model, pathname)` is the pure in-memory renderer; `loadRepository(root)` is the file loader. Neither depends on Express. A render result contains the complete HTML document and suggested response status.
+`renderSite(model, pathname)` is the pure in-memory renderer; `loadRepository(root)` is the file loader. Neither depends on the HTTP host adapter. A render result contains the complete HTML document and suggested response status.
 
 Unknown/malformed Blocks, Sections or Navigation show a small unavailable-content placeholder while the rest of the page renders. Unknown/malformed Page, Site or prototype files return a complete 500 page. Missing routes return 404. Details go to server diagnostics, never stack traces in HTML. Invalid links fail locally. Markdown HTML is sanitized with a narrow tag/attribute allowlist; scripts, embeds, event attributes, unsafe URLs and arbitrary styles are removed. Only CSS is exposed as a static directory. Request paths never become file paths.
 

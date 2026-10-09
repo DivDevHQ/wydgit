@@ -103,7 +103,7 @@ test('JSON edits are picked up on the next render; corrupt JSON fails gracefully
  fs.writeFileSync(path.join(root,'content/app.json'),'{broken'); assert.equal(renderer.renderPage('/').status,500);
 });
 
-test('Express serves HTML and CSS, returns HTTP errors and does not expose source files', async t => {
+test('HTTP host serves HTML and CSS, returns HTTP errors and does not expose source files', async t => {
  const server=createApp({logger:{error(){}}}).listen(0,'127.0.0.1');
  await new Promise(resolve => server.once('listening',resolve));
  t.after(() => new Promise(resolve => {server.close(resolve);server.closeAllConnections();}));

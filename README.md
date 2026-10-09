@@ -42,9 +42,9 @@ The result should be:
 
 Wydgit is currently in **early alpha development**.
 
-The current codebase implements the Wydgit 0.2-H event, lifecycle and request/response foundation, integrated with WydGate sessions, WydStore and the existing object-model/mutation/SEAM foundation:
+The current codebase implements the Wydgit 0.2-I transport boundary and 0.2-H event, lifecycle and request/response foundation, integrated with WydGate sessions, WydStore and the existing object-model/mutation/SEAM foundation:
 
-- Node.js / Express server
+- replaceable Hono HTTP transport adapter on Node.js
 - canonical App-rooted JSON and immutable hydrated Wydgit instances
 - single prototype inheritance with publisher boundaries and abstract bases
 - validated named slots and deny-by-default scoped traversal
@@ -63,13 +63,13 @@ The current codebase implements the Wydgit 0.2-H event, lifecycle and request/re
 - nested App → Page → Section → Block composition
 - renderer and HTTP tests
 
-Implementation details: [object model](docs/object-model.md), [SEAM](docs/seam.md), [mutation model](docs/mutation-model.md), [library model](docs/library-model.md), [WydStore](docs/wydstore.md), [WydGate](docs/wydgate.md), and [events/HTTP execution](docs/events.md). Executable third-party packages and later platform subsystems remain deferred.
+Implementation details: [object model](docs/object-model.md), [SEAM](docs/seam.md), [mutation model](docs/mutation-model.md), [library model](docs/library-model.md), [WydStore](docs/wydstore.md), [WydGate](docs/wydgate.md), [events/HTTP execution](docs/events.md), and [HTTP transport](docs/http-transport.md). Executable third-party packages and later platform subsystems remain deferred.
 
 The architectural contract is:
 
 [`docs/FOUNDING-ARCHITECTURE.md`](docs/FOUNDING-ARCHITECTURE.md)
 
-Current development version: **0.2.0-alpha.8**. Completed platform milestones
+Current development version: **0.2.0-alpha.9**. Completed platform milestones
 update `package.json`, matching root metadata in `package-lock.json`, and
 `content/app.json` → `properties.revision` together. Version updates do not create
 Git tags or publish releases. Completed milestones also update [CHANGELOG.md](CHANGELOG.md).

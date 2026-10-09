@@ -3,7 +3,7 @@
 **Dispatch carries authority. It never manufactures it.**
 
 This implements the runtime contract in `docs/milestones/0.2-H`. Wydgine owns
-transport and server execution; WydClient owns browser adaptation; SEAM owns
+transport and server execution (see the [0.2-I transport boundary](http-transport.md)); WydClient owns browser adaptation; SEAM owns
 runtime authority. No WydBASIC parser/compiler or SEWN interpreter exists. The
 parameterless JavaScript bridge below is trusted implementation/test code, not a
 way to load arbitrary executable Wydgit packages.
@@ -17,7 +17,7 @@ way to load arbitrary executable Wydgit packages.
 | App lifecycle and anonymous Session ownership | `wydgine/execution/lifecycle.js` |
 | Gate committed Session transitions | `packages/wydgate/src/core.js`, `sessions.js` |
 | Bounded input, response intent, approved file catalog | `wydgine/http/` |
-| Actual Express and startup/shutdown integration | `app.js`, `server.js` |
+| Replaceable Hono HTTP adapter and startup/shutdown | `wydgine/http/transport/hono.js`, `app.js`, `server.js` |
 | DOM adapter and client lifecycle | `wydclient/index.js` |
 
 Canonical containment remains App → Page → content. Session ownership is an
@@ -253,7 +253,7 @@ for server forms. No browser automation framework was present or added.
 
 ## Compatibility, verification and deferred work
 
-Platform is 0.2.0-alpha.8; Gate is independently 0.1.0-alpha.3. Gate's private
+Platform is 0.2.0-alpha.9; Gate is independently 0.1.0-alpha.3. Gate's private
 `wydgate.local/0.2` schema remains unchanged; expiry now records revocation/history.
 The pre-existing 0.2-F→G storage incompatibility remains; no destructive migration.
 There was no prior public event/handler/HTTP facade to migrate. Existing pure

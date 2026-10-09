@@ -1,7 +1,7 @@
-import express from 'express';
+import { createTransport } from './wydgine/http/transport/hono.js';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createRenderer, errorDocument } from './wydgine/index.js';
+import { createRenderer } from './wydgine/index.js';
 import { createPipeline } from './wydgine/http/pipeline.js';
 import { createLifecycle } from './wydgine/execution/lifecycle.js';
 import { loadRepository } from './wydgine/repository.js';
@@ -9,28 +9,9 @@ import { initializeHost } from './wydgine/host.js';
 
 export const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 export function createApp({ root = projectRoot, logger = console, libraries, execution = {}, lifecycle } = {}) {
-  const app = express();
   const renderer = createRenderer({ root });
-  const pipeline=createPipeline({root,libraries,execution,lifecycle});
-  app.locals.lifecycle=pipeline.lifecycle;
-  app.disable('x-powered-by');
-  app.use((_req, res, next) => {
-    res.set('Content-Security-Policy', "default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
-    res.set('X-Content-Type-Options', 'nosniff');
-    next();
-  });
-  app.get('/css/skins.css', (_req, res) => {
-    res.type('css').set('Cache-Control', 'no-cache').send(renderer.renderStyles());
-  });
-  const clientModules=['wydclient/index.js','wydgine/events/index.js','wydgine/object-model/validation.js','wydgine/seam/context.js','wydgine/seam/capabilities.js','wydgine/http/input.js'];
-  for(const module of clientModules)app.get(`/runtime/${module}`,(_req,res)=>res.type('js').sendFile(path.join(projectRoot,module)));
-  app.use('/css', express.static(path.join(root, 'public/css')));
-  app.use(express.text({type:'application/x-www-form-urlencoded',limit:'32kb'}));
-  app.use((req,res)=>pipeline.request(req,res));
-  app.use((error, _req, res, _next) => {
-    logger.error(error.message);
-    res.status(500).type('html').send(errorDocument());
-  });
+  const pipeline = createPipeline({ root, libraries, execution, lifecycle });
+  const app = createTransport({ root, projectRoot, renderer, pipeline, logger });
   return app;
 }
 

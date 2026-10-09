@@ -68,7 +68,7 @@ export function errorDocument(status = 500) {
   return documentHtml(title, '', `<main class="error-page"><h1>${title}</h1><p>${status === 404 ? 'We could not find that page.' : 'Please try again later.'}</p><a href="/">Return to home</a></main>`);
 }
 
-// Pure rendering API: accepts an in-memory model, knows nothing about Express or HTTP.
+// Pure rendering API: accepts an in-memory model, knows nothing about the host adapter or HTTP.
 export function renderSite(model, requestPath = '/', {csrf=''} = {}) {
   const diagnostics = [...(model.diagnostics || [])];
   const guard = fn => { try { return fn(); } catch (error) { diagnostics.push(error.message); return placeholder(); } };
