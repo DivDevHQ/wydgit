@@ -1,3 +1,4 @@
+import { prepareHandler } from '../events/index.js';
 import { loadRepository } from '../repository.js';
 import { executePage } from '../execution/page.js';
 import { createLifecycle,createSessionResolver } from '../execution/lifecycle.js';
@@ -6,6 +7,7 @@ import { ExecutionContext } from '../seam/context.js';
 import { createGate } from '@wydgit/gate/client';
 import { errorDocument,pagePath } from '../index.js';
 export function createPipeline({root,libraries,execution={},lifecycle}) {
+  execution={...execution,handlers:(execution.handlers??[]).map(prepareHandler),actions:(execution.actions??[]).map(prepareHandler)};
   const model=loadRepository(root),app=model.runtime.rootId;
   lifecycle??=createLifecycle({app,handlers:execution.lifecycleHandlers,context:execution.lifecycleContext});
   const ready=lifecycle.start();

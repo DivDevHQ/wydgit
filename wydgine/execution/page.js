@@ -1,12 +1,13 @@
 import { hydrate,dehydrate } from '../object-model/index.js';
 import { clean,freeze,requireThat as check } from '../object-model/validation.js';
-import { createDispatcher,EventRegistry,safeError } from '../events/index.js';
+import { createDispatcher,EventRegistry,safeError,prepareHandler } from '../events/index.js';
 import { requestFacade,parseMap } from '../http/input.js';
 import { createResponse } from '../http/response.js';
 import { webModel } from '../web-model.js';
 import { renderSite,errorDocument } from '../index.js';
 
 export async function executePage({model,pageId,session,input,context,handlers=[],actions=[],events=new EventRegistry(),files,libraries,csrf,render=renderSite}) {
+  handlers=handlers.map(prepareHandler);actions=actions.map(prepareHandler);
   check(context.app===session.view.app&&session.active(),'EVENT.DENIED','Invalid owning Session');
   check((context.identity?.sessionId??null)===(session.identity?.sessionId??null),'EVENT.DENIED','Wrong Session identity');
   let runtime=hydrate(dehydrate(model.runtime),model.registry),alive=true,writable=true,unloading=false;

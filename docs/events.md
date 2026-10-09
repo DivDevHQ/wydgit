@@ -4,7 +4,7 @@
 
 This implements the runtime contract in `docs/milestones/0.2-H`. Wydgine owns
 transport and server execution (see the [0.2-I transport boundary](http-transport.md)); WydClient owns browser adaptation; SEAM owns
-runtime authority. SEWN workflows execute through the shared bounded interpreter (see [SEWN](sewn.md)). No WydBASIC parser/compiler exists. The
+runtime authority. SEWN workflows execute through the shared bounded interpreter (see [SEWN](sewn.md)). [WydBASIC](wydbasic.md) source compiles to canonical SEWN before dispatch. The
 parameterless JavaScript bridge below is trusted implementation/test code, not a
 way to load arbitrary executable Wydgit packages.
 
@@ -47,7 +47,9 @@ invocation. Payloads are deeply frozen. Activate permits optional string `Comman
 Change requires `OldValue` and `NewValue`; Submit has an empty payload and reads
 semantic field/validation state through scoped handles.
 
-Host registrations use `{type,owner,source?,capability?,run}` or replace `run` with a validated SEWN `workflow` in declaration order.
+Host registrations use `{type,owner,source?,capability?,run}` or replace `run` with a validated SEWN `workflow` or WydBASIC `wydBasic` source
+in declaration order. Exactly one implementation is required; source is compiled
+before dispatch. HTTP registrations compile once during pipeline construction.
 `source` selects named-source delivery; it defaults to owner. The optional capability
 adds a requirement; it never grants authority. All handlers use the dispatch caller's
 existing context. No privileged owner context is unioned into it.
@@ -133,7 +135,8 @@ warnings. POST binding permits only declared field names; values bind before Loa
 Required-field validation precedes Validate handlers and Submit. The renderer owns
 HTML and error presentation; application validation data contains no CSS/DOM nodes.
 
-Host action registrations are `{page,target,type,method:'POST',capability,run}`.
+Host action registrations are `{page,target,type,method:'POST',capability,run}`;
+`workflow` or `wydBasic` replaces `run` under the same exclusive implementation rule.
 Server checks known action/target, owning Session, payload schema, method and grants.
 POST uses `_target`, `_action`, `_csrf` plus named form values; Change additionally
 uses `value`, with OldValue resolved by the server. Each action runs once per request;
@@ -253,7 +256,7 @@ for server forms. No browser automation framework was present or added.
 
 ## Compatibility, verification and deferred work
 
-Platform is 0.2.0-alpha.10; Gate is independently 0.1.0-alpha.3. Gate's private
+Platform is 0.2.0-alpha.11; Gate is independently 0.1.0-alpha.3. Gate's private
 `wydgate.local/0.2` schema remains unchanged; expiry now records revocation/history.
 The pre-existing 0.2-F→G storage incompatibility remains; no destructive migration.
 There was no prior public event/handler/HTTP facade to migrate. Existing pure
@@ -261,7 +264,7 @@ renderer APIs remain, while createApp/createHostApp now use the Page pipeline.
 Raw HTML tokens inside Markdown are deliberately disabled across both response and
 content rendering. Default demo routes/appearance are otherwise retained.
 
-No WydBASIC/WydStitch compiler, WydFiles package, distributed event transport,
+No additional WydStitch dialect, WydFiles package, distributed event transport,
 WebSockets, new renderer, arbitrary HTTP client, uploads, cookie login UI, cache,
 redirect/JSON response API, capture/bubbling, or unrestricted host execution is added.
 

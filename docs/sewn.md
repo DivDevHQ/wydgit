@@ -1,8 +1,8 @@
 # SEWN — 0.2-J
 
 SEWN means **SEAM Execution Workflow Notation**. WydStitch writes it. SEWN describes
-it. SEAM constrains it. Wydgine or WydClient runs it. WydBASIC and future WydStitch
-dialects may compile to SEWN; no source parser/compiler is implemented.
+it. SEAM constrains it. Wydgine or WydClient runs it. [WydBASIC](wydbasic.md)
+compiles to SEWN in 0.2-K; future WydStitch dialects may use the same boundary.
 
 A document is exactly `{ "schema": "sewn/0.1", "body": [] }`. The closed executable
 grammar is defined in `wydgine/sewn/schema.js` and validated by `validate.js`.
@@ -53,7 +53,8 @@ execution. All statements, expressions, arguments and service calls run in order
 
 ## Context and authority
 
-Event registrations choose exactly one of trusted host `run` or portable `workflow`.
+Event registrations choose exactly one of trusted host `run`, portable `workflow`, or
+WydBASIC `wydBasic` source compiled to a workflow before dispatch.
 Actions accept the same choice. No callbacks are needed inside a workflow:
 
 ```json
@@ -115,6 +116,6 @@ retains the canonical form. `test/sewn.test.js` also executes a simple Client.Re
 workflow through WydClient; client mutations/services beyond existing bindings are
 not claimed. Trusted JS remains kernel/test code, never portable package source.
 
-Source languages, durable replay/queues, debugger, dynamic imports, arbitrary
+Additional source languages, durable replay/queues, debugger, dynamic imports, arbitrary
 networking, general reflection, user procedures and full client feature parity
-remain deferred. No WydBASIC implementation is included.
+remain deferred. WydBASIC adds only a compiler front end.

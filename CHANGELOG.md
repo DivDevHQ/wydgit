@@ -7,6 +7,30 @@ breaking architectural changes.
 
 ## Unreleased
 
+## 0.2.0-alpha.11 — 0.2-K
+### WydBASIC Compiler Foundation
+
+- Added a separate hand-written tokenizer, located AST/parser and semantic compiler
+  for the first WydStitch dialect; output is frozen, validated canonical `sewn/0.1`.
+- Implemented case-insensitive keywords/identifiers, DIM with types/inference,
+  assignment/SET, scalar/array/object literals, strict structured expressions,
+  IF/ELSE/ELSEIF, bounded FOR EACH, RETURN/STOP and allowlisted member/method calls.
+- Added structured source-location diagnostics, name/type checking, deterministic
+  lowering and explicit rejection of unsupported syntax and dangerous members.
+- Integrated exclusive `run`/`workflow`/`wydBasic` event/action registration;
+  HTTP source compiles before dispatch and reuses SEWN without authority changes.
+- Proved real HTTP Page/Submit → WydStore → request-local replacement/rendering,
+  denial/isolation/concurrency, SEWN structure/execution equivalence and WydClient
+  Ready/Change through existing facades and the existing SEAM execution boundary.
+- Added no interpreter, generated JavaScript, host escape, dependency or alternate
+  runtime. Advanced platform/App to `0.2.0-alpha.11`; library versions unchanged.
+  Added `docs/wydbasic.md` and updated SEWN/event documentation.
+- Deferred procedures, modules/source events, async syntax, unbounded loops,
+  classes/imports, array indexing, nested service expressions and DIM inside loops.
+  Branch declarations remain branch-local for source name checking; static types
+  do not replace SEWN's runtime checks.
+- Verified `npm test` and `npm run check`; manual browser verification not performed.
+
 ## 0.2.0-alpha.10 — 0.2-J
 ### SEWN Foundation + Safe Execution Engine
 

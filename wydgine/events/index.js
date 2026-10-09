@@ -1,3 +1,4 @@
+import { compile as compileWydBasic } from '../wydbasic/index.js';
 import { validate as validateWorkflow } from '../sewn/validate.js';
 import { execute as executeWorkflow } from '../sewn/execute.js';
 import { clean, freeze, record, requireThat as check, WydgitError } from '../object-model/validation.js';
@@ -35,13 +36,21 @@ export class EventRegistry {
   }
 }
 export function handler(fn) {
-  // Trusted JS bridge only; no source evaluation or WydBASIC/SEWN compiler.
+  // Trusted JS bridge only; portable source uses the separate SEWN compiler.
   const source=typeof fn==='function'?Function.prototype.toString.call(fn):'';
   check(/^(?:async\s+)?(?:function(?:\s+[\w$]+)?\s*)?\(\s*\)/.test(source)&&fn.length===0,'EVENT.INVALID','Handlers must declare no parameters');return fn;
 }
+export function prepareHandler(record) {
+  check(['run','workflow','wydBasic'].filter(key=>record[key]!==undefined).length===1,'EVENT.INVALID','Choose one handler implementation');
+  if(record.wydBasic!==undefined) {
+    const {wydBasic,...rest}=record;
+    return {...rest,workflow:compileWydBasic(wydBasic)};
+  }
+  return record.workflow!==undefined?{...record,workflow:validateWorkflow(record.workflow)}:{...record,run:handler(record.run)};
+}
 export function createDispatcher({registry=new EventRegistry(),handlers=[],context,handle,contexts=()=>({}),exists=()=>true,defaults={},limit={},completed=()=>false,runtimeTarget='server',identifiers={},reusable=false,canRaise=exists}) {
   checkContext(context);
-  const records=handlers.map((r)=>{const d=registry.get(r.type);check(['Semantic','Custom'].includes(d.family)||r.source===undefined||r.source===r.owner,'EVENT.INVALID','Lifecycle handler owner must be recipient');check(typeof r.owner==='string','EVENT.INVALID','Missing owner');check((r.workflow!==undefined)!==(r.run!==undefined),'EVENT.INVALID','Choose one handler implementation');return r.workflow!==undefined?{...r,workflow:validateWorkflow(r.workflow)}:{...r,run:handler(r.run)};});
+  const records=handlers.map((r)=>{const d=registry.get(r.type);check(['Semantic','Custom'].includes(d.family)||r.source===undefined||r.source===r.owner,'EVENT.INVALID','Lifecycle handler owner must be recipient');check(typeof r.owner==='string','EVENT.INVALID','Missing owner');return prepareHandler(r);});
   const bounds={queue:64,dispatches:256,handlers:2048,depth:16,timeMs:5000,...limit};
   for(const key of Object.keys(bounds)){const grant=context.limits[`event${key[0].toUpperCase()+key.slice(1)}`];if(grant!==undefined)bounds[key]=Math.min(bounds[key],grant);check(Number.isSafeInteger(bounds[key])&&bounds[key]>0,'EVENT.LIMIT','Invalid limit');}
   let deadline=Date.now()+bounds.timeMs;
