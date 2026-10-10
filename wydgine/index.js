@@ -61,8 +61,8 @@ export function resolveLink(item, currentPage, model) {
   return pagePath(page, model.site) + (item.section ? `#${encodeURIComponent(item.section)}` : '');
 }
 
-function documentHtml(title, description, body, bodyAttributes = '') {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(title)}</title><meta name="description" content="${escapeHtml(description)}"><link rel="stylesheet" href="/css/site.css"><link rel="stylesheet" href="/css/skins.css"></head><body${bodyAttributes}>${body}</body></html>`;
+function documentHtml(title, description, body, bodyAttributes = '', themeMode = 'system') {
+  return `<!doctype html><html lang="en" data-wyd-theme="${escapeHtml(themeMode)}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(title)}</title><meta name="description" content="${escapeHtml(description)}"><link rel="stylesheet" href="/css/site.css"><link rel="stylesheet" href="/css/skins.css"></head><body${bodyAttributes}>${body}</body></html>`;
 }
 export function errorDocument(status = 500) {
   const title = status === 404 ? 'Page not found' : 'Page temporarily unavailable';
@@ -108,7 +108,7 @@ export function renderSite(model, requestPath = '/', {csrf=''} = {}) {
     function block(raw) {
       if(raw.prototype==='field')return renderField(raw,escapeHtml,claim);
       if(raw.prototype==='section')return nestedSection(raw);
-      if(raw.prototype==='form'){const presentation=resolve({...raw,prototype:'section'},'section',model);claim(raw.id);return `<form class="${classes(presentation)}"${skinAttribute(presentation,model)} id="${escapeHtml(raw.id)}" method="post" data-wydgit="${escapeHtml(raw.id)}"><input type="hidden" name="_target" value="${escapeHtml(raw.id)}"><input type="hidden" name="_action" value="Submit"><input type="hidden" name="_csrf" value="${escapeHtml(csrf)}">${raw.content?.value?renderMarkdown(raw.content.value):''}${sectionContent(presentation)}${(raw.fields??[]).map(block).join('')}<button type="submit">${escapeHtml(raw.label)}</button></form>`;}
+      if(raw.prototype==='form'){const presentation=resolve({...raw,prototype:'section'},'section',model);claim(raw.id);return `<form class="wyd-form ${classes(presentation)}"${skinAttribute(presentation,model)} id="${escapeHtml(raw.id)}" method="post" data-wydgit="${escapeHtml(raw.id)}"><input type="hidden" name="_target" value="${escapeHtml(raw.id)}"><input type="hidden" name="_action" value="Submit"><input type="hidden" name="_csrf" value="${escapeHtml(csrf)}">${raw.content?.value?renderMarkdown(raw.content.value):''}${sectionContent(presentation)}${(raw.fields??[]).map(block).join('')}<button class="wyd-submit" type="submit">${escapeHtml(raw.label)}</button></form>`;}
       return guard(() => {
         const node = resolve(raw, 'block', model);
         const allowed = model.prototypes.get('block').properties.content['supported-types'];
@@ -159,7 +159,7 @@ export function renderSite(model, requestPath = '/', {csrf=''} = {}) {
     const asideNav = navs.filter(n => n.position === 'aside').map(navigation).join('');
     const toc = page.navigation ? navigation(page.navigation) : '';
     const html = documentHtml(`${page.title} — ${site.title}`, page.description,
-      `<a class="skip" href="#main">Skip to content</a><header class="site-header"><a class="brand" href="/">${site.logoText ? `<span class="brand-mark" aria-hidden="true">${escapeHtml(site.logoText)}</span>` : ''}${escapeHtml(site.title)}</a><span class="tagline">${escapeHtml(site.tagline)}</span>${headerNav ? `<div class="desktop-navigation">${headerNav}</div><details class="mobile-navigation"><summary>Menu</summary>${headerNav}</details>` : ''}</header><main id="main"${pageSkin} class="${classes(page)}"><article>${introduction}${toc || asideNav ? `<div class="reading-layout"><aside class="toc">${toc}${asideNav}</aside><div class="reading-content">${sections}</div></div>` : sections}</article></main><footer class="site-footer"><a class="brand" href="/">${escapeHtml(site.title)}</a><p>${escapeHtml(site.tagline)}</p>${footerNav}<p>${escapeHtml(site.footer)}</p><small>${escapeHtml(site.revision)}</small></footer>`, siteSkin);
+      `<a class="skip" href="#main">Skip to content</a><header class="site-header"><a class="brand" href="/">${site.logoText ? `<span class="brand-mark" aria-hidden="true">${escapeHtml(site.logoText)}</span>` : ''}${escapeHtml(site.title)}</a><span class="tagline">${escapeHtml(site.tagline)}</span>${headerNav ? `<div class="desktop-navigation">${headerNav}</div><details class="mobile-navigation"><summary>Menu</summary>${headerNav}</details>` : ''}</header><main id="main"${pageSkin} class="${classes(page)}"><article>${introduction}${toc || asideNav ? `<div class="reading-layout"><aside class="toc">${toc}${asideNav}</aside><div class="reading-content">${sections}</div></div>` : sections}</article></main><footer class="site-footer"><a class="brand" href="/">${escapeHtml(site.title)}</a><p>${escapeHtml(site.tagline)}</p>${footerNav}<p>${escapeHtml(site.footer)}</p><small>${escapeHtml(site.revision)}</small></footer>`, siteSkin, site.themeMode);
     return { status: 200, html, diagnostics };
   } catch (error) {
     diagnostics.push(error.message);

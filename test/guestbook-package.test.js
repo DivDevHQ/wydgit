@@ -18,7 +18,7 @@ test('ordinary Guestbook: uninstalled → plan → install → normal host → P
  await applyPackageInstall(plan);
  const start=async()=>{const app=await createHostApp({root});const server=app.listen(0,'127.0.0.1');await once(server,'listening');return {app,server,url:`http://127.0.0.1:${server.address().port}`};};
  let host=await start();t.after(()=>host.app.shutdown(host.server));
- const first=await fetch(host.url),html=await first.text();assert.equal(first.status,200);assert.match(html,/Guestbook/);
+ const first=await fetch(host.url),html=await first.text();assert.equal(first.status,200);assert.match(html,/Guestbook/);assert.match(html,/class="wyd-form /);assert.match(html,/class="wyd-textarea wyd-input"/);assert.match(html,/class="wyd-submit"/);
  const cookie=first.headers.get('set-cookie').split(';')[0],csrf=/name="_csrf" value="([^"]+)"/.exec(html)[1];
  const post=async(name,message,token=csrf)=>{const r=await fetch(host.url,{method:'POST',headers:{cookie,'content-type':'application/x-www-form-urlencoded'},body:new URLSearchParams({_target:'guestbook-form',_action:'Submit',_csrf:token,name,message})});return {status:r.status,html:await r.text()};};
  assert.equal((await post('Alice','bad','forged')).status,403);

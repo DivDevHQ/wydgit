@@ -111,3 +111,29 @@ The homepage uses these groups for the hero, AI feature, economic section, and c
 Leading Sections with `position: "header"` render above the sidebar/content grid. Keep these header sections at the start of the page's ordered sections. The site `logoText` property supplies an optional decorative letter mark. The skin's `link-hover` token controls text-link hover color; header navigation underlines only the current page.
 
 Reading-page presentations also include `related` (separate Continue reading links), `note`, `concept`, `relationship`, `metadata`, `summary`, `back`, `glossary`, and `assessment`. Card collections contain one `whole-card-link` block per card, with `layout: "cards"` on the owning section; do not flatten a collection into one Markdown block. Glossary Markdown retains semantic `<dl>`, `<dt>`, and `<dd>` tags through the sanitizer. Assessment lists retain native ordered-list semantics while displaying styled numbers. Skins can override `soft`, `quote-border`, and `assessment-number`. The presentation regression test compares component counts against all 46 publication snapshots, alongside the existing word-order and link checks.
+
+### Theme modes and Forms (0.2-Q)
+
+App `properties.themeMode` defaults to `system`; supported values are `system`,
+`light`, and `dark`. Skin identity (`skin: "default"`) is separate from mode.
+The web document exposes `data-wyd-theme` on `<html>`. Forced modes select the
+corresponding palette; system uses CSS `prefers-color-scheme: dark`, without
+JavaScript detection or a preference UI.
+
+Skin `tokens` supply the base/light palette. Optional `darkTokens` override those
+same validated tokens in dark mode. Both maps are partial: undeclared values
+inherit from enclosing skin scopes and ultimately the renderer defaults. Older
+skins without `darkTokens` continue to load, with their declared tokens applying
+in both modes. Custom skins should supply dark overrides for colors they change.
+Existing `paper`, `surface`, `ink`, `muted`, and `line` describe page, surface,
+text, muted text, and borders. Control tokens are `input-background`, `input-text`,
+`input-border`, `focus`, `primary`, `primary-text`, `error`, `success`,
+`disabled-background`, and `disabled-text`.
+
+Forms inherit presentation from the active skin. The renderer owns vertical
+layout, field labels, control spacing, validation messages, focus outlines and
+the synthesized Submit button. Stable classes include `wyd-form`, `wyd-field`,
+`wyd-field-label`, `wyd-input`, `wyd-textarea`, `wyd-select`, `wyd-checkbox`,
+`wyd-radio-group`, `wyd-checkbox-group`, `wyd-validation`, and `wyd-submit`.
+Packages should use semantic controls instead of embedding HTML/CSS presentation
+hacks. Skin tokens control appearance and do not alter validation or submission.

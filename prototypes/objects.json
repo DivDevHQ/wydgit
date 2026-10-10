@@ -59,6 +59,15 @@
         "type": "string",
         "default": "",
         "description": "Optional decorative letter mark beside the site title."
+      },
+      "themeMode": {
+        "type": "string",
+        "default": "system",
+        "enum": [
+          "system",
+          "light",
+          "dark"
+        ]
       }
     },
     "slots": {

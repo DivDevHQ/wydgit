@@ -1,3 +1,12 @@
+## 0.2.0-alpha.17 — 0.2-Q
+### Default Form Presentation + Theme Modes
+
+- Default vertical Forms and consistent semantic field/control and Submit styling.
+- Separate system/light/dark theme mode contract with CSS-native system preference handling.
+- Semantic skin control tokens, default light/dark palettes, and backward-compatible partial skin fallbacks.
+- Preserve label/group semantics, invalid-message associations, disabled controls and visible focus.
+- Guestbook requires no package-specific styling or package changes.
+
 # Changelog
 
 All notable changes to Wydgit are documented in this file.

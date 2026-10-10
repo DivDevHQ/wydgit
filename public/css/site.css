@@ -15,7 +15,7 @@ body, [data-skin] {
 }
 a { color: var(--link); text-underline-offset: .22em; }
 a:hover { color: var(--link-hover); }
-a:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
+a:focus-visible, summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; }
 h1, h2, h3, h4 { line-height: 1.25; text-wrap: balance; }
 h1 { font-size: clamp(2rem, 5.4vw, 4.32rem); letter-spacing: -.035em; margin: .4em 0; }
 h2 { font-size: clamp(1.8rem, 3vw, 2.2rem); letter-spacing: -.025em; margin: 0 0 1.5rem; }
@@ -235,3 +235,34 @@ main { max-width: 1240px; padding-inline: 5%; }
 }
 
 article > section.wyd-position-header .wyd-presentation-lead p { margin-bottom: 22px; }
+
+/* Semantic defaults also support older skins with partial token sets. */
+:root { --input-background:#ffffff;--input-text:#243042;--input-border:#64748b;--focus:#1d4ed8;--primary:#1d4ed8;--primary-text:#ffffff;--error:#b42318;--success:#166534;--disabled-background:#e2e8f0;--disabled-text:#475569; }
+[data-wyd-theme="dark"] { color-scheme: dark; --paper:#111827;--surface:#1f2937;--ink:#f1f5f9;--muted:#b8c4d4;--line:#526176;--accent:#334b70;--link:#93c5fd;--link-hover:#bfdbfe;--panel:#1e293b;--panel-ink:#f1f5f9;--soft:#1e293b;--quote-border:#93c5fd;--assessment-number:#93c5fd;--input-background:#1f2937;--input-text:#f1f5f9;--input-border:#94a3b8;--focus:#93c5fd;--primary:#93c5fd;--primary-text:#111827;--error:#fca5a5;--success:#86efac;--disabled-background:#334155;--disabled-text:#b8c4d4; }
+[data-wyd-theme="light"], [data-wyd-theme="system"] { color-scheme: light; }
+@media (prefers-color-scheme: dark) { [data-wyd-theme="system"] { color-scheme: dark; --paper:#111827;--surface:#1f2937;--ink:#f1f5f9;--muted:#b8c4d4;--line:#526176;--accent:#334b70;--link:#93c5fd;--link-hover:#bfdbfe;--panel:#1e293b;--panel-ink:#f1f5f9;--soft:#1e293b;--quote-border:#93c5fd;--assessment-number:#93c5fd;--input-background:#1f2937;--input-text:#f1f5f9;--input-border:#94a3b8;--focus:#93c5fd;--primary:#93c5fd;--primary-text:#111827;--error:#fca5a5;--success:#86efac;--disabled-background:#334155;--disabled-text:#b8c4d4; } }
+
+.wyd-form { display: flex; flex-direction: column; gap: 1.25rem; width: 100%; max-width: var(--reading-width); padding-block: 1.5rem; text-align: start; }
+.wyd-form > :not(.wyd-field):not(.wyd-submit) { min-width: 0; }
+.wyd-field { display: flex; flex-direction: column; gap: .4rem; min-width: 0; margin: 0 0 1.25rem; padding: 0; border: 0; }
+.wyd-field-label, .wyd-field legend { font-weight: 650; }
+.wyd-field legend { padding: 0; margin-bottom: .5rem; }
+.wyd-required { font-size: .8rem; color: var(--muted); }
+.wyd-input { width: 100%; min-width: 0; font: inherit; line-height: 1.5; padding: .65rem .8rem; border: 1px solid var(--input-border); border-radius: .35rem; background: var(--input-background); color: var(--input-text); }
+.wyd-input::placeholder { color: var(--muted); opacity: 1; }
+.wyd-input:hover:not(:disabled) { border-color: var(--focus); }
+.wyd-textarea { min-height: 9rem; resize: vertical; }
+.wyd-select[multiple] { min-height: 8rem; }
+.wyd-option, .wyd-field-checkbox { display: flex; flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: .6rem; }
+.wyd-option { margin-block: .3rem; }
+.wyd-option input { order: -1; }
+.wyd-checkbox, .wyd-radio { accent-color: var(--primary); width: 1.15rem; height: 1.15rem; flex-shrink: 0; }
+.wyd-field-checkbox .wyd-validation { flex-basis: 100%; }
+.wyd-input:focus-visible, .wyd-checkbox:focus-visible, .wyd-radio:focus-visible, .wyd-submit:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.wyd-input[aria-invalid="true"] { border: 2px solid var(--error); }
+.wyd-validation { color: var(--error); border-inline-start: 3px solid var(--error); padding-inline-start: .6rem; font-size: .9rem; margin: .3rem 0 0; }
+.wyd-submit { align-self: flex-start; font: inherit; font-weight: 650; line-height: 1.5; padding: .65rem 1.3rem; border: 1px solid var(--primary); border-radius: .35rem; background: var(--primary); color: var(--primary-text); cursor: pointer; }
+.wyd-submit:hover:not(:disabled) { text-decoration: underline; text-underline-offset: .2em; }
+.wyd-input:disabled, .wyd-submit:disabled { background: var(--disabled-background); color: var(--disabled-text); border-color: var(--line); cursor: not-allowed; }
+.wyd-field:disabled .wyd-field-label, .wyd-field:disabled legend, .wyd-field-label:has(+ input:disabled) { color: var(--disabled-text); }
+.wyd-checkbox:disabled, .wyd-radio:disabled { opacity: .65; }
