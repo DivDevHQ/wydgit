@@ -1,3 +1,15 @@
 node_modules/
 *.log
 .env
+
+# Local SQLite provider files and recovery sidecars
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+
+Agents.md
+AGENTS.md
+
+# Host runtime/provider data
+.wydgit-data/

@@ -1,0 +1,34 @@
+[
+  {
+    "id": "divdev/guestbook",
+    "publisher": "divdev",
+    "extends": "wydgit.core/section",
+    "properties": {},
+    "slots": {},
+    "behaviorSource": "SUB RefreshEntries()\n    DIM entries AS Wydgit\n    DIM entry AS Wydgit\n    DIM position AS Number = 0\n    FOR EACH child IN Me.related(\"children\", \"blocks\")\n        IF child.id = \"guestbook-entries\" THEN\n            SET entries = child\n        END IF\n    NEXT child\n    DIM result = SERVICES.Call(\"wydstore\", \"query\", {\"store\":\"entries\", \"collection\":\"entries\", \"limit\":20})\n    FOR EACH previous IN entries.related(\"children\", \"blocks\")\n        previous.Remove()\n    NEXT previous\n    IF NOT result.ok THEN\n        FOR EACH item IN Me.related(\"children\", \"blocks\")\n            IF item.id = \"guestbook-status\" THEN\n                item.Set(\"content\", {\"type\":\"markdown\", \"value\":\"Guestbook entries are temporarily unavailable.\"})\n            END IF\n        NEXT item\n        RETURN\n    END IF\n    FOR EACH record IN result.value\n        SET entry = NEW \"divdev/guestbook-entry\"(\"guestbook-entry-\" & NewId())\n        CALL entry.ShowEntry(record.data.name, record.data.message)\n        entries.Insert(\"blocks\", position, entry)\n        position = position + 1\n    NEXT record\nEND SUB"
+  },
+  {
+    "id": "divdev/guestbook-form",
+    "publisher": "divdev",
+    "extends": "wydgit.core/form",
+    "properties": {},
+    "slots": {},
+    "behaviorSource": "FUNCTION SaveEntry() AS Boolean\n    DIM values AS Object = Me.Values()\n    DIM result = SERVICES.Call(\"wydstore\", \"create\", {\"store\":\"entries\", \"collection\":\"entries\", \"id\":NewId(), \"data\":{\"name\":values.name, \"message\":values.message}})\n    RETURN result.ok\nEND FUNCTION"
+  },
+  {
+    "id": "divdev/guestbook-entry",
+    "publisher": "divdev",
+    "extends": "wydgit.core/block",
+    "properties": {
+      "content": {
+        "type": "object",
+        "default": {
+          "type": "markdown",
+          "value": ""
+        }
+      }
+    },
+    "slots": {},
+    "behaviorSource": "SUB ShowEntry(name AS String, message AS String)\n    Me.Set(\"content\", {\"type\":\"markdown\", \"value\":name & \" \u2014 \" & message})\nEND SUB"
+  }
+]

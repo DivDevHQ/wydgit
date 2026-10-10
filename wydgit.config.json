@@ -1,0 +1,29 @@
+{
+  "schema": "wydgit.host/0.1",
+  "libraries": [
+    {
+      "id": "wydtest",
+      "package": "@wydgit/test-library",
+      "enabled": false,
+      "version": "^1.0.0",
+      "publisher": "wydgit.core",
+      "trust": "canonical"
+    },
+    {
+      "id": "wydstore",
+      "package": "@wydgit/store",
+      "enabled": false,
+      "version": "^0.1.0-alpha.2",
+      "publisher": "wydgit.core",
+      "trust": "canonical"
+    },
+    {
+      "id": "wydgate",
+      "package": "@wydgit/gate",
+      "enabled": false,
+      "version": "^0.1.0-alpha.3",
+      "publisher": "wydgit.core",
+      "trust": "canonical"
+    }
+  ]
+}

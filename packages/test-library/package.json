@@ -1,0 +1,12 @@
+{
+  "name": "@wydgit/test-library",
+  "version": "1.0.0",
+  "description": "Non-production Wyd library contract fixture",
+  "private": true,
+  "license": "MPL-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json"
+  }
+}

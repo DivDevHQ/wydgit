@@ -12,7 +12,7 @@ export function resolveSkin(id, model) {
     if (skin[name] === undefined && !rule.required) continue;
     if (skin[name] === null || Array.isArray(skin[name]) || typeof skin[name] !== rule.type) throw new Error(`Invalid skin.${name}: ${id}`);
   }
-  for (const [key, value] of Object.entries(skin.tokens)) {
+  for (const tokens of [skin.tokens, skin.darkTokens]) for (const [key, value] of Object.entries(tokens)) {
     const rule = definition.tokens[key];
     const valid = rule && (
       (rule.type === 'color' && typeof value === 'string' && /^#(?:[\da-f]{3}|[\da-f]{6}|[\da-f]{8})$/i.test(value)) ||
@@ -35,6 +35,11 @@ export function renderSkinCss(model) {
     try {
       const skin = resolveSkin(id, model);
       rules.push(`[data-skin="${id}"]{${Object.entries(skin.tokens).map(([key,value]) => `--${key}:${value}`).join(';')}}`);
+      const dark = Object.entries(skin.darkTokens).map(([key,value]) => `--${key}:${value}`).join(';');
+      if (dark) {
+        rules.push(`[data-wyd-theme="dark"] [data-skin="${id}"]{${dark}}`);
+        rules.push(`@media (prefers-color-scheme: dark){[data-wyd-theme="system"] [data-skin="${id}"]{${dark}}}`);
+      }
     } catch {
       // Invalid referenced skins produce renderer diagnostics at their owning node.
       // They must never contribute unsafe CSS or break unrelated skins.

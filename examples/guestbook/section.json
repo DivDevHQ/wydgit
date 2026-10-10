@@ -1,0 +1,86 @@
+{
+  "schema": "wydgit/0.2",
+  "id": "guestbook",
+  "prototype": "divdev/guestbook",
+  "properties": {},
+  "slots": {
+    "blocks": [
+      {
+        "schema": "wydgit/0.2",
+        "id": "guestbook-heading",
+        "prototype": "wydgit.core/block",
+        "properties": {
+          "content": {
+            "type": "markdown",
+            "value": "## Guestbook"
+          }
+        },
+        "slots": {},
+        "provenance": {}
+      },
+      {
+        "schema": "wydgit/0.2",
+        "id": "guestbook-form",
+        "prototype": "divdev/guestbook-form",
+        "properties": {
+          "label": "Sign guestbook"
+        },
+        "slots": {
+          "blocks": [
+            {
+              "schema": "wydgit/0.2",
+              "id": "guestbook-name",
+              "prototype": "wydgit.core/text-input",
+              "properties": {
+                "name": "name",
+                "label": "Name",
+                "required": true,
+                "maxLength": 80
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "guestbook-message",
+              "prototype": "wydgit.core/text-area",
+              "properties": {
+                "name": "message",
+                "label": "Message (Markdown supported)",
+                "required": true,
+                "maxLength": 2000
+              },
+              "slots": {},
+              "provenance": {}
+            }
+          ]
+        },
+        "provenance": {}
+      },
+      {
+        "schema": "wydgit/0.2",
+        "id": "guestbook-status",
+        "prototype": "wydgit.core/block",
+        "properties": {
+          "content": {
+            "type": "markdown",
+            "value": "Shows up to 20 entries in record-ID order. Messages support sanitized Markdown."
+          }
+        },
+        "slots": {},
+        "provenance": {}
+      },
+      {
+        "schema": "wydgit/0.2",
+        "id": "guestbook-entries",
+        "prototype": "wydgit.core/section",
+        "properties": {},
+        "slots": {
+          "blocks": []
+        },
+        "provenance": {}
+      }
+    ]
+  },
+  "provenance": {}
+}

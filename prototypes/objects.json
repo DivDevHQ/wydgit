@@ -1,0 +1,455 @@
+[
+  {
+    "id": "wydgit.core/object",
+    "publisher": "wydgit.core",
+    "public": true,
+    "abstract": true,
+    "properties": {
+      "order": {
+        "type": "number",
+        "default": 0
+      },
+      "position": {
+        "type": "string",
+        "default": "main",
+        "enum": [
+          "header",
+          "main",
+          "aside",
+          "footer"
+        ]
+      },
+      "format": {
+        "type": "object",
+        "default": {}
+      }
+    },
+    "slots": {}
+  },
+  {
+    "id": "wydgit.core/app",
+    "publisher": "wydgit.core",
+    "public": true,
+    "properties": {
+      "title": {
+        "type": "string",
+        "required": true
+      },
+      "home": {
+        "type": "string",
+        "required": true
+      },
+      "tagline": {
+        "type": "string",
+        "default": ""
+      },
+      "footer": {
+        "type": "string",
+        "default": ""
+      },
+      "revision": {
+        "type": "string",
+        "default": ""
+      },
+      "skin": {
+        "type": "string",
+        "description": "Optional skin ID. Its tokens override inherited site/page/section tokens; omitted tokens keep the parent values."
+      },
+      "logoText": {
+        "type": "string",
+        "default": "",
+        "description": "Optional decorative letter mark beside the site title."
+      },
+      "themeMode": {
+        "type": "string",
+        "default": "system",
+        "enum": [
+          "system",
+          "light",
+          "dark"
+        ]
+      }
+    },
+    "slots": {
+      "pages": {
+        "accepts": [
+          "wydgit.core/page"
+        ],
+        "ordered": true,
+        "min": 1
+      },
+      "navigation": {
+        "accepts": [
+          "wydgit.core/navigation"
+        ],
+        "ordered": true
+      }
+    },
+    "extends": "wydgit.core/object"
+  },
+  {
+    "id": "wydgit.core/page",
+    "publisher": "wydgit.core",
+    "public": true,
+    "properties": {
+      "title": {
+        "type": "string",
+        "required": true
+      },
+      "slug": {
+        "type": "string",
+        "required": true
+      },
+      "description": {
+        "type": "string",
+        "default": ""
+      },
+      "skin": {
+        "type": "string",
+        "description": "Optional skin ID. Its tokens override inherited site/page/section tokens; omitted tokens keep the parent values."
+      }
+    },
+    "slots": {
+      "sections": {
+        "accepts": [
+          "wydgit.core/section"
+        ],
+        "ordered": true
+      },
+      "navigation": {
+        "accepts": [
+          "wydgit.core/navigation"
+        ],
+        "ordered": true,
+        "max": 1
+      }
+    },
+    "extends": "wydgit.core/object"
+  },
+  {
+    "id": "wydgit.core/section",
+    "publisher": "wydgit.core",
+    "public": true,
+    "properties": {
+      "skin": {
+        "type": "string",
+        "description": "Optional skin ID. Its tokens override inherited site/page/section tokens; omitted tokens keep the parent values."
+      }
+    },
+    "slots": {
+      "blocks": {
+        "accepts": [
+          "wydgit.core/block",
+          "wydgit.core/section",
+          "wydgit.core/field"
+        ],
+        "ordered": true
+      }
+    },
+    "extends": "wydgit.core/object"
+  },
+  {
+    "id": "wydgit.core/block",
+    "publisher": "wydgit.core",
+    "public": true,
+    "properties": {
+      "anchors": {
+        "type": "array",
+        "default": []
+      },
+      "content": {
+        "type": "object",
+        "required": true,
+        "supported-types": [
+          "markdown"
+        ]
+      },
+      "skin": {
+        "type": "string",
+        "description": "Optional skin ID. Its tokens override inherited site/page/section tokens; omitted tokens keep the parent values."
+      },
+      "linkToPage": {
+        "type": "string",
+        "description": "Page ID, resolved like navigation.items[].page. Required for whole-card-link; optional for card (adds a separate page link)."
+      }
+    },
+    "slots": {
+      "children": {
+        "accepts": [
+          "wydgit.core/block",
+          "wydgit.core/section",
+          "wydgit.core/field"
+        ],
+        "ordered": true
+      }
+    },
+    "extends": "wydgit.core/object"
+  },
+  {
+    "id": "wydgit.core/navigation",
+    "publisher": "wydgit.core",
+    "public": true,
+    "properties": {
+      "label": {
+        "type": "string",
+        "default": "Navigation"
+      },
+      "items": {
+        "type": "array",
+        "required": true
+      }
+    },
+    "slots": {},
+    "extends": "wydgit.core/object"
+  },
+  {
+    "id": "wydgit.core/form",
+    "publisher": "wydgit.core",
+    "public": true,
+    "extends": "wydgit.core/section",
+    "properties": {
+      "content": {
+        "type": "object",
+        "default": {
+          "type": "markdown",
+          "value": ""
+        }
+      },
+      "label": {
+        "type": "string",
+        "default": "Submit"
+      },
+      "valid": {
+        "type": "boolean",
+        "default": true
+      },
+      "errors": {
+        "type": "array",
+        "default": []
+      },
+      "warnings": {
+        "type": "array",
+        "default": []
+      }
+    },
+    "slots": {},
+    "behaviorSource": "FUNCTION Validate() AS Boolean\n RETURN Me.FormState(\"validate\")\nEND FUNCTION\nFUNCTION IsValid() AS Boolean\n RETURN Me.FormState(\"isValid\")\nEND FUNCTION\nFUNCTION Values() AS Object\n RETURN Me.FormState(\"values\")\nEND FUNCTION\nSUB Bind(data AS Object)\n Me.FormState(\"bind\", data)\nEND SUB\nSUB Clear()\n Me.FormState(\"clear\")\nEND SUB"
+  },
+  {
+    "id": "wydgit.core/field",
+    "publisher": "wydgit.core",
+    "public": true,
+    "extends": "wydgit.core/object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "required": true
+      },
+      "label": {
+        "type": "string",
+        "default": ""
+      },
+      "value": {
+        "type": "string",
+        "default": ""
+      },
+      "required": {
+        "type": "boolean",
+        "default": false
+      },
+      "valid": {
+        "type": "boolean",
+        "default": true
+      },
+      "errors": {
+        "type": "array",
+        "default": []
+      },
+      "warnings": {
+        "type": "array",
+        "default": []
+      },
+      "enabled": {
+        "type": "boolean",
+        "default": true
+      },
+      "visible": {
+        "type": "boolean",
+        "default": true
+      },
+      "validationMessage": {
+        "type": "string",
+        "default": ""
+      }
+    },
+    "slots": {}
+  },
+  {
+    "id": "acme/message-panel",
+    "publisher": "acme",
+    "extends": "wydgit.core/block",
+    "properties": {
+      "content": {
+        "type": "object",
+        "default": {
+          "type": "markdown",
+          "value": ""
+        }
+      }
+    },
+    "behaviorSource": "SUB SetMessage(value AS String)\n    Me.Set(\"content\", {\"type\":\"markdown\", \"value\":value})\nEND SUB\nFUNCTION HasMessage() AS Boolean\n    RETURN Me.properties.content.value <> \"\"\nEND FUNCTION"
+  },
+  {
+    "id": "acme/important-message-panel",
+    "publisher": "acme",
+    "extends": "acme/message-panel",
+    "overrides": [
+      "setmessage"
+    ],
+    "behaviorSource": "SUB SetMessage(value AS String)\n    Me.Set(\"content\", {\"type\":\"markdown\", \"value\":\"Important: \" & value})\nEND SUB"
+  },
+  {
+    "id": "wydgit.core/text-input",
+    "publisher": "wydgit.core",
+    "public": true,
+    "extends": "wydgit.core/field",
+    "properties": {
+      "placeholder": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "default": null
+      },
+      "maxLength": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "default": null
+      }
+    },
+    "slots": {}
+  },
+  {
+    "id": "wydgit.core/password-input",
+    "publisher": "wydgit.core",
+    "public": true,
+    "extends": "wydgit.core/field",
+    "properties": {
+      "placeholder": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "default": null
+      },
+      "maxLength": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "default": null
+      }
+    },
+    "slots": {}
+  },
+  {
+    "id": "wydgit.core/text-area",
+    "publisher": "wydgit.core",
+    "public": true,
+    "extends": "wydgit.core/field",
+    "properties": {
+      "placeholder": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "default": null
+      },
+      "maxLength": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "default": null
+      }
+    },
+    "slots": {}
+  },
+  {
+    "id": "wydgit.core/checkbox",
+    "publisher": "wydgit.core",
+    "public": true,
+    "extends": "wydgit.core/field",
+    "properties": {
+      "value": {
+        "type": "boolean",
+        "default": false
+      }
+    },
+    "slots": {}
+  },
+  {
+    "id": "wydgit.core/radio-group",
+    "publisher": "wydgit.core",
+    "public": true,
+    "extends": "wydgit.core/field",
+    "properties": {
+      "options": {
+        "type": "array",
+        "default": []
+      },
+      "value": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "default": null
+      }
+    },
+    "slots": {}
+  },
+  {
+    "id": "wydgit.core/checkbox-group",
+    "publisher": "wydgit.core",
+    "public": true,
+    "extends": "wydgit.core/field",
+    "properties": {
+      "options": {
+        "type": "array",
+        "default": []
+      },
+      "value": {
+        "type": "array",
+        "default": []
+      }
+    },
+    "slots": {}
+  },
+  {
+    "id": "wydgit.core/select",
+    "publisher": "wydgit.core",
+    "public": true,
+    "extends": "wydgit.core/field",
+    "properties": {
+      "options": {
+        "type": "array",
+        "default": []
+      },
+      "value": {
+        "type": [
+          "string",
+          "null",
+          "array"
+        ],
+        "default": null
+      },
+      "multiple": {
+        "type": "boolean",
+        "default": false
+      }
+    },
+    "slots": {}
+  }
+]

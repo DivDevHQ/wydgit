@@ -42,21 +42,39 @@ The result should be:
 
 Wydgit is currently in **early alpha development**.
 
-The current codebase demonstrates the original Wydgine 0.1 architecture:
+The 0.2 alpha implements an App object model, SEAM authority, bounded WydBASIC/SEWN behavior, semantic Forms, local declarative package installation, JSON/SQLite storage, WydGate identity, Hono transport and CSS-native system/light/dark presentation:
 
-- Node.js / Express server
-- JSON-defined Wydgit prototypes and instances
+- validated bounded portable [SEWN workflows](docs/sewn.md) with procedures, safe contexts and service calls
+- WydBASIC SUB/FUNCTION and source-declared EVENT modules compiled to canonical SEWN
+- replaceable Hono HTTP transport adapter on Node.js
+- canonical App-rooted JSON and immutable hydrated Wydgit instances
+- single prototype inheritance with publisher boundaries and abstract bases
+- validated named slots and deny-by-default scoped traversal
+- authorized edit sessions, immutable commits, change sets and revision hooks
+- npm workspaces, explicit host-approved library loading, portable requirements
+- scoped storage services, typed records, optimistic concurrency and record history
+- local users, Argon2id passwords, revocable sessions, roles/groups and explicit permissions
+- Session-owned request-local Page lifecycles and bounded contextual events
+- safe request/response, Markdown/file delivery and scoped headers/cookies
+- WydClient lifecycle and semantic browser-event adapter (trusted host integration)
 - server-side rendering
 - Markdown content
 - sanitized output
 - navigation and page routing
 - skins and scoped presentation rules
-- nested Page → Section → Block composition
+- nested App → Page → Section → Block composition
 - renderer and HTTP tests
 
-This baseline is now being evolved into the broader Wydgit platform architecture described in:
+Implementation details: [object model](docs/object-model.md), [SEAM](docs/seam.md), [mutation model](docs/mutation-model.md), [library model](docs/library-model.md), [WydStore](docs/wydstore.md), [WydGate](docs/wydgate.md), [events/HTTP execution](docs/events.md), [HTTP transport](docs/http-transport.md), [SEWN](docs/sewn.md), and [WydBASIC](docs/wydbasic.md). Local declarative packages execute validated WydBASIC/SEWN through those boundaries; arbitrary package JavaScript remains forbidden.
+
+The architectural contract is:
 
 [`docs/FOUNDING-ARCHITECTURE.md`](docs/FOUNDING-ARCHITECTURE.md)
+
+Current development version: **0.2.0-alpha.18**. Completed platform milestones
+update `package.json`, matching root metadata in `package-lock.json`, and
+`content/app.json` → `properties.revision` together. Version updates do not create
+Git tags or publish releases. Completed milestones also update [CHANGELOG.md](CHANGELOG.md).
 
 Expect significant changes before 1.0.
 
@@ -133,6 +151,18 @@ A future human-friendly authoring language may be called **WydStitch**.
 ## Modular Capability Libraries
 
 Vanilla Wydgine and WydClient are intended to remain small.
+
+**Libraries provide capabilities. SEAM grants authority.**
+
+The library contract and explicit loader are implemented. `@wydgit/store` is the
+first real workspace library, with JSON and SQLite adapters. `@wydgit/gate` adds
+local identity/authentication through host-approved WydStore services; a separate
+non-production fixture exercises loading. All three are disabled in
+`wydgit.config.json` by default. Federation and login UI/auth-cookie issuance remain deferred. Gate permissions
+never automatically grant SEAM capabilities.
+`content/requirements.json` holds portable library requirements; it never names
+Node implementation packages. Repository location is a development concern, not
+part of library identity.
 
 Optional capabilities will be supplied through canonical Wyd libraries such as:
 
@@ -227,7 +257,7 @@ Wydgit is licensed under the **Mozilla Public License 2.0 (MPL-2.0)**.
 
 Modifications to MPL-covered source files remain under the MPL, while Wydgit may be combined with separately licensed code in larger works.
 
-See [`LICENSE`](docs/LICENSE) for the full terms.
+See [`LICENSE`](LICENSE) for the full terms.
 
 ---
 
@@ -238,7 +268,49 @@ Requires:
 - Node.js 22.12 or newer
 - npm
 
-Install dependencies:
+Try the tracked sample site (Home, About and Contact):
 
 ```sh
+git clone https://github.com/DivDevHQ/wydgit.git
+cd wydgit
 npm ci
+npm test
+npm run check
+npm start
+```
+
+Open http://127.0.0.1:3000/. Native Argon2 and SQLite dependencies use prebuilt
+binaries where available; unsupported platforms need their native build toolchain.
+
+Validate with `npm test` and `npm run check`. Inspect workspace linking with
+`npm ls --workspaces --depth=0`. Startup validates enabled libraries and portable
+requirements before opening the HTTP listener.
+
+
+Guestbook is a tracked example package, **not installed by default**. Stop the host
+and run the experimental alpha installer:
+
+```sh
+node scripts/install-package.js examples/guestbook
+npm start
+```
+
+Review and explicitly approve authority, WydStore enablement and storage provisioning.
+Choose JSON or SQLite, then a Page/parent/slot, and confirm the final plan. The
+installer can provision host-owned `.wydgit-data`; no manual WydStore setup is
+needed. Packages cannot approve their own grants. See [package contracts and recovery](docs/packages.md)
+and the [Guestbook walkthrough](examples/guestbook/README.md). Use a disposable copy
+for experiments: there is no uninstall operation.
+
+## 0.2 limitations
+
+This is alpha-quality software, with no beta-level security or ecosystem promise.
+There is no uninstall, upgrade, storage migration, remote package registry, package
+signature verification or automatic package dependency installation. Only one
+installed package principal per Page and one installation of each fixed-ID package
+template are supported. WydClient has no automatic bootstrap/transport. There is no
+admin console or CMS. Canonical libraries currently live in this monorepo/workspace;
+they are not independently published for general external consumption.
+
+The [0.2-R audit record](docs/hardening-0.2-R.md) distinguishes automated verification
+from remaining browser acceptance.

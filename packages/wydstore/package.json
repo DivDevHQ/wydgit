@@ -1,0 +1,18 @@
+{
+  "name": "@wydgit/store",
+  "version": "0.1.0-alpha.2",
+  "description": "WydStore adapter-neutral records with JSON and SQLite providers",
+  "license": "MPL-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "exports": {
+    ".": "./src/index.js",
+    "./client": "./src/client.js",
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "better-sqlite3": "13.0.3"
+  }
+}

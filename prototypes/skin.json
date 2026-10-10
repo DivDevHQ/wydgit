@@ -14,6 +14,10 @@
     "tokens": {
       "type": "object",
       "default": {}
+    },
+    "darkTokens": {
+      "type": "object",
+      "default": {}
     }
   },
   "tokens": {
@@ -96,6 +100,36 @@
       "type": "color"
     },
     "assessment-number": {
+      "type": "color"
+    },
+    "input-background": {
+      "type": "color"
+    },
+    "input-text": {
+      "type": "color"
+    },
+    "input-border": {
+      "type": "color"
+    },
+    "focus": {
+      "type": "color"
+    },
+    "primary": {
+      "type": "color"
+    },
+    "primary-text": {
+      "type": "color"
+    },
+    "error": {
+      "type": "color"
+    },
+    "success": {
+      "type": "color"
+    },
+    "disabled-background": {
+      "type": "color"
+    },
+    "disabled-text": {
       "type": "color"
     }
   }
