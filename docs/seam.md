@@ -183,8 +183,8 @@ Packages request grants in manifests; only separate operator approval authorizes
 
 
 Object authorization grants in `visible` and `editable` accept `exact-id` or a
-nonempty trailing prefix such as `guestbook-entry-*`. Matching treats the prefix
-literally: only one final `*` is allowed; bare/middle/multiple wildcards, `?`,
+nonempty trailing prefix followed by `-*`, such as `guestbook-entry-*`. Matching treats the prefix
+literally: only one final `-*` is allowed; `foo*`, bare/middle/multiple wildcards, `?`,
 classes, regex syntax and brace expansion are rejected during context/policy
 validation. Prefixes use the canonical object-ID grammar. Exact matches remain
 unchanged. `self` remains a concrete ID, never a grant pattern.

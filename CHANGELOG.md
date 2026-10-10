@@ -1,3 +1,35 @@
+## 0.2.0-alpha.18 — 0.2-R
+### Hardening + Prerelease Readiness
+
+- Restricted visible/editable wildcard grants to `foo-*`; broader `foo*` is rejected.
+- Block startup on installation locks/recovery files, including dangling symlinks;
+  return structured busy errors for competing installs. Recheck stale config at
+  replacement, validate receipt/catalog metadata parity, and enforce the package
+  count ceiling before apply. Reject malformed explicit policy and source-directory
+  or symlink-root storage provisioning.
+- Added installer EOF/no-write, receipt drift, stale-state and concurrent apply
+  regressions; seeded WydBASIC fuzzing and SEWN hostile-input checks for every schema.
+- Centralized the defensive installed-package ceiling at `LIMITS.packages = 1024`,
+  enforced before candidate processing and during catalog loading; regression coverage
+  accepts 33 real installs and checks the 1024/1025 boundaries. The defect recheck expands wildcard/receipt/policy cases, and verifies all seven defect
+  regressions fail when their respective pre-fix behavior is restored in isolation.
+- Extended JSON/SQLite conformance with duplicate-create races and distinct-package
+  physical isolation; verified SQLite rollback/reopen after interrupted transactions.
+- Exercised interactive Guestbook provisioning for both providers on Contact,
+  invalid/concurrent HTTP submissions, safe dynamic rendering, restart persistence,
+  explicit disposable-state cleanup and final base-Page reloads.
+- Corrected current package/Form/SEWN/recovery/version documentation, added a concise
+  clone-to-Guestbook path and explicit alpha limitations/readiness audit record.
+- Removed two unused development dependencies; canonical library versions and
+  serialized schemas remain unchanged. Advanced platform/lockfile/App to alpha.18.
+- Initial verification: clean `npm ci`, two full 287-test passes, `npm run check` (3 Pages,
+  42 links), `git diff --check`, workspace linking and zero npm audit advisories.
+  An isolated tracked-files snapshot independently installs, passes all 287 tests,
+  checks content and starts with all three base routes returning 200.
+  Browser visual acceptance remains open:
+  no browser was available; HTTP/CSS/semantic tests are not visual verification.
+- Defect recheck: all 288 tests pass; content and diff whitespace checks pass.
+
 ## 0.2.0-alpha.17 — 0.2-Q
 ### Default Form Presentation + Theme Modes
 

@@ -123,3 +123,14 @@ test('SQLite history result safeguard never truncates or discards retained versi
  await reject(()=>collection.history('item'),'STORE.LIMIT');assert.equal((await collection.get('item')).version,10001);
  withDb(await file(root,'.sqlite'),db=>assert.equal(db.prepare('SELECT count(*) AS count FROM history').get().count,10000));
 });
+
+test('SQLite recovers accepted state after process death inside an uncommitted transaction',async t=>{
+ const {root,store,collection}=await fixture(t,'sqlite');await collection.create('item',{name:'accepted'}).save();
+ const child=fork(path.join(project,'test-support/sqlite-crash-writer.js'),[],{stdio:['ignore','pipe','pipe','ipc']});
+ t.after(()=>{if(child.exitCode===null&&child.signalCode===null)child.kill('SIGKILL');});
+ const ready=once(child,'message');child.send({file:await file(root,'.sqlite')});assert.equal((await ready)[0].ready,true);
+ const exited=once(child,'exit');child.kill('SIGKILL');await exited;
+ const reopened=createStores((await load(store)).bind(context())).get('main').collection('users');
+ const item=await reopened.get('item');assert.equal(item.version,1);assert.equal(item.get('name'),'accepted');assert.equal((await reopened.history('item')).length,1);
+ item.set('name','after restart');await item.save();assert.equal(item.version,2);
+});

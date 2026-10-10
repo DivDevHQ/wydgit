@@ -1,7 +1,9 @@
 # Guestbook declarative package — 0.2-P
 
 Guestbook is server-authoritative and browser-POST-driven in the default web host.
-It installs through Wydgine and activates under normal `npm start`.
+It is an experimental alpha example, not installed in the base site. It installs
+through Wydgine and activates under normal `npm start`. Use a disposable checkout
+for experiments; uninstall and upgrade are not implemented.
 
 Run the trusted installer, then follow its prompts:
 
@@ -17,7 +19,8 @@ host-owned `.wydgit-data/` directory. Choose provider, approve provisioning, cho
 Page/parent/slot/index from discovered destinations, review the complete plan, and
 confirm applying it. Declining an approval writes nothing. No manual configuration,
 data directory creation or policy JSON is needed for ordinary installation.
-Open http://127.0.0.1:3000/ and sign the Guestbook.
+Open the chosen Page (http://127.0.0.1:3000/ for Home or `/contact/` for Contact)
+and sign the Guestbook. Stop the host before installation and restart afterward.
 
 For advanced non-interactive operation, the operator policy example lives **outside** the reusable package:
 [`examples/guestbook-policy.example.json`](../guestbook-policy.example.json).
@@ -70,4 +73,6 @@ per Page is supported; independently approved grants are never combined.
 
 `node --test test/guestbook-package.test.js` tests an uninstalled isolated site,
 installation, ordinary host startup, CSRF, validation, repeated/concurrent submissions
-and persistence across host restart. It does not require installing into this checkout.
+and persistence across host restart. It does not require installing into this checkout. `test/hardening.test.js` repeats
+interactive provisioning and real HTTP acceptance for JSON and SQLite on Contact,
+then explicitly restores the disposable fixture and reloads all three base Pages.

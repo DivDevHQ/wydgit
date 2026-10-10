@@ -87,7 +87,8 @@ from the current App, with canonical planning still validating placement.
 `wydgit-installed/0.1`, revision, base fingerprint, serialized canonical App and an
 explicit `packages` array. Each entry records installed state, manifest, embedded
 resource texts, approved grants, resolved libraries, logical mappings/scopes,
-installed instance IDs, installable ID, placement and receipt. Source resources are
+installed instance IDs, installable ID, placement and receipt. Receipt metadata must
+match the accepted entry; resource hashes are checked on loading. Source resources are
 copied into this catalog; startup never revisits the local source package directory.
 Core `prototypes/objects.json` and content source files remain unchanged. Host config
 changes only under separately approved infrastructure policy.
@@ -106,7 +107,8 @@ fingerprints, writes and fsyncs an exclusive temporary file, and atomically rena
 it over the accepted state. All package resources, catalog and App publish together.
 Handled failure removes temporary files and retains the prior accepted state.
 A crash before rename leaves the old state; after rename the complete new state is
-accepted. A stale lock after a crash needs operator inspection/removal once no writer
+accepted. A leftover lock blocks startup with `PACKAGE.RECOVERY`; concurrent apply fails with
+`PACKAGE.BUSY`. A stale lock after a crash needs operator inspection/removal once no writer
 remains. This targets a private local filesystem, not distributed writers. File
 fsync plus rename does not promise directory-entry survival through power loss.
 
@@ -165,7 +167,7 @@ corresponding fields accept `exact-id` or `trailing-prefix-*`. For example,
 `guestbook-entry-*` covers future entry IDs without enumerating a finite range.
 Fixed IDs remain explicit; malformed patterns fail before authorization. Editable
 patterns must be covered by visible grants, and requested patterns still require
-separate exact operator approval. Package prefixes may cover future IDs but cannot
+separate exact operator approval. `foo*` is rejected; use `foo-*`. Package prefixes may cover future IDs but cannot
 reach existing objects outside the installable. All other scopes remain exact.
 Wildcards add no capabilities, traversal, service or package authority.
 
@@ -227,3 +229,8 @@ inspect/remove orphan new data and temporary files, then remove the recovery bac
 and stale lock. This is a local staged operation, not a distributed transaction;
 filesystem power-loss guarantees remain limited as described above. Stop the host
 while applying infrastructure changes and restart after installation.
+
+The centralized `LIMITS.packages` ceiling is 1024 installed packages. Planning
+rejects at the ceiling before candidate processing or provisioning, and catalog
+loading rejects counts above it. This is a defensive implementation bound, not a
+supported-capacity target; catalog byte limits and other resource bounds also apply.

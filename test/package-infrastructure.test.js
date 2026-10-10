@@ -84,3 +84,16 @@ test('infrastructure failure preserves an already accepted package catalog and c
  await assert.rejects(applyOperatorInstall(resolved,{beforeStateReplace:()=>{throw Error('catalog write failure');}}),/catalog write failure/);
  assert.equal(await fs.readFile(catalogFile,'utf8'),catalog);assert.equal(await fs.readFile(file(f.root),'utf8'),config);assert.equal(loadRepository(f.root).runtime.get('guestbook').prototype,'divdev/guestbook');await assert.rejects(fs.stat(path.join(f.root,'.wydgit-data')),{code:'ENOENT'});
 });
+
+test('source directories and symlink site roots cannot become runtime storage locations',async t=>{
+ const f=await disabled(t);
+ for(const directory of ['docs','scripts','wydgine','wydclient','packages','test','test-support'])assert.throws(()=>storageLocation(f.root,directory+'/runtime'),{code:'PACKAGE.PATH'});
+ const link=path.join(f.root,'site-link');await fs.symlink(f.root,link);
+ assert.throws(()=>storageLocation(link,'.wydgit-data/new-store'),{code:'PACKAGE.PATH'});
+});
+
+test('config change immediately before replacement fails stale without overwriting the operator change',async t=>{
+ const f=await disabled(t),before=await fs.readFile(file(f.root),'utf8'),{policy}=await policyFor(f),resolved=await planFor(f,policy);
+ await assert.rejects(applyOperatorInstall(resolved,{beforeConfigReplace:()=>fs.appendFile(file(f.root),'\n')}),{code:'PACKAGE.STALE'});
+ await untouched(f,before+'\n');
+});

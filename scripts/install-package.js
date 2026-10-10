@@ -7,7 +7,7 @@ import { stdin, stdout } from 'node:process';
 import { validatePackageManifest } from '../wydgine/packages/index.js';
 import { safeRead } from '../wydgine/packages/state.js';
 import { LIMITS } from '../wydgine/packages/manifest.js';
-import { validateConfig } from '../wydgine/libraries/contracts.js';
+import { validateConfig, fields } from '../wydgine/libraries/contracts.js';
 import { clean, requireThat as check, WydgitError } from '../wydgine/object-model/validation.js';
 import { loadRepository } from '../wydgine/repository.js';
 import { ExecutionContext } from '../wydgine/seam/context.js';
@@ -117,6 +117,7 @@ export async function runInstaller({args=process.argv.slice(2),input=stdin,outpu
       ask=async prompt=>{output.write(prompt);const line=await lines.next();check(!line.done,'PACKAGE.CLI','Input ended; installation aborted');return line.value;};
     }
     const policy=flags.approval?JSON.parse(await fs.readFile(flags.approval,'utf8')):await buildOperatorPolicy({root,packagePath,ask,write});
+    if(flags.approval)fields(policy,['placement','approvals','storageMappings','installationContext',...(policy?.infrastructure!==undefined?['infrastructure']:[])],'PACKAGE.POLICY');
     if(!policy){write('Installation cancelled. No changes made.');return null;}
     const manifest=validatePackageManifest(safeRead(packagePath,'manifest.json',LIMITS.manifest));
     const resolved=await planOperatorInstall({root,packagePath,manifest,policy,installationContext:new ExecutionContext(policy.installationContext)}),{plan}=resolved;

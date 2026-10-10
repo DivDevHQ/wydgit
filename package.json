@@ -1,6 +1,6 @@
 {
   "name": "wydgit",
-  "version": "0.2.0-alpha.17",
+  "version": "0.2.0-alpha.18",
   "description": "A portable, capability-safe application platform for the open web",
   "license": "MPL-2.0",
   "private": true,
@@ -22,9 +22,7 @@
     "semver": "^7.8.5"
   },
   "devDependencies": {
-    "cheerio": "1.0.0",
-    "turndown": "^7.2.0",
-    "turndown-plugin-gfm": "^1.0.2"
+    "cheerio": "1.0.0"
   },
   "workspaces": [
     "packages/*"

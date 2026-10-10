@@ -1,9 +1,9 @@
-import { clean, freeze, record, requireThat as check } from '../object-model/validation.js';
+import { clean, freeze, record, parse, requireThat as check } from '../object-model/validation.js';
 import { fields, version, range, satisfies, validateRequirements } from '../libraries/contracts.js';
 import { validObjectGrant, matchesObjectGrant, objectGrantCovers } from '../seam/context.js';
 import { isCapability } from '../seam/capabilities.js';
 import platform from '../../package.json' with { type: 'json' };
-export const LIMITS = Object.freeze({manifest:32768,resource:65536,resources:16,prototypes:64,bindings:64,storage:16,permissions:128,templateNodes:256,templateDepth:32,state:4*1024*1024});
+export const LIMITS = Object.freeze({packages:1024,manifest:32768,resource:65536,resources:16,prototypes:64,bindings:64,storage:16,permissions:128,templateNodes:256,templateDepth:32,state:4*1024*1024});
 const code='PACKAGE.MANIFEST';
 export const qualified = x => typeof x==='string' && x.length<=128 && /^[a-z][a-z0-9.-]*\/[a-z][a-z0-9-]*$/.test(x);
 export const localName = x => typeof x==='string' && /^[a-z][a-z0-9-]{0,63}$/.test(x);
@@ -23,7 +23,7 @@ export function permissions(input) {
 }
 export function validatePackageManifest(input) {
   const text=typeof input==='string'?input:JSON.stringify(clean(input));check(Buffer.byteLength(text)<=LIMITS.manifest,code,'Manifest too large');
-  const m=clean(JSON.parse(text));fields(m,['schema','id','publisher','version','platform','runtime','resources','requires','storage','permissions','bindings','installables'],code);
+  const m=clean(parse(text));fields(m,['schema','id','publisher','version','platform','runtime','resources','requires','storage','permissions','bindings','installables'],code);
   check(m.schema==='wydgit-package/0.1',code,'Unsupported package schema');
   check(qualified(m.id)&&m.publisher===m.id.split('/')[0]&&m.publisher!=='wydgit.core',code,'Invalid package/publisher identity');
   check(version(m.version)&&range(m.platform),code,'Invalid version');check(satisfies(platform.version,m.platform),'PACKAGE.VERSION','Incompatible platform');

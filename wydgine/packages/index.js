@@ -12,7 +12,7 @@ import { validateConfig, validateManifest as libraryManifest, satisfies, fields 
 import { importNodePackage } from '../libraries/node-package.js';
 import platform from '../../package.json' with { type: 'json' };
 import { validatePackageManifest, LIMITS, permissions } from './manifest.js';
-import { STATE, safeRead, baseFingerprint, stateFingerprint, digest } from './state.js';
+import { STATE, readInstalledState, safeRead, baseFingerprint, stateFingerprint, digest } from './state.js';
 export { validatePackageManifest } from './manifest.js';
 const plans=new WeakMap();
 const idsOf=node=>[node.id,...Object.values(node.slots).flat().flatMap(idsOf)];
@@ -67,7 +67,9 @@ function mapStorage(manifest,config,mappings,app) {
   return {mappings:clean(mappings),scopes};
 }
 export async function planPackageInstall({root,packagePath,placement,approvals,storageMappings={},installationContext,hostConfig}) {
-  root=path.resolve(root);const base=baseFingerprint(root),head=stateFingerprint(root);const model=loadRepository(root),candidate=loadPackage(packagePath),{manifest,resources,definitions,template}=candidate;
+  root=path.resolve(root);
+  check((readInstalledState(root)?.packages.length??0)<LIMITS.packages,'PACKAGE.LIMIT','Installed package safety ceiling reached');
+  const base=baseFingerprint(root),head=stateFingerprint(root);const model=loadRepository(root),candidate=loadPackage(packagePath),{manifest,resources,definitions,template}=candidate;
   check(!(model.installed?.packages??[]).some(p=>p.manifest.id===manifest.id),'PACKAGE.ALREADY_INSTALLED','Package already installed');
   fields(placement,['page','parent','slot','index'],'PACKAGE.PLACEMENT');check(typeof placement.slot==='string'&&Number.isSafeInteger(placement.index),'PACKAGE.PLACEMENT','Invalid placement');
   check(model.registry.isA(model.runtime.get(placement.page).prototype,'wydgit.core/page'),'PACKAGE.PLACEMENT','Destination must be Page');
@@ -105,7 +107,7 @@ export async function applyPackageInstall(plan,{beforeReplace,prepareInfrastruct
       const backup={config:configBefore,state:plan.catalogFingerprint?await fs.readFile(path.join(root,STATE),'utf8'):null};
       journal=await fs.open(journalPath,'wx',0o600);try{await journal.writeFile(JSON.stringify(backup));await journal.sync();}finally{await journal.close();}
       if(prepareInfrastructure)rollbackInfrastructure=await prepareInfrastructure();
-      current();if(beforeConfigReplace)await beforeConfigReplace();
+      current();if(beforeConfigReplace)await beforeConfigReplace();current();
       await fs.rename(configTemp,configPath);configTemp=null;configChanged=true;
     }
     if(beforeStateReplace)await beforeStateReplace();
@@ -118,6 +120,7 @@ export async function applyPackageInstall(plan,{beforeReplace,prepareInfrastruct
       if(rollbackInfrastructure)await rollbackInfrastructure();
       if(journal){await fs.unlink(journalPath);journal=null;}
     }
+    check(handle||error.code!=='EEXIST','PACKAGE.BUSY','Another installation holds the lock; inspect interrupted state before retrying');
     throw error;
   } finally {if(configTemp)await fs.unlink(configTemp).catch(()=>{});if(temp)await fs.unlink(temp).catch(()=>{});if(handle){await handle.close();await fs.unlink(lock);}}
 }

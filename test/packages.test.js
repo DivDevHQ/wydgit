@@ -5,7 +5,8 @@ import path from 'node:path';
 import { packageFixture } from '../test-support/packages.js';
 import { planPackageInstall, applyPackageInstall, validatePackageManifest, activatePackages } from '../wydgine/packages/index.js';
 import { loadRepository } from '../wydgine/repository.js';
-import { STATE } from '../wydgine/packages/state.js';
+import { LIMITS } from '../wydgine/packages/manifest.js';
+import { STATE, readInstalledState } from '../wydgine/packages/state.js';
 import { ExecutionContext } from '../wydgine/seam/context.js';
 import { initializeHost } from '../wydgine/host.js';
 const read=file=>fs.readFile(file,'utf8');
@@ -127,4 +128,78 @@ test('stale host config/catalog, bounded template/prototype counts and unapprove
  const definitions=JSON.parse(await read(path.join(packagePath,'prototypes.json')));await write(path.join(packagePath,'prototypes.json'),Array.from({length:65},()=>definitions[0]));await assert.rejects(planPackageInstall(options),code('PACKAGE.LIMIT'));await write(path.join(packagePath,'prototypes.json'),definitions);
  const template=JSON.parse(await read(path.join(packagePath,'section.json')));let current=template;for(let i=0;i<34;i++){const child={...structuredClone(template),id:'depth-'+i,slots:{blocks:[]}};current.slots={blocks:[child]};current=child;}await write(path.join(packagePath,'section.json'),template);await assert.rejects(planPackageInstall(options),code('PACKAGE.LIMIT'));
  const m=structuredClone(manifest);for(let i=0;i<16;i++)m.resources.sources['source-'+i]='source-'+i+'.bas';assert.throws(()=>validatePackageManifest(m));
+});
+
+test('simultaneous install attempts fail with structured busy and publish exactly one accepted state',async t=>{
+ const {root,options}=await packageFixture(t),a=await planPackageInstall(options),b=await planPackageInstall(options);
+ let release,entered;const held=new Promise(r=>release=r),ready=new Promise(r=>entered=r);
+ const first=applyPackageInstall(a,{beforeReplace:async()=>{entered();await held;}});
+ await ready;
+ try{assert.throws(()=>loadRepository(root),{code:'PACKAGE.RECOVERY'});await assert.rejects(applyPackageInstall(b),{code:'PACKAGE.BUSY'});}
+ finally{release();}
+ await first;assert.equal(loadRepository(root).installed.packages.length,1);
+ await assert.rejects(applyPackageInstall(b),{code:'PACKAGE.STALE'});
+});
+
+test('malformed catalogs and receipt metadata drift fail closed',async t=>{
+ const {root,options}=await packageFixture(t);await applyPackageInstall(await planPackageInstall(options));
+ const location=path.join(root,STATE),accepted=await read(location);
+ for(const change of [s=>s.packages=[null],s=>s.packages[0].state='active',s=>s.packages[0].receipt.approved.capabilities=[],s=>s.packages[0].receipt.placement.page='contact',s=>s.packages[0].receipt.instanceIds=[],s=>s.packages[0].receipt.storageMappings={},s=>s.packages[0].receipt.publisher='other',s=>s.packages[0].receipt.instance='other',s=>s.packages[0].receipt.installable='other',s=>s.packages[0].receipt.libraries=[],s=>s.packages[0].receipt.bindings=[]]){
+  const state=JSON.parse(accepted);change(state);await write(location,state);assert.throws(()=>loadRepository(root),{code:'PACKAGE.CATALOG'});
+ }
+ await fs.writeFile(location,'{');assert.throws(()=>loadRepository(root),{code:'INPUT.JSON'});
+ await fs.writeFile(location,accepted);await fs.writeFile(path.join(root,'content/.package-install.lock'),'interrupted');
+ assert.throws(()=>loadRepository(root),{code:'PACKAGE.RECOVERY'});await assert.rejects(initializeHost({root}),{code:'PACKAGE.RECOVERY'});
+});
+
+test('dangling recovery and catalog symlinks cannot be mistaken for absent state',async t=>{
+ const {root}=await packageFixture(t);
+ for(const relative of ['content/.package-install.lock','content/.package-infrastructure.json',STATE]){
+  const location=path.join(root,relative);await fs.symlink(path.join(root,'missing-target'),location);
+  assert.throws(()=>loadRepository(root),{code:relative===STATE?'PACKAGE.PATH':'PACKAGE.RECOVERY'});
+  if(relative!==STATE)await assert.rejects(initializeHost({root}),{code:'PACKAGE.RECOVERY'});
+  await fs.unlink(location);
+ }
+});
+
+test('package safety ceiling permits more than 32 and rejects planning at 1024 before candidate work or writes',async t=>{
+ const {root,packagePath}=await packageFixture(t);
+ const pageId=i=>'capacity-page-'+i,instanceId=i=>'capacity-section-'+i;
+ // Provision all destinations in base content before accepting a catalog so this
+ // tests the package ceiling, not base drift or the one-principal-per-Page rule.
+ for(let i=0;i<34;i++)await write(path.join(root,'content/pages',pageId(i)+'.json'),{
+  schema:'wydgit/0.2',id:pageId(i),prototype:'wydgit.core/page',properties:{title:'Capacity '+i,slug:pageId(i)},slots:{sections:[],navigation:[]},provenance:{}
+ });
+ await write(path.join(packagePath,'prototypes.json'),[]);
+ const optionsFor=async i=>{
+  const approvals={capabilities:[],traversal:[],visible:[instanceId(i)],editable:[],scopes:{wydstore:[]}};
+  await write(path.join(packagePath,'manifest.json'),{
+   schema:'wydgit-package/0.1',id:'acme/capacity-'+i,publisher:'acme',version:'1.0.0',platform:'>=0.2.0-alpha.1',runtime:['server'],
+   resources:{prototypes:'prototypes.json',template:'section.json',sources:{}},requires:{schema:'wydgit.requirements/0.1',libraries:[]},
+   storage:[],permissions:approvals,bindings:[],installables:[{id:'capacity',kind:'section-template'}]
+  });
+  await write(path.join(packagePath,'section.json'),{schema:'wydgit/0.2',id:instanceId(i),prototype:'wydgit.core/section',properties:{},slots:{blocks:[]},provenance:{}});
+  return {root,packagePath,placement:{page:pageId(i),parent:pageId(i),slot:'sections',index:0},approvals,
+   installationContext:new ExecutionContext({publisher:'operator',self:pageId(i),app:'boilerplate',capabilities:['object.instances.edit'],visible:[pageId(i),instanceId(i)],editable:[pageId(i),instanceId(i)]})};
+ };
+ for(let i=0;i<33;i++)await applyPackageInstall(await planPackageInstall(await optionsFor(i)));
+ const model=loadRepository(root);assert.equal(model.installed.packages.length,33);
+ assert.equal(model.runtime.get(instanceId(32)).prototype,'wydgit.core/section');
+ const catalog=await read(path.join(root,STATE)),config=await read(path.join(root,'wydgit.config.json'));
+ // Expand validated receipt metadata to exercise the defensive ceiling without
+ // treating 1024 sequential installs as a supported-capacity benchmark.
+ const state=JSON.parse(catalog);
+ while(state.packages.length<LIMITS.packages){const entry=structuredClone(state.packages[0]);entry.manifest.id='acme/bound-'+state.packages.length;entry.receipt.package=entry.manifest.id;state.packages.push(entry);}
+ await write(path.join(root,STATE),state);
+ assert.equal(readInstalledState(root).packages.length,LIMITS.packages);
+ const boundedCatalog=await read(path.join(root,STATE));
+ const options=await optionsFor(33);options.packagePath=path.join(root,'nonexistent-candidate');
+ const contents=await fs.readdir(path.join(root,'content')),data=await fs.readdir(path.join(root,'data'));
+ await assert.rejects(planPackageInstall(options),{code:'PACKAGE.LIMIT'});
+ assert.equal(await read(path.join(root,STATE)),boundedCatalog);assert.equal(await read(path.join(root,'wydgit.config.json')),config);
+ assert.deepEqual(await fs.readdir(path.join(root,'content')),contents);assert.deepEqual(await fs.readdir(path.join(root,'data')),data);
+ state.packages.push(structuredClone(state.packages[0]));await write(path.join(root,STATE),state);
+ assert.throws(()=>readInstalledState(root),code('PACKAGE.CATALOG'));
+ await fs.writeFile(path.join(root,STATE),boundedCatalog);
+ await assert.rejects(fs.stat(path.join(root,'.wydgit-data')),{code:'ENOENT'});
 });

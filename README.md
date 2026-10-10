@@ -42,7 +42,7 @@ The result should be:
 
 Wydgit is currently in **early alpha development**.
 
-The current codebase implements the Wydgit 0.2-M prototype methods/construction, 0.2-L procedures/event modules, 0.2-K WydBASIC compiler and 0.2-J SEWN execution foundation, 0.2-I transport boundary and 0.2-H event, lifecycle and request/response foundation, integrated with WydGate sessions, WydStore and the existing object-model/mutation/SEAM foundation:
+The 0.2 alpha implements an App object model, SEAM authority, bounded WydBASIC/SEWN behavior, semantic Forms, local declarative package installation, JSON/SQLite storage, WydGate identity, Hono transport and CSS-native system/light/dark presentation:
 
 - validated bounded portable [SEWN workflows](docs/sewn.md) with procedures, safe contexts and service calls
 - WydBASIC SUB/FUNCTION and source-declared EVENT modules compiled to canonical SEWN
@@ -65,13 +65,13 @@ The current codebase implements the Wydgit 0.2-M prototype methods/construction,
 - nested App → Page → Section → Block composition
 - renderer and HTTP tests
 
-Implementation details: [object model](docs/object-model.md), [SEAM](docs/seam.md), [mutation model](docs/mutation-model.md), [library model](docs/library-model.md), [WydStore](docs/wydstore.md), [WydGate](docs/wydgate.md), [events/HTTP execution](docs/events.md), [HTTP transport](docs/http-transport.md), [SEWN](docs/sewn.md), and [WydBASIC](docs/wydbasic.md). Executable third-party packages and later platform subsystems remain deferred.
+Implementation details: [object model](docs/object-model.md), [SEAM](docs/seam.md), [mutation model](docs/mutation-model.md), [library model](docs/library-model.md), [WydStore](docs/wydstore.md), [WydGate](docs/wydgate.md), [events/HTTP execution](docs/events.md), [HTTP transport](docs/http-transport.md), [SEWN](docs/sewn.md), and [WydBASIC](docs/wydbasic.md). Local declarative packages execute validated WydBASIC/SEWN through those boundaries; arbitrary package JavaScript remains forbidden.
 
 The architectural contract is:
 
 [`docs/FOUNDING-ARCHITECTURE.md`](docs/FOUNDING-ARCHITECTURE.md)
 
-Current development version: **0.2.0-alpha.17**. Completed platform milestones
+Current development version: **0.2.0-alpha.18**. Completed platform milestones
 update `package.json`, matching root metadata in `package-lock.json`, and
 `content/app.json` → `properties.revision` together. Version updates do not create
 Git tags or publish releases. Completed milestones also update [CHANGELOG.md](CHANGELOG.md).
@@ -268,16 +268,49 @@ Requires:
 - Node.js 22.12 or newer
 - npm
 
-Install dependencies:
+Try the tracked sample site (Home, About and Contact):
 
 ```sh
+git clone https://github.com/DivDevHQ/wydgit.git
+cd wydgit
 npm ci
+npm test
+npm run check
 npm start
 ```
+
+Open http://127.0.0.1:3000/. Native Argon2 and SQLite dependencies use prebuilt
+binaries where available; unsupported platforms need their native build toolchain.
 
 Validate with `npm test` and `npm run check`. Inspect workspace linking with
 `npm ls --workspaces --depth=0`. Startup validates enabled libraries and portable
 requirements before opening the HTTP listener.
 
 
-Native local declarative packages now install through Wydgine plans and atomic receipts/catalogs, then activate under normal `npm start`. See [package format and operator API](docs/packages.md) and the [Guestbook package](examples/guestbook/README.md). WydStore must already be host-enabled and mapped; packages cannot approve their own grants.
+Guestbook is a tracked example package, **not installed by default**. Stop the host
+and run the experimental alpha installer:
+
+```sh
+node scripts/install-package.js examples/guestbook
+npm start
+```
+
+Review and explicitly approve authority, WydStore enablement and storage provisioning.
+Choose JSON or SQLite, then a Page/parent/slot, and confirm the final plan. The
+installer can provision host-owned `.wydgit-data`; no manual WydStore setup is
+needed. Packages cannot approve their own grants. See [package contracts and recovery](docs/packages.md)
+and the [Guestbook walkthrough](examples/guestbook/README.md). Use a disposable copy
+for experiments: there is no uninstall operation.
+
+## 0.2 limitations
+
+This is alpha-quality software, with no beta-level security or ecosystem promise.
+There is no uninstall, upgrade, storage migration, remote package registry, package
+signature verification or automatic package dependency installation. Only one
+installed package principal per Page and one installation of each fixed-ID package
+template are supported. WydClient has no automatic bootstrap/transport. There is no
+admin console or CMS. Canonical libraries currently live in this monorepo/workspace;
+they are not independently published for general external consumption.
+
+The [0.2-R audit record](docs/hardening-0.2-R.md) distinguishes automated verification
+from remaining browser acceptance.

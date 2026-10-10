@@ -4,7 +4,9 @@ import { clean, freeze, record, requireThat as check } from '../object-model/val
 // Object grants alone accept one nonempty trailing prefix wildcard. These helpers
 // never match capabilities, traversal, prototype scopes or service resources.
 export function validObjectGrant(grant) {
-  return typeof grant === 'string' && validId(grant.endsWith('*') ? grant.slice(0, -1) : grant);
+  return typeof grant === 'string' && (grant.endsWith('*')
+    ? grant.endsWith('-*') && validId(grant.slice(0, -2))
+    : validId(grant));
 }
 export function matchesObjectGrant(grants, id) {
   if (!validId(id)) return false;

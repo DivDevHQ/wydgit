@@ -102,7 +102,8 @@ maxima cannot be widened. Event budgets also continue to apply.
 The deadline is a resource check, not a workflow-visible clock. Timeout invalidates
 execution before subsequent calls/mutations. It cannot undo an external service
 already started or cancel a trusted provider; providers retain their own bounds.
-No implicit randomness, clock value, UUID or global variable state exists.
+The portable `NewId()` intrinsic in `sewn/0.3` provides an opaque ID as described below.
+No implicit clock value or global variable state exists.
 
 Errors are sanitized WydgitError values: SEWN.INVALID, DENIED, LIMIT, TYPE,
 EXECUTION_FAILED. Existing SEAM/EVENT/MUTATION/facade failures retain their codes.

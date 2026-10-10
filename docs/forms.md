@@ -145,7 +145,7 @@ uses existing action authority. These hooks/elements stay in trusted host code;
 portable handlers receive no native objects. The client adapter does not implement
 canonical tree attachment or storage. Windows/mobile controls and renderers,
 automatic client bootstrap, Reset, advanced validators and cross-field rules are
-deferred. The Guestbook reference applet remains deferred.
+deferred. The tracked Guestbook package exercises server Forms and dynamic rendering.
 
 `test/forms.test.js` provides the ProfileForm vertical fixture and direct hostile
 object/mutation/draft, shared rule, portable source/Page and client tests. Existing

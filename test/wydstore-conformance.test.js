@@ -125,3 +125,14 @@ test('JSON and SQLite queries produce identical equality results for all JSON fi
  assert.deepEqual((await stores[1].collection.query({where:{nothing:null}})).map(r=>r.id),['A','z']);
  assert.deepEqual((await stores[1].collection.query({where:{info:{a:1,b:{x:true}}}})).map(r=>r.id),['A','z']);
 });
+
+for(const provider of ['json','sqlite'])test(`${provider}: concurrent create collisions and distinct package physical stores remain isolated`,async t=>{
+ const {store,collection}=await fixture(t,provider);
+ const results=await Promise.allSettled(Array.from({length:8},(_,i)=>collection.create('same',{name:'writer'+i}).save()));
+ assert.equal(results.filter(r=>r.status==='fulfilled').length,1);for(const r of results.filter(r=>r.status==='rejected'))assert.equal(r.reason.code,'STORE.DUPLICATE_ID');
+ assert.equal((await collection.history('same')).length,1);
+ const otherRoot=await temp(t),otherStore={...store,root:otherRoot,package:'acme/other'};
+ const otherRegistry=await load(otherStore),other=createStores(otherRegistry.bind(context({package:'acme/other'}))).get('main').collection('users');
+ await other.create('same',{name:'private B'}).save();assert.notEqual((await collection.get('same')).get('name'),'private B');
+ assert.equal((await otherRegistry.bind(context()).call('wydstore','get',{store:'main',collection:'users',id:'same'})).code,'STORE.DENIED');
+});

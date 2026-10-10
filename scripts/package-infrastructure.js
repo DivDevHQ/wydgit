@@ -12,8 +12,9 @@ import { planPackageInstall, applyPackageInstall } from '../wydgine/packages/ind
 export const physicalStoreId=id=>id.replace(/[^a-z0-9-]/g,'-');
 export function storageLocation(root,relative) {
  check(typeof relative==='string'&&relative.length<=256&&!path.isAbsolute(relative)&&relative.split('/').every(p=>p==='.wydgit-data'||/^[a-z][a-z0-9-]*$/.test(p)),'PACKAGE.PATH','Use a safe site-relative runtime directory');
- check(!['content','prototypes','examples','public','node_modules'].includes(relative.split('/')[0]),'PACKAGE.PATH','Runtime data cannot use application/resource directories');
- let cursor=path.resolve(root);
+ check(!['content','prototypes','examples','public','node_modules','wydgine','wydclient','packages','scripts','test','test-support','docs'].includes(relative.split('/')[0]),'PACKAGE.PATH','Runtime data cannot use application/resource directories');
+ const base=path.resolve(root);let cursor=path.parse(base).root;
+ for(const part of base.slice(cursor.length).split(path.sep)){cursor=path.join(cursor,part);const info=lstatSync(cursor);check(info.isDirectory()&&!info.isSymbolicLink(),'PACKAGE.PATH','Unsafe site directory');}
  for(const part of relative.split('/')){cursor=path.join(cursor,part);const info=lstatSync(cursor,{throwIfNoEntry:false});if(info)check(info.isDirectory()&&!info.isSymbolicLink(),'PACKAGE.PATH','Unsafe runtime directory');}
  return cursor;
 }

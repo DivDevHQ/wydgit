@@ -188,3 +188,15 @@ test('session capacity fails without mutation; expired and revoked entries are p
  assert.equal((await gate.resolveSession(login.token)).userId,user.id);
  assert.equal((await storage.call('wydstore','get',directoryRequest)).value.data.sessions.length,1024);
 });
+
+for(const provider of ['json','sqlite'])test(`${provider}: concurrent logins and revocations preserve both accepted session changes`,async t=>{
+ const {gate,config,storage}=await fixture(t,provider);await gate.createUser({username:'alice',password:secret});
+ const other=createGate((await load(config)).bind(gateContext()));
+ const [a,b]=await Promise.all([gate.login('alice',secret),other.login('alice',secret)]);
+ assert.notEqual(a.token,b.token);assert.notEqual(a.session.id,b.session.id);
+ assert.equal((await other.resolveSession(a.token)).sessionId,a.session.id);assert.equal((await gate.resolveSession(b.token)).sessionId,b.session.id);
+ await Promise.all([gate.logout(a.token),other.revokeSession(b.session.id)]);
+ for(const token of [a.token,b.token])await reject(()=>gate.resolveSession(token),'GATE.SESSION_INVALID');
+ const directory=(await storage.call('wydstore','get',directoryRequest)).value.data;
+ assert.equal(directory.sessions.length,2);assert.ok(directory.sessions.every(s=>s.revoked));assert.ok(!JSON.stringify(directory).includes(a.token));assert.ok(!JSON.stringify(directory).includes(b.token));
+});

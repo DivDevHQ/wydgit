@@ -37,3 +37,23 @@ test('declining final apply shows the exact plan and leaves repository untouched
  const result=await runInstaller({args:[packagePath,'--root',root,'--apply'],ask:async()=>queue.shift(),output:out.stream});
  assert.equal(result.receipt,null);assert.match(out.text(),/wydgit-install-plan\/0.1/);assert.deepEqual(await snapshot(root),before);
 });
+
+test('EOF at every interactive approval/choice aborts without writes, including --apply',async t=>{
+ for(let count=0;count<=answers.length;count++){
+  const {root,packagePath}=await packageFixture(t),before=await snapshot(root);
+  await assert.rejects(runInstaller({args:[packagePath,'--root',root,'--apply'],input:Readable.from(answers.slice(0,count).map(a=>a+'\n')),output:output().stream}),{code:'PACKAGE.CLI'});
+  assert.deepEqual(await snapshot(root),before);
+ }
+});
+
+test('malformed and nonexistent unattended policy fail before writing accepted state',async t=>{
+ const {root,packagePath}=await packageFixture(t),before=await snapshot(root),policy=path.join(root,'bad-policy.json');
+ const malformedPolicy={...JSON.parse(await fs.readFile('examples/guestbook-policy.example.json','utf8')),unexpected:true};
+ for(const text of ['{','null','{}','[]','false','0','"policy"',JSON.stringify(malformedPolicy)]){
+  await fs.writeFile(policy,text);
+  await assert.rejects(runInstaller({args:[packagePath,'--root',root,'--approval',policy,'--apply'],output:output().stream}),text==='{'?SyntaxError:{code:'PACKAGE.POLICY'});
+  assert.deepEqual(await snapshot(root),before);
+ }
+ await assert.rejects(runInstaller({args:[packagePath,'--root',root,'--approval',path.join(root,'missing.json'),'--apply'],output:output().stream}),{code:'ENOENT'});
+ assert.deepEqual(await snapshot(root),before);
+});

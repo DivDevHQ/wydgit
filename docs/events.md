@@ -256,7 +256,7 @@ for server forms. No browser automation framework was present or added.
 
 ## Compatibility, verification and deferred work
 
-Platform is 0.2.0-alpha.17; Gate is independently 0.1.0-alpha.3. Gate's private
+Platform is 0.2.0-alpha.18; Gate is independently 0.1.0-alpha.3. Gate's private
 `wydgate.local/0.2` schema remains unchanged; expiry now records revocation/history.
 The pre-existing 0.2-F→G storage incompatibility remains; no destructive migration.
 There was no prior public event/handler/HTTP facade to migrate. Existing pure

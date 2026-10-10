@@ -17,7 +17,7 @@ import { mountClient } from '../wydclient/index.js';
 import { packageFixture } from '../test-support/packages.js';
 import { fixture, envelope, runPage } from '../test-support/events.js';
 const dynamicIds=['guestbook-entry-20','guestbook-entry-200','guestbook-entry-abc123'];
-const malformed=['*','*-entry','guest*-entry','guestbook-*-item','guestbook-entry-**','guestbook-entry-?','entry-[abc]','entry-{a,b}','entry-(a|b)','entry-+*','entry-\\d*','entry-^*',''];
+const malformed=['*','foo*','-*','*-entry','guest*-entry','guestbook-*-item','guestbook-entry-**','guestbook-entry-?','entry-[abc]','entry-{a,b}','entry-(a|b)','entry-+*','entry-\\d*','entry-^*',''];
 const grant='guestbook-entry-*';
 const context=extra=>new ExecutionContext({publisher:'operator',app:'boilerplate',self:'home',visible:['home','section',grant],editable:['home','section',grant],capabilities:['object.instances.edit'],traversal:['children'],...extra});
 function graph() {
@@ -33,7 +33,8 @@ test('object grants preserve exact matches and accept only literal nonempty trai
   assert.equal(matchesObjectGrant(['cart-line-*'],'cart-line-200'),true);
   assert.equal(matchesObjectGrant(['comment-*'],'comment-abc'),true);
   assert.equal(matchesObjectGrant(['a.b-*'],'a.b-c'),true);assert.equal(matchesObjectGrant(['a.b-*'],'axb-c'),false);
-  assert.equal(validObjectGrant('foo*'),true);assert.equal(matchesObjectGrant(['foo*'],'foobar'),true);
+  assert.equal(validObjectGrant('foo*'),false);assert.equal(matchesObjectGrant(['foo*'],'foobar'),false);
+  assert.equal(validObjectGrant('-*'),false);assert.equal(validObjectGrant('foo-*'),true);
   for(const value of malformed){assert.equal(validObjectGrant(value),false);assert.equal(matchesObjectGrant([value],'guestbook-entry-200'),false);for(const field of ['visible','editable'])assert.throws(()=>context({[field]:[value]}),{code:'SEAM.CONTEXT'});}
   assert.throws(()=>context({self:'*'}),{code:'SEAM.CONTEXT'});
   assert.throws(()=>context({visible:Array(10001).fill('foo')}),{code:'SEAM.CONTEXT'});
