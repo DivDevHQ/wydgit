@@ -1,3 +1,8 @@
+## 0.3.0-alpha.5 (fix) — 0.3-E media search integration correction
+
+- Corrected media source destinations to preserve existing query fields and encode the media ID once through a shared validated same-site link contract. WydSearch accepts bounded safe queries while retaining destination validation.
+- Added JSON/SQLite upload-to-canonical-search regression fixtures that follow escaped result links through Player and delivery, and verify current visibility/authority and unsafe-destination rejection.
+
 ## 0.3.0-alpha.5 — 0.3-E WydFiles
 
 - Added canonical WydFiles API 1.0.0 with App/principal/receipt-scoped logical mounts, strict paths and host-controlled policies.

@@ -81,8 +81,14 @@ Index location and App come from host policy. Source ownership and revisions
 come from the trusted resolver. Unknown fields and unsupported visibility policies
 are rejected. Title, body and summary are plain text, including literal angle
 brackets and markup-like strings; the renderer escapes them as text. Destinations are bounded, canonical
-same-site paths; schemes, query strings, fragments, backslashes, percent-encoded
-delimiters and protocol-relative links are unsupported.
+same-site paths with optional validated queries (maximum 1,024 characters and 16
+unique parameters). Paths use lowercase ASCII letters, digits, hyphens and
+underscores. Query names are bounded ASCII identifiers; values are decoded exactly
+once and reject controls, URL delimiters, backslashes and nested percent escapes.
+Malformed UTF-8/escapes, schemes, fragments and protocol-relative links remain
+unsupported. The shared trusted destination helper preserves existing query fields
+and replaces a selected parameter with URLSearchParams encoding; rendering still
+escapes the complete attribute.
 
 Supported visibility values are `public` and `authenticated`. Both additionally
 require `published === true` and a fresh `allowed === true`. Authenticated discovery

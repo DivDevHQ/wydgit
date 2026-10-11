@@ -1,8 +1,6 @@
 export const normalize=text=>text.normalize('NFKC').toLocaleLowerCase('und');
 export const tokens=text=>normalize(text).match(/[\p{L}\p{N}]+/gu)??[];
-// Same-site canonical paths only; callers cannot introduce executable schemes,
-// protocol-relative URLs, controls, encoded delimiters or backslashes.
-export const safeDestination=value=>typeof value==='string'&&/^\/(?:[a-z0-9-]+\/)*[a-z0-9-]*\/?$/.test(value)&&!value.includes('//')&&value.length<=1024;
+export { safeDestination } from '../../../wydgine/http/destination.js';
 export function rank(document,query) {
  const title=tokens(document.title),body=tokens(document.body),tags=tokens(document.categories.join(' '));
  if(!query.terms.every(term=>title.includes(term)||body.includes(term)||tags.includes(term)))return 0;

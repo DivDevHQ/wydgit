@@ -1,3 +1,4 @@
+import { destinationWithParameter } from '../../../wydgine/http/destination.js';
 // Trusted source adapter for WydSearch. No binary reads or private-index access.
 // dispatch(caller) must be the canonical caller-bound dispatcher. Both media and
 // search grants remain necessary; this adapter cannot grant either capability.
@@ -9,7 +10,7 @@ export function mediaSearchSource({indexes,dispatch}) {
    const result=await dispatch(caller).invoke('wydstream','1.0.0','get',{resource:config.resource,id});
    if(!result.ok||!['public','authenticated'].includes(result.value.visibility))return null;
    const item=result.value;
-   return {app:item.app,resource:item.resource,publisher:item.publisher,package:item.package,principal:item.principal,published:item.state==='ready',allowed:true,visibility:item.visibility,revision:String(item.revision),title:item.title,body:item.description,summary:item.description,type:item.type,categories:item.tags,url:config.destination+'?media='+encodeURIComponent(item.id)};
+   return {app:item.app,resource:item.resource,publisher:item.publisher,package:item.package,principal:item.principal,published:item.state==='ready',allowed:true,visibility:item.visibility,revision:String(item.revision),title:item.title,body:item.description,summary:item.description,type:item.type,categories:item.tags,url:destinationWithParameter(config.destination,'media',item.id)};
   },
   async list(index,caller){
    const config=configurations.get(index);if(!config||config.app!==caller.app)return [];

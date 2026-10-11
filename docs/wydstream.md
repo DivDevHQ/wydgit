@@ -251,3 +251,12 @@ playback references, ranges/HEAD/conditions, persistence/revocation, negative
 security cases and failure repair. No manual browser or decoder acceptance is
 claimed. Transcoding, external thumbnail processors, adaptive streaming, CDNs,
 scanning infrastructure and all other excluded later milestones remain deferred.
+
+Media search destinations use the shared bounded same-site destination contract.
+Configure a Media Player Page path or an approved delivery binding; both existing
+media presentations consume the `media` query field and translate it to the
+canonical `id` input. Existing validated query fields are preserved, an existing
+`media` field is replaced, and the raw media ID is encoded once. Invalid configured
+destinations fail rather than falling back. JSON/SQLite integration fixtures upload,
+index, render and follow Player/delivery links; these are automated HTTP checks,
+not manual browser verification.
