@@ -5,7 +5,7 @@ export const manifest = {
   version: '1.0.0',
   publisher: 'wydgit.core',
   trust: 'canonical',
-  platform: '^0.2.0-alpha.3',
+  platform: '^0.2.0-alpha.3 || ^0.3.0-alpha.1',
   targets: ['server'],
   capabilities: ['test.echo.read'],
   services: [{ name: 'echo', capability: 'test.echo.read' }]

@@ -16,7 +16,7 @@ export function compileModule(source,{registry=new EventRegistry()}={}) { return
 // Public compilation starts from source; AST lowering remains an internal stage.
 function compileAst(ast,registry,prototype=false) {
   if(prototype&&ast.events.length)fail('TYPE','Prototype modules cannot declare EVENT blocks.',ast.events[0].location);
-  let symbols=new Map();let declared=new Set();const procedures=Object.create(null),declarations=new Map(),graph=new Map();let current=null;const modern=ast.kind==='module';let objects=prototype;
+  let symbols=new Map();let declared=new Set();const procedures=Object.create(null),declarations=new Map(),graph=new Map();let current=null;const modern=ast.kind==='module';let objects=prototype,versioned=false;
   const error=(n,code,message)=>fail(code,message,n.location);
   const checkType=(n,actual,expected)=>{if(expected!=='Unknown'&&actual!=='Unknown'&&actual!==expected)error(n,'TYPE',`Expected ${expected}, received ${actual}.`);};
   const key=(n,k)=>{if(!safeKey(k.toLowerCase()))error(n,'UNSUPPORTED',`Reserved member '${k}'.`);return k;};
@@ -42,7 +42,7 @@ function compileAst(ast,registry,prototype=false) {
       case 'invoke':{
         if(n.target.kind==='name'&&n.target.name.toUpperCase()==='NEWID'){if(n.args.length)error(n,'TYPE','NewId takes no arguments.');objects=true;return value({op:'newId'},'String');}
         if(n.target.kind==='name'&&modern)return procedureCall(n,'function');
-        if(modern){const svc=service(n);if(svc)return value({...svc,op:'serviceCall'},'Object');}
+        if(modern){const svc=service(n);if(svc)return value({...svc,op:svc.op==='canonicalService'?'canonicalServiceCall':'serviceCall'},'Object');}
         if(n.target.kind!=='member')error(n,'UNSUPPORTED','Only safe facade methods can be called.');const target=expression(n.target.target);key(n,n.target.key);const method=canonical(Object.keys(methods[target.kind]??{}),n.target.key);if(!method){if(target.kind!=='handle')error(n,'UNSUPPORTED',`Unsupported method '${n.target.key}'.`);objects=true;return value({op:'methodValue',target:target.sewn,name:n.target.key.toLowerCase(),args:n.args.map(x=>expression(x).sewn)});}const args=n.args.map(expression),arity=methods[target.kind][method];if(args.length<arity[0]||args.length>arity[1])error(n,'TYPE',`Invalid argument count for ${method}.`);args.forEach((v,i)=>{if(v.kind&&!(method==='Move'&&i===0||method==='Raise'&&i===1||method==='Insert'&&i===2||method==='Replace'&&i===0))error(n,'TYPE','This argument requires JSON data.');});
         let type='Unknown',kind=null;if(method==='related'){const relation=n.args[0];if(relation.kind!=='literal'||typeof relation.value!=='string')error(n,'TYPE','related requires a literal relationship.');if(relation.value==='children')type='Array';else{type='Wydgit';kind='handle';}}else if(['Set','Insert','Remove','Replace','Move','Cancel','Raise','WriteMarkdown','Delete'].includes(method))type='Null';else if(method==='GetAll')type='Array';
         return {...value({op:'invoke',target:target.sewn,method,args:args.map(x=>x.sewn)},type,kind),...(method==='related'&&type==='Array'?{element:'Wydgit'}:{})};}
@@ -62,9 +62,11 @@ function compileAst(ast,registry,prototype=false) {
   }
   function service(n) {
     if(n?.kind!=='invoke'||n.target.kind!=='member'||n.target.target.kind!=='name'||n.target.target.name.toUpperCase()!=='SERVICES')return null;
-    if(n.target.key.toUpperCase()!=='CALL'||n.args.length!==3)error(n,'UNSUPPORTED','Use SERVICES.Call(library, method, input).');
-    const [library,method,input]=n.args;if([library,method].some(x=>x.kind!=='literal'||typeof x.value!=='string'))error(n,'TYPE','Service library and method must be literal strings.');
-    if(!/^[a-z][a-z0-9-]*$/.test(library.value)||!safeKey(method.value.toLowerCase())||!method.value)error(n,'UNSUPPORTED','Invalid canonical service identity.');const v=expression(input);if(v.kind)error(n,'TYPE','Service input requires JSON data.');return {op:'service',library:library.value,method:method.value,input:v.sewn};
+    const canonical=n.target.key.toUpperCase()==='INVOKE';
+    if(canonical?n.args.length!==4:n.target.key.toUpperCase()!=='CALL'||n.args.length!==3)error(n,'UNSUPPORTED','Use SERVICES.Call(library, method, input) or SERVICES.Invoke(library, apiVersion, method, input).');
+    const [library,apiVersion,method,input]=canonical?n.args:[n.args[0],null,n.args[1],n.args[2]];
+    if(canonical){if(apiVersion.kind!=='literal'||typeof apiVersion.value!=='string'||!/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/.test(apiVersion.value))error(n,'TYPE','Service API version must be an exact literal version.');versioned=true;}if([library,method].some(x=>x.kind!=='literal'||typeof x.value!=='string'))error(n,'TYPE','Service library and method must be literal strings.');
+    if(!/^[a-z][a-z0-9-]*$/.test(library.value)||!safeKey(method.value.toLowerCase())||!method.value)error(n,'UNSUPPORTED','Invalid canonical service identity.');const v=expression(input);if(v.kind)error(n,'TYPE','Service input requires JSON data.');return {op:canonical?'canonicalService':'service',...(canonical?{apiVersion:apiVersion.value}:{}),library:library.value,method:method.value,input:v.sewn};
   }
   function body(nodes,inLoop=false) {
     const out=[];
@@ -98,7 +100,7 @@ function compileAst(ast,registry,prototype=false) {
     return out;
   }
   const validated=program=>{try{return validate(program);}catch{error(ast,'COMPILE','Generated workflow exceeds or violates canonical SEWN validation bounds.');}};
-  if(!modern){const lowered=body(ast.body);return validated({schema:objects?'sewn/0.3':'sewn/0.1',...(objects?{procedures:{}}:{}),body:lowered});}
+  if(!modern){const lowered=body(ast.body);return validated({schema:versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.1',...((objects||versioned)?{procedures:{}}:{}),body:lowered});}
   for(const proc of ast.procedures){
     if(proc.params.length>MAXIMA.parameters)error(proc.params[MAXIMA.parameters],'COMPILE','Procedure parameter count exceeds SEWN limits.');
     const id=reserve(proc,proc.name,'Null');if(!/^[a-z][a-z0-9_]*$/.test(id))error(proc,'NAME','Procedure names must start with a letter.');
@@ -117,10 +119,10 @@ function compileAst(ast,registry,prototype=false) {
   const eventNames=new Set(),events=[];
   for(const event of ast.events){
     let type;try{type=registry?.resolve(event.type);}catch{error(event,'NAME',`Unknown or ambiguous event '${event.type}'.`);}if(!type)error(event,'NAME','Module compilation requires an event registry.');
-    if(eventNames.has(type))error(event,'NAME',`Duplicate EVENT '${type}'.`);eventNames.add(type);reset();const lowered=body(event.body);events.push({type,workflow:validated({schema:objects?'sewn/0.3':'sewn/0.2',procedures,body:lowered})});
+    if(eventNames.has(type))error(event,'NAME',`Duplicate EVENT '${type}'.`);eventNames.add(type);reset();const lowered=body(event.body);events.push({type,workflow:validated({schema:versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.2',procedures,body:lowered})});
   }
   // Even a declaration-only module is validated.
-  const behavior=validated({schema:objects?'sewn/0.3':'sewn/0.2',procedures,body:[]});
+  const behavior=validated({schema:versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.2',procedures,body:[]});
   if(prototype)return behavior;
   return Object.freeze({events:Object.freeze(events.map(Object.freeze))});
 }

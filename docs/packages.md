@@ -234,3 +234,10 @@ The centralized `LIMITS.packages` ceiling is 1024 installed packages. Planning
 rejects at the ceiling before candidate processing or provisioning, and catalog
 loading rejects counts above it. This is a defensive implementation bound, not a
 supported-capacity target; catalog byte limits and other resource bounds also apply.
+
+
+## Canonical service foundation — 0.3-A
+
+See [canonical service contracts](canonical-services.md) for exact API versions,
+`SERVICES.Invoke`, `sewn/0.4`, execution identities and compatibility limitations.
+Existing v0.2 library calls, grants and ownership rules remain supported.

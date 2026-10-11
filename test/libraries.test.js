@@ -221,3 +221,17 @@ test('host dependency bindings are scoped, explicit, dependency-first and never 
  for(const bindings of [null,[binding,binding],[{...binding,publisher:'imposter'}],[{...binding,capabilities:['*']}]] )code(()=>validateConfig(config({...consumerEntry,bindings})),'LIBRARY.INVALID_CONFIG');
  code(()=>validateConfig(config(null)),'LIBRARY.INVALID_CONFIG');
 });
+
+test('versioned dependency calls retain host binding identity and cannot use the legacy call to bypass validation',async t=>{
+ const root=temp(t);
+ const base={...fixtureManifest,id:'zbase',apiVersion:'1.0.0',capabilities:['base.data.read'],services:[{name:'read',capability:'base.data.read'}]};
+ install(root,{name:'@acme/base',manifest:base,source:`export const manifest=${JSON.stringify(base)};export function register({service}){service('read',(input,caller)=>({app:caller.app,principal:caller.principal,installation:caller.installation}),{authorize:(input,caller)=>caller.app==='site-A'&&caller.principal==='library:consumer',validate:input=>Object.keys(input).length===0});}`});
+ const consumer={...fixtureManifest,id:'consumer',requirements:requirements(need('zbase'))};
+ install(root,{name:'@acme/consumer',manifest:consumer,source:`export const manifest=${JSON.stringify(consumer)};export function register({service,dependency}){const backend=dependency('zbase');service('echo',async()=>({versioned:await backend.invoke('1.0.0','read',{}),legacy:await backend.call('read',{})}),{authorize:()=>true});}`});
+ const r=await load(config(entry({id:'zbase',package:'@acme/base'}),entry({id:'consumer',package:'@acme/consumer',bindings:[{library:'zbase',app:'site-A',capabilities:['base.data.read'],scopes:{}}]})),root);
+ const caller=new ExecutionContext({publisher:'ordinary',package:'ordinary/pkg',app:'site-B',self:'home',capabilities:['test.echo.read']});
+ const result=await r.bind(caller).call('consumer','echo',{});
+ assert.equal(result.value.versioned.value.app,'site-A');assert.equal(result.value.versioned.value.principal,'library:consumer');assert.equal(result.value.versioned.value.installation,null);
+ assert.equal(result.value.legacy.code,'SERVICE.VERSION_REQUIRED');
+ assert.equal((await r.bind(caller).invoke('zbase','1.0.0','read',{})).code,'SEAM.DENIED');
+});

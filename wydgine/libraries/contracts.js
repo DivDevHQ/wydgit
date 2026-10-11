@@ -50,7 +50,8 @@ export function validateConfig(input) {
 export function validateManifest(input) {
   const code = 'LIBRARY.INVALID_MANIFEST', manifest = data(input, code);
   ensure(record(manifest), code, 'Expected library manifest');
-  fields(manifest, ['schema','id','version','publisher','trust','platform','targets','capabilities','services', ...(Object.hasOwn(manifest,'requirements') ? ['requirements'] : [])], code);
+  fields(manifest, ['schema','id','version','publisher','trust','platform','targets','capabilities','services', ...['requirements','apiVersion'].filter(key => Object.hasOwn(manifest,key))], code);
+  if (Object.hasOwn(manifest,'apiVersion')) ensure(version(manifest.apiVersion) && typeof manifest.apiVersion === 'string' && /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/.test(manifest.apiVersion), code, 'Invalid service API version');
   if (Object.hasOwn(manifest,'requirements')) {
     try { manifest.requirements = validateRequirements(manifest.requirements); }
     catch { throw new WydgitError(code, 'Invalid library requirements'); }

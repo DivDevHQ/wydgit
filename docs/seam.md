@@ -85,7 +85,7 @@ explicit loading, registration and startup failure boundaries.
 
 ## Caller-bound library services
 
-0.2-D adds `registry.bind(context)`. Its only method is asynchronous
+0.2-D adds `registry.bind(context)`. Its legacy method is asynchronous
 `call(library, service, input)`, returning `{ok:true,value}` or a structured failure.
 Binding requires a branded host-issued context, not a structurally similar object.
 Each call checks the service's declared capability and registered authorization
@@ -202,3 +202,10 @@ approval authorizes enabling an installed canonical library and JSON/SQLite stor
 provisioning. Those host actions do not grant the package any capabilities or object
 access. Runtime authority still requires separately approved capabilities, traversal,
 visibility/editability and resource scopes; logical mappings expose no provider/path.
+
+
+## Canonical service foundation — 0.3-A
+
+See [canonical service contracts](canonical-services.md) for exact API versions,
+`SERVICES.Invoke`, `sewn/0.4`, execution identities and compatibility limitations.
+Existing v0.2 library calls, grants and ownership rules remain supported.

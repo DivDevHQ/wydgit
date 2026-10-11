@@ -17,3 +17,8 @@ export const reservedNames=Object.freeze([...contextNames,'SERVICES','NEWID','DI
 export const OBJECT_SCHEMA='sewn/0.3';
 export const objectStatements=Object.freeze({...procedureStatements,methodCall:['target','name','args']});
 export const objectExpressions=Object.freeze({...procedureExpressions,methodValue:['target','name','args'],construct:['type','id'],newId:[]});
+
+// Explicit versioned service calls; older wire grammars remain closed.
+export const SERVICE_SCHEMA='sewn/0.4';
+export const serviceStatements=Object.freeze({...objectStatements,canonicalService:['library','apiVersion','method','input','into?']});
+export const serviceExpressions=Object.freeze({...objectExpressions,canonicalServiceCall:['library','apiVersion','method','input']});

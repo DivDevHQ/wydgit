@@ -96,7 +96,7 @@ test('stale App/config/catalog plans rejected, persistence failure preserves acc
 
 test('activation uses exact approved principal and actual Session identity, rejects principal union',async t=>{
  const {root,options}=await packageFixture(t);await applyPackageInstall(await planPackageInstall(options));const libraries=await initializeHost({root}),model=loadRepository(root),active=activatePackages(model,libraries,root);
- const identity={authenticated:true,app:'boilerplate',userId:'user',sessionId:'session',createdAt:1,expiresAt:9,roles:[],groups:[],permissions:['store.records.delete']};const context=active.context({pageId:'home',session:{identity},ids:['home']});assert.equal(context.identity.sessionId,'session');assert.equal(context.package,'divdev/guestbook');assert.equal(context.allows('store.records.delete'),false);assert.equal(context.editable.includes('home'),false);
+ const identity={authenticated:true,app:'boilerplate',userId:'user',sessionId:'session',createdAt:1,expiresAt:9,roles:[],groups:[],permissions:['store.records.delete']};const context=active.context({pageId:'home',session:{identity},ids:['home']});assert.equal(context.identity.sessionId,'session');assert.equal(context.package,'divdev/guestbook');assert.equal(context.principal,context.package);assert.equal(context.installation,model.installed.packages[0].receipt.id);assert.equal(context.template,model.installed.packages[0].installable);assert.notEqual(context.installation,model.installed.packages[0].instance);assert.equal(context.allows('store.records.delete'),false);assert.equal(context.editable.includes('home'),false);
  assert.equal((await libraries.bind(context).call('wydstore','create',{store:'host-book',collection:'host-entries',id:'entry',data:{name:'Ada',message:'Hello'}})).ok,true);
  const denied=new ExecutionContext({publisher:'divdev',package:'divdev/guestbook',app:'boilerplate',self:'guestbook',scopes:context.scopes});assert.equal((await libraries.bind(denied).call('wydstore','query',{store:'host-book',collection:'host-entries'})).code,'SEAM.DENIED');
  const altered={...model,installed:{...model.installed,packages:[...model.installed.packages,...model.installed.packages]}};assert.throws(()=>activatePackages(altered,libraries,root),code('PACKAGE.PRINCIPALS'));
@@ -174,7 +174,7 @@ test('package safety ceiling permits more than 32 and rejects planning at 1024 b
  const optionsFor=async i=>{
   const approvals={capabilities:[],traversal:[],visible:[instanceId(i)],editable:[],scopes:{wydstore:[]}};
   await write(path.join(packagePath,'manifest.json'),{
-   schema:'wydgit-package/0.1',id:'acme/capacity-'+i,publisher:'acme',version:'1.0.0',platform:'>=0.2.0-alpha.1',runtime:['server'],
+   schema:'wydgit-package/0.1',id:'acme/capacity-'+i,publisher:'acme',version:'1.0.0',platform:'>=0.2.0-alpha.1 || ^0.3.0-alpha.1',runtime:['server'],
    resources:{prototypes:'prototypes.json',template:'section.json',sources:{}},requires:{schema:'wydgit.requirements/0.1',libraries:[]},
    storage:[],permissions:approvals,bindings:[],installables:[{id:'capacity',kind:'section-template'}]
   });

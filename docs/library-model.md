@@ -126,7 +126,7 @@ export const manifest = {
   version: '1.0.0',
   publisher: 'wydgit.core',
   trust: 'canonical',
-  platform: '^0.2.0-alpha.3',
+  platform: '^0.2.0-alpha.3 || ^0.3.0-alpha.1',
   targets: ['server'],
   capabilities: ['test.echo.read'],
   services: [{ name: 'echo', capability: 'test.echo.read' }]
@@ -229,7 +229,7 @@ empty. No Node wiring is added to canonical App properties or provenance.
 
 Three versions are independent:
 
-- Platform version: `wydgit@0.2.0-alpha.18`.
+- Platform version: `wydgit@0.3.0-alpha.1`.
 - Library version: e.g. the fixture's `1.0.0`, equal to its npm package version.
 - Compatibility ranges: manifest `platform`, host-approved implementation `version`,
   and portable requirement `version` each constrain their respective version.
@@ -238,7 +238,8 @@ The loader uses npm's [semver implementation](https://github.com/npm/node-semver
 Standard prerelease exclusion applies; no loose/coerced matching or blanket
 `includePrerelease` option is enabled. Ranges must be nonempty valid strings; npm
 dist-tags such as `latest` are not ranges. The fixture explicitly supports the
-platform's 0.2 prerelease series through `^0.2.0-alpha.3`.
+platform's 0.2 and 0.3 prerelease series through
+`^0.2.0-alpha.3 || ^0.3.0-alpha.1`.
 
 ## Failure behavior
 
@@ -319,3 +320,10 @@ revocation; Gate continues terminal cleanup notifications. See [events.md](event
 ## 0.2-P local packages
 
 Local packages declare required libraries; they cannot enable/install them. Operators separately map logical resources and approve grants. Startup resolves cataloged requirements; library versions/contracts remain unchanged. See [packages](packages.md).
+
+
+## Canonical service foundation — 0.3-A
+
+See [canonical service contracts](canonical-services.md) for exact API versions,
+`SERVICES.Invoke`, `sewn/0.4`, execution identities and compatibility limitations.
+Existing v0.2 library calls, grants and ownership rules remain supported.

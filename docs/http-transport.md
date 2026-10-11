@@ -76,8 +76,9 @@ kernel output operations, host policy, asset roots, body bounds and lifecycle
 bridge, then pass the existing acceptance and real TCP transport tests. Hono is
 replaceable and is not an architectural permanence requirement. No alternate
 adapter, Bun/Deno/Cloudflare host, WebSocket or HTTP/2 support is implemented here.
-Workspace package contracts/versions and their minimum platform compatibility
-ranges remain unchanged; the host platform is `0.2.0-alpha.18`.
+Workspace package contracts and versions remain unchanged. Their platform
+compatibility ranges now also accept the 0.3 prerelease series; the host platform
+is `0.3.0-alpha.1`.
 
 Verification includes the full `npm test` suite and `npm run check`. Focused real
 TCP tests exercise asset/cache policy, malformed/oversized/chunked/compressed

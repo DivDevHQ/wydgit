@@ -22,7 +22,7 @@ export function objectGrantCovers(grants, grant) {
 }
 const contexts = new WeakSet();
 export class ExecutionContext {
-  constructor({ publisher, package: packageId = null, self, app = null, scopes = {}, identity = null, capabilities = [], visible = [], editable = [], traversal = [], limits = {} }) {
+  constructor({ publisher, package: packageId = null, self, app = null, scopes = {}, identity = null, installation = null, template = null, principal = packageId, capabilities = [], visible = [], editable = [], traversal = [], limits = {} }) {
     check(typeof publisher === 'string' && validId(self), 'SEAM.CONTEXT', 'Context requires publisher and self');
     check(Array.isArray(capabilities) && capabilities.every(isCapability), 'SEAM.CAPABILITY', 'Invalid capability name');
     check(Array.isArray(visible) && visible.length <= 10000 && visible.every(validObjectGrant), 'SEAM.CONTEXT', 'Invalid visible scope');
@@ -30,6 +30,7 @@ export class ExecutionContext {
     check(Array.isArray(traversal) && traversal.every(x => ['parent','root','children','previousSibling','nextSibling'].includes(x)), 'SEAM.CONTEXT', 'Invalid traversal permission');
     check(packageId === null || typeof packageId === 'string', 'SEAM.CONTEXT', 'Invalid package identity');
     check(app === null || typeof app === 'string', 'SEAM.CONTEXT', 'Invalid App identity');
+    check([installation,template,principal].every(value => value === null || typeof value === 'string' && value.length > 0 && value.length <= 256), 'SEAM.CONTEXT', 'Invalid service execution identity');
     const scopeData = clean(scopes);
     check(record(scopeData), 'SEAM.CONTEXT', 'Scopes must be a JSON object');
     // Host-supplied identity metadata is not a capability or scope grant.
@@ -44,7 +45,7 @@ export class ExecutionContext {
     }
     const resources = clean(limits);
     check(record(resources) && Object.values(resources).every(n => Number.isSafeInteger(n) && n >= 0), 'SEAM.CONTEXT', 'Limits must be non-negative integers');
-    Object.assign(this, { publisher, package: packageId, self, app, identity: subject, scopes: scopeData, capabilities: [...new Set(capabilities)], visible: [...new Set([self, ...visible])], editable: [...new Set(editable)], traversal: [...new Set(traversal)], limits: resources });
+    Object.assign(this, { publisher, package: packageId, self, app, identity: subject, installation, template, principal, scopes: scopeData, capabilities: [...new Set(capabilities)], visible: [...new Set([self, ...visible])], editable: [...new Set(editable)], traversal: [...new Set(traversal)], limits: resources });
     contexts.add(this); freeze(this);
   }
   allows(capability) { return this.capabilities.includes(capability); }

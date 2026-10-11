@@ -33,7 +33,7 @@ test('filesystem links, busy locks and provider errors never expose paths',async
 
 test('generic dispatcher retains context, requires authorization and sanitizes unexpected service errors',async()=>{
  const ctx=context();let seen;const service={capability:'store.records.read',authorize:(request,caller)=>{seen=caller;return true;},handler:()=>({answer:42})};
- const dispatch=bindServices(ctx,()=>service);assert.deepEqual(Object.keys(dispatch),['call']);assert.equal((await dispatch.call('x','y',{})).value.answer,42);assert.equal(seen,ctx);
+ const dispatch=bindServices(ctx,()=>service);assert.deepEqual(Object.keys(dispatch),['call','invoke']);assert.equal((await dispatch.call('x','y',{})).value.answer,42);assert.equal(seen,ctx);
  service.authorize=()=>false;assert.equal((await dispatch.call('x','y',{})).code,'SEAM.DENIED');delete service.authorize;assert.equal((await dispatch.call('x','y',{})).code,'SEAM.DENIED');
  service.authorize=()=>true;service.handler=()=>{throw new Error('/private/host/file');};assert.deepEqual((await dispatch.call('x','y',{})),{ok:false,code:'SERVICE.FAILED',message:'Service operation failed',details:{}});
  service.handler=()=>{throw failure('STORE.CONFLICT');};assert.equal((await dispatch.call('x','y',{})).code,'STORE.CONFLICT');service.handler=()=>({fn:()=>{}});assert.equal((await dispatch.call('x','y',{})).code,'SERVICE.FAILED');
@@ -41,7 +41,7 @@ test('generic dispatcher retains context, requires authorization and sanitizes u
 
 test('platform metadata, workspace metadata and demo remain synchronized and portable',async()=>{
  const lock=JSON.parse(await fs.readFile(path.join(project,'package-lock.json'))),app=JSON.parse(await fs.readFile(path.join(project,'content/app.json')));
- assert.equal(platform.version,'0.2.0-alpha.18');assert.equal(lock.version,platform.version);assert.equal(lock.packages[''].version,platform.version);assert.equal(lock.packages[''].name,platform.name);assert.equal(lock.packages['packages/wydstore'].version,manifest.version);assert.equal(app.properties.revision,'Wydgit 0.2 alpha 18');assert.doesNotMatch(JSON.stringify(app),/node_modules|@wydgit\/store|filesystem|provider|sqlite|pragma|SELECT/i);
+ assert.equal(platform.version,'0.3.0-alpha.1');assert.equal(lock.version,platform.version);assert.equal(lock.packages[''].version,platform.version);assert.equal(lock.packages[''].name,platform.name);assert.equal(lock.packages['packages/wydstore'].version,manifest.version);assert.equal(app.properties.revision,'Wydgit 0.3 alpha 1');assert.doesNotMatch(JSON.stringify(app),/node_modules|@wydgit\/store|filesystem|provider|sqlite|pragma|SELECT/i);
 });
 
 test('equivalent record inputs persist deterministically and input aliases cannot change saved values',async t=>{

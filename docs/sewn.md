@@ -258,3 +258,10 @@ The handle allowlist adds `FormState(operation, data?)`, the closed scoped Form 
 ## 0.2-P local packages
 
 `sewn/0.3` adds the closed expression `{op:"newId"}`. No operands are accepted. It returns a 33-character opaque String using the secure runtime UUID facility; unavailable secure generation raises SEWN.DENIED. Identity grants no authority. See [packages](packages.md).
+
+
+## Canonical service foundation — 0.3-A
+
+See [canonical service contracts](canonical-services.md) for exact API versions,
+`SERVICES.Invoke`, `sewn/0.4`, execution identities and compatibility limitations.
+Existing v0.2 library calls, grants and ownership rules remain supported.

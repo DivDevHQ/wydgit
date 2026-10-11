@@ -93,13 +93,14 @@ export async function loadLibraries({ config: input, requirements: requested = e
       dependency(library) {
         ensure(approved.get(id).has(library), 'LIBRARY.DEPENDENCY_DENIED', 'Dependency binding is not approved');
         const context = approved.get(id).get(library);
-        const dispatch = bindServices(context, (target,name) => services.get(target)?.get(name));
+        const dispatch = bindServices(context, (target,name) => services.get(target)?.get(name), target => staged.get(target)?.manifest);
         return Object.freeze({identity:Object.freeze({app:context.app,publisher:context.publisher,library:id}),
-          call(name,input) { return dispatch.call(library,name,input); }});
+          call(name,input) { return dispatch.call(library,name,input); },
+          invoke(apiVersion,name,input) { return dispatch.invoke(library,apiVersion,name,input); }});
       }, service(name, handler, policy = {}) {
-      const valid = active && manifest.services.some(s => s.name === name) && !handlers.has(name) && typeof handler === 'function' && policy && Object.keys(policy).every(key => key === 'authorize') && (policy.authorize === undefined || typeof policy.authorize === 'function');
+      const valid = active && manifest.services.some(s => s.name === name) && !handlers.has(name) && typeof handler === 'function' && policy && Object.keys(policy).every(key => ['authorize','validate'].includes(key)) && (policy.authorize === undefined || typeof policy.authorize === 'function') && (policy.validate === undefined || typeof policy.validate === 'function') && (!manifest.apiVersion || typeof policy.authorize === 'function' && typeof policy.validate === 'function');
       if (!valid) { invalid = true; throw new WydgitError('LIBRARY.REGISTRATION_FAILED', 'Invalid service registration'); }
-      handlers.set(name, { handler, authorize: policy.authorize, capability: manifest.services.find(s => s.name === name).capability });
+      handlers.set(name, { handler, authorize: policy.authorize, validate: policy.validate, capability: manifest.services.find(s => s.name === name).capability });
     } });
     try {
       await register(api);
@@ -111,7 +112,7 @@ export async function loadLibraries({ config: input, requirements: requested = e
     services.set(id, handlers);
   }
   return Object.freeze({
-    bind(context) { return bindServices(context, (id, name) => services.get(id)?.get(name)); },
+    bind(context) { return bindServices(context, (id, name) => services.get(id)?.get(name), id => staged.get(id)?.manifest); },
     list() { return Object.freeze([...staged.values()].map(record => record.manifest)); },
     get(id) { ensure(staged.has(id), 'LIBRARY.UNKNOWN', 'Unknown loaded library'); return staged.get(id).manifest; },
     capabilities() { return freeze([...capabilityOwners].sort(([a],[b]) => a < b ? -1 : a > b ? 1 : 0).map(([capability, library]) => ({ capability, library }))); },

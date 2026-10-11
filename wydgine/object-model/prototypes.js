@@ -31,7 +31,7 @@ export class PrototypeRegistry {
       let behavior=null;if(d.behavior!==undefined){try{behavior=validate(d.behavior);}catch{check(false,'PROTOTYPE.METHOD','Invalid portable method behavior');}}
       check(d.methods===undefined&&d.behaviorSource===undefined,'PROTOTYPE.METHOD','Behavior must be compiled by trusted setup');
       check(new Set(d.overrides??[]).size===(d.overrides??[]).length,'PROTOTYPE.METHOD','Duplicate overrides');
-      check(!behavior||behavior.schema==='sewn/0.3'&&behavior.body.length===0,'PROTOTYPE.METHOD','Expected portable prototype behavior');
+      check(!behavior||['sewn/0.3','sewn/0.4'].includes(behavior.schema)&&behavior.body.length===0,'PROTOTYPE.METHOD','Expected portable prototype behavior');
       for(const [name,proc] of Object.entries(behavior?.procedures??{})){
         check(!Object.keys(facadeMethods.handle).some(x=>x.toLowerCase()===name),'PROTOTYPE.METHOD','Method conflicts with kernel facade');
         const old=inheritedMethods[name];

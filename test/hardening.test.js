@@ -23,7 +23,7 @@ test('seeded hostile WydBASIC inputs fail with structured diagnostics and bounde
 });
 
 test('every SEWN schema rejects dangerous keys, oversize programs and excessive nesting before execution',()=>{
- for(const schema of ['sewn/0.1','sewn/0.2','sewn/0.3']){
+ for(const schema of ['sewn/0.1','sewn/0.2','sewn/0.3','sewn/0.4']){
   const program={schema,...(schema==='sewn/0.1'?{}:{procedures:{}}),body:[]};
   for(const body of [[{op:'eval',source:'process.exit()'}],[{op:'return',value:{op:'literal',value:'x'.repeat(65537)}}],JSON.parse('[{"op":"return","value":{"op":"literal","value":{"__proto__":{}}}}]')])assert.throws(()=>validate({...program,body}),e=>/^SEWN\./.test(e.code));
   let value={op:'literal',value:true};for(let i=0;i<100;i++)value={op:'not',value};assert.throws(()=>validate({...program,body:[{op:'return',value}]}),{code:'SEWN.LIMIT'});

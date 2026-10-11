@@ -1,3 +1,18 @@
+## 0.3.0-alpha.1 — 0.3-A Canonical Service Foundation
+
+- Extended the trusted library registry with independent exact service API versions,
+  explicit versioned dispatch, mandatory argument/resource policies and bounded JSON
+  result/error handling; legacy library operations retain their v0.2 contracts.
+- Added bounded `sewn/0.4` canonical calls and WydBASIC `SERVICES.Invoke`, retaining
+  existing grammars and execution budgets.
+- Separated installable, receipt installation and runtime principal metadata in
+  host-issued contexts without changing catalog schemas or Page ownership policy.
+- Added a non-production diagnostic fixture, isolation/security regressions and
+  canonical contract documentation. No canonical-library functionality expansion
+  or dependency changes. Advanced platform/lockfile/App metadata to 0.3.0-alpha.1;
+  retained independent library versions and explicitly added v0.3 prerelease
+  compatibility to canonical library and example manifests.
+
 ## 0.2.0-alpha.18 — 0.2-R
 ### Hardening + Prerelease Readiness
 

@@ -371,3 +371,10 @@ Form supplies public prototype methods `Bind(Object)`, `Validate() AS Boolean`, 
 ## 0.2-P local packages
 
 `DIM id AS String = NewId()` returns a bounded collision-resistant opaque ID with no arguments, host objects or authority. It compiles to the `sewn/0.3` newId intrinsic. Use for WydStore create or explicit NEW IDs; existing capability/scope checks remain required. See [packages](packages.md).
+
+
+## Canonical service foundation — 0.3-A
+
+See [canonical service contracts](canonical-services.md) for exact API versions,
+`SERVICES.Invoke`, `sewn/0.4`, execution identities and compatibility limitations.
+Existing v0.2 library calls, grants and ownership rules remain supported.

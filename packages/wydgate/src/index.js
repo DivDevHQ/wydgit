@@ -2,7 +2,7 @@ import { openGate } from './core.js';
 import { GateError } from './validation.js';
 export const manifest = {
   schema:'wydgit.library/0.1',id:'wydgate',version:'0.1.0-alpha.3',
-  publisher:'wydgit.core',trust:'canonical',platform:'^0.2.0-alpha.8',targets:['server'],
+  publisher:'wydgit.core',trust:'canonical',platform:'^0.2.0-alpha.8 || ^0.3.0-alpha.1',targets:['server'],
   requirements:{schema:'wydgit.requirements/0.1',libraries:[{library:'wydstore',version:'^0.1.0-alpha.2'}]},
   capabilities:['gate.users.read','gate.users.create','gate.users.update','gate.credentials.authenticate','gate.credentials.manage','gate.sessions.use','gate.sessions.manage','gate.roles.manage','gate.groups.manage'],
   services:[
