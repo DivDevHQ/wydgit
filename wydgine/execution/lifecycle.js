@@ -29,7 +29,7 @@ export function createSessionResolver({app,gate,lifecycle,max=1024}) {
   return Object.freeze({async resolve(cookies) {
     if(cookies['__Host-wydgit-auth']) {
       check(gate,'EVENT.DENIED','Authentication unavailable');const identity=await gate.resolveSession(cookies['__Host-wydgit-auth']);check(identity.app===app,'EVENT.DENIED','Cross-App Session');
-      return {view:{id:identity.sessionId,app,authenticated:true,identity},active:()=>identity.expiresAt>Date.now(),async authorize(){const fresh=await gate.resolveSession(cookies['__Host-wydgit-auth']);check(fresh.app===app&&fresh.sessionId===identity.sessionId,'EVENT.DENIED','Session changed');},identity,csrf:digest(cookies['__Host-wydgit-auth']+'csrf'),cookie:null};
+      return {view:{id:identity.sessionId,app,authenticated:true,identity},active:()=>identity.expiresAt>Date.now(),async authorize(){const fresh=await gate.resolveSession(cookies['__Host-wydgit-auth']);check(fresh.app===app&&fresh.sessionId===identity.sessionId,'EVENT.DENIED','Session changed');return fresh;},identity,csrf:digest(cookies['__Host-wydgit-auth']+'csrf'),cookie:null};
     }
     const now=Date.now();for(const [key,entry] of anonymous)if(entry.expiresAt<=now){anonymous.delete(key);await lifecycle.session({app,type:'Timeout',session:{id:entry.id,app,authenticated:false,expiresAt:entry.expiresAt}});await lifecycle.session({app,type:'End',session:{id:entry.id,app,authenticated:false,expiresAt:entry.expiresAt}});}
     const token=cookies['__Host-wydgit-session'];let entry=token&&anonymous.get(digest(token));let cookie=null;

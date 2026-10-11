@@ -45,7 +45,7 @@ export function packageBindings(entry,registry,runtime) {
     if(b.kind==='handler'){check(events.get(b.event).family==='Page','PACKAGE.BINDING','Only Page lifecycle handlers supported');handlers.push(...prepareHandlers([{owner:b.owner,wydBasicModule:source}],events));}
     else {check(events.get(b.event).family==='Semantic','PACKAGE.BINDING','Expected semantic action');check(b.event!=='Submit'||registry.isA(runtime.get(b.owner).prototype,'wydgit.core/form'),'PACKAGE.BINDING','Submit requires Form');actions.push(prepareAction({page:entry.placement.page,target:b.owner,type:b.event,method:b.method,capability:b.capability,wydBasicModule:source},events));}
   }
-  for(const id of entry.instanceIds){const presentation=registry.get(runtime.get(id).prototype).presentation;if(presentation?.request)check(m.requires.libraries.some(r=>r.library===presentation.request.library),'PACKAGE.LIBRARY','Component service provider must be declared');}
+  for(const id of entry.instanceIds){const presentation=registry.get(runtime.get(id).prototype).presentation;for(const binding of [presentation?.request,presentation?.submission,presentation?.delivery].filter(Boolean))check(m.requires.libraries.some(r=>r.library===binding.library),'PACKAGE.LIBRARY','Component service provider must be declared');}
   return {handlers,actions};
 }
 async function resolveLibraries(root,manifest,hostConfig) {

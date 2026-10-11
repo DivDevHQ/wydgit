@@ -1,0 +1,897 @@
+[
+  {
+    "id": "divdev/media-upload",
+    "publisher": "divdev",
+    "public": true,
+    "extends": "wydgit.core/block",
+    "properties": {
+      "content": {
+        "type": "object",
+        "default": {
+          "type": "markdown",
+          "value": ""
+        }
+      },
+      "resource": {
+        "type": "string",
+        "default": "media"
+      },
+      "acceptedCategories": {
+        "type": "array",
+        "default": [
+          "image",
+          "audio",
+          "video",
+          "file"
+        ]
+      },
+      "label": {
+        "type": "string",
+        "default": "Upload media"
+      },
+      "maxBytes": {
+        "type": "number",
+        "default": 8388608
+      },
+      "accept": {
+        "type": "string",
+        "default": "image/*,audio/*,video/*,.pdf,.zip"
+      }
+    },
+    "slots": {},
+    "presentation": {
+      "schema": "wydgit.presentation/0.1",
+      "submission": {
+        "library": "wydstream",
+        "apiVersion": "1.0.0",
+        "operation": "create-upload",
+        "input": {
+          "resource": {
+            "get": "properties.resource"
+          },
+          "categories": {
+            "get": "properties.acceptedCategories"
+          },
+          "maxBytes": {
+            "get": "properties.maxBytes"
+          }
+        }
+      },
+      "template": {
+        "tag": "form",
+        "attrs": {
+          "id": {
+            "get": "id"
+          },
+          "class": "wyd-media-upload wyd-result-panel",
+          "method": "post",
+          "enctype": "multipart/form-data",
+          "action": {
+            "op": "url",
+            "path": {
+              "get": "transfer"
+            },
+            "params": [
+              [
+                "_csrf",
+                {
+                  "get": "csrf"
+                }
+              ]
+            ]
+          }
+        },
+        "children": [
+          {
+            "tag": "h2",
+            "text": {
+              "get": "properties.label"
+            }
+          },
+          {
+            "tag": "label",
+            "text": "Choose a file",
+            "children": [
+              {
+                "tag": "input",
+                "attrs": {
+                  "type": "file",
+                  "name": "file",
+                  "required": true,
+                  "aria-label": "Media file",
+                  "accept": {
+                    "get": "properties.accept"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "tag": "label",
+            "text": "Title",
+            "children": [
+              {
+                "tag": "input",
+                "attrs": {
+                  "name": "title",
+                  "type": "text"
+                }
+              }
+            ]
+          },
+          {
+            "tag": "label",
+            "text": "Description",
+            "children": [
+              {
+                "tag": "input",
+                "attrs": {
+                  "name": "description",
+                  "type": "text"
+                }
+              }
+            ]
+          },
+          {
+            "tag": "p",
+            "text": {
+              "op": "concat",
+              "args": [
+                "Accepted categories: ",
+                {
+                  "get": "properties.acceptedCategories"
+                },
+                ". Upload results appear after submission."
+              ]
+            }
+          },
+          {
+            "tag": "button",
+            "text": "Upload",
+            "attrs": {
+              "type": "submit"
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "divdev/media-player",
+    "publisher": "divdev",
+    "public": true,
+    "extends": "wydgit.core/block",
+    "properties": {
+      "content": {
+        "type": "object",
+        "default": {
+          "type": "markdown",
+          "value": ""
+        }
+      },
+      "resource": {
+        "type": "string",
+        "default": "media"
+      },
+      "mediaId": {
+        "type": "string",
+        "default": ""
+      },
+      "label": {
+        "type": "string",
+        "default": "Media player"
+      }
+    },
+    "slots": {},
+    "presentation": {
+      "schema": "wydgit.presentation/0.1",
+      "request": {
+        "library": "wydstream",
+        "apiVersion": "1.0.0",
+        "operation": "get",
+        "input": {
+          "resource": {
+            "get": "properties.resource"
+          },
+          "id": {
+            "op": "if",
+            "test": {
+              "op": "eq",
+              "args": [
+                {
+                  "get": "properties.mediaId"
+                },
+                ""
+              ]
+            },
+            "then": {
+              "op": "query",
+              "name": "media"
+            },
+            "else": {
+              "get": "properties.mediaId"
+            }
+          }
+        }
+      },
+      "delivery": {
+        "library": "wydstream",
+        "apiVersion": "1.0.0",
+        "operation": "get-delivery",
+        "input": {
+          "resource": {
+            "get": "properties.resource"
+          },
+          "id": {
+            "op": "if",
+            "test": {
+              "op": "eq",
+              "args": [
+                {
+                  "get": "properties.mediaId"
+                },
+                ""
+              ]
+            },
+            "then": {
+              "op": "query",
+              "name": "media"
+            },
+            "else": {
+              "get": "properties.mediaId"
+            }
+          }
+        }
+      },
+      "template": {
+        "tag": "section",
+        "attrs": {
+          "id": {
+            "get": "id"
+          },
+          "class": "wyd-media-player wyd-result-panel"
+        },
+        "children": [
+          {
+            "tag": "h2",
+            "text": {
+              "get": "properties.label"
+            }
+          },
+          {
+            "tag": "p",
+            "text": "Media is unavailable or access was denied.",
+            "attrs": {
+              "role": "status"
+            },
+            "if": {
+              "op": "eq",
+              "args": [
+                {
+                  "get": "data.state"
+                },
+                "error"
+              ]
+            }
+          },
+          {
+            "tag": "audio",
+            "attrs": {
+              "controls": true,
+              "preload": "metadata",
+              "src": {
+                "op": "url",
+                "path": {
+                  "get": "transfer"
+                },
+                "params": [
+                  [
+                    "media",
+                    {
+                      "get": "data.value.id"
+                    }
+                  ]
+                ]
+              },
+              "aria-label": {
+                "get": "properties.label"
+              }
+            },
+            "children": [
+              {
+                "tag": "p",
+                "text": "Your browser cannot play this media. Use the download link."
+              }
+            ],
+            "if": {
+              "op": "and",
+              "args": [
+                {
+                  "op": "eq",
+                  "args": [
+                    {
+                      "get": "data.state"
+                    },
+                    "ready"
+                  ]
+                },
+                {
+                  "op": "eq",
+                  "args": [
+                    {
+                      "get": "data.value.type"
+                    },
+                    "audio"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "tag": "video",
+            "attrs": {
+              "controls": true,
+              "preload": "metadata",
+              "src": {
+                "op": "url",
+                "path": {
+                  "get": "transfer"
+                },
+                "params": [
+                  [
+                    "media",
+                    {
+                      "get": "data.value.id"
+                    }
+                  ]
+                ]
+              },
+              "aria-label": {
+                "get": "properties.label"
+              }
+            },
+            "children": [
+              {
+                "tag": "p",
+                "text": "Your browser cannot play this media. Use the download link."
+              }
+            ],
+            "if": {
+              "op": "and",
+              "args": [
+                {
+                  "op": "eq",
+                  "args": [
+                    {
+                      "get": "data.state"
+                    },
+                    "ready"
+                  ]
+                },
+                {
+                  "op": "eq",
+                  "args": [
+                    {
+                      "get": "data.value.type"
+                    },
+                    "video"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "tag": "img",
+            "attrs": {
+              "src": {
+                "op": "url",
+                "path": {
+                  "get": "transfer"
+                },
+                "params": [
+                  [
+                    "media",
+                    {
+                      "get": "data.value.id"
+                    }
+                  ]
+                ]
+              },
+              "alt": {
+                "get": "data.value.title"
+              }
+            },
+            "if": {
+              "op": "and",
+              "args": [
+                {
+                  "op": "eq",
+                  "args": [
+                    {
+                      "get": "data.state"
+                    },
+                    "ready"
+                  ]
+                },
+                {
+                  "op": "eq",
+                  "args": [
+                    {
+                      "get": "data.value.type"
+                    },
+                    "image"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "tag": "a",
+            "text": "Download media",
+            "attrs": {
+              "href": {
+                "op": "url",
+                "path": {
+                  "get": "transfer"
+                },
+                "params": [
+                  [
+                    "media",
+                    {
+                      "get": "data.value.id"
+                    }
+                  ]
+                ]
+              }
+            },
+            "if": {
+              "op": "eq",
+              "args": [
+                {
+                  "get": "data.state"
+                },
+                "ready"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "divdev/media-gallery",
+    "publisher": "divdev",
+    "public": true,
+    "extends": "wydgit.core/block",
+    "properties": {
+      "content": {
+        "type": "object",
+        "default": {
+          "type": "markdown",
+          "value": ""
+        }
+      },
+      "resource": {
+        "type": "string",
+        "default": "media"
+      },
+      "pageSize": {
+        "type": "number",
+        "default": 10
+      },
+      "mediaType": {
+        "type": "string",
+        "default": ""
+      }
+    },
+    "slots": {},
+    "presentation": {
+      "schema": "wydgit.presentation/0.1",
+      "request": {
+        "library": "wydstream",
+        "apiVersion": "1.0.0",
+        "operation": "list",
+        "input": {
+          "resource": {
+            "get": "properties.resource"
+          },
+          "limit": {
+            "get": "properties.pageSize"
+          },
+          "offset": {
+            "op": "integer",
+            "value": {
+              "op": "query",
+              "name": "offset"
+            },
+            "default": 0,
+            "min": 0,
+            "max": 256
+          },
+          "type": {
+            "op": "if",
+            "test": {
+              "op": "eq",
+              "args": [
+                {
+                  "get": "properties.mediaType"
+                },
+                ""
+              ]
+            },
+            "then": {
+              "op": "query",
+              "name": "type"
+            },
+            "else": {
+              "get": "properties.mediaType"
+            }
+          }
+        }
+      },
+      "delivery": {
+        "library": "wydstream",
+        "apiVersion": "1.0.0",
+        "operation": "get-delivery",
+        "input": {
+          "resource": {
+            "get": "properties.resource"
+          },
+          "id": {
+            "op": "query",
+            "name": "media"
+          }
+        }
+      },
+      "template": {
+        "tag": "section",
+        "attrs": {
+          "id": {
+            "get": "id"
+          },
+          "class": "wyd-media-gallery wyd-result-panel"
+        },
+        "children": [
+          {
+            "tag": "h2",
+            "text": "Media gallery"
+          },
+          {
+            "tag": "p",
+            "text": "Media is unavailable or access was denied.",
+            "attrs": {
+              "role": "status"
+            },
+            "if": {
+              "op": "eq",
+              "args": [
+                {
+                  "get": "data.state"
+                },
+                "error"
+              ]
+            }
+          },
+          {
+            "tag": "p",
+            "text": "No media available.",
+            "attrs": {
+              "role": "status"
+            },
+            "if": {
+              "op": "and",
+              "args": [
+                {
+                  "op": "eq",
+                  "args": [
+                    {
+                      "get": "data.state"
+                    },
+                    "ready"
+                  ]
+                },
+                {
+                  "op": "eq",
+                  "args": [
+                    {
+                      "get": "data.value.total"
+                    },
+                    0
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "tag": "form",
+            "attrs": {
+              "method": "get",
+              "action": {
+                "get": "path"
+              }
+            },
+            "children": [
+              {
+                "tag": "label",
+                "text": "Filter by category",
+                "children": [
+                  {
+                    "tag": "input",
+                    "attrs": {
+                      "name": "type",
+                      "type": "text",
+                      "placeholder": "image, audio, video, file"
+                    }
+                  }
+                ]
+              },
+              {
+                "tag": "button",
+                "text": "Filter",
+                "attrs": {
+                  "type": "submit"
+                }
+              }
+            ]
+          },
+          {
+            "tag": "ul",
+            "children": [
+              {
+                "tag": "li",
+                "children": [
+                  {
+                    "tag": "img",
+                    "attrs": {
+                      "src": {
+                        "op": "url",
+                        "path": {
+                          "get": "transfer"
+                        },
+                        "params": [
+                          [
+                            "media",
+                            {
+                              "get": "item.id"
+                            }
+                          ]
+                        ]
+                      },
+                      "alt": {
+                        "get": "item.title"
+                      }
+                    },
+                    "if": {
+                      "op": "eq",
+                      "args": [
+                        {
+                          "get": "item.type"
+                        },
+                        "image"
+                      ]
+                    }
+                  },
+                  {
+                    "tag": "a",
+                    "text": {
+                      "op": "if",
+                      "test": {
+                        "op": "eq",
+                        "args": [
+                          {
+                            "get": "item.title"
+                          },
+                          ""
+                        ]
+                      },
+                      "then": {
+                        "get": "item.id"
+                      },
+                      "else": {
+                        "get": "item.title"
+                      }
+                    },
+                    "attrs": {
+                      "href": {
+                        "op": "url",
+                        "path": {
+                          "get": "transfer"
+                        },
+                        "params": [
+                          [
+                            "media",
+                            {
+                              "get": "item.id"
+                            }
+                          ]
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "tag": "p",
+                    "text": {
+                      "get": "item.description"
+                    }
+                  }
+                ],
+                "each": {
+                  "in": {
+                    "get": "data.value.items"
+                  },
+                  "as": "item"
+                }
+              }
+            ],
+            "if": {
+              "op": "eq",
+              "args": [
+                {
+                  "get": "data.state"
+                },
+                "ready"
+              ]
+            }
+          },
+          {
+            "tag": "nav",
+            "attrs": {
+              "aria-label": "Media pages",
+              "class": "wyd-pagination"
+            },
+            "children": [
+              {
+                "tag": "a",
+                "text": "Previous",
+                "attrs": {
+                  "href": {
+                    "op": "url",
+                    "path": {
+                      "get": "path"
+                    },
+                    "params": [
+                      [
+                        "offset",
+                        {
+                          "op": "max",
+                          "args": [
+                            0,
+                            {
+                              "op": "subtract",
+                              "args": [
+                                {
+                                  "op": "integer",
+                                  "value": {
+                                    "op": "query",
+                                    "name": "offset"
+                                  },
+                                  "default": 0,
+                                  "min": 0,
+                                  "max": 256
+                                },
+                                {
+                                  "get": "properties.pageSize"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ],
+                      [
+                        "type",
+                        {
+                          "op": "query",
+                          "name": "type"
+                        }
+                      ]
+                    ]
+                  }
+                },
+                "if": {
+                  "op": "gt",
+                  "args": [
+                    {
+                      "op": "integer",
+                      "value": {
+                        "op": "query",
+                        "name": "offset"
+                      },
+                      "default": 0,
+                      "min": 0,
+                      "max": 256
+                    },
+                    0
+                  ]
+                }
+              },
+              {
+                "tag": "a",
+                "text": "Next",
+                "attrs": {
+                  "href": {
+                    "op": "url",
+                    "path": {
+                      "get": "path"
+                    },
+                    "params": [
+                      [
+                        "offset",
+                        {
+                          "op": "add",
+                          "args": [
+                            {
+                              "op": "integer",
+                              "value": {
+                                "op": "query",
+                                "name": "offset"
+                              },
+                              "default": 0,
+                              "min": 0,
+                              "max": 256
+                            },
+                            {
+                              "get": "properties.pageSize"
+                            }
+                          ]
+                        }
+                      ],
+                      [
+                        "type",
+                        {
+                          "op": "query",
+                          "name": "type"
+                        }
+                      ]
+                    ]
+                  }
+                },
+                "if": {
+                  "op": "lt",
+                  "args": [
+                    {
+                      "op": "add",
+                      "args": [
+                        {
+                          "op": "integer",
+                          "value": {
+                            "op": "query",
+                            "name": "offset"
+                          },
+                          "default": 0,
+                          "min": 0,
+                          "max": 256
+                        },
+                        {
+                          "get": "properties.pageSize"
+                        }
+                      ]
+                    },
+                    {
+                      "get": "data.value.total"
+                    }
+                  ]
+                }
+              }
+            ],
+            "if": {
+              "op": "eq",
+              "args": [
+                {
+                  "get": "data.state"
+                },
+                "ready"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "divdev/media-section",
+    "publisher": "divdev",
+    "extends": "wydgit.core/section",
+    "properties": {},
+    "slots": {}
+  }
+]

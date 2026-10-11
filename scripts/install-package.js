@@ -13,6 +13,7 @@ import { loadRepository } from '../wydgine/repository.js';
 import { ExecutionContext } from '../wydgine/seam/context.js';
 import { importNodePackage } from '../wydgine/libraries/node-package.js';
 import { planOperatorInstall, applyOperatorInstall, physicalStoreId, storageLocation } from './package-infrastructure.js';
+import { mediaPackagePolicy } from '../examples/media/install-policy.js';
 import { searchPackagePolicy } from '../examples/search/install-policy.js';
 const usage='Usage: node scripts/install-package.js PACKAGE [--approval HOST-POLICY.json] [--apply] [--root SITE]';
 const yes=answer=>/^y(?:es)?$/i.test(answer.trim());
@@ -39,6 +40,7 @@ export async function buildOperatorPolicy({root,packagePath,ask,write}) {
 
   const model=loadRepository(root),app=model.runtime.rootId;
   const config=JSON.parse(JSON.stringify(validateConfig(safeRead(root,'wydgit.config.json'))));
+  if(manifest.id==='divdev/media'&&manifest.permissions.scopes.wydstream)return mediaPackagePolicy({model,manifest,config,ask,write,chooseOne});
   if(manifest.id==='divdev/search'&&manifest.permissions.scopes.wydsearch)return searchPackagePolicy({model,manifest,config,ask,write,chooseOne});
   const infrastructure={enableWydstore:false,stores:[]};
   for(const required of manifest.requires.libraries){

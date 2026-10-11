@@ -280,3 +280,9 @@ article > section.wyd-position-header .wyd-presentation-lead p { margin-bottom: 
 .wyd-pagination { display:flex; gap:1rem; }
 article > section.wyd-position-header:has(> .wyd-form-inline) { padding:.5rem 0 1rem; }
 article > section:has(> .wyd-result-panel) { padding:1rem 0; }
+
+/* Standard declarative media controls use the existing skin tokens. */
+.wyd-media-player video,.wyd-media-player img,.wyd-media-gallery img{max-width:100%;height:auto}
+.wyd-media-player audio{width:100%}
+.wyd-media-gallery img{max-height:12rem}
+.wyd-media-upload label{display:block;margin-block:0.75rem}

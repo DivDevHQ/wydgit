@@ -1,0 +1,50 @@
+{
+  "schema": "wydgit-package/0.1",
+  "id": "divdev/media",
+  "publisher": "divdev",
+  "version": "0.1.0",
+  "platform": "^0.3.0-alpha.1",
+  "runtime": [
+    "server"
+  ],
+  "resources": {
+    "prototypes": "prototypes.json",
+    "template": "section.json",
+    "sources": {}
+  },
+  "requires": {
+    "schema": "wydgit.requirements/0.1",
+    "libraries": [
+      {
+        "library": "wydstream",
+        "version": "^0.1.0-alpha.1"
+      }
+    ]
+  },
+  "storage": [],
+  "permissions": {
+    "capabilities": [
+      "stream.media.upload",
+      "stream.media.read"
+    ],
+    "traversal": [],
+    "visible": [
+      "wydmedia",
+      "wydmedia-*"
+    ],
+    "editable": [],
+    "scopes": {
+      "wydstore": [],
+      "wydstream": [
+        "media"
+      ]
+    }
+  },
+  "bindings": [],
+  "installables": [
+    {
+      "id": "media-section",
+      "kind": "section-template"
+    }
+  ]
+}

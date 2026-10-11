@@ -1,3 +1,18 @@
+## 0.3.0-alpha.4 — 0.3-D WydStream and Media Wydgits
+
+- Added canonical WydStream 0.1.0-alpha.1 / API 1.0.0, App-scoped transactional
+  WydStore metadata, private local binaries, quota reservations and bounded repair.
+- Added authenticated, MIME-verified streaming multipart uploads; current-policy
+  GET/HEAD/conditional delivery, single byte ranges and disconnect cleanup.
+- Added generic approved-library transport hooks, controlled component submission
+  and delivery bindings, safe media elements and trusted HTTP resource policy.
+- Added installable divdev/media Upload/Player/Gallery, existing skin support,
+  ordinary installer provisioning/receipts and rollback for separate media roots.
+- Added a canonical metadata-only WydSearch source adapter without contract changes.
+- Added JSON/SQLite and real HTTP acceptance/security/recovery regressions and docs.
+- Added Busboy 1.6.0 to trusted HTTP transport and file-type 21.0.0 to WydStream.
+  No progress/transcoding, authentication redesign, 0.3-E or multi-App routing.
+
 ## 0.3-C correction — Search plain-text extraction
 
 - Decode sanitized Page text once with the direct runtime `entities` dependency;

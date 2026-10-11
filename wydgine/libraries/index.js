@@ -1,5 +1,5 @@
-import { serviceLimits, STORE_SERVICE_DEFAULTS, checkJsonBudget } from './limits.js';
-import { ExecutionContext } from '../seam/context.js';
+import { effectiveLimits, serviceLimits, STORE_SERVICE_DEFAULTS, checkJsonBudget } from './limits.js';
+import { checkContext, ExecutionContext } from '../seam/context.js';
 import { bindServices, failure, isServiceFailure } from './dispatch.js';
 import { ensure, version, satisfies, validateConfig, validateManifest, validateRequirements } from './contracts.js';
 import { importNodePackage } from './node-package.js';
@@ -87,7 +87,7 @@ export async function loadLibraries({ config: input, requirements: requested = e
         self:`library-${id}`, app:binding.app, capabilities:binding.capabilities, scopes:binding.scopes})];
     })));
   }
-  const services = new Map(),starts=[];
+  const services = new Map(),transports=new Map(),starts=[];
   for (const id of order) {
     const {manifest,register,limits,initialize} = staged.get(id);
     let host;try{host=initialize?await initialize(Object.freeze({root,options:configured.get(id).options??{},adapter:adapters[id]})):undefined;}catch{throw new WydgitError('LIBRARY.INITIALIZATION_FAILED','Approved library initialization failed');}
@@ -97,6 +97,10 @@ export async function loadLibraries({ config: input, requirements: requested = e
     let active = true, invalid = false;
     const api = Object.freeze({ options: configured.get(id).options ?? Object.freeze({}), failure, checkJson:checkJsonBudget,
       hostContext:host?.context??Object.freeze({}),
+      transport(name,handler) {
+        if(!(active && manifest.services.some(s=>s.name===name) && typeof handler==='function' && !transports.has(id+':'+name))){invalid=true;throw new WydgitError('LIBRARY.REGISTRATION_FAILED','Invalid transport registration');}
+        transports.set(id+':'+name,handler);
+      },
       async lifecycle(event) { return lifecycle(id, freeze(validateLifecycle(event))); },
       dependency(library) {
         ensure(approved.get(id).has(library), 'LIBRARY.DEPENDENCY_DENIED', 'Dependency binding is not approved');
@@ -120,6 +124,16 @@ export async function loadLibraries({ config: input, requirements: requested = e
     services.set(id, handlers);
   }
   const registry=Object.freeze({
+    async transfer(context,id,name,input,port) {
+      checkContext(context);ensure(context.app!==null,'SEAM.DENIED','Transport requires authoritative App identity');
+      const record=services.get(id)?.get(name),handler=transports.get(id+':'+name);
+      ensure(record&&handler&&context.allows(record.capability)&&record.authorize,'SEAM.DENIED','Transport denied');
+      const policy=effectiveLimits(record.limits,context);checkJsonBudget(input,policy.request);
+      const request=freeze(validateLifecycle(input));
+      ensure(await record.authorize(request,context,policy)===true,'SEAM.DENIED','Transport denied');
+      ensure(!record.validate||await record.validate(request,context,policy)===true,'SERVICE.INVALID_REQUEST','Invalid transfer request');
+      return handler(request,context,port,policy);
+    },
     bind(context) { return bindServices(context, (id, name) => services.get(id)?.get(name), id => staged.get(id)?.manifest); },
     bindPresentation(context){return bindServices(context,(id,name)=>{const record=services.get(id)?.get(name);return record?.presentation?record:undefined;},id=>staged.get(id)?.manifest);},
     list() { return Object.freeze([...staged.values()].map(record => record.manifest)); },

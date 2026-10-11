@@ -1,6 +1,6 @@
 {
   "name": "wydgit",
-  "version": "0.3.0-alpha.3",
+  "version": "0.3.0-alpha.4",
   "description": "A portable, capability-safe application platform for the open web",
   "license": "MPL-2.0",
   "private": true,
@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@hono/node-server": "2.1.4",
+    "busboy": "1.6.0",
     "hono": "4.13.13",
     "marked": "^15.0.12",
     "sanitize-html": "^2.18.0",

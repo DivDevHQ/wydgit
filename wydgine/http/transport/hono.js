@@ -8,7 +8,7 @@ import { Readable } from 'node:stream';
 import { createGunzip, createInflate, createBrotliDecompress } from 'node:zlib';
 import { errorDocument } from '../../index.js';
 
-const policy = "default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'";
+const policy = "default-src 'none'; style-src 'self'; img-src 'self'; media-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'";
 // Explicit browser-safe dependency closure; no server/provider modules are exposed.
 const clientModules = [
   'wydclient/index.js', 'wydgine/events/index.js', 'wydgine/events/registry.js',
@@ -106,7 +106,7 @@ export function createTransport({ root, projectRoot, renderer, pipeline, logger 
   host.all('*', async c => {
     const request = c.req.raw, res = outputPort(c.env.outgoing, request.method === 'HEAD');
     res.setHeader('Content-Security-Policy', policy);
-    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Content-Type-Options', 'nosniff');res.setHeader('Referrer-Policy','no-referrer');
     try {
       const url = new URL(request.url), pathname = url.pathname;
       if (['GET', 'HEAD'].includes(request.method)) {
@@ -121,6 +121,10 @@ export function createTransport({ root, projectRoot, renderer, pipeline, logger 
           const type = relative.endsWith('.css') ? 'text/css; charset=utf-8' : 'application/octet-stream';
           if (await asset(path.join(root, 'public/css'), relative, type, res, request)) return RESPONSE_ALREADY_SENT;
         }
+      }
+      if(pathname.startsWith('/_transfer/')) {
+        await pipeline.request({method:request.method,path:pathname,query:url.search.slice(1),cookie:request.headers.get('cookie')??'',transfer:{body:request.body,headers:{type:request.headers.get('content-type')??'',encoding:request.headers.get('content-encoding')??'identity',accept:request.headers.get('accept')??'',range:request.headers.get('range'),ifNoneMatch:request.headers.get('if-none-match'),ifRange:request.headers.get('if-range')}}},res);
+        return RESPONSE_ALREADY_SENT;
       }
       let form;
       try { form = await collectForm(request); }
@@ -139,7 +143,8 @@ export function createTransport({ root, projectRoot, renderer, pipeline, logger 
   return {
     locals,
     listen(...args) {
-      const server = createAdaptorServer({ fetch: host.fetch, overrideGlobalObjects: false });
+      const server = createAdaptorServer({ fetch: host.fetch, overrideGlobalObjects: false,serverOptions:{maxHeaderSize:pipeline.httpPolicy.headerBytes} });
+      server.requestTimeout=pipeline.httpPolicy.requestMs;server.headersTimeout=Math.min(15000,pipeline.httpPolicy.requestMs);server.maxHeadersCount=pipeline.httpPolicy.headerCount;
       // Stop after in-flight HTTP requests finish, including direct host closes.
       server.once('close', () => { stop().catch(error => logger.error(error.message)); });
       server.once('error', () => { stop().catch(error => logger.error(error.message)); });

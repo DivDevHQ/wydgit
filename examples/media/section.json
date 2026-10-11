@@ -1,0 +1,35 @@
+{
+  "schema": "wydgit/0.2",
+  "id": "wydmedia",
+  "prototype": "divdev/media-section",
+  "properties": {},
+  "slots": {
+    "blocks": [
+      {
+        "schema": "wydgit/0.2",
+        "id": "wydmedia-upload",
+        "prototype": "divdev/media-upload",
+        "properties": {},
+        "slots": {},
+        "provenance": {}
+      },
+      {
+        "schema": "wydgit/0.2",
+        "id": "wydmedia-player",
+        "prototype": "divdev/media-player",
+        "properties": {},
+        "slots": {},
+        "provenance": {}
+      },
+      {
+        "schema": "wydgit/0.2",
+        "id": "wydmedia-gallery",
+        "prototype": "divdev/media-gallery",
+        "properties": {},
+        "slots": {},
+        "provenance": {}
+      }
+    ]
+  },
+  "provenance": {}
+}

@@ -65,13 +65,13 @@ The 0.2 alpha implements an App object model, SEAM authority, bounded WydBASIC/S
 - nested App → Page → Section → Block composition
 - renderer and HTTP tests
 
-Implementation details: [object model](docs/object-model.md), [SEAM](docs/seam.md), [mutation model](docs/mutation-model.md), [library model](docs/library-model.md), [WydStore](docs/wydstore.md), [WydGate](docs/wydgate.md), [events/HTTP execution](docs/events.md), [HTTP transport](docs/http-transport.md), [SEWN](docs/sewn.md), and [WydBASIC](docs/wydbasic.md). Local declarative packages execute validated WydBASIC/SEWN through those boundaries; arbitrary package JavaScript remains forbidden.
+Implementation details: [object model](docs/object-model.md), [SEAM](docs/seam.md), [mutation model](docs/mutation-model.md), [library model](docs/library-model.md), [WydStore](docs/wydstore.md), [WydGate](docs/wydgate.md), [WydStream](docs/wydstream.md), [events/HTTP execution](docs/events.md), [HTTP transport](docs/http-transport.md), [SEWN](docs/sewn.md), and [WydBASIC](docs/wydbasic.md). Local declarative packages execute validated WydBASIC/SEWN through those boundaries; arbitrary package JavaScript remains forbidden.
 
 The architectural contract is:
 
 [`docs/FOUNDING-ARCHITECTURE.md`](docs/FOUNDING-ARCHITECTURE.md)
 
-Current development version: **0.3.0-alpha.3**. Completed platform milestones
+Current development version: **0.3.0-alpha.4**. Completed platform milestones
 update `package.json`, matching root metadata in `package-lock.json`, and
 `content/app.json` → `properties.revision` together. Version updates do not create
 Git tags or publish releases. Completed milestones also update [CHANGELOG.md](CHANGELOG.md).

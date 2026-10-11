@@ -78,7 +78,7 @@ replaceable and is not an architectural permanence requirement. No alternate
 adapter, Bun/Deno/Cloudflare host, WebSocket or HTTP/2 support is implemented here.
 Workspace package contracts and versions remain unchanged. Their platform
 compatibility ranges now also accept the 0.3 prerelease series; the host platform
-is `0.3.0-alpha.3`.
+is `0.3.0-alpha.4`.
 
 Verification includes the full `npm test` suite and `npm run check`. Focused real
 TCP tests exercise asset/cache policy, malformed/oversized/chunked/compressed
@@ -86,3 +86,16 @@ forms, safe cookies, Change payloads, explicit Markdown/files, HEAD, concurrent
 Page isolation, startup errors, in-flight shutdown and both process signals.
 Manual browser verification remains unavailable when no browser surface is
 connected; HTTP integration tests do not claim visual browser verification.
+
+## 0.3-D generic transfers
+
+Approved libraries may register host-only binary handlers for declared canonical
+operations. `/_transfer/<library>/<operation>/<page>/<component>` resolves current
+Page/session authority and an installed declarative submission/delivery binding,
+then enforces the existing capability, resource policy and JSON request budgets.
+POST verifies the existing session CSRF secret before consuming any file bytes.
+Read-only presentation dispatch remains read-only. No package routes or native
+request/response handles are exposed. Generic bounded multipart and streaming
+output utilities provide backpressure, timeout/disconnect cleanup and accessible
+browser submission feedback. Safe local media elements use CSP media-src:self.
+Trusted `runtime.http` bounds headers/request duration; see [WydStream](wydstream.md).

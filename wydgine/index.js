@@ -1,3 +1,4 @@
+import { submissionToken } from './http/submission-authority.js';
 import { renderField } from './form-renderer.js';
 import { renderComponent } from './components.js';
 import { marked, Renderer } from 'marked';
@@ -107,7 +108,7 @@ export function renderSite(model, requestPath = '/', {csrf='',components} = {}) 
       });
     }
     function block(raw) {
-      if(raw.presentation)return guard(()=>{return renderComponent(raw,components?.states.get(raw.id),components?.query??{},pagePath(page,site),escapeHtml,skinAttribute(raw,model),claim,componentBudget);});
+      if(raw.presentation)return guard(()=>{return renderComponent(raw,components?.states.get(raw.id),components?.query??{},pagePath(page,site),escapeHtml,skinAttribute(raw,model),claim,componentBudget,{csrf:submissionToken(csrf,site.id,page.id,raw.id,raw.presentation.submission),path:raw.presentation.submission?`/_transfer/${raw.presentation.submission.library}/${raw.presentation.submission.operation}/${page.id}/${raw.id}`:raw.presentation.delivery?`/_transfer/${raw.presentation.delivery.library}/${raw.presentation.delivery.operation}/${page.id}/${raw.id}`:''});});
       if(raw.prototype==='field')return renderField(raw,escapeHtml,claim);
       if(raw.prototype==='section')return nestedSection(raw);
       if(raw.prototype==='form'){const presentation=resolve({...raw,prototype:'section'},'section',model);claim(raw.id);return `<form class="wyd-form ${classes(presentation)}"${skinAttribute(presentation,model)} id="${escapeHtml(raw.id)}" method="post" data-wydgit="${escapeHtml(raw.id)}"><input type="hidden" name="_target" value="${escapeHtml(raw.id)}"><input type="hidden" name="_action" value="Submit"><input type="hidden" name="_csrf" value="${escapeHtml(csrf)}">${raw.content?.value?renderMarkdown(raw.content.value):''}${sectionContent(presentation)}${(raw.fields??[]).map(block).join('')}<button class="wyd-submit" type="submit">${escapeHtml(raw.label)}</button></form>`;}

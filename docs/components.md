@@ -126,3 +126,20 @@ prototype construction scopes retain their existing rules.
 WydSearch uses these hooks for its source resolver, public Page allowlist, refresh
 and index scope policy. A future WydStream or third-party component can use the same
 mechanisms without adding a type-specific runtime renderer or service adapter.
+
+## Controlled transfers — 0.3-D
+
+A presentation may declare `submission` and `delivery` descriptors with the same
+{library,apiVersion,operation,input} shape as a read request. These descriptors do
+not run during read preparation. Kernel-owned transfer URLs and binding-scoped CSRF tokens are
+available as `transfer` and `csrf` in render expressions; the POST endpoint checks
+the installed binding and current Page/session authority before reading bytes.
+The provider must explicitly register a host-only transport handler for that
+canonical operation. Every descriptor's library must be a declared dependency.
+Unregistered services cannot become routes by adding a descriptor.
+
+The generic vocabulary includes audio/video/source/img, safe local src/alt, native
+controls, bounded preload (none or metadata), file-input accept/required and approved
+multipart POST forms. Text and attributes are escaped; raw HTML, scripts, event
+attributes and external/data media URLs remain forbidden. Transfer paths and
+implementation streams never become ordinary service objects.

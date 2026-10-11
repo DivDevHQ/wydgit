@@ -22,7 +22,7 @@ export function storageLocation(root,relative) {
 export async function planOperatorInstall({policy,...options}) {
  let hostConfig;const roots=[];
  if(policy.infrastructure){
-  fields(policy.infrastructure,['enableWydstore','stores',...(policy.infrastructure.search!==undefined?['search']:[])],'PACKAGE.INFRASTRUCTURE');
+  fields(policy.infrastructure,['enableWydstore','stores',...(policy.infrastructure.search!==undefined?['search']:[]),...(policy.infrastructure.media!==undefined?['media']:[])],'PACKAGE.INFRASTRUCTURE');
   check(typeof policy.infrastructure.enableWydstore==='boolean'&&Array.isArray(policy.infrastructure.stores)&&policy.infrastructure.stores.length<=16,'PACKAGE.INFRASTRUCTURE','Invalid infrastructure approval');
   hostConfig=JSON.parse(JSON.stringify(validateConfig(await fs.readFile(path.join(options.root,'wydgit.config.json'),'utf8'))));
   const library=hostConfig.libraries.find(l=>l.id==='wydstore');
@@ -62,9 +62,25 @@ export async function planOperatorInstall({policy,...options}) {
    }
    search.enabled=true;
   }
+  if(policy.infrastructure.media){
+   const request=policy.infrastructure.media;
+   fields(request,['resource','provider','metadataLocation','binaryLocation','categories',...['limits','uploadPermission'].filter(k=>Object.hasOwn(request,k))],'PACKAGE.INFRASTRUCTURE');
+   check(options.manifest.requires.libraries.some(r=>r.library==='wydstream')&&options.manifest.permissions.scopes.wydstream?.includes(request.resource)&&['json','sqlite'].includes(request.provider),'PACKAGE.INFRASTRUCTURE','Undeclared media resource');
+   const app=policy.installationContext.app,root=storageLocation(options.root,request.metadataLocation),binary=storageLocation(options.root,request.binaryLocation);
+   check(root!==binary&&!existsSync(root)&&!existsSync(binary)&&!roots.includes(root)&&!roots.includes(binary),'PACKAGE.STORAGE','Media requires unused separate roots');roots.push(root,binary);
+   let stream=hostConfig.libraries.find(l=>l.id==='wydstream');
+   if(!stream){stream={id:'wydstream',package:'@wydgit/stream',enabled:false,version:'^0.1.0-alpha.1',publisher:'wydgit.core',trust:'canonical'};hostConfig.libraries.push(stream);}
+   check(stream.package==='@wydgit/stream'&&stream.publisher==='wydgit.core'&&stream.trust==='canonical'&&!stream.enabled&&!stream.options,'PACKAGE.INFRASTRUCTURE','Media resource already configured; use existing resource without provisioning');const {module:implementation}=await importNodePackage(stream,options.root);
+   const id='media-'+request.resource;
+   check(!library.options.stores.some(s=>s.id===id),'PACKAGE.STORAGE','Media store ID collision');
+   library.options.stores.push({id,app,publisher:'wydgit.core',package:'library:wydstream',provider:request.provider,root,collections:[{id:'media',schemaId:'media-ledger',schemaVersion:1,fields:implementation.metadataFields}]});
+   stream.options={apps:[{app,resource:request.resource,store:id,collection:'media',root:binary,categories:clean(request.categories),...(request.uploadPermission?{uploadPermission:request.uploadPermission}:{})}],...(request.limits?{limits:clean(request.limits)}:{})};
+   try{check(typeof implementation.validateOptions==='function','PACKAGE.INFRASTRUCTURE','Media provider cannot validate provisioning');implementation.validateOptions(stream.options);}catch{check(false,'PACKAGE.INFRASTRUCTURE','Invalid media resource policy');}
+   stream.bindings=[{library:'wydstore',app,capabilities:['store.records.read','store.records.create','store.records.write'],scopes:{wydstore:[{store:id,collection:'media'}]}}];stream.enabled=true;
+  }
   validateStoreConfig(library.options);validateConfig(hostConfig);
   for(const store of library.options.stores)if(!roots.includes(store.root))await safeRoot(store.root);
-  if(policy.infrastructure.stores.some(s=>s.provider==='sqlite')||policy.infrastructure.search?.provider==='sqlite'){const require=createRequire(path.join(options.root,'package.json')),Database=require('better-sqlite3');const probe=new Database(':memory:');probe.close();}
+  if(policy.infrastructure.stores.some(s=>s.provider==='sqlite')||policy.infrastructure.search?.provider==='sqlite'||policy.infrastructure.media?.provider==='sqlite'){const require=createRequire(path.join(options.root,'package.json')),Database=require('better-sqlite3');const probe=new Database(':memory:');probe.close();}
  }
  const plan=await planPackageInstall({...options,placement:policy.placement,approvals:policy.approvals,storageMappings:policy.storageMappings,installationContext:options.installationContext,hostConfig,...Object.fromEntries(['additions','page','navigation','properties'].filter(key=>Object.hasOwn(policy,key)).map(key=>[key,policy[key]]))});
  return {plan,infrastructure:policy.infrastructure??null,hostConfig,roots,root:options.root};

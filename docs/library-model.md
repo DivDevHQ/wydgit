@@ -7,7 +7,7 @@ validated descriptor and one explicit registration entry point. It is trusted
 runtime infrastructure, not an ordinary Wydgit package. Ordinary Wydgit packages
 can declare requirements; they cannot install Node dependencies or approve runtime
 code. [WydStore](wydstore.md) and [WydGate](wydgate.md) are implemented canonical
-libraries; other canonical libraries remain deferred.
+libraries; [WydSearch](wydsearch.md) and [WydStream](wydstream.md) are also implemented; other canonical libraries remain deferred.
 
 **Repository location is a development concern, not part of library identity.**
 
@@ -22,7 +22,7 @@ private to prevent accidental publication. `packages/wydstore` adds the independ
 Canonical package versions need not match the platform version or remain in this
 repository.
 
-Canonical mappings (only WydStore, WydGate and the fixture are implemented; none published):
+Canonical mappings (WydStore, WydGate, WydSearch, WydStream and the fixture are implemented; none published):
 
 | Canonical identity | Node implementation package |
 | --- | --- |
@@ -229,7 +229,7 @@ empty. No Node wiring is added to canonical App properties or provenance.
 
 Three versions are independent:
 
-- Platform version: `wydgit@0.3.0-alpha.3`.
+- Platform version: `wydgit@0.3.0-alpha.4`.
 - Library version: e.g. the fixture's `1.0.0`, equal to its npm package version.
 - Compatibility ranges: manifest `platform`, host-approved implementation `version`,
   and portable requirement `version` each constrain their respective version.

@@ -4,8 +4,8 @@ import { parseMap } from './http/input.js';
 import { presentationPolicy } from './presentation-policy.js';
 import { checkContext,matchesObjectGrant } from './seam/context.js';
 const blocked=new Set(['__proto__','prototype','constructor']);
-const tags=new Set(['section','div','p','span','h2','h3','form','label','input','button','ol','ul','li','a','nav','strong']);
-const attributes=new Set(['id','class','role','method','action','for','name','type','value','placeholder','href','title','aria-label']);
+const tags=new Set(['section','div','p','span','h2','h3','form','label','input','button','ol','ul','li','a','nav','strong','audio','video','source','img']);
+const attributes=new Set(['id','class','role','method','action','for','name','type','value','placeholder','href','title','aria-label','src','alt','controls','preload','enctype','accept','required']);
 const ops=new Set(['concat','eq','not','and','or','if','length','add','subtract','min','max','lt','gt','query','queryValid','integer','parameter','url','trim']);
 const localURL=value=>{
  if(typeof value!=='string'||!value.startsWith('/')||value.startsWith('//')||/[\\\u0000-\u0020<>]/.test(value))return false;
@@ -21,8 +21,8 @@ export function validatePresentation(input){
   Object.values(value).forEach(v=>walk(v,depth+1));
  }};
  check(spec.schema==='wydgit.presentation/0.1'&&spec.template,'COMPONENT.INVALID','Invalid presentation');
- check(Object.keys(spec).every(k=>['schema','template','request','when','valid'].includes(k)),'COMPONENT.INVALID','Unknown presentation field');
- if(spec.request)check(Object.keys(spec.request).every(k=>['library','apiVersion','operation','input'].includes(k))&&['library','apiVersion','operation'].every(k=>typeof spec.request[k]==='string'),'COMPONENT.INVALID','Invalid service binding');
+ check(Object.keys(spec).every(k=>['schema','template','request','when','valid','submission','delivery'].includes(k)),'COMPONENT.INVALID','Unknown presentation field');
+ for(const binding of [spec.request,spec.submission,spec.delivery].filter(Boolean))check(Object.keys(binding).every(k=>['library','apiVersion','operation','input'].includes(k))&&['library','apiVersion','operation'].every(k=>typeof binding[k]==='string'),'COMPONENT.INVALID','Invalid service binding');
  walk(spec);return spec;
 }
 export function evaluate(value,env,budget={steps:0}){
@@ -70,14 +70,14 @@ export async function prepareComponents(model,pageId,input,context,libraries,ses
  for(const slot of ['sections','blocks','children','fields'])for(const child of node[slot]??[])await walk(child);};
  await walk(model.pages.get(pageId));return {states,query};
 }
-export function renderComponent(node,state,query,path,escape,skin='',claim=()=>{},budget={steps:0,elements:0,bytes:0}){
- const spec=node.presentation,env={properties:node,id:node.id,data:state??{state:'error'},query,path};
+export function renderComponent(node,state,query,path,escape,skin='',claim=()=>{},budget={steps:0,elements:0,bytes:0},transport={}){
+ const spec=node.presentation,env={properties:node,id:node.id,csrf:transport.csrf??'',transfer:transport.path??'',data:state??{state:'error'},query,path};
  const ids=new Set(),escaped=value=>{const text=String(value??'');check(Buffer.byteLength(text)<=65536,'COMPONENT.LIMIT','Displayed value too large');return escape(text);};
  const ev=v=>evaluate(v,env,budget);
  const render=(part,depth=0)=>{check(++budget.elements<=2048&&depth<=32,'COMPONENT.LIMIT','Render complexity exceeded');if(part.if!==undefined&&!ev(part.if))return '';
   if(part.each){const values=ev(part.each.in);check(Array.isArray(values)&&values.length<=256&&parameter(part.each.as),'COMPONENT.LIMIT','Invalid repeated data');return values.map(value=>{const old=env[part.each.as];env[part.each.as]=value;try{return render({...part,each:undefined},depth+1);}finally{env[part.each.as]=old;}}).join('');}
-  check(tags.has(part.tag),'COMPONENT.INVALID','Unsupported element');const attrs=Object.entries(part.attrs??{}).map(([key,expression])=>{check(attributes.has(key),'COMPONENT.INVALID','Unsafe attribute');const value=ev(expression);if(value===undefined||value===null)return '';if(key==='id'){check(typeof value==='string'&&/^[a-zA-Z][\w-]*$/.test(value)&&!ids.has(value),'COMPONENT.INVALID','Invalid or duplicate anchor');ids.add(value);claim(value);}if(['href','action'].includes(key))check(localURL(value),'COMPONENT.INVALID','Unsafe destination');if(key==='method')check(value==='get','COMPONENT.INVALID','Only GET forms supported');return ` ${key}="${escaped(value)}"`;}).join('');
-  const body=(part.text!==undefined?escaped(ev(part.text)):'')+(part.children??[]).map(child=>render(child,depth+1)).join('');const html=`<${part.tag}${attrs}${part===spec.template?skin:''}>${body}${['input'].includes(part.tag)?'':`</${part.tag}>`}`;
+  check(tags.has(part.tag),'COMPONENT.INVALID','Unsupported element');const attrs=Object.entries(part.attrs??{}).map(([key,expression])=>{check(attributes.has(key),'COMPONENT.INVALID','Unsafe attribute');const value=ev(expression);if(value===undefined||value===null)return '';if(key==='id'){check(typeof value==='string'&&/^[a-zA-Z][\w-]*$/.test(value)&&!ids.has(value),'COMPONENT.INVALID','Invalid or duplicate anchor');ids.add(value);claim(value);}if(['href','action','src'].includes(key))check(localURL(value),'COMPONENT.INVALID','Unsafe destination');if(key==='action'&&part.tag==='form'&&ev(part.attrs.method)==='post')check(value.split('?')[0]===transport.path,'COMPONENT.INVALID','Submission must use its approved endpoint');if(key==='method')check((value==='get'||value==='post'&&spec.submission),'COMPONENT.INVALID','Unapproved form method');if(['controls','required'].includes(key))return value===true?` ${key}`:'';if(key==='enctype')check(value==='multipart/form-data'&&spec.submission,'COMPONENT.INVALID','Invalid encoding');if(key==='preload')check(['none','metadata'].includes(value),'COMPONENT.INVALID','Invalid preload');return ` ${key}="${escaped(value)}"`;}).join('');
+  const body=(part.text!==undefined?escaped(ev(part.text)):'')+(part.children??[]).map(child=>render(child,depth+1)).join('');const html=`<${part.tag}${attrs}${part===spec.template?skin:''}>${body}${['input','source','img'].includes(part.tag)?'':`</${part.tag}>`}`;
   budget.bytes+=Buffer.byteLength(html);check(budget.bytes<=1024*1024,'COMPONENT.LIMIT','Render byte budget exceeded');return html;
  };return render(spec.template);
 }
