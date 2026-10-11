@@ -362,3 +362,286 @@ WydStore collection rules and uses host-owned `.wydgit-data/` by default. The pa
 cannot select provider, filesystem root or physical resource IDs. Planning writes
 nothing; staged apply creates infrastructure only after final confirmation. See
 [trusted infrastructure policy](packages.md#trusted-infrastructure-policy).
+
+## 0.3-B foundation (current)
+
+WydStore implementation version is **0.1.0-alpha.3**, service API **1.0.0**.
+The platform version remains 0.3.0-alpha.1. The preceding sections describe the
+retained legacy API and backend safeguards; this section extends those contracts.
+SQLite is the recommended production backend. JSON remains a small development
+backend. Application behavior is portable; capacity and durability are backend properties.
+
+### Invocation and compatibility
+
+Use `registry.bind(context).invoke('wydstore','1.0.0',operation,input)` in trusted
+canonical code, or `SERVICES.Invoke("wydstore", "1.0.0", operation, input)` in
+WydBASIC (operation must be a source literal). All operations use the existing
+registry, context, authorization and structured error boundary. Versioned Page calls
+apply the existing approved logical storage mappings, just as legacy Page calls do.
+
+The manifest explicitly lists the six legacy operations allowed through `.call`:
+get, query, history, create, update, delete. Other versioned libraries still reject
+legacy calls by default. New count, metadata and transaction operations require
+explicit invocation. The portable facade selects the versioned path for these
+new operations; existing handles keep their legacy dispatch and capacities.
+
+Canonical and legacy WydStore calls use the same loader-owned service profile:
+17 MiB request JSON, 33 MiB response value JSON, depth 64 and 262,144 value nodes.
+All byte budgets measure **serialized UTF-8 JSON**, including keys, punctuation,
+escaping and values; the fixed dispatcher `{ok:true,value}` envelope and transport
+headers are excluded. There is no universal 64 KiB record limit. Other canonical
+services default to 64 KiB request/response bytes, depth 32 and 4,096 nodes.
+Host settings and stored-record/query/transaction budgets are separate; see
+[resource policies](#resource-policies). WydStore checks single-operation results
+and aggregate transaction results before committing writes. No implicit truncation
+occurs. Existing large WydGate directories and multi-megabyte record tests retain
+their supported behavior; WydGate's own legacy interface is unchanged.
+
+### Query contract
+
+`query` adds `filter`, `sort` and `offset` to the existing `where` and `limit`.
+`where` remains an AND of exact JSON equalities; when both are supplied, `where`
+and `filter` must both match. A filter is one of:
+
+```json
+{"field":"score","op":"gte","value":10}
+{"and":[{"field":"active","op":"eq","value":true},{"field":"score","op":"lt","value":100}]}
+{"or":[{"field":"name","op":"eq","value":"Ada"},{"field":"name","op":"eq","value":"Grace"}]}
+```
+
+Predicates: eq, ne, lt, lte, gt, gte. Comparison predicates accept only declared
+number/string fields and matching values. There is no coercion, SQL, expression,
+join or full-text syntax. Equality supports all six JSON field types. Numbers are
+finite, negative zero normalizes to zero, object key order is immaterial, array
+order matters. Null matches only a declared null field; optional missing fields
+match no predicate, including ne. Boolean values never coerce to numbers.
+
+`sort:[{field:'score',direction:'desc'}]` supports up to eight distinct scalar
+fields; strings compare by JavaScript UTF-16 lexical order (not locale collation),
+numbers numerically, booleans false before true. Missing sorts before present in
+ascending order and after present in descending order. Equal keys always break
+by ascending ASCII record ID. Object/array sort is unsupported. `offset` is an
+integer 0–10000; `limit` remains 0–10000, default 10000. Pagination applies after
+filtering/sorting; pages from separate requests are not a stable snapshot across
+concurrent changes. Filters allow at most 64 nodes, depth eight, and 16 children
+per nonempty Boolean group. Unknown keys/operators/fields and invalid types fail.
+
+`count` accepts the same request fields as query, counts all matched live records,
+and ignores sorting/pagination. The facade `count({where?,filter?})` exposes only
+its relevant options. `metadata` accepts only store/collection and returns the
+host collection definition, with no provider, path or adapter handle. Both require
+store.records.read. Existing create/update/delete revisions and history are retained.
+
+### Schemas, collection provisioning and uniqueness
+
+Host collection definitions can add `schemaId` (safe logical ID) and `schemaVersion`
+(positive safe integer); both must appear together. Fields additionally accept
+`unique:true` and `index:true`. Example:
+
+```json
+{"id":"users","schemaId":"usersSchema","schemaVersion":1,"fields":{
+  "name":{"type":"string","required":true,"unique":true,"index":true},
+  "active":{"type":"boolean","default":true}
+}}
+```
+
+The existing host configuration/approved installer creates collections when
+provisioning new stores. Packages cannot create arbitrary physical tables or
+alter schemas at runtime. Metadata is read-only. Required/optional/default/type
+rules are unchanged. Unique values use exact JSON equality per field among live
+records: absent values do not participate; explicit null does. Deletion releases
+field values, but reserves the record ID. Composite uniqueness is unsupported.
+Indexes are logical declarations; both adapters currently scan portable JSON
+values and neither promises a physical field index or SQL query performance.
+
+New JSON documents persist exact collection definitions; legacy JSON files without
+metadata remain readable only with unversioned host schemas. They cannot acquire
+an explicit schema version silently. SQLite retains its fixed private schema v1;
+explicit schema definitions are stored in its existing metadata table. Exact
+configured/persisted definitions must agree. Schema changes fail explicitly with
+STORE.SCHEMA_INCOMPATIBLE (legacy incompatible SQLite metadata retains STORE.CORRUPT).
+A declaration is not a migration. Unversioned legacy JSON cannot prove that its
+original host schema has not changed; this compatibility limitation is retained,
+not described as version-aware protection. Adoption requires future explicit migration.
+
+### Transactions and durability
+
+`transaction` requires store.records.write plus every member's ordinary capability
+and exact collection scope. Input:
+
+```json
+{"store":"main","collection":"users","operations":[
+  {"operation":"create","input":{"id":"ada","data":{"name":"Ada"}}},
+  {"operation":"count","input":{}}
+]}
+```
+
+A batch has 1–64 members (reduced by trusted context limits.storeOperations), runs
+in order, sees its own writes, and returns an ordered array of ordinary results.
+Members support get/query/count/history/create/update/delete; nested transactions
+and metadata members fail STORE.UNSUPPORTED. Input may choose another authorized
+collection in the same store, but cannot choose another store. Every member is
+validated and authorized before starting. Any operation, schema, uniqueness,
+revision, capacity or aggregate-result failure rolls the whole batch back. Aggregate
+result byte/node accounting runs after each member, including array syntax and
+depth, and stops before executing further members once the effective budget fails.
+Handles loaded earlier are not updated by a batch; refetch after commit.
+
+JSON applies the batch to one private document under its existing queue/local lock,
+then performs **one** temporary-file fsync and rename for that store. There is no
+multi-file transaction, journal or invented JSON database. Handled failures before
+rename preserve the prior document; readers see the old or new complete document.
+An interruption before rename can leave an orphan temporary file/stale lock;
+temporary files are ignored, and stale locks require operator inspection/removal.
+Rename does not fsync the parent directory. Power loss may lose the replacement;
+filesystem/device failure may corrupt data. There is no guaranteed power-loss
+recovery, and failure after rename may have an uncertain outcome. Local filesystems
+and cooperating writers only; no cross-store atomicity or automatic lock recovery.
+
+SQLite executes the entire batch within its existing native BEGIN IMMEDIATE
+transaction, with synchronous FULL and rollback journaling. Native rollback covers
+operation failure and uncommitted process death. Durable commits rely on SQLite's
+local filesystem/device synchronization assumptions; they are not a substitute for
+backups. Concurrent writers serialize; stale revisions fail STORE.CONFLICT and
+lock timeout fails STORE.BUSY. No asynchronous callback transaction, savepoint,
+manual begin/commit, distributed transaction or cancellation framework is exposed.
+Restart persistence and native interrupted-transaction recovery have regression tests;
+no power-failure simulation or guarantee is claimed for JSON.
+
+### Scope, errors and subsequent work
+
+The immutable app/publisher/package tuple and exact collection grants remain
+mandatory. Every caller's principal must match configured `principal`, defaulting
+to the owning package under the current one-installation model. Host stores may
+add `installation` to require that exact non-null receipt identity. These configured
+identity fields also enter the physical ownership key; adding them selects a new
+resource, not a migration. Legacy package stores remain package-owned rather than
+retroactively receiving invented installation IDs. Incoming identity/context fields
+never grant authority. No authenticated-user ACL or cross-owner sharing is added.
+
+Added errors: STORE.INVALID_QUERY, STORE.UNIQUE, STORE.SCHEMA_INCOMPATIBLE,
+STORE.UNSUPPORTED. Existing missing, duplicate, conflict, denial, capacity and
+sanitized I/O errors are retained. SQL remains fixed/parameterized inside the
+trusted adapter; logical queries execute shared predicates. No filesystem path,
+SQL statement, connection or internal adapter becomes a portable operation.
+
+`test/wydstore-foundation.test.js` and the existing shared conformance tests run
+identical expectations against both backends. The small
+[portable application fixture](../examples/store-portability/index.js) receives a
+caller-bound dispatcher and uses identical application logic for either provider.
+
+For 0.3-C, WydSearch should consume this public versioned contract, use its own
+explicit capabilities/resource policy, and treat index declarations as metadata,
+not a search index. Separate query/count calls are not one snapshot; a bounded
+read batch can provide one-store consistency. No change feed, cursor, streaming
+scan or search lifecycle guarantee is implemented here. Future schema migrations
+must explicitly reconcile persisted definitions before opening; automated schema
+upgrades, cross-adapter and package lifecycle migrations, and multiple installations
+remain deferred to 0.4. No WydSearch, WydStream or WydGate enhancement is included.
+
+### Resource policies
+
+Only trusted host configuration controls these settings. The library entry accepts
+`serviceLimits`; each `options.stores` definition accepts `limits`. They do not
+belong to package manifests, requests, schemas or installation receipts. Changing
+limits does not change storage ownership or migrate data. Unknown keys, noninteger,
+zero/negative and over-ceiling values fail startup rather than silently clamping.
+SQLite capacity must be a positive multiple of 4,096 bytes. This **4 GiB ceiling is
+current v0.3 host policy**, not a fundamental WydStore or SQLite architecture limit.
+
+| Host setting | Default | Hard ceiling |
+| --- | --- | --- |
+| serviceLimits.requestBytes (generic / WydStore) | 64 KiB / 17 MiB | 33 MiB |
+| serviceLimits.responseBytes (generic / WydStore) | 64 KiB / 33 MiB | 65 MiB |
+| serviceLimits.maxNodes (generic / WydStore) | 4,096 / 262,144 | 1,048,576 |
+| serviceLimits.maxDepth (generic / WydStore) | 32 / 64 | 64 |
+| limits.recordBytes | 16 MiB | 16 MiB |
+| limits.queryResultBytes | 32 MiB | 64 MiB |
+| limits.historyDataBytes | 32 MiB | 64 MiB |
+| limits.transactionRequestBytes | 17 MiB | 33 MiB |
+| limits.transactionResultBytes | 33 MiB | 65 MiB |
+| limits.jsonDocumentBytes | 16 MiB | 64 MiB |
+| limits.sqliteDatabaseBytes | 256 MiB | 4 GiB |
+| limits.maxNodes | 262,144 | 1,048,576 |
+| limits.maxDepth | 64 | 64 |
+| limits.maxOperations | 64 | 64 |
+
+Omitted keys retain defaults. Example settings within an existing WydStore host entry:
+
+```json
+{
+  "serviceLimits": {
+    "requestBytes": 17825792,
+    "responseBytes": 34603008,
+    "maxNodes": 262144,
+    "maxDepth": 64
+  },
+  "options": {
+    "stores": [{
+      "id": "main", "app": "appA", "publisher": "acme", "package": "acme/demo",
+      "provider": "sqlite", "root": "/srv/wydgit-data",
+      "limits": {"sqliteDatabaseBytes": 536870912},
+      "collections": [{"id":"users","fields":{"name":{"type":"string"}}}]
+    }]
+  }
+}
+```
+
+Stored-record bytes cover `data` after defaults, excluding ID/revision envelopes.
+Field values have no independent byte allowance. Query bytes cover the complete
+snapshot array. History retains the existing sum-of-serialized-data-value budget;
+its envelopes are additionally covered by the service response budget. Transactions
+measure their whole input/output arrays and envelopes, independently of each
+member's ordinary record/query/history limits. JSON document bytes include all
+metadata, retained versions and tombstones. Its existing whole-document depth 64
+check remains, without a new aggregate document-node cap; logical requests,
+records and responses have the separate node policies above. SQLite's private
+metadata and serialized data inspection retain their 16 MiB integrity safeguard.
+Each inspected SQLite database/sidecar file remains bounded by configured capacity;
+this is not an aggregate directory quota.
+
+The loader captures immutable policies after validating the host-approved canonical
+identity. It supplies the larger WydStore profile without requiring existing hosts
+to edit configuration. Canonical and legacy WydStore requests/results use the same
+budgets. Other legacy providers retain prior behavior unless the host explicitly
+sets serviceLimits for that entry. Generic versioned boundaries return
+SERVICE.INVALID_REQUEST / SERVICE.INVALID_RESULT; WydStore's independent checks
+return STORE.LIMIT, including pre-commit response failures. These error layers are
+the same for both adapters.
+
+A genuine host-issued context may **reduce** serviceRequestBytes,
+serviceResponseBytes, serviceNodes, serviceDepth, or storeOperations. Effective
+limits are minima of host/service/store settings and applicable context reductions.
+Large context values cannot raise host ceilings. The actual frozen effective
+service policy is passed to the trusted handler, so transaction pre-commit checks
+honor host-lowered service response bytes, nodes and depth. Package-supplied limits
+or identity fields are rejected; spoofed contexts cannot bind a dispatcher.
+
+The 262,144-node default was checked against multi-megabyte strings, a 250,000-value
+record, full 10,000-record queries, 10,000-version histories, and existing WydGate
+session capacity. Byte capacities are retained; byte size alone does not guarantee
+acceptance of an extremely wide structure. Values above the node budget now fail
+explicitly on both call paths. A host can raise both applicable node policies to
+1,048,576; larger structures remain unsupported by this v0.3 policy. Reducing limits
+can reject existing reads/writes without deleting or rewriting data. Limits are
+operational policy rather than persisted schema compatibility metadata.
+
+Budgets are inspected before boundary copies. Preparation is reused across
+resource authorization and execution; record serialization is reused for SQLite
+writes. SQLite unsorted queries/counts stream ID-ordered candidates, and pagination
+stops after enough matching records; limit zero closes its native iterator cleanly.
+Field sorting retains matched candidates, so its **candidate working set** must
+also fit the effective query-result/service-response byte, node and depth budgets,
+before pagination. Both adapters enforce this restriction; a selective filter or
+higher trusted budget can permit a larger sorted scan. Transactions account for
+aggregate output incrementally before collecting another member. These safeguards
+avoid unbounded result accumulation and preserve authorization/rollback.
+
+Byte/node budgets are not exact heap limits or global admission control. Parsed
+objects, driver buffers, validation, sorting and immutable boundary copies have
+additional memory overhead; concurrent calls/stores multiply it. JSON still reads
+and validates a whole document, with one cooperating operation per file at a time.
+There is no process-wide memory quota, bounded global waiting queue, streaming
+response transport or distributed concurrency framework. Operators must provision
+memory and bound host request concurrency accordingly. No new WydSearch or media
+storage implementation is implied by raising these budgets.

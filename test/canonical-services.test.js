@@ -87,3 +87,28 @@ test('WydBASIC compiles explicit Invoke calls and expressions without changing l
  const module=compileModule('EVENT Page.Load\nDIM result AS Object = SERVICES.Invoke("wyddiagnostic", "1.0.0", "ping", {})\nEND EVENT');assert.equal(module.events[0].workflow.schema,'sewn/0.4');
  const prototype=compilePrototype('FUNCTION Ping() AS Object\nRETURN SERVICES.Invoke("wyddiagnostic", "1.0.0", "ping", {})\nEND FUNCTION');assert.equal(prototype.schema,'sewn/0.4');
 });
+
+test('legacy operation declarations are closed, explicit and preserve default version enforcement',async t=>{
+ for (const legacyOperations of [['missing'],['ping','ping'],'ping']) assert.throws(()=>validateManifest({...manifest,legacyOperations}),e=>e.code==='LIBRARY.INVALID_MANIFEST');
+ const {apiVersion,...legacyManifest}=manifest;
+ assert.throws(()=>validateManifest({...legacyManifest,legacyOperations:['ping']}),e=>e.code==='LIBRARY.INVALID_MANIFEST');
+ const caller=ctx(),service={capability:'diagnostic.status.read',authorize:()=>true,validate:()=>true,handler:()=>({status:'ok'})};
+ const allowed=bindServices(caller,()=>service,()=>({...manifest,legacyOperations:['ping']}));
+ assert.equal((await allowed.call('wyddiagnostic','ping',{})).value.status,'ok');
+ assert.equal((await allowed.call('wyddiagnostic','other',{})).code,'SERVICE.VERSION_REQUIRED');
+ assert.equal((await bindServices(ctx({capabilities:[]}),()=>service,()=>({...manifest,legacyOperations:['ping']})).call('wyddiagnostic','ping',{})).code,'SEAM.DENIED');
+});
+
+test('versioned Page storage calls and transaction members use approved logical mappings',async()=>{
+ const base=fixture({capabilities:['store.records.read','store.records.write']}),seen=[];
+ const libraries={bind(context){assert.equal(context,base.context);return {async invoke(...args){seen.push(args);return {ok:true,value:0};}};}};
+ const request={store:'users',collection:'users',operations:[{operation:'count',input:{}},{operation:'count',input:{store:'other',collection:'other'}}]};
+ const workflow={schema:'sewn/0.4',procedures:{},body:[{op:'canonicalService',library:'wydstore',apiVersion:'1.0.0',method:'transaction',input:{op:'literal',value:request}}]};
+ const serviceMappings={users:{store:'physical',collection:'first'},other:{store:'physical',collection:'second'}};
+ const result=await runPage({...base,libraries,serviceMappings,handlers:[{owner:'home',type:'Page.Load',workflow}]});
+ assert.equal(result.error,null);assert.equal(seen.length,1);
+ assert.deepEqual(JSON.parse(JSON.stringify(seen[0][3])),{...request,store:'physical',collection:'first',operations:[{operation:'count',input:{store:'physical',collection:'first'}},{operation:'count',input:{store:'physical',collection:'second'}}]});
+ const hostile={...request,operations:[{operation:'count',input:{store:'physical',collection:'second'}}]};
+ const denied=await runPage({...base,libraries,serviceMappings,handlers:[{owner:'home',type:'Page.Load',workflow:{...workflow,body:[{...workflow.body[0],input:{op:'literal',value:hostile}}]}}]});
+ assert.equal(denied.error.code,'PACKAGE.STORAGE');assert.equal(seen.length,1);
+});

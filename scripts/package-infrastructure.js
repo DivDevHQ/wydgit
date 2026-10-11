@@ -8,6 +8,7 @@ import { validateConfig, fields } from '../wydgine/libraries/contracts.js';
 import { importNodePackage } from '../wydgine/libraries/node-package.js';
 import { requireThat as check, clean } from '../wydgine/object-model/validation.js';
 import { validateStoreConfig, openStores } from '../packages/wydstore/src/core.js';
+import { checkJsonBudget } from '../wydgine/libraries/limits.js';
 import { planPackageInstall, applyPackageInstall } from '../wydgine/packages/index.js';
 export const physicalStoreId=id=>id.replace(/[^a-z0-9-]/g,'-');
 export function storageLocation(root,relative) {
@@ -57,7 +58,7 @@ export async function applyOperatorInstall(resolved,hooks={}) {
    }
    if(hooks.beforeProviderSetup)await hooks.beforeProviderSetup();
    const stores=resolved.hostConfig.libraries.find(l=>l.id==='wydstore').options.stores.filter(s=>resolved.roots.includes(s.root));
-   if(stores.length)await openStores({stores});
+   if(stores.length)await openStores({stores},checkJsonBudget);
    return rollback;
   }catch(error){await rollback();throw error;}
  }});

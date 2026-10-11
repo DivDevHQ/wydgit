@@ -1,3 +1,4 @@
+import { serviceLimits, STORE_SERVICE_DEFAULTS, checkJsonBudget } from './limits.js';
 import { ExecutionContext } from '../seam/context.js';
 import { bindServices, failure, isServiceFailure } from './dispatch.js';
 import { ensure, version, satisfies, validateConfig, validateManifest, validateRequirements } from './contracts.js';
@@ -41,7 +42,8 @@ export async function loadLibraries({ config: input, requirements: requested = e
     ensure(manifest.targets.includes('server'), 'LIBRARY.TARGET_MISMATCH', 'Library does not support the server runtime');
     ensure(!staged.has(manifest.id), 'LIBRARY.DUPLICATE', 'Duplicate library identity');
     for (const capability of manifest.capabilities) ensure(!capabilityOwners.has(capability), 'LIBRARY.DUPLICATE', 'Capability already has a provider');
-    staged.set(manifest.id, { manifest, register });
+    const limits=serviceLimits(entry.serviceLimits, manifest.id==='wydstore' && manifest.publisher==='wydgit.core' && manifest.trust==='canonical' ? STORE_SERVICE_DEFAULTS : undefined);
+    staged.set(manifest.id, { manifest, register, limits });
     manifest.capabilities.forEach(capability => capabilityOwners.set(capability, manifest.id));
   }
   const resolveRequirements = input => {
@@ -85,10 +87,10 @@ export async function loadLibraries({ config: input, requirements: requested = e
   }
   const services = new Map();
   for (const id of order) {
-    const {manifest,register} = staged.get(id);
+    const {manifest,register,limits} = staged.get(id);
     const handlers = new Map();
     let active = true, invalid = false;
-    const api = Object.freeze({ options: configured.get(id).options ?? Object.freeze({}), failure,
+    const api = Object.freeze({ options: configured.get(id).options ?? Object.freeze({}), failure, checkJson:checkJsonBudget,
       async lifecycle(event) { return lifecycle(id, freeze(validateLifecycle(event))); },
       dependency(library) {
         ensure(approved.get(id).has(library), 'LIBRARY.DEPENDENCY_DENIED', 'Dependency binding is not approved');
@@ -100,7 +102,7 @@ export async function loadLibraries({ config: input, requirements: requested = e
       }, service(name, handler, policy = {}) {
       const valid = active && manifest.services.some(s => s.name === name) && !handlers.has(name) && typeof handler === 'function' && policy && Object.keys(policy).every(key => ['authorize','validate'].includes(key)) && (policy.authorize === undefined || typeof policy.authorize === 'function') && (policy.validate === undefined || typeof policy.validate === 'function') && (!manifest.apiVersion || typeof policy.authorize === 'function' && typeof policy.validate === 'function');
       if (!valid) { invalid = true; throw new WydgitError('LIBRARY.REGISTRATION_FAILED', 'Invalid service registration'); }
-      handlers.set(name, { handler, authorize: policy.authorize, validate: policy.validate, capability: manifest.services.find(s => s.name === name).capability });
+      handlers.set(name, { handler, limits, enforceLegacyLimits:manifest.id==='wydstore' || configured.get(id).serviceLimits!==undefined, authorize: policy.authorize, validate: policy.validate, capability: manifest.services.find(s => s.name === name).capability });
     } });
     try {
       await register(api);

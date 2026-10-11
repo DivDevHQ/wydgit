@@ -31,8 +31,8 @@ an exact supported version. Simultaneous API versions and negotiation are deferr
 
 Existing manifests without `apiVersion` and `SERVICES.Call` preserve v0.2 dispatch.
 Explicit-version implementations require `invoke` and reject legacy calls with
-`SERVICE.VERSION_REQUIRED`. WydStore and WydGate remain legacy implementations in
-0.3-A: their behavior, package versions and configuration do not change. Adding
+`SERVICE.VERSION_REQUIRED`. At the 0.3-A checkpoint, WydStore and WydGate were legacy
+implementations with unchanged behavior, package versions and configuration. Adding
 `apiVersion` to these libraries requires a deliberate compatibility decision in
 subsequent iterations; it is not an automatic migration.
 
@@ -136,8 +136,11 @@ become SEAM capabilities. The fixture rejects all such extra fields.
 
 Arguments and results must be plain JSON: no accessors, symbols, native objects,
 functions, cycles, sparse arrays or reserved pollution keys (`__proto__`,
-`constructor`, `prototype`). Versioned boundaries enforce 32 levels, 4096 value
-nodes and 65536 total key/string characters before copying. Successful results
+`constructor`, `prototype`). Versioned boundaries enforce separate UTF-8 serialized request/response byte
+budgets and structural depth/node limits before copying. Generic defaults are
+64 KiB for each direction, 32 levels and 4,096 value nodes. WydStore has a
+loader-owned profile of 17 MiB request, 33 MiB response, depth 64 and 262,144
+nodes so its canonical and legacy interfaces support the same large records. Successful results
 are copied/frozen `{ok:true,value}`. Failures use
 `{ok:false,code,message,details:{}}`; internal exceptions and async rejections
 return `SERVICE.FAILED` without implementation messages, stacks or paths. Trusted
@@ -186,3 +189,41 @@ service transport; no client bootstrap or identity federation is added. Concurre
 API versions, API-range requirement declarations and independent npm publication
 are also deferred. External packages and host-approved libraries must explicitly
 declare v0.3 prerelease compatibility; existing v0.2-only ranges are not bypassed.
+
+## 0.3-B update
+
+WydStore now exposes API 1.0.0. An optional validated manifest
+`legacyOperations` array explicitly permits listed operations on `.call`; other
+versioned libraries still require `.invoke`. WydStore lists only its original six
+operations. Count, metadata and transactions require an exact version. Both paths
+retain SEAM/resource checks; the versioned path retains bounded argument/results
+and mandatory validation. See [WydStore](wydstore.md#03-b-foundation-current).
+
+
+## 0.3-B resource policy update
+
+The trusted host library entry may set `serviceLimits` with requestBytes,
+responseBytes, maxDepth and maxNodes. Hard ceilings are 33 MiB, 65 MiB, 64 levels
+and 1,048,576 nodes. Limits count serialized UTF-8 JSON including syntax and escapes,
+not JavaScript string characters; responses measure the value, excluding the fixed
+result envelope. Unicode and many-small-value payloads are independently bounded.
+The change from 0.3-A character counting is deliberate: a multibyte payload can now
+hit a byte limit sooner. Requests and responses have separate policies/tests.
+
+Manifests cannot declare these overrides. The loader validates and freezes host
+policies, then passes the actual effective request/response policy as the third
+argument to trusted authorize/validate/handler callbacks. Existing callbacks ignore
+the additional argument. Context serviceRequestBytes, serviceResponseBytes,
+serviceNodes and serviceDepth may only reduce limits; spoofed contexts still fail.
+The registration API exposes host-only `checkJson(value,budget)` so WydStore can
+inspect its private state without copying it or importing runtime implementation
+modules. Neither policy objects nor validators cross into ordinary Wydgit code.
+
+WydStore checks writes and incremental batch results inside its atomic boundary,
+using the minimum of store and effective dispatcher policy, before commit. Other
+trusted services remain responsible for their own transactional semantics; a
+post-handler generic response failure cannot undo an arbitrary side effect.
+Other legacy providers retain their previous limits unless serviceLimits is
+explicitly configured, in which case the host policy applies to both paths.
+See [WydStore resource policies](wydstore.md#resource-policies) for defaults,
+capacity guarantees, structural compatibility and memory/concurrency limitations.

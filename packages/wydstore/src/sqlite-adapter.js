@@ -1,3 +1,4 @@
+import { budget } from './resource-limits.js';
 import Database from 'better-sqlite3';
 import { open, lstat } from 'node:fs/promises';
 import { constants } from 'node:fs';
@@ -5,11 +6,9 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { safeRoot } from './local-root.js';
 import { check, StoreError, json, equal } from './data.js';
-import { MAX_COLLECTION_RECORDS, MAX_QUERY, snapshot, historical, matches, validateStored, changeRecord } from './adapter-contract.js';
+import { MAX_COLLECTION_RECORDS, snapshot, historical, validateStored, changeRecord, selectRecords, enforceUnique, validateUnique } from './adapter-contract.js';
 
-const MAX_FILE = 256 * 1024 * 1024;
 const MAX_DATA = 16 * 1024 * 1024;
-const MAX_RESULT = 32 * 1024 * 1024;
 const MAX_HISTORY_RESULT = 10000;
 // Fixed platform-owned identifiers and schema, never constructed from input.
 const tables = {
@@ -31,11 +30,12 @@ function providerError(error) {
   return new StoreError('STORE.IO');
 }
 
-export async function openSqliteAdapter(root, owner, definitions) {
+export async function openSqliteAdapter(root, owner, definitions, metadata, limits, checkJson) {
   try { await safeRoot(root); } catch { throw new StoreError('STORE.INVALID_CONFIG'); }
   const name = createHash('sha256').update(JSON.stringify(owner)).digest('hex');
   const file = path.join(root, `${name}.sqlite`);
-  const collections = Object.fromEntries([...definitions].sort(([a],[b]) => a < b ? -1 : a > b ? 1 : 0));
+  const persisted = new Map([...definitions].map(([id,fields]) => [id,metadata?.get(id).schemaId ? metadata.get(id) : fields]));
+  const collections = Object.fromEntries([...persisted].sort(([a],[b]) => a < b ? -1 : a > b ? 1 : 0));
   async function inspectFiles() {
     await safeRoot(root);
     // SQLite owns these sidecars. Reject links before the native driver opens any.
@@ -44,7 +44,7 @@ export async function openSqliteAdapter(root, owner, definitions) {
       try { info = await lstat(file + suffix); }
       catch (error) { if (error.code === 'ENOENT' && suffix) continue; if(error.code === 'ENOENT') throw new StoreError('STORE.CORRUPT'); throw error; }
       check(info.isFile() && !info.isSymbolicLink() && info.nlink === 1, 'STORE.CORRUPT');
-      check(info.size <= MAX_FILE, 'STORE.LIMIT');
+      check(info.size <= limits.sqliteDatabaseBytes, 'STORE.LIMIT');
     }
   }
   function validateMetadata(db) {
@@ -53,7 +53,8 @@ export async function openSqliteAdapter(root, owner, definitions) {
     const objects = db.prepare('SELECT name, type, sql FROM sqlite_schema WHERE sql IS NOT NULL ORDER BY name').all();
     check(objects.length === 3 && objects.every(row => row.type === 'table' && Object.hasOwn(tables,row.name) && row.sql === tables[row.name]), 'STORE.CORRUPT');
     const rows = db.prepare('SELECT singleton, owner, collections FROM metadata').all();
-    check(rows.length === 1 && rows[0].singleton === 1 && equal(parseData(rows[0].owner),owner) && equal(parseData(rows[0].collections),collections), 'STORE.CORRUPT');
+    check(rows.length === 1 && rows[0].singleton === 1 && equal(parseData(rows[0].owner),owner), 'STORE.CORRUPT');
+    check(equal(parseData(rows[0].collections),collections),[...metadata.values()].some(item => item.schemaId) ? 'STORE.SCHEMA_INCOMPATIBLE' : 'STORE.CORRUPT');
   }
   function decode(row) {
     if (!row) return undefined;
@@ -61,9 +62,10 @@ export async function openSqliteAdapter(root, owner, definitions) {
     const entry = {id:row.id, version:row.version, deleted:row.deleted === 1, data:row.data === null ? null : parseData(row.data)};
     try { validateStored(entry, definitions.get(row.collection)); }
     catch { throw new StoreError('STORE.CORRUPT'); }
+    entry.encodedData=row.data;
     return entry;
   }
-  function historyRows(db, collection, entry, includeValues) {
+  function historyRows(db, collection, entry, includeValues, addResult) {
     const count = db.prepare('SELECT count(*) AS count, min(version) AS first, max(version) AS last FROM history WHERE collection = ? AND id = ?').get(collection,entry.id);
     check(count.count === entry.version - 1 && (count.count === 0 || count.first === 1 && count.last === entry.version - 1), 'STORE.CORRUPT');
     if (!includeValues) return;
@@ -72,12 +74,12 @@ export async function openSqliteAdapter(root, owner, definitions) {
     let bytes = 0;
     for (const row of db.prepare('SELECT collection,id,version,data,0 AS deleted FROM history WHERE collection = ? AND id = ? ORDER BY version').iterate(collection,entry.id)) {
       bytes += Buffer.byteLength(row.data);
-      check(bytes <= MAX_RESULT, 'STORE.LIMIT');
-      result.push(historical(decode(row)));
+      check(bytes <= limits.historyDataBytes, 'STORE.LIMIT');
+      const value=historical(decode(row));addResult(value);result.push(value);
     }
-    bytes += Buffer.byteLength(stringify(entry.data));
-    check(bytes <= MAX_RESULT, 'STORE.LIMIT');
-    result.push(historical(entry));
+    bytes += Buffer.byteLength(entry.encodedData ?? 'null');
+    check(bytes <= limits.historyDataBytes, 'STORE.LIMIT');
+    const current=historical(entry);addResult(current);result.push(current);
     return result;
   }
   function validateAll(db) {
@@ -90,39 +92,36 @@ export async function openSqliteAdapter(root, owner, definitions) {
       check(counts.get(row.collection) <= MAX_COLLECTION_RECORDS, 'STORE.LIMIT');
       historyRows(db,row.collection,entry,false);
     }
+    for (const [collection,fields] of definitions) validateUnique(db.prepare('SELECT collection,id,version,data,deleted FROM records WHERE collection = ?').all(collection).map(decode),fields);
     for (const row of db.prepare('SELECT collection,id,version,data,0 AS deleted FROM history').iterate()) decode(row);
   }
   function execute(db, operation, request) {
-    if (operation === 'query') {
-      const result = [];
-      let bytes = 0;
-      for (const row of db.prepare('SELECT collection,id,version,data,deleted FROM records WHERE collection = ? ORDER BY id COLLATE BINARY').iterate(request.collection)) {
-        const entry = decode(row);
-        if (result.length >= (request.limit ?? MAX_QUERY)) break;
-        if (matches(entry,request.where)) {
-          bytes += Buffer.byteLength(row.data);
-          check(bytes <= MAX_RESULT, 'STORE.LIMIT');
-          result.push(snapshot(entry));
-        }
-      }
-      return result;
+    if (['query','count'].includes(operation)) {
+      const rows=db.prepare('SELECT collection,id,version,data,deleted FROM records WHERE collection = ? ORDER BY id COLLATE BINARY').iterate(request.collection);
+      try {
+        function* decoded(){for(const row of rows)yield decode(row);}
+        const result=selectRecords(decoded(),request,operation === 'count',true);
+        if(operation==='query')checkJson(result,budget(limits,limits.queryResultBytes),'STORE.LIMIT');
+        return result;
+      } finally {rows.return();}
     }
     const entry = decode(db.prepare('SELECT collection,id,version,data,deleted FROM records WHERE collection = ? AND id = ?').get(request.collection,request.id));
     if (entry) historyRows(db,request.collection,entry,false);
     if (operation === 'get' || operation === 'history') {
       check(entry && (operation === 'history' || !entry.deleted), 'STORE.NOT_FOUND');
-      return operation === 'get' ? snapshot(entry) : historyRows(db,request.collection,entry,true);
+      return operation === 'get' ? snapshot(entry) : historyRows(db,request.collection,entry,true,request.addHistoryResult);
     }
     const next = changeRecord(operation,request,entry);
+    if (next && ['create','update'].includes(operation) && Object.values(request.definitions).some(rule=>rule.unique)) enforceUnique(db.prepare('SELECT collection,id,version,data,deleted FROM records WHERE collection = ?').all(request.collection).map(decode),request,request.definitions);
     if (!next) return snapshot(entry);
-    const data = next.deleted ? null : stringify(next.data);
-    check(data === null || Buffer.byteLength(data) <= MAX_DATA, 'STORE.LIMIT');
+    const data = next.deleted ? null : request.encodedData;
+    check(data === null || Buffer.byteLength(data) <= limits.recordBytes, 'STORE.LIMIT');
     if (operation === 'create') {
       const {count} = db.prepare('SELECT count(*) AS count FROM records WHERE collection = ?').get(request.collection);
       check(count < MAX_COLLECTION_RECORDS, 'STORE.LIMIT');
       db.prepare('INSERT INTO records (collection,id,version,data,deleted) VALUES (?,?,?,?,?)').run(request.collection,next.id,next.version,data,0);
     } else {
-      db.prepare('INSERT INTO history (collection,id,version,data) VALUES (?,?,?,?)').run(request.collection,entry.id,entry.version,stringify(entry.data));
+      db.prepare('INSERT INTO history (collection,id,version,data) VALUES (?,?,?,?)').run(request.collection,entry.id,entry.version,entry.encodedData);
       const {changes} = db.prepare('UPDATE records SET version = ?, data = ?, deleted = ? WHERE collection = ? AND id = ? AND version = ? AND deleted = 0').run(next.version,data,Number(next.deleted),request.collection,next.id,entry.version);
       check(changes === 1, 'STORE.CONFLICT');
     }
@@ -140,10 +139,14 @@ export async function openSqliteAdapter(root, owner, definitions) {
         validateMetadata(db);
         if (initialize) { validateAll(db); return null; }
         // This fixed provider ceiling is independent of JSON's document limit.
-        db.pragma('max_page_count = 65536');
-        return execute(db,operation,request);
+        check(db.pragma(`max_page_count = ${limits.sqliteDatabaseBytes/4096}`,{simple:true}) <= limits.sqliteDatabaseBytes/4096,'STORE.LIMIT');
+        const result=operation==='transaction' ? request.operations.map(item=>{
+          const value=execute(db,item.operation,item.request);request.addResult(value);return value;
+        }) : execute(db,operation,request);
+        if(operation!=='transaction')request.checkResult(result);
+        return result;
       });
-      return json(initialize || ['get','query','history'].includes(operation) ? run.deferred() : run.immediate());
+      return initialize || ['get','query','count','history'].includes(operation) ? run.deferred() : run.immediate();
     } catch (error) { throw providerError(error); }
     finally { if (db) { try { db.close(); } catch { throw new StoreError('STORE.IO'); } } }
   }
@@ -162,6 +165,7 @@ export async function openSqliteAdapter(root, owner, definitions) {
       try {
         db.pragma('trusted_schema = OFF');
         db.pragma('page_size = 4096');
+        db.pragma(`max_page_count = ${limits.sqliteDatabaseBytes/4096}`);
         db.transaction(() => {
           for (const ddl of Object.values(tables)) db.exec(ddl);
           db.prepare('INSERT INTO metadata (singleton,owner,collections) VALUES (?,?,?)').run(1,stringify(owner),stringify(collections));

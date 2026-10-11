@@ -10,7 +10,7 @@ import {project, context, reject, load, temp, fixture, file} from '../test-suppo
 
 test('WydStore workspace loads independently through canonical loader without granting authority',async t=>{
  const {registry,root}=await fixture(t);const require=createRequire(import.meta.url),pkg=require('@wydgit/store/package.json');
- assert.equal(pkg.version,'0.1.0-alpha.2');assert.equal(pkg.version,manifest.version);assert.equal(registry.get('wydstore').id,'wydstore');
+ assert.equal(pkg.version,'0.1.0-alpha.3');assert.equal(pkg.version,manifest.version);assert.equal(registry.get('wydstore').id,'wydstore');
  assert.equal(await fs.realpath(path.dirname(require.resolve('@wydgit/store/package.json'))),path.join(project,'packages/wydstore'));
  const ctx=context({capabilities:[]});assert.equal((await registry.bind(ctx).call('wydstore','query',{store:'main',collection:'users'})).code,'SEAM.DENIED');assert.deepEqual(ctx.capabilities,[]);
  assert.deepEqual(await fs.readdir(root).then(x=>x.map(n=>path.extname(n))),['.json']);

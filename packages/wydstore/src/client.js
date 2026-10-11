@@ -3,7 +3,7 @@ import { check, StoreError, json, frozen, equal, idValid, record } from './data.
 export { StoreError } from './data.js';
 export function createStores(dispatch) {
   const call = async (operation, request) => {
-    const result = await dispatch.call('wydstore',operation,request);
+    const result = await (['count','metadata','transaction'].includes(operation) ? dispatch.invoke('wydstore','1.0.0',operation,request) : dispatch.call('wydstore',operation,request));
     if(!result.ok)throw new StoreError(result.code);
     return result.value;
   };
@@ -50,7 +50,10 @@ export function createStores(dispatch) {
       return Object.freeze({
         async get(id) { check(idValid(id));return handle(await call('get',{...scope,id})); },
         create(id,data) { check(idValid(id));const copy = json(data);check(record(copy));return handle({id,version:0,data:copy},true); },
-        async query(options = {}) { const opts = json(options);check(record(opts) && Object.keys(opts).every(k => ['where','limit'].includes(k)));return Object.freeze((await call('query',{...scope,...opts})).map(value => handle(value))); },
+        async query(options = {}) { const opts = json(options);check(record(opts) && Object.keys(opts).every(k => ['where','filter','sort','offset','limit'].includes(k)));return Object.freeze((await call('query',{...scope,...opts})).map(value => handle(value))); },
+        async count(options = {}) { const opts=json(options); check(record(opts) && Object.keys(opts).every(k => ['where','filter'].includes(k))); return call('count',{...scope,...opts}); },
+        async metadata() { return frozen(await call('metadata',scope)); },
+        async transaction(operations) { return frozen(await call('transaction',{...scope,operations:json(operations)})); },
         async history(id) { check(idValid(id));return frozen(await call('history',{...scope,id})); }
       });
     } });

@@ -1,3 +1,4 @@
+import { serviceLimits } from './limits.js';
 import semver from 'semver';
 import { isBuiltin } from 'node:module';
 import { clean, freeze, record, WydgitError } from '../object-model/validation.js';
@@ -27,7 +28,8 @@ export function validateConfig(input) {
   ensure(config.schema === 'wydgit.host/0.1' && Array.isArray(config.libraries), code, 'Unsupported host config');
   for (const entry of config.libraries) {
     ensure(record(entry), code, 'Expected library mapping');
-    fields(entry, ['id','package','enabled','version','publisher','trust', ...['options','bindings'].filter(key => Object.hasOwn(entry,key))], code);
+    fields(entry, ['id','package','enabled','version','publisher','trust', ...['options','bindings','serviceLimits'].filter(key => Object.hasOwn(entry,key))], code);
+    if (entry.serviceLimits !== undefined) serviceLimits(entry.serviceLimits);
     ensure(entry.options === undefined || record(entry.options), code, 'Library options must be an object');
     if (Object.hasOwn(entry,'bindings')) {
       ensure(Array.isArray(entry.bindings), code, 'Expected dependency bindings');
@@ -50,7 +52,7 @@ export function validateConfig(input) {
 export function validateManifest(input) {
   const code = 'LIBRARY.INVALID_MANIFEST', manifest = data(input, code);
   ensure(record(manifest), code, 'Expected library manifest');
-  fields(manifest, ['schema','id','version','publisher','trust','platform','targets','capabilities','services', ...['requirements','apiVersion'].filter(key => Object.hasOwn(manifest,key))], code);
+  fields(manifest, ['schema','id','version','publisher','trust','platform','targets','capabilities','services', ...['requirements','apiVersion','legacyOperations'].filter(key => Object.hasOwn(manifest,key))], code);
   if (Object.hasOwn(manifest,'apiVersion')) ensure(version(manifest.apiVersion) && typeof manifest.apiVersion === 'string' && /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/.test(manifest.apiVersion), code, 'Invalid service API version');
   if (Object.hasOwn(manifest,'requirements')) {
     try { manifest.requirements = validateRequirements(manifest.requirements); }
@@ -67,6 +69,7 @@ export function validateManifest(input) {
     fields(service, ['name','capability'], code);
     ensure(identity(service.name) && manifest.capabilities.includes(service.capability), code, 'Service must use a declared capability');
   }
+  if (Object.hasOwn(manifest,'legacyOperations')) ensure(manifest.apiVersion && Array.isArray(manifest.legacyOperations) && manifest.legacyOperations.every(name => manifest.services.some(service => service.name === name)) && new Set(manifest.legacyOperations).size === manifest.legacyOperations.length, code, 'Invalid legacy operations');
   unique(manifest.services, x => x.name, code);
   ensure(manifest.capabilities.every(c => manifest.services.some(s => s.capability === c)), code, 'Each provided capability needs a declared service');
   return freeze(manifest);

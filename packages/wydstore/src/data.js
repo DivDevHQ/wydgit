@@ -18,7 +18,8 @@ export function json(value, seen = new Set(), depth = 0) {
   check(!array || (keys.length === value.length && keys.every((key,i) => key === String(i))));
   const output = array ? [] : Object.create(null);
   seen.add(value);
-  for (const key of keys.sort()) {
+  if(!array)keys.sort();
+  for (const key of keys) {
     const descriptor = Object.getOwnPropertyDescriptor(value, key);
     check(descriptor.enumerable && Object.hasOwn(descriptor, 'value'));
     output[key] = json(descriptor.value, seen, depth + 1);
@@ -33,20 +34,25 @@ export function schema(input) {
   check(record(input), 'STORE.INVALID_CONFIG');
   for (const [name,rule] of Object.entries(input)) {
     check(idValid(name) && name !== 'id', 'STORE.INVALID_CONFIG');
-    fields(rule,['type'],['required','default'],'STORE.INVALID_CONFIG');
+    fields(rule,['type'],['required','default','unique','index'],'STORE.INVALID_CONFIG');
     check(['string','number','boolean','object','array','null'].includes(rule.type) && (rule.required === undefined || typeof rule.required === 'boolean'), 'STORE.INVALID_CONFIG');
+    for (const flag of ['unique','index']) check(rule[flag] === undefined || typeof rule[flag] === 'boolean','STORE.INVALID_CONFIG');
     if (Object.hasOwn(rule,'default')) check(typeOf(rule.default) === rule.type, 'STORE.INVALID_CONFIG');
   }
   return input;
 }
 const typeOf = value => value === null ? 'null' : Array.isArray(value) ? 'array' : typeof value;
-export function validateData(input, definitions) {
-  const data = json(input); check(record(data));
+export function validateData(input, definitions, copy = true) {
+  // Dispatcher inputs have already been copied, checked and deeply frozen.
+  // Only the root changes when defaults are applied; retain safe frozen children.
+  check(record(input));
+  const data = copy ? json(input) : Object.assign(Object.create(null),input);
   for (const name of Object.keys(data)) check(Object.hasOwn(definitions,name),'STORE.INVALID_FIELD');
   for (const [name,rule] of Object.entries(definitions)) {
     if (!Object.hasOwn(data,name) && Object.hasOwn(rule,'default')) data[name] = json(rule.default);
     if (!Object.hasOwn(data,name)) { check(!rule.required,'STORE.INVALID_FIELD'); continue; }
     check(typeOf(data[name]) === rule.type,'STORE.INVALID_FIELD');
   }
-  return json(data);
+  // Children are already validated copies; canonicalize only the root after defaults.
+  return Object.assign(Object.create(null),Object.fromEntries(Object.keys(data).sort().map(key=>[key,data[key]])));
 }

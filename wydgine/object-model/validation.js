@@ -25,7 +25,9 @@ export function clean(value, active = new Set(), depth = 0) {
   jsonKeys(value);
   active.add(value);
   const out = Array.isArray(value) ? [] : Object.create(null);
-  for (const key of Object.keys(value).sort()) {
+  const keys=Object.keys(value);
+  if(!Array.isArray(value))keys.sort();
+  for (const key of keys) {
     requireThat(!['__proto__','constructor','prototype'].includes(key), 'INPUT.DANGEROUS_KEY', `Reserved key: ${key}`);
     const descriptor = Object.getOwnPropertyDescriptor(value, key);
     requireThat(Object.hasOwn(descriptor, 'value'), 'INPUT.JSON', 'Accessors are not JSON');

@@ -42,9 +42,24 @@ export async function executePage({model,pageId,session,input,context,handlers=[
   };
   const rootGuard=()=>{};
   const request=requestFacade(requestData,context);
+  const storageInput=(library,name,input)=>{
+    if(library!=='wydstore'||!serviceMappings)return input;
+    const request=clean(input);
+    const map=resource=>{
+      const mapping=serviceMappings[resource?.store];
+      check(mapping&&resource.collection===resource.store,'PACKAGE.STORAGE','Unknown logical storage resource');
+      return {...resource,...mapping};
+    };
+    const mapped=map(request);
+    if(name==='transaction'&&Array.isArray(request.operations))mapped.operations=request.operations.map(item=>{
+      const resource={store:request.store,collection:request.collection,...item.input};
+      return {...item,input:map(resource)};
+    });
+    return mapped;
+  };
   const contexts=guard=>({PAGE:handle(pageId,guard),SESSION:freeze(clean(session.view)),REQUEST:requestFacade(requestData,context,guard),RESPONSE:response.facade(guard),SERVER:Object.freeze({App:context.app}),
     FILESYS:Object.freeze({Get(id){guard();check(files,'FILE.DENIED','No approved files');return files.get(id,context,guard);}}),
-    SERVICES:Object.freeze({async Invoke(library,apiVersion,name,input){guard();await session.authorize();guard();check(libraries,'SEAM.DENIED','No services');return libraries.bind(context).invoke(library,apiVersion,name,input);},async Call(library,name,input){guard();await session.authorize();guard();check(libraries,'SEAM.DENIED','No services');if(library==='wydstore'&&serviceMappings){const mapping=serviceMappings[input?.store];check(mapping&&input.collection===input.store,'PACKAGE.STORAGE','Unknown logical storage resource');input={...input,...mapping};}return libraries.bind(context).call(library,name,input);}})
+    SERVICES:Object.freeze({async Invoke(library,apiVersion,name,input){guard();await session.authorize();guard();check(libraries,'SEAM.DENIED','No services');input=storageInput(library,name,input);return libraries.bind(context).invoke(library,apiVersion,name,input);},async Call(library,name,input){guard();await session.authorize();guard();check(libraries,'SEAM.DENIED','No services');input=storageInput(library,name,input);return libraries.bind(context).call(library,name,input);}})
   });
   const action=actions.find(a=>a.page===pageId&&a.target===input.action?.target&&a.type===input.action?.type);
   const defaults={};

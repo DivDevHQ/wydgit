@@ -1,3 +1,24 @@
+## 0.3-B — WydStore Foundation
+
+- Advanced WydStore to 0.1.0-alpha.3 and service API 1.0.0, with explicit legacy
+  operation compatibility through the existing canonical dispatcher.
+- Shared comparison/Boolean filters, deterministic scalar sorting, offsets,
+  counting, metadata, field uniqueness/index declarations and schema identification
+  across JSON/SQLite; retained revision/history semantics and host provisioning.
+- Added bounded one-store atomic batches with per-member authority, rollback and
+  aggregate-result checks; JSON replaces one file, SQLite uses native transactions.
+- Enforced trusted principal/optional receipt ownership and versioned Page mappings;
+  added shared foundation/security/portability tests and documented JSON power-loss
+  limitations, legacy schema compatibility and deferred 0.4 migrations.
+- Separated trusted host request/response, record, query/history, transaction and
+  backend policies with exact UTF-8 JSON budgets; preserved large legacy consumers,
+  added 262,144-node defaults / 1,048,576-node ceilings and bounded SQLite capacity
+  configuration (256 MiB default, 4 GiB current v0.3 policy ceiling).
+- Checked effective service/store transaction results incrementally before commit,
+  streamed unsorted SQLite queries and removed redundant copies/serialization;
+  added multibyte, full-capacity, host-policy, escalation and rollback regressions.
+- Platform version remains 0.3.0-alpha.1; no new dependencies or release action.
+
 ## 0.3.0-alpha.1 — 0.3-A Canonical Service Foundation
 
 - Extended the trusted library registry with independent exact service API versions,
