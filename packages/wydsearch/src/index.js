@@ -48,7 +48,7 @@ export async function register({service,options,dependency,failure,checkJson,hos
   keys(current,['app','resource','publisher','package','principal','published','visibility','revision','title','body','url'],['summary','type','categories','allowed']);
   check(typeof current.published==='boolean'&&typeof current.revision==='string'&&current.revision.length>0&&current.revision.length<=128,'SEARCH.SOURCE');
   check(['title','body'].every(k=>typeof current[k]==='string')&&(!current.summary||typeof current.summary==='string')&&safeDestination(current.url),'SEARCH.INVALID_DOCUMENT');
-  check(!/[<>]/.test(current.title+current.body+(current.summary??'')),'SEARCH.INVALID_DOCUMENT');
+  // Title, body and summary are plain text; renderers escape literal markup.
   const categories=current.categories??[];
   check(Array.isArray(categories)&&categories.length<=16&&categories.every(x=>typeof x==='string'&&Buffer.byteLength(x)<=64)&&typeof(current.type??'page')==='string'&&Buffer.byteLength(current.type??'page')<=64,'SEARCH.INVALID_DOCUMENT');
   const value={id:documentId,resource:current.resource,owner:{publisher:current.publisher,package:current.package,principal:current.principal},title:current.title,body:current.body,summary:current.summary??'',url:current.url,type:current.type??'page',categories,visibility:current.visibility,revision:current.revision,schemaVersion:1};

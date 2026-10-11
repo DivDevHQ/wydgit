@@ -15,6 +15,7 @@ const presentation=kind=>definitions.find(d=>d.id==='divdev/'+kind).presentation
 function renderSearch(node,state,query,path,escape){const properties={pageSize:state?.pageSize??10,queryParameter:'q',submitLabel:'Search',showType:true,showSnippet:true,emptyMessage:'Enter a search term to find pages.',noResultsMessage:'No matching pages found.',...node};return renderComponent({...properties,presentation:presentation(node.prototype)},state?{state:state.state,value:state}:undefined,{q:[state?.query??query]},path,escape);}
 const prepareSearch=prepareComponents;
 import { escapeHtml } from '../wydgine/index.js';
+import { initializeHost } from '../wydgine/host.js';
 import { pageSearchSource } from '../packages/wydsearch/src/page-source.js';
 import platform from '../package.json' with {type:'json'};
 import { defaults,ceilings } from '@wydgit/search';
@@ -93,12 +94,22 @@ for(const provider of ['json','sqlite']) {
   assert.equal((await f.invoke('reindex',{ids:Array.from({length:33},(_,i)=>'d'+i)})).code,'SEARCH.LIMIT');
   f.put('security',{visibility:'roles'});assert.equal((await f.invoke('index',{id:'security'})).code,'SEARCH.UNSUPPORTED_POLICY');
   f.put('security',{url:'javascript:alert(1)'});assert.equal((await f.invoke('index',{id:'security'})).code,'SEARCH.INVALID_DOCUMENT');
-  f.put('security',{body:'<script>alert(1)</script>'});assert.equal((await f.invoke('index',{id:'security'})).code,'SEARCH.INVALID_DOCUMENT');
   f.put('security',{body:'x'.repeat(17000)});assert.equal((await f.invoke('index',{id:'security'})).code,'SEARCH.LIMIT');
   assert.equal((await f.invoke('metadata')).value.visibleDocuments,0);
  });
+ test(`${provider}: document title, body and summary accept harmless markup-like plain text`,async t=>{
+  const f=await custom(t,provider),text='<img src=x onerror="alert(1)"><script>needle</script>';
+  f.put('security',{title:text,body:text,summary:text});
+  assert.equal((await f.invoke('index',{id:'security'})).ok,true);
+  const result=(await f.invoke('search',{query:'needle'})).value;
+  assert.equal(result.total,1);
+  const rendered=html(renderSearch({prototype:'search-results'},{state:'ready',...result,query:'needle',offset:0,pageSize:10},'','/search/',escapeHtml));
+  assert.equal(rendered('img,script,[onerror]').length,0);
+  assert.equal(rendered('.wyd-search-list a').text(),text);
+  assert.equal(rendered('.wyd-search-list li p:last-child').text(),text);
+ });
  test(`${provider}: bounded reindex rollback and actual service response policy prevent writes`,async t=>{
-  const f=await custom(t,provider);f.put('getting-started');f.put('security',{body:'<script>bad</script>'});
+  const f=await custom(t,provider);f.put('getting-started');f.put('security',{url:'javascript:alert(1)'});
   assert.equal((await f.invoke('reindex',{ids:['getting-started','security']})).code,'SEARCH.INVALID_DOCUMENT');
   assert.equal((await f.invoke('metadata')).value.visibleDocuments,0);
   const tiny=new ExecutionContext({...searchContext(null,true),limits:{serviceResponseBytes:1}});
@@ -132,6 +143,51 @@ for(const provider of ['json','sqlite']) {
   const registry=await loadLibraries({config:f.config,root:project,platformVersion:platform.version,adapters:{wydsearch:{source:f.source}}});
   const result=await registry.bind(searchContext()).invoke('wydsearch','1.0.0','search',{index:'site',query:'café'});
   assert.ok(Buffer.byteLength(result.value.results[0].snippet)<=12);
+ });
+ test(`${provider}: Page extraction decodes once, refreshes old indexes and bounds decoded documents`,async t=>{
+  const f=await createSearchExample(await temp(t),provider);
+  const edit=async markdown=>{
+   const location=path.join(f.root,'content/installed-packages.json'),state=JSON.parse(await fs.readFile(location)),tree=JSON.parse(state.app);
+   const walk=node=>{if(node.id==='getting-started')node.properties.description='';if(node.id==='getting-started-body')node.properties.content={type:'markdown',value:markdown};Object.values(node.slots).flat().forEach(walk);};
+   walk(tree);state.app=JSON.stringify(tree);await fs.writeFile(location,JSON.stringify(state));
+  };
+  const source=pageSearchSource(f.root),invoke=(libraries,name,input)=>libraries.bind(searchContext(null,true)).invoke('wydsearch','1.0.0',name,{index:'site',...input});
+  await edit('Fish & chips; x < y');
+  const decoded=source.resolve('site','getting-started');
+  assert.match(decoded.body,/Fish & chips; x < y/);
+  // Seed the persisted pre-fix representation through the same service/store path.
+  const legacy={...source,resolve:(index,id)=>{const current=source.resolve(index,id);return id==='getting-started'?{...current,body:current.body.replaceAll('&','&amp;').replaceAll('<','&lt;'),revision:'pre-fix'}:current;}};
+  const old=await loadLibraries({config:f.config,root:project,platformVersion:platform.version,adapters:{wydsearch:{source:legacy}}});
+  assert.equal((await invoke(old,'search',{query:'amp lt'})).value.total,1);
+  assert.equal((await invoke(f.libraries,'search',{query:'Fish'})).value.total,0);
+  const restarted=await initializeHost({root:f.root});
+  assert.equal((await invoke(restarted,'index',{id:'getting-started'})).value.changed,0);
+  const result=(await invoke(restarted,'search',{query:'Fish'})).value;
+  assert.equal(result.total,1);assert.match(result.results[0].snippet,/fish & chips; x < y/);
+  const rendered=html(renderSearch({prototype:'search-results'},{state:'ready',...result,query:'Fish',offset:0,pageSize:10},'','/search/',escapeHtml));
+  assert.match(rendered('.wyd-search-list li p:last-child').text(),/fish & chips; x < y/);
+  for(const query of ['amp','lt'])assert.equal((await invoke(restarted,'search',{query})).value.total,0);
+  await edit('Named &copy; numeric &#233; hex &#x1F41F; Unicode café. Literal `&amp;` and &amp;amp;.\n\nalpha\n\nbeta\n\n`<img src=x onerror="alert(1)"><script>needle</script>`');
+  const current=source.resolve('site','getting-started');
+  assert.notEqual(current.revision,decoded.revision);
+  assert.match(current.body,/Named © numeric é hex 🐟 Unicode café/);
+  assert.match(current.body,/Literal &amp; and &amp;/);
+  assert.match(current.body,/alpha\s+beta/);
+  assert.equal((await invoke(restarted,'reindex',{ids:['getting-started']})).value.changed,1);
+  assert.equal((await invoke(restarted,'reindex',{ids:['getting-started']})).value.changed,0);
+  for(const query of ['café','alpha beta','needle'])assert.equal((await invoke(restarted,'search',{query})).value.total,1);
+  assert.equal((await invoke(restarted,'search',{query:'alphabeta'})).value.total,0);
+  const hostile=(await invoke(restarted,'search',{query:'needle'})).value;
+  const safe=html(renderSearch({prototype:'search-results'},{state:'ready',...hostile,query:'needle',offset:0,pageSize:10},'','/search/',escapeHtml));
+  assert.equal(safe('img,script,[onerror]').length,0);assert.match(safe('.wyd-search-list li p:last-child').text(),/<img src=x onerror=/);
+  await edit('&#233; '.repeat(20));
+  const limited=async limits=>loadLibraries({config:{...f.config,libraries:f.config.libraries.map(l=>l.id==='wydsearch'?{...l,options:{...l.options,limits}}:l)},root:project,platformVersion:platform.version,adapters:{wydsearch:{source:{...source,refresh:undefined}}}});
+  assert.equal((await invoke(await limited({documentTokens:8}),'index',{id:'getting-started'})).code,'SEARCH.LIMIT');
+  assert.equal((await invoke(await limited({documentBytes:600}),'index',{id:'getting-started'})).ok,true);
+  assert.equal((await invoke(await limited({documentBytes:400}),'index',{id:'getting-started'})).code,'SEARCH.LIMIT');
+  await edit('&#233; '.repeat(3000));
+  assert.equal((await invoke(restarted,'index',{id:'getting-started'})).code,'SEARCH.LIMIT');
+  await edit('x'.repeat(65537));assert.throws(()=>source.resolve('site','getting-started'),/Search source size/);
  });
  test(`${provider}: native Search Bar GET submission renders ranked results, pagination, themes and refreshed content`,async t=>{
   const root=await temp(t),f=await createSearchExample(root,provider);

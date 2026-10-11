@@ -1,1 +1,1 @@
-{"name":"@wydgit/search","version":"0.1.0-alpha.1","type":"module","license":"MPL-2.0","engines":{"node":">=22.12.0"},"exports":{".":"./src/index.js","./text":"./src/text.js","./package.json":"./package.json"}}
+{"name":"@wydgit/search","version":"0.1.0-alpha.1","type":"module","license":"MPL-2.0","engines":{"node":">=22.12.0"},"exports":{".":"./src/index.js","./text":"./src/text.js","./package.json":"./package.json"},"dependencies":{"entities":"4.5.0"}}

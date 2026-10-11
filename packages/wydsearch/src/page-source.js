@@ -2,6 +2,7 @@ import { readFileSync,existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import sanitizeHtml from 'sanitize-html';
+import { decodeHTML } from 'entities';
 import { loadRepository } from '../../../wydgine/repository.js';
 import { renderMarkdown,pagePath } from '../../../wydgine/index.js';
 // Explicit, trusted host Page allowlist. Never enumerate configuration or private
@@ -22,7 +23,10 @@ export function pageSearchSource(root) {
    const model=loadRepository(root),page=model.pages.get(id);
    if(!page)return {app:model.site.id,resource:id,publisher:policy.publisher,package:policy.package,principal:policy.principal,published:false,visibility:'public',revision:'deleted',title:'',body:'',url:'/',allowed:false};
    const parts=[];let nodes=0,bytes=0;
-   const walk=node=>{if(++nodes>10000)throw new Error('Search source complexity');if(node.content?.type==='markdown'){const text=sanitizeHtml(renderMarkdown(node.content.value),{allowedTags:[],allowedAttributes:{}});bytes+=Buffer.byteLength(text);if(bytes>65536)throw new Error('Search source size');parts.push(text);}for(const slot of ['sections','blocks','children'])for(const child of node[slot]??[])walk(child);};
+   const walk=node=>{if(++nodes>10000)throw new Error('Search source complexity');if(node.content?.type==='markdown'){if(Buffer.byteLength(node.content.value)>65536)throw new Error('Search source size');
+    // Preserve block boundaries before stripping tags; decode sanitizer text once.
+    const rendered=renderMarkdown(node.content.value).replace(/<\/(?:p|h[1-6]|blockquote|li|pre|tr|th|td|caption|dt|dd)>|<(?:br|hr)\s*\/?>/g,'$& ');
+    const text=decodeHTML(sanitizeHtml(rendered,{allowedTags:[],allowedAttributes:{}}));bytes+=Buffer.byteLength(text)+(parts.length?1:0);if(bytes>65536)throw new Error('Search source size');parts.push(text);}for(const slot of ['sections','blocks','children'])for(const child of node[slot]??[])walk(child);};
    walk(page);const body=parts.join(' '),url=pagePath(page,model.site);
    const published=(embedded||page.searchable===true)&&page.published===true&&model.site.pages.includes(id);
    const revision=createHash('sha256').update(JSON.stringify([page.title,body,url,published])).digest('hex');

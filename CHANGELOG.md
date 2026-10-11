@@ -1,3 +1,12 @@
+## 0.3-C correction — Search plain-text extraction
+
+- Decode sanitized Page text once with the direct runtime `entities` dependency;
+  preserve literal entities and block spacing, and enforce decoded-text limits.
+- Treat search titles, bodies and summaries as escaped plain text, including angle
+  brackets; retain destination, authorization, ownership and resource checks.
+- Add JSON/SQLite extraction, search, snippet and normal startup-refresh regressions;
+  existing indexes need no schema migration. Versions remain unchanged.
+
 ## 0.3.0-alpha.3 — 0.3-C WydSearch and Search UI Wydgits
 
 - Added canonical WydSearch 0.1.0-alpha.1 / API 1.0.0 through the existing

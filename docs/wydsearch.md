@@ -79,8 +79,8 @@ Required fields are shown above except summary/type/categories/allowed. Omitted
 `owner`, and `schemaVersion: 1`; the index envelope also has schemaVersion 1.
 Index location and App come from host policy. Source ownership and revisions
 come from the trusted resolver. Unknown fields and unsupported visibility policies
-are rejected. Titles/body/summary containing angle brackets are rejected: the
-interface takes plain text, not executable HTML. Destinations are bounded, canonical
+are rejected. Title, body and summary are plain text, including literal angle
+brackets and markup-like strings; the renderer escapes them as text. Destinations are bounded, canonical
 same-site paths; schemes, query strings, fragments, backslashes, percent-encoded
 delimiters and protocol-relative links are unsupported.
 
@@ -136,6 +136,15 @@ commit. WydStore separately checks its dependency/store transaction response
 policy before its own commit. No caller can raise either policy. A failure leaves
 the previous complete index available. Interrupted reindex batches can be rerun;
 there is no partial in-place rebuild, job queue, scheduler, event bus or migration.
+
+Page extraction keeps Markdown rendering and sanitization, preserves block spacing,
+and decodes the text-only sanitizer output exactly once with `entities.decodeHTML`.
+Deliberately literal entity text (for example Markdown code `&amp;`) stays literal.
+Extraction is bounded to 10,000 nodes, 65,536 UTF-8 bytes per Markdown input and
+65,536 bytes of final decoded body including separators. Document byte/token
+policies apply to decoded text. Existing indexes refresh through normal reindex
+or approved startup refresh; changed bodies change the source revision and update
+the stored document without a schema migration.
 
 The index is authoritative search state, and WydStore retains prior snapshots in
 history. JSON's whole-document budget includes those snapshots and can fill after
