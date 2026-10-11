@@ -7,6 +7,7 @@ export const LIMITS = Object.freeze({packages:1024,manifest:32768,resource:65536
 const code='PACKAGE.MANIFEST';
 export const qualified = x => typeof x==='string' && x.length<=128 && /^[a-z][a-z0-9.-]*\/[a-z][a-z0-9-]*$/.test(x);
 export const localName = x => typeof x==='string' && /^[a-z][a-z0-9-]{0,63}$/.test(x);
+export const fileScope = x => typeof x==='string' && x.length<=120 && /^\/(?:[A-Za-z0-9_-][A-Za-z0-9_.-]*(?:\/[A-Za-z0-9_-][A-Za-z0-9_.-]*)*)?$/.test(x) && !x.split('/').some(s=>s.endsWith('.'));
 export const resourcePath = x => typeof x==='string' && x.length<=128 && x.split('/').every(part=>/^[a-zA-Z0-9][a-zA-Z0-9_-]*(?:\.[a-zA-Z0-9_-]+)?$/.test(part));
 export function list(items,max,predicate,where=code) {
   check(Array.isArray(items)&&items.length<=max&&items.every(predicate)&&new Set(items).size===items.length,where,'Invalid or duplicate declaration');
@@ -17,7 +18,7 @@ export function permissions(input) {
   for(const key of ['visible','editable'])list(p[key],LIMITS.templateNodes,x=>validObjectGrant(x)&&x.length<=128);
   check(record(p.scopes),code,'Invalid scopes');
   check(Object.keys(p.scopes).every(localName),code,'Invalid scope provider');list(p.scopes.wydstore,LIMITS.storage,localName);
-  for(const key of Object.keys(p.scopes).filter(k=>!['wydstore','prototypes'].includes(k)))list(p.scopes[key],16,localName);
+  for(const key of Object.keys(p.scopes).filter(k=>!['wydstore','prototypes'].includes(k)))list(p.scopes[key],16,key==='wydfiles'?fileScope:localName);
   if(p.scopes.prototypes!==undefined)list(p.scopes.prototypes,LIMITS.prototypes,qualified);
   check(p.editable.every(grant=>objectGrantCovers(p.visible,grant)),code,'Editable objects must be visible');
   return p;

@@ -1,3 +1,10 @@
+## 0.3.0-alpha.5 — 0.3-E WydFiles
+
+- Added canonical WydFiles API 1.0.0 with App/principal/receipt-scoped logical mounts, strict paths and host-controlled policies.
+- Added confined local and signed S3-compatible streaming providers, bounded range/list operations, exact inventory quota checks and explicit non-atomic copy/move guarantees.
+- Added shared local/simulated-S3 conformance and security tests, documentation and a standalone mount demonstration. Existing WydStream/media storage remains unchanged.
+- Live cloud verification, caching, additional cloud adapters and multi-App routing remain deferred.
+
 ## 0.3.0-alpha.4 — 0.3-D WydStream and Media Wydgits
 
 - Added canonical WydStream 0.1.0-alpha.1 / API 1.0.0, App-scoped transactional
