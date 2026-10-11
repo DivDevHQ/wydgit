@@ -1,0 +1,704 @@
+[
+  {
+    "id": "divdev/search-bar",
+    "publisher": "divdev",
+    "public": true,
+    "extends": "wydgit.core/block",
+    "properties": {
+      "content": {
+        "type": "object",
+        "default": {
+          "type": "markdown",
+          "value": ""
+        }
+      },
+      "destination": {
+        "type": "string",
+        "default": "/search/"
+      },
+      "placeholder": {
+        "type": "string",
+        "default": "Search this site"
+      },
+      "label": {
+        "type": "string",
+        "default": "Search"
+      },
+      "queryParameter": {
+        "type": "string",
+        "default": "q"
+      },
+      "submitLabel": {
+        "type": "string",
+        "default": "Search"
+      }
+    },
+    "slots": {},
+    "presentation": {
+      "schema": "wydgit.presentation/0.1",
+      "valid": {
+        "op": "and",
+        "args": [
+          {
+            "op": "parameter",
+            "value": {
+              "get": "properties.queryParameter"
+            }
+          },
+          {
+            "op": "not",
+            "args": [
+              {
+                "op": "eq",
+                "args": [
+                  {
+                    "get": "properties.queryParameter"
+                  },
+                  "offset"
+                ]
+              }
+            ]
+          },
+          {
+            "op": "queryValid",
+            "name": {
+              "get": "properties.queryParameter"
+            }
+          },
+          {
+            "op": "queryValid",
+            "name": "offset"
+          }
+        ]
+      },
+      "template": {
+        "tag": "form",
+        "attrs": {
+          "id": {
+            "get": "id"
+          },
+          "class": "wyd-search-bar wyd-form-inline",
+          "role": "search",
+          "method": "get",
+          "action": {
+            "get": "properties.destination"
+          }
+        },
+        "children": [
+          {
+            "tag": "label",
+            "attrs": {
+              "class": "wyd-search-label wyd-label-hidden",
+              "for": {
+                "op": "concat",
+                "args": [
+                  {
+                    "get": "id"
+                  },
+                  "-query"
+                ]
+              }
+            },
+            "text": {
+              "get": "properties.label"
+            }
+          },
+          {
+            "tag": "input",
+            "attrs": {
+              "id": {
+                "op": "concat",
+                "args": [
+                  {
+                    "get": "id"
+                  },
+                  "-query"
+                ]
+              },
+              "name": {
+                "get": "properties.queryParameter"
+              },
+              "type": "search",
+              "value": {
+                "op": "query",
+                "name": {
+                  "get": "properties.queryParameter"
+                }
+              },
+              "placeholder": {
+                "get": "properties.placeholder"
+              }
+            }
+          },
+          {
+            "tag": "button",
+            "attrs": {
+              "type": "submit",
+              "aria-label": {
+                "get": "properties.label"
+              }
+            },
+            "text": {
+              "get": "properties.submitLabel"
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "divdev/search-results",
+    "publisher": "divdev",
+    "public": true,
+    "extends": "wydgit.core/block",
+    "properties": {
+      "content": {
+        "type": "object",
+        "default": {
+          "type": "markdown",
+          "value": ""
+        }
+      },
+      "index": {
+        "type": "string",
+        "required": true
+      },
+      "pageSize": {
+        "type": "number",
+        "default": 10
+      },
+      "queryParameter": {
+        "type": "string",
+        "default": "q"
+      },
+      "showType": {
+        "type": "boolean",
+        "default": true
+      },
+      "showSnippet": {
+        "type": "boolean",
+        "default": true
+      },
+      "emptyMessage": {
+        "type": "string",
+        "default": "Enter a search term to find pages."
+      },
+      "noResultsMessage": {
+        "type": "string",
+        "default": "No matching pages found."
+      }
+    },
+    "slots": {},
+    "presentation": {
+      "schema": "wydgit.presentation/0.1",
+      "valid": {
+        "op": "and",
+        "args": [
+          {
+            "op": "parameter",
+            "value": {
+              "get": "properties.queryParameter"
+            }
+          },
+          {
+            "op": "not",
+            "args": [
+              {
+                "op": "eq",
+                "args": [
+                  {
+                    "get": "properties.queryParameter"
+                  },
+                  "offset"
+                ]
+              }
+            ]
+          },
+          {
+            "op": "queryValid",
+            "name": {
+              "get": "properties.queryParameter"
+            }
+          },
+          {
+            "op": "queryValid",
+            "name": "offset"
+          }
+        ]
+      },
+      "when": {
+        "op": "not",
+        "args": [
+          {
+            "op": "eq",
+            "args": [
+              {
+                "op": "trim",
+                "value": {
+                  "op": "query",
+                  "name": {
+                    "get": "properties.queryParameter"
+                  }
+                }
+              },
+              ""
+            ]
+          }
+        ]
+      },
+      "request": {
+        "library": "wydsearch",
+        "apiVersion": "1.0.0",
+        "operation": "search",
+        "input": {
+          "index": {
+            "get": "properties.index"
+          },
+          "query": {
+            "op": "query",
+            "name": {
+              "get": "properties.queryParameter"
+            }
+          },
+          "offset": {
+            "op": "integer",
+            "value": {
+              "op": "query",
+              "name": "offset"
+            },
+            "default": 0,
+            "min": 0,
+            "max": 99999
+          },
+          "limit": {
+            "get": "properties.pageSize"
+          }
+        }
+      },
+      "template": {
+        "tag": "section",
+        "attrs": {
+          "id": {
+            "get": "id"
+          },
+          "class": "wyd-search-results wyd-result-panel"
+        },
+        "children": [
+          {
+            "tag": "p",
+            "attrs": {
+              "class": "wyd-search-meta wyd-text-meta"
+            },
+            "text": "SEARCH RESULTS"
+          },
+          {
+            "tag": "h2",
+            "text": {
+              "op": "if",
+              "test": {
+                "op": "not",
+                "args": [
+                  {
+                    "op": "eq",
+                    "args": [
+                      {
+                        "op": "query",
+                        "name": {
+                          "get": "properties.queryParameter"
+                        }
+                      },
+                      ""
+                    ]
+                  }
+                ]
+              },
+              "then": {
+                "op": "concat",
+                "args": [
+                  "Results for \u201c",
+                  {
+                    "op": "query",
+                    "name": {
+                      "get": "properties.queryParameter"
+                    }
+                  },
+                  "\u201d"
+                ]
+              },
+              "else": "Search"
+            }
+          },
+          {
+            "tag": "p",
+            "text": {
+              "get": "properties.emptyMessage"
+            },
+            "if": {
+              "op": "eq",
+              "args": [
+                {
+                  "get": "data.state"
+                },
+                "empty"
+              ]
+            }
+          },
+          {
+            "tag": "p",
+            "attrs": {
+              "role": "status"
+            },
+            "text": "Search is temporarily unavailable. Check your query and try again.",
+            "if": {
+              "op": "eq",
+              "args": [
+                {
+                  "get": "data.state"
+                },
+                "error"
+              ]
+            }
+          },
+          {
+            "tag": "p",
+            "attrs": {
+              "role": "status"
+            },
+            "text": {
+              "get": "properties.noResultsMessage"
+            },
+            "if": {
+              "op": "and",
+              "args": [
+                {
+                  "op": "eq",
+                  "args": [
+                    {
+                      "get": "data.state"
+                    },
+                    "ready"
+                  ]
+                },
+                {
+                  "op": "eq",
+                  "args": [
+                    {
+                      "op": "length",
+                      "value": {
+                        "get": "data.value.results"
+                      }
+                    },
+                    0
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "tag": "ol",
+            "attrs": {
+              "class": "wyd-search-list wyd-result-list"
+            },
+            "children": [
+              {
+                "tag": "li",
+                "children": [
+                  {
+                    "tag": "a",
+                    "attrs": {
+                      "href": {
+                        "get": "item.url"
+                      }
+                    },
+                    "text": {
+                      "get": "item.title"
+                    }
+                  },
+                  {
+                    "tag": "p",
+                    "attrs": {
+                      "class": "wyd-search-meta wyd-text-meta"
+                    },
+                    "text": {
+                      "op": "concat",
+                      "args": [
+                        {
+                          "get": "item.type"
+                        },
+                        " \u00b7 ",
+                        {
+                          "get": "item.url"
+                        }
+                      ]
+                    },
+                    "if": {
+                      "get": "properties.showType"
+                    }
+                  },
+                  {
+                    "tag": "p",
+                    "text": {
+                      "get": "item.snippet"
+                    },
+                    "if": {
+                      "get": "properties.showSnippet"
+                    }
+                  }
+                ],
+                "each": {
+                  "in": {
+                    "get": "data.value.results"
+                  },
+                  "as": "item"
+                }
+              }
+            ],
+            "if": {
+              "op": "and",
+              "args": [
+                {
+                  "op": "eq",
+                  "args": [
+                    {
+                      "get": "data.state"
+                    },
+                    "ready"
+                  ]
+                },
+                {
+                  "op": "gt",
+                  "args": [
+                    {
+                      "op": "length",
+                      "value": {
+                        "get": "data.value.results"
+                      }
+                    },
+                    0
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "tag": "nav",
+            "attrs": {
+              "class": "wyd-search-pagination wyd-pagination",
+              "aria-label": "Search results pages"
+            },
+            "children": [
+              {
+                "tag": "a",
+                "attrs": {
+                  "href": {
+                    "op": "url",
+                    "path": {
+                      "get": "path"
+                    },
+                    "params": [
+                      [
+                        {
+                          "get": "properties.queryParameter"
+                        },
+                        {
+                          "op": "query",
+                          "name": {
+                            "get": "properties.queryParameter"
+                          }
+                        }
+                      ],
+                      [
+                        "offset",
+                        {
+                          "op": "max",
+                          "args": [
+                            0,
+                            {
+                              "op": "subtract",
+                              "args": [
+                                {
+                                  "op": "integer",
+                                  "value": {
+                                    "op": "query",
+                                    "name": "offset"
+                                  },
+                                  "default": 0,
+                                  "min": 0,
+                                  "max": 99999
+                                },
+                                {
+                                  "get": "properties.pageSize"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    ]
+                  }
+                },
+                "text": "Previous",
+                "if": {
+                  "op": "gt",
+                  "args": [
+                    {
+                      "op": "integer",
+                      "value": {
+                        "op": "query",
+                        "name": "offset"
+                      },
+                      "default": 0,
+                      "min": 0,
+                      "max": 99999
+                    },
+                    0
+                  ]
+                }
+              },
+              {
+                "tag": "a",
+                "attrs": {
+                  "href": {
+                    "op": "url",
+                    "path": {
+                      "get": "path"
+                    },
+                    "params": [
+                      [
+                        {
+                          "get": "properties.queryParameter"
+                        },
+                        {
+                          "op": "query",
+                          "name": {
+                            "get": "properties.queryParameter"
+                          }
+                        }
+                      ],
+                      [
+                        "offset",
+                        {
+                          "op": "add",
+                          "args": [
+                            {
+                              "op": "integer",
+                              "value": {
+                                "op": "query",
+                                "name": "offset"
+                              },
+                              "default": 0,
+                              "min": 0,
+                              "max": 99999
+                            },
+                            {
+                              "get": "properties.pageSize"
+                            }
+                          ]
+                        }
+                      ]
+                    ]
+                  }
+                },
+                "text": "Next",
+                "if": {
+                  "op": "lt",
+                  "args": [
+                    {
+                      "op": "add",
+                      "args": [
+                        {
+                          "op": "integer",
+                          "value": {
+                            "op": "query",
+                            "name": "offset"
+                          },
+                          "default": 0,
+                          "min": 0,
+                          "max": 99999
+                        },
+                        {
+                          "get": "properties.pageSize"
+                        }
+                      ]
+                    },
+                    {
+                      "get": "data.value.total"
+                    }
+                  ]
+                }
+              }
+            ],
+            "if": {
+              "op": "and",
+              "args": [
+                {
+                  "op": "eq",
+                  "args": [
+                    {
+                      "get": "data.state"
+                    },
+                    "ready"
+                  ]
+                },
+                {
+                  "op": "or",
+                  "args": [
+                    {
+                      "op": "gt",
+                      "args": [
+                        {
+                          "op": "integer",
+                          "value": {
+                            "op": "query",
+                            "name": "offset"
+                          },
+                          "default": 0,
+                          "min": 0,
+                          "max": 99999
+                        },
+                        0
+                      ]
+                    },
+                    {
+                      "op": "lt",
+                      "args": [
+                        {
+                          "op": "add",
+                          "args": [
+                            {
+                              "op": "integer",
+                              "value": {
+                                "op": "query",
+                                "name": "offset"
+                              },
+                              "default": 0,
+                              "min": 0,
+                              "max": 99999
+                            },
+                            {
+                              "get": "properties.pageSize"
+                            }
+                          ]
+                        },
+                        {
+                          "get": "data.value.total"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "divdev/search-section",
+    "publisher": "divdev",
+    "extends": "wydgit.core/section",
+    "properties": {},
+    "slots": {}
+  }
+]

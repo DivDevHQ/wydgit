@@ -40,6 +40,7 @@ export function readInstalledState(root) {
         Object.hasOwn(entry,key)&&Object.hasOwn(entry.receipt,key)&&JSON.stringify(clean(entry[key]))===JSON.stringify(clean(entry.receipt[key])))&&
       JSON.stringify(clean(entry.receipt.bindings))===JSON.stringify(m.bindings),'PACKAGE.CATALOG','Catalog differs from installation receipt');
     check(paths.every(file=>entry.receipt.resources?.[file]?.sha256===digest(entry.resources[file])),'PACKAGE.DRIFT','Installed resource hash differs from receipt');
+    for(const key of ['additions','page','navigation','properties','libraryScopes'])check(Object.hasOwn(entry,key)===Object.hasOwn(entry.receipt,key)&&(!Object.hasOwn(entry,key)||JSON.stringify(clean(entry[key]))===JSON.stringify(clean(entry.receipt[key]))),'PACKAGE.CATALOG','Initial attachment differs from receipt');
     const definitions=JSON.parse(entry.resources[m.resources.prototypes]);
     check(Array.isArray(definitions)&&definitions.length<=LIMITS.prototypes&&definitions.every(d=>d.publisher===m.publisher&&d.id?.startsWith(m.publisher+'/')),'PACKAGE.CATALOG','Invalid catalog prototypes');
   }

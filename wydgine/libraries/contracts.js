@@ -1,3 +1,4 @@
+import { presentationPolicy } from '../presentation-policy.js';
 import { serviceLimits } from './limits.js';
 import semver from 'semver';
 import { isBuiltin } from 'node:module';
@@ -24,7 +25,8 @@ const unique = (items, key, code) => {
 };
 export function validateConfig(input) {
   const code = 'LIBRARY.INVALID_CONFIG', config = data(input, code);
-  fields(config, ['schema', 'libraries'], code);
+  fields(config, ['schema', 'libraries',...(Object.hasOwn(config??{},'runtime')?['runtime']:[])], code);
+  if(Object.hasOwn(config??{},'runtime'))presentationPolicy(config.runtime);
   ensure(config.schema === 'wydgit.host/0.1' && Array.isArray(config.libraries), code, 'Unsupported host config');
   for (const entry of config.libraries) {
     ensure(record(entry), code, 'Expected library mapping');

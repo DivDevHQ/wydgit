@@ -107,6 +107,14 @@
       "skin": {
         "type": "string",
         "description": "Optional skin ID. Its tokens override inherited site/page/section tokens; omitted tokens keep the parent values."
+      },
+      "searchable": {
+        "type": "boolean",
+        "default": false
+      },
+      "published": {
+        "type": "boolean",
+        "default": true
       }
     },
     "slots": {

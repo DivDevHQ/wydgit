@@ -20,7 +20,7 @@ export function createApp({ root = projectRoot, logger = console, libraries, exe
 export async function createHostApp(options = {}) {
   const root=options.root??projectRoot;
   let lifecycle;
-  const libraries = await initializeHost({ root, lifecycle:async(id,event)=>{if(id==='wydgate'&&lifecycle)await lifecycle.session(event);} });
+  const libraries = await initializeHost({ root, adapters:options.libraryAdapters, lifecycle:async(id,event)=>{if(id==='wydgate'&&lifecycle)await lifecycle.session(event);} });
   lifecycle=createLifecycle({app:loadRepository(root).runtime.rootId,handlers:options.execution?.lifecycleHandlers,context:options.execution?.lifecycleContext});
   const app = createApp({...options,libraries,lifecycle});
   app.locals.libraries = libraries; // Trusted host access only; never serialized.

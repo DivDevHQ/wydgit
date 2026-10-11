@@ -1,0 +1,31 @@
+{
+  "schema": "wydgit/0.2",
+  "id": "wydsearch",
+  "prototype": "divdev/search-section",
+  "properties": {},
+  "slots": {
+    "blocks": [
+      {
+        "schema": "wydgit/0.2",
+        "id": "wydsearch-bar",
+        "prototype": "divdev/search-bar",
+        "properties": {
+          "destination": "/search/"
+        },
+        "slots": {},
+        "provenance": {}
+      },
+      {
+        "schema": "wydgit/0.2",
+        "id": "wydsearch-results",
+        "prototype": "divdev/search-results",
+        "properties": {
+          "index": "site"
+        },
+        "slots": {},
+        "provenance": {}
+      }
+    ]
+  },
+  "provenance": {}
+}

@@ -9,7 +9,7 @@ const emptyRequirements = () => ({ schema: 'wydgit.requirements/0.1', libraries:
 
 // The registry is published only after every enabled library and requirement
 // succeeds. Package functions and registry mutation never cross into Wydgits.
-export async function loadLibraries({ config: input, requirements: requested = emptyRequirements(), platformVersion, root, lifecycle = async () => {} }) {
+export async function loadLibraries({ config: input, requirements: requested = emptyRequirements(), platformVersion, root, lifecycle = async () => {}, adapters = {} }) {
   const config = validateConfig(input), requirements = validateRequirements(requested);
   ensure(version(platformVersion), 'LIBRARY.VERSION_MISMATCH', 'Invalid host platform version');
   ensure(typeof root === 'string' && root.length > 0, 'LIBRARY.INVALID_CONFIG', 'Host resolution root is required');
@@ -43,7 +43,9 @@ export async function loadLibraries({ config: input, requirements: requested = e
     ensure(!staged.has(manifest.id), 'LIBRARY.DUPLICATE', 'Duplicate library identity');
     for (const capability of manifest.capabilities) ensure(!capabilityOwners.has(capability), 'LIBRARY.DUPLICATE', 'Capability already has a provider');
     const limits=serviceLimits(entry.serviceLimits, manifest.id==='wydstore' && manifest.publisher==='wydgit.core' && manifest.trust==='canonical' ? STORE_SERVICE_DEFAULTS : undefined);
-    staged.set(manifest.id, { manifest, register, limits });
+    const initialization=Object.getOwnPropertyDescriptor(module,'initialize');
+    ensure(!initialization||typeof initialization.value==='function','LIBRARY.INVALID_MANIFEST','Invalid initialization hook');
+    staged.set(manifest.id, { manifest, register, limits, initialize:initialization?.value, scopeResolver:module.resolvePackageScopes });
     manifest.capabilities.forEach(capability => capabilityOwners.set(capability, manifest.id));
   }
   const resolveRequirements = input => {
@@ -85,12 +87,16 @@ export async function loadLibraries({ config: input, requirements: requested = e
         self:`library-${id}`, app:binding.app, capabilities:binding.capabilities, scopes:binding.scopes})];
     })));
   }
-  const services = new Map();
+  const services = new Map(),starts=[];
   for (const id of order) {
-    const {manifest,register,limits} = staged.get(id);
+    const {manifest,register,limits,initialize} = staged.get(id);
+    let host;try{host=initialize?await initialize(Object.freeze({root,options:configured.get(id).options??{},adapter:adapters[id]})):undefined;}catch{throw new WydgitError('LIBRARY.INITIALIZATION_FAILED','Approved library initialization failed');}
+    ensure(!host||typeof host==='object'&&Object.keys(host).every(k=>['context','start'].includes(k))&&(!host.start||typeof host.start==='function'),'LIBRARY.INITIALIZATION_FAILED','Invalid initialization result');
+    if(host?.start)starts.push(host.start);
     const handlers = new Map();
     let active = true, invalid = false;
     const api = Object.freeze({ options: configured.get(id).options ?? Object.freeze({}), failure, checkJson:checkJsonBudget,
+      hostContext:host?.context??Object.freeze({}),
       async lifecycle(event) { return lifecycle(id, freeze(validateLifecycle(event))); },
       dependency(library) {
         ensure(approved.get(id).has(library), 'LIBRARY.DEPENDENCY_DENIED', 'Dependency binding is not approved');
@@ -100,9 +106,9 @@ export async function loadLibraries({ config: input, requirements: requested = e
           call(name,input) { return dispatch.call(library,name,input); },
           invoke(apiVersion,name,input) { return dispatch.invoke(library,apiVersion,name,input); }});
       }, service(name, handler, policy = {}) {
-      const valid = active && manifest.services.some(s => s.name === name) && !handlers.has(name) && typeof handler === 'function' && policy && Object.keys(policy).every(key => ['authorize','validate'].includes(key)) && (policy.authorize === undefined || typeof policy.authorize === 'function') && (policy.validate === undefined || typeof policy.validate === 'function') && (!manifest.apiVersion || typeof policy.authorize === 'function' && typeof policy.validate === 'function');
+      const valid = active && manifest.services.some(s => s.name === name) && !handlers.has(name) && typeof handler === 'function' && policy && Object.keys(policy).every(key => ['authorize','validate','presentation'].includes(key)) && (policy.presentation === undefined || typeof policy.presentation === 'boolean') && (policy.authorize === undefined || typeof policy.authorize === 'function') && (policy.validate === undefined || typeof policy.validate === 'function') && (!manifest.apiVersion || typeof policy.authorize === 'function' && typeof policy.validate === 'function');
       if (!valid) { invalid = true; throw new WydgitError('LIBRARY.REGISTRATION_FAILED', 'Invalid service registration'); }
-      handlers.set(name, { handler, limits, enforceLegacyLimits:manifest.id==='wydstore' || configured.get(id).serviceLimits!==undefined, authorize: policy.authorize, validate: policy.validate, capability: manifest.services.find(s => s.name === name).capability });
+      handlers.set(name, { handler, limits, presentation:policy.presentation===true, enforceLegacyLimits:manifest.id==='wydstore' || configured.get(id).serviceLimits!==undefined, authorize: policy.authorize, validate: policy.validate, capability: manifest.services.find(s => s.name === name).capability });
     } });
     try {
       await register(api);
@@ -113,12 +119,14 @@ export async function loadLibraries({ config: input, requirements: requested = e
     } finally { active = false; }
     services.set(id, handlers);
   }
-  return Object.freeze({
+  const registry=Object.freeze({
     bind(context) { return bindServices(context, (id, name) => services.get(id)?.get(name), id => staged.get(id)?.manifest); },
+    bindPresentation(context){return bindServices(context,(id,name)=>{const record=services.get(id)?.get(name);return record?.presentation?record:undefined;},id=>staged.get(id)?.manifest);},
     list() { return Object.freeze([...staged.values()].map(record => record.manifest)); },
     get(id) { ensure(staged.has(id), 'LIBRARY.UNKNOWN', 'Unknown loaded library'); return staged.get(id).manifest; },
     capabilities() { return freeze([...capabilityOwners].sort(([a],[b]) => a < b ? -1 : a > b ? 1 : 0).map(([capability, library]) => ({ capability, library }))); },
     resolve: resolveRequirements,
+    resolvePackageScopes(id,scopes,app){const provider=staged.get(id);ensure(typeof provider?.scopeResolver==='function','PACKAGE.STORAGE','Library does not support package scopes');try{return freeze(validateLifecycle(provider.scopeResolver({options:configured.get(id).options??{},app,scopes})));}catch{throw new WydgitError('PACKAGE.STORAGE','Library scope approval failed');}},
     // Raw implementations are host-only. Pass bind(context), never this registry,
     // across an ordinary package boundary.
     service(id, name) {
@@ -126,4 +134,6 @@ export async function loadLibraries({ config: input, requirements: requested = e
       return services.get(id).get(name).handler;
     }
   });
+  for(const start of starts)try{await start(registry);}catch{throw new WydgitError('LIBRARY.INITIALIZATION_FAILED','Approved library startup failed');}
+  return registry;
 }

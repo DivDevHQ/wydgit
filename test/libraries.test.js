@@ -235,3 +235,15 @@ test('versioned dependency calls retain host binding identity and cannot use the
  assert.equal(result.value.legacy.code,'SERVICE.VERSION_REQUIRED');
  assert.equal((await r.bind(caller).invoke('zbase','1.0.0','read',{})).code,'SEAM.DENIED');
 });
+
+test('approved library initialization and scope extensions are generic and private to the host',async t=>{
+ const root=temp(t);install(root,{source:`export const manifest=${JSON.stringify(fixtureManifest)};
+ export function initialize({root,options,adapter}){if(!root||adapter?.token!=='approved')throw new Error('private path');return {context:{value:options.value},async start(registry){const result=await registry.bindPresentation(adapter.caller).call('wydtest','echo',{text:'start'});if(!result.ok)throw new Error('startup');}};}
+ export function resolvePackageScopes({app,scopes}){if(app!=='site')throw new Error('wrong site');return scopes.map(resource=>({resource}));}
+ export function register({service,hostContext}){service('echo',value=>({value:hostContext.value,...value}),{presentation:true,authorize:()=>true,validate:()=>true});}`});
+ const caller=new ExecutionContext({publisher:'example',app:'site',self:'page',capabilities:['test.echo.read']});
+ const registry=await loadLibraries({config:config(entry({options:{value:'host-only'}})),root,platformVersion:platform.version,adapters:{wydtest:{token:'approved',caller}}});
+ assert.equal(JSON.stringify(registry.resolvePackageScopes('wydtest',['one'],'site')),JSON.stringify([{resource:'one'}]));assert.throws(()=>registry.resolvePackageScopes('wydtest',['one'],'other'),{code:'PACKAGE.STORAGE'});
+ const result=await registry.bindPresentation(caller).call('wydtest','echo',{text:'query'});assert.equal(result.value.value,'host-only');assert.equal(registry.hostContext,undefined);
+ await rejects(()=>loadLibraries({config:config(entry()),root,platformVersion:platform.version}), 'LIBRARY.INITIALIZATION_FAILED');
+});

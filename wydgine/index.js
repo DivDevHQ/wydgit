@@ -1,4 +1,5 @@
 import { renderField } from './form-renderer.js';
+import { renderComponent } from './components.js';
 import { marked, Renderer } from 'marked';
 import sanitizeHtml from 'sanitize-html';
 import { loadRepository } from './repository.js';
@@ -70,8 +71,8 @@ export function errorDocument(status = 500) {
 }
 
 // Pure rendering API: accepts an in-memory model, knows nothing about the host adapter or HTTP.
-export function renderSite(model, requestPath = '/', {csrf=''} = {}) {
-  const diagnostics = [...(model.diagnostics || [])];
+export function renderSite(model, requestPath = '/', {csrf='',components} = {}) {
+  const diagnostics = [...(model.diagnostics || [])],componentBudget={steps:0,elements:0,bytes:0};
   const guard = fn => { try { return fn(); } catch (error) { diagnostics.push(error.message); return placeholder(); } };
   try {
     const site = resolve(model.site, 'site', model);
@@ -106,6 +107,7 @@ export function renderSite(model, requestPath = '/', {csrf=''} = {}) {
       });
     }
     function block(raw) {
+      if(raw.presentation)return guard(()=>{return renderComponent(raw,components?.states.get(raw.id),components?.query??{},pagePath(page,site),escapeHtml,skinAttribute(raw,model),claim,componentBudget);});
       if(raw.prototype==='field')return renderField(raw,escapeHtml,claim);
       if(raw.prototype==='section')return nestedSection(raw);
       if(raw.prototype==='form'){const presentation=resolve({...raw,prototype:'section'},'section',model);claim(raw.id);return `<form class="wyd-form ${classes(presentation)}"${skinAttribute(presentation,model)} id="${escapeHtml(raw.id)}" method="post" data-wydgit="${escapeHtml(raw.id)}"><input type="hidden" name="_target" value="${escapeHtml(raw.id)}"><input type="hidden" name="_action" value="Submit"><input type="hidden" name="_csrf" value="${escapeHtml(csrf)}">${raw.content?.value?renderMarkdown(raw.content.value):''}${sectionContent(presentation)}${(raw.fields??[]).map(block).join('')}<button class="wyd-submit" type="submit">${escapeHtml(raw.label)}</button></form>`;}

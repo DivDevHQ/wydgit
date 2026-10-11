@@ -1,3 +1,4 @@
+import { validatePresentation } from '../components.js';
 import { validate } from '../sewn/validate.js';
 import { methods as facadeMethods } from '../sewn/bindings.js';
 import { clean, freeze, record, requireThat as check } from './validation.js';
@@ -49,7 +50,8 @@ export class PrototypeRegistry {
         check(record(rule) && Array.isArray(rule.accepts) && rule.accepts.length > 0 && rule.accepts.every(x => typeof x === 'string'), 'PROTOTYPE.SLOT', 'Slot needs accepted prototypes');
         check(rule.ordered === true && Number.isInteger(rule.min ?? 0) && (rule.min ?? 0) >= 0 && (rule.max === undefined || (Number.isInteger(rule.max) && rule.max >= (rule.min ?? 0))), 'PROTOTYPE.SLOT', 'Invalid ordered slot cardinality');
       }
-      const result = freeze({ ...d, abstract: d.abstract ?? false, properties, slots, methods, ancestors: base ? [base.id, ...base.ancestors] : [] });
+      const presentation=d.presentation===undefined?base?.presentation:validatePresentation(d.presentation);
+      const result = freeze({ ...d, ...(presentation?{presentation}:{}), abstract: d.abstract ?? false, properties, slots, methods, ancestors: base ? [base.id, ...base.ancestors] : [] });
       visiting.delete(id); this.#definitions.set(id, result); return result;
     };
     for (const id of raw.keys()) resolve(id);

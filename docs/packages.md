@@ -241,3 +241,28 @@ supported-capacity target; catalog byte limits and other resource bounds also ap
 See [canonical service contracts](canonical-services.md) for exact API versions,
 `SERVICES.Invoke`, `sewn/0.4`, execution identities and compatibility limitations.
 Existing v0.2 library calls, grants and ownership rules remain supported.
+
+## Search package initial provisioning — 0.3-C
+
+The existing installer additionally accepts trusted operator policy `additions`
+(up to 32 declared-package prototype instance trees), optional empty native `page`,
+template `properties` overrides keyed by instance ID, and `navigation` specifying
+an existing App navigation ID and link label. These are initial installation
+choices, persisted in matching catalog/receipt metadata, not package executable
+code or a new lifecycle. Authorized object edits and Page ownership rules apply
+to every placement. Attachments must preserve their approved positions and the
+aggregate instance count is bounded to 256.
+
+Optional manifest `permissions.scopes.<library>` lists exact logical resource IDs.
+The required, host-approved library resolves them into runtime grants for the
+current App through its generic `resolvePackageScopes` hook. WydSearch resolves
+exact enabled site index IDs; other libraries can supply their own resource policy.
+Trusted `infrastructure.search` selects an index and explicit source Page IDs;
+new infrastructure also requires provider/location approval. Reuse cannot alter
+existing source policy. Provisioning uses the same staged configuration/catalog
+commit and new-directory rollback as WydStore. See
+[the installable search package](../examples/search/README.md).
+
+Package prototypes can define bounded declarative `presentation` templates and
+canonical read-service bindings. See [generic components](components.md). There
+is no package JavaScript, custom route or raw-HTML escape hatch.

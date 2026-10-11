@@ -13,6 +13,7 @@ import { loadRepository } from '../wydgine/repository.js';
 import { ExecutionContext } from '../wydgine/seam/context.js';
 import { importNodePackage } from '../wydgine/libraries/node-package.js';
 import { planOperatorInstall, applyOperatorInstall, physicalStoreId, storageLocation } from './package-infrastructure.js';
+import { searchPackagePolicy } from '../examples/search/install-policy.js';
 const usage='Usage: node scripts/install-package.js PACKAGE [--approval HOST-POLICY.json] [--apply] [--root SITE]';
 const yes=answer=>/^y(?:es)?$/i.test(answer.trim());
 const idsOf=node=>[node.id,...Object.values(node.slots).flat().flatMap(idsOf)];
@@ -38,6 +39,7 @@ export async function buildOperatorPolicy({root,packagePath,ask,write}) {
 
   const model=loadRepository(root),app=model.runtime.rootId;
   const config=JSON.parse(JSON.stringify(validateConfig(safeRead(root,'wydgit.config.json'))));
+  if(manifest.id==='divdev/search'&&manifest.permissions.scopes.wydsearch)return searchPackagePolicy({model,manifest,config,ask,write,chooseOne});
   const infrastructure={enableWydstore:false,stores:[]};
   for(const required of manifest.requires.libraries){
     const library=config.libraries.find(l=>l.id===required.library);
@@ -117,7 +119,7 @@ export async function runInstaller({args=process.argv.slice(2),input=stdin,outpu
       ask=async prompt=>{output.write(prompt);const line=await lines.next();check(!line.done,'PACKAGE.CLI','Input ended; installation aborted');return line.value;};
     }
     const policy=flags.approval?JSON.parse(await fs.readFile(flags.approval,'utf8')):await buildOperatorPolicy({root,packagePath,ask,write});
-    if(flags.approval)fields(policy,['placement','approvals','storageMappings','installationContext',...(policy?.infrastructure!==undefined?['infrastructure']:[])],'PACKAGE.POLICY');
+    if(flags.approval)fields(policy,['placement','approvals','storageMappings','installationContext',...['infrastructure','additions','page','navigation','properties'].filter(key=>Object.hasOwn(policy??{},key))],'PACKAGE.POLICY');
     if(!policy){write('Installation cancelled. No changes made.');return null;}
     const manifest=validatePackageManifest(safeRead(packagePath,'manifest.json',LIMITS.manifest));
     const resolved=await planOperatorInstall({root,packagePath,manifest,policy,installationContext:new ExecutionContext(policy.installationContext)}),{plan}=resolved;

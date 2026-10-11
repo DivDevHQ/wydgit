@@ -22,7 +22,7 @@ export function storageLocation(root,relative) {
 export async function planOperatorInstall({policy,...options}) {
  let hostConfig;const roots=[];
  if(policy.infrastructure){
-  fields(policy.infrastructure,['enableWydstore','stores'],'PACKAGE.INFRASTRUCTURE');
+  fields(policy.infrastructure,['enableWydstore','stores',...(policy.infrastructure.search!==undefined?['search']:[])],'PACKAGE.INFRASTRUCTURE');
   check(typeof policy.infrastructure.enableWydstore==='boolean'&&Array.isArray(policy.infrastructure.stores)&&policy.infrastructure.stores.length<=16,'PACKAGE.INFRASTRUCTURE','Invalid infrastructure approval');
   hostConfig=JSON.parse(JSON.stringify(validateConfig(await fs.readFile(path.join(options.root,'wydgit.config.json'),'utf8'))));
   const library=hostConfig.libraries.find(l=>l.id==='wydstore');
@@ -38,11 +38,35 @@ export async function planOperatorInstall({policy,...options}) {
    check(!existsSync(root)&&!roots.includes(root),'PACKAGE.STORAGE','New storage needs an unused directory');roots.push(root);
    library.options.stores.push({id:request.id,app:policy.installationContext.app,publisher:options.manifest.publisher,package:options.manifest.id,provider:request.provider,root,collections:clean(request.collections)});
   }
+  if(policy.infrastructure.search){
+   const request=policy.infrastructure.search;fields(request,['index','pages',...['provider','location'].filter(key=>Object.hasOwn(request,key))],'PACKAGE.INFRASTRUCTURE');
+   check(options.manifest.requires.libraries.some(r=>r.library==='wydsearch')&&options.manifest.permissions.scopes.wydsearch?.includes(request.index),'PACKAGE.INFRASTRUCTURE','Undeclared search index');
+   const {loadRepository}=await import('../wydgine/repository.js'),model=loadRepository(options.root),app=model.runtime.rootId;
+   check(Array.isArray(request.pages)&&request.pages.length>0&&request.pages.length<=256&&new Set(request.pages).size===request.pages.length&&request.pages.every(id=>model.pages.has(id)),'PACKAGE.INFRASTRUCTURE','Select existing public source Pages explicitly');
+   let search=hostConfig.libraries.find(l=>l.id==='wydsearch');
+   if(!search){search={id:'wydsearch',package:'@wydgit/search',enabled:false,version:'^0.1.0-alpha.1',publisher:'wydgit.core',trust:'canonical'};hostConfig.libraries.push(search);}
+   check(search.package==='@wydgit/search'&&search.publisher==='wydgit.core'&&search.trust==='canonical','PACKAGE.LIBRARY','Approved canonical WydSearch required');await importNodePackage(search,options.root);
+   const existing=search.options?.indexes?.find(i=>i.id===request.index);
+   if(existing){
+    const source=search.options.pageSource?.indexes?.find(i=>i.id===request.index);
+    check(existing.app===app&&source&&JSON.stringify([...source.pages].sort())===JSON.stringify([...request.pages].sort())&&request.provider===undefined&&request.location===undefined,'PACKAGE.INFRASTRUCTURE','Reuse cannot change existing source policy or storage');
+   }else{
+    check(['json','sqlite'].includes(request.provider)&&typeof request.location==='string','PACKAGE.INFRASTRUCTURE','Approve a provider and new location');
+    const root=storageLocation(options.root,request.location);check(!existsSync(root)&&!roots.includes(root),'PACKAGE.STORAGE','Search storage needs an unused directory');roots.push(root);
+    const id='search-'+request.index;check(!library.options.stores.some(s=>s.id===id),'PACKAGE.STORAGE','Search store ID collision');
+    library.options.stores.push({id,app,publisher:'wydgit.core',package:'library:wydsearch',provider:request.provider,root,collections:[{id:'indexes',schemaId:'search-index',schemaVersion:1,fields:{schemaVersion:{type:'number',required:true},documents:{type:'array',required:true}}}]});
+    search.options??={indexes:[]};search.options.indexes.push({id:request.index,app,store:id,collection:'indexes'});
+    search.options.pageSource??={schema:'wydgit.search-source/0.1',indexes:[]};search.options.pageSource.indexes.push({id:request.index,publisher:'wydgit.core',package:'host:site-search',principal:'host:site-search',pages:[...request.pages]});
+    search.bindings??=[{library:'wydstore',app,capabilities:['store.records.read','store.records.create','store.records.write'],scopes:{wydstore:[]}}];
+    const binding=search.bindings.find(b=>b.library==='wydstore');check(binding&&binding.app===app&&Array.isArray(binding.scopes.wydstore),'PACKAGE.INFRASTRUCTURE','Incompatible existing search dependency binding');binding.scopes.wydstore.push({store:id,collection:'indexes'});
+   }
+   search.enabled=true;
+  }
   validateStoreConfig(library.options);validateConfig(hostConfig);
   for(const store of library.options.stores)if(!roots.includes(store.root))await safeRoot(store.root);
-  if(policy.infrastructure.stores.some(s=>s.provider==='sqlite')){const require=createRequire(path.join(options.root,'package.json')),Database=require('better-sqlite3');const probe=new Database(':memory:');probe.close();}
+  if(policy.infrastructure.stores.some(s=>s.provider==='sqlite')||policy.infrastructure.search?.provider==='sqlite'){const require=createRequire(path.join(options.root,'package.json')),Database=require('better-sqlite3');const probe=new Database(':memory:');probe.close();}
  }
- const plan=await planPackageInstall({...options,placement:policy.placement,approvals:policy.approvals,storageMappings:policy.storageMappings,installationContext:options.installationContext,hostConfig});
+ const plan=await planPackageInstall({...options,placement:policy.placement,approvals:policy.approvals,storageMappings:policy.storageMappings,installationContext:options.installationContext,hostConfig,...Object.fromEntries(['additions','page','navigation','properties'].filter(key=>Object.hasOwn(policy,key)).map(key=>[key,policy[key]]))});
  return {plan,infrastructure:policy.infrastructure??null,hostConfig,roots,root:options.root};
 }
 export async function applyOperatorInstall(resolved,hooks={}) {

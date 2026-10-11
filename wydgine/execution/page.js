@@ -7,11 +7,13 @@ import { requestFacade,parseMap } from '../http/input.js';
 import { createResponse } from '../http/response.js';
 import { webModel } from '../web-model.js';
 import { renderSite,errorDocument } from '../index.js';
+import { prepareComponents,createPresentationLedger } from '../components.js';
 
-export async function executePage({model,pageId,session,input,context,handlers=[],actions=[],events=new EventRegistry(),files,libraries,serviceMappings,csrf,render=renderSite}) {
+export async function executePage({model,pageId,session,input,context,runtimeSettings={},handlers=[],actions=[],events=new EventRegistry(),files,libraries,serviceMappings,csrf,render=renderSite}) {
   handlers=prepareHandlers(handlers,events);actions=actions.map(record=>prepareAction(record,events));
   check(context.app===session.view.app&&session.active(),'EVENT.DENIED','Invalid owning Session');
   check((context.identity?.sessionId??null)===(session.identity?.sessionId??null),'EVENT.DENIED','Wrong Session identity');
+  const presentationLedger=createPresentationLedger(context,pageId,runtimeSettings);
   let runtime=hydrate(dehydrate(model.runtime,{includeSensitive:true}),model.registry),alive=true,writable=true,unloading=false;
   const ledger=[],initialized=new Set(),archive=new Map(),errors=[];let failure;
   const response=createResponse(context),requestData={...input,route:{page:pageId}};
@@ -121,7 +123,7 @@ export async function executePage({model,pageId,session,input,context,handlers=[
     }
     if(!response.explicit)await phase('PreRender');
     writable=false;
-    if(!response.explicit){const result=await render(webModel(runtime,model),input.path,{csrf});response.tree(result.html,result.status);}
+    if(!response.explicit){const projection=webModel(runtime,model);const components=await prepareComponents(projection,pageId,input,context,libraries,session,presentationLedger);const result=await render(projection,input.path,{csrf,components});response.tree(result.html,result.status);}
   }catch(error){failure=safeError(error);}
   finally {
     writable=false;unloading=true;response.beginCleanup();dispatcher.close();

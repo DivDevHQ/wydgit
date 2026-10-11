@@ -1,0 +1,49 @@
+{
+  "schema": "wydgit-package/0.1",
+  "id": "divdev/search",
+  "publisher": "divdev",
+  "version": "0.1.0",
+  "platform": "^0.3.0-alpha.1",
+  "runtime": [
+    "server"
+  ],
+  "resources": {
+    "prototypes": "prototypes.json",
+    "template": "section.json",
+    "sources": {}
+  },
+  "requires": {
+    "schema": "wydgit.requirements/0.1",
+    "libraries": [
+      {
+        "library": "wydsearch",
+        "version": "^0.1.0-alpha.1"
+      }
+    ]
+  },
+  "storage": [],
+  "permissions": {
+    "capabilities": [
+      "search.documents.read"
+    ],
+    "traversal": [],
+    "visible": [
+      "wydsearch",
+      "wydsearch-*"
+    ],
+    "editable": [],
+    "scopes": {
+      "wydstore": [],
+      "wydsearch": [
+        "site"
+      ]
+    }
+  },
+  "bindings": [],
+  "installables": [
+    {
+      "id": "search-section",
+      "kind": "section-template"
+    }
+  ]
+}

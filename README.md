@@ -71,7 +71,7 @@ The architectural contract is:
 
 [`docs/FOUNDING-ARCHITECTURE.md`](docs/FOUNDING-ARCHITECTURE.md)
 
-Current development version: **0.3.0-alpha.1**. Completed platform milestones
+Current development version: **0.3.0-alpha.3**. Completed platform milestones
 update `package.json`, matching root metadata in `package-lock.json`, and
 `content/app.json` → `properties.revision` together. Version updates do not create
 Git tags or publish releases. Completed milestones also update [CHANGELOG.md](CHANGELOG.md).
@@ -301,6 +301,15 @@ installer can provision host-owned `.wydgit-data`; no manual WydStore setup is
 needed. Packages cannot approve their own grants. See [package contracts and recovery](docs/packages.md)
 and the [Guestbook walkthrough](examples/guestbook/README.md). Use a disposable copy
 for experiments: there is no uninstall operation.
+
+## 0.3-C site search
+
+The [0.3-C WydSearch contract](docs/wydsearch.md) documents portable bounded site
+search and package-defined Search Bar/Results Wydgits. Install the
+[reusable declarative package](examples/search/README.md) in an existing site. Run `node examples/testsearch/run.js`
+for a disposable acceptance site on port 3001; set `WYDSEARCH_ADAPTER=sqlite`
+to use the same application with SQLite. Search Bar placement uses Page header
+Sections, and content refresh requires an explicit trusted indexing call.
 
 ## 0.2 limitations
 

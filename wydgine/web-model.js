@@ -4,7 +4,9 @@ export function webModel(runtime, model) {
   const project = id => {
     const object = runtime.get(id);
     const kind = ['form','field','app','page','section','block','navigation'].find(kind=>model.registry?.isA(object.prototype,`wydgit.core/${kind}`))??object.prototype.split('/')[1];
-    const node = { id, prototype: kind === 'app' ? 'site' : kind, ...structuredClone(object.properties) };
+    const presentation=model.registry?.get(object.prototype).presentation;
+    const properties=structuredClone(object.properties);delete properties.presentation;
+    const node = { ...properties, id, prototype: kind === 'app' ? 'site' : kind, ...(presentation?{presentation}:{} ) };
     if(kind==='field'){node.controlKind=fieldKind(object.prototype,model.registry);if(sensitive(object.prototype,model.registry))node.value='';}
     for (const [slot, children] of Object.entries(object.slots)) {
       node[slot] = slot === 'navigation' && kind === 'page' ? children.map(project)[0] : children.map(project);

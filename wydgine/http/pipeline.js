@@ -1,3 +1,7 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { validateConfig } from '../libraries/contracts.js';
+import { presentationPolicy } from '../presentation-policy.js';
 import { prepareHandlers,prepareAction } from '../events/index.js';
 import { activatePackages } from '../packages/index.js';
 import { stateFingerprint } from '../packages/state.js';
@@ -11,6 +15,8 @@ import { createGate } from '@wydgit/gate/client';
 import { errorDocument,pagePath } from '../index.js';
 export function createPipeline({root,libraries,execution={},lifecycle}) {
   execution={...execution,handlers:prepareHandlers(execution.handlers??[],execution.events),actions:(execution.actions??[]).map(record=>prepareAction(record,execution.events))};
+  let runtimeSettings;
+  try{runtimeSettings=presentationPolicy(validateConfig(readFileSync(path.join(root,'wydgit.config.json'),'utf8')).runtime);}catch(error){if(error.code!=='ENOENT')throw error;runtimeSettings=presentationPolicy();} // Legacy createApp may render without a library host config; createHostApp still requires it.
   const model=loadRepository(root),app=model.runtime.rootId;
   const catalogHead=stateFingerprint(root);
   const packages=model.installed?activatePackages(model,libraries,root):null;
@@ -40,7 +46,7 @@ export function createPipeline({root,libraries,execution={},lifecycle}) {
         input.action={target:single('_target'),type:single('_action'),csrf:single('_csrf'),payload:{}};
         if(input.action.type==='Change')input.action.payload={OldValue:model.runtime.get(input.action.target).properties.value,NewValue:single('value')};
       }
-      result=await executePage({model,pageId:page.id,session,input,context,handlers:execution.handlers,actions:execution.actions,events:execution.events,files:execution.files,libraries,serviceMappings:packages?.pages.get(page.id)?.storageMappings,csrf:session.csrf});
+      result=await executePage({model,pageId:page.id,session,input,context,runtimeSettings,handlers:execution.handlers,actions:execution.actions,events:execution.events,files:execution.files,libraries,serviceMappings:packages?.pages.get(page.id)?.storageMappings,csrf:session.csrf});
       await result.response.send(res,req.method==='HEAD');
     }catch{if(!res.headersSent){res.statusCode=400;res.setHeader('Content-Type','text/html; charset=utf-8');res.end(errorDocument());}else res.destroy();}
     finally{await result?.response.close();}

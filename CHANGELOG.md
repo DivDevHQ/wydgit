@@ -1,3 +1,32 @@
+## 0.3.0-alpha.3 — 0.3-C WydSearch and Search UI Wydgits
+
+- Added canonical WydSearch 0.1.0-alpha.1 / API 1.0.0 through the existing
+  dispatcher and an explicitly scoped WydStore dependency, portable on JSON/SQLite.
+- Bounded Unicode token/phrase matching, deterministic weighted ranking,
+  filtering, pagination, suggestions and visible-only metadata; current trusted
+  source state excludes protected, stale, deleted and unpublished content.
+- Added ownership-scoped idempotent indexing/removal and atomic bounded refresh
+  batches with revision conflict retries and effective pre-commit response checks.
+- Added package-defined Search Bar/Results Block prototypes, accessible GET submission,
+  safe escaped rendering and existing light/dark skin tokens. Header placement
+  uses existing Page Sections; no global header slot or Page authority changes.
+- Added a disposable acceptance site, JSON/SQLite search/UI/security tests and
+  documentation of resource policies, manual refresh and snapshot-history costs.
+- Added installable `divdev/search` declarative package, independent initial
+  component placements, optional Results Page/navigation and approved canonical
+  search provisioning through normal installer receipts and rollback. The demo
+  now consumes the installed package.
+- Kept Wydgine generic: bounded declarative component presentation and explicit
+  read-only canonical-service bindings; approved library initialization and scope
+  resolution hooks. Search source policy/refresh belongs to WydSearch, and search
+  templates/properties belong to the installable package.
+- Hardened presentation budgets with validated host defaults (4, ceiling 16),
+  private Page-execution ledgers shared across nesting/retries, and Form-field
+  coverage. Exhaustion discards result data; SEWN/canonical budgets stay separate.
+- Advanced platform, lockfile, App revision and current-version documentation to
+  0.3.0-alpha.3. Independent library versions and compatibility ranges are unchanged;
+  no new third-party dependency or release action.
+
 ## 0.3-B — WydStore Foundation
 
 - Advanced WydStore to 0.1.0-alpha.3 and service API 1.0.0, with explicit legacy

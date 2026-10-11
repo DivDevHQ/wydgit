@@ -366,7 +366,7 @@ nothing; staged apply creates infrastructure only after final confirmation. See
 ## 0.3-B foundation (current)
 
 WydStore implementation version is **0.1.0-alpha.3**, service API **1.0.0**.
-The platform version remains 0.3.0-alpha.1. The preceding sections describe the
+The current platform version is 0.3.0-alpha.3. The preceding sections describe the
 retained legacy API and backend safeguards; this section extends those contracts.
 SQLite is the recommended production backend. JSON remains a small development
 backend. Application behavior is portable; capacity and durability are backend properties.
