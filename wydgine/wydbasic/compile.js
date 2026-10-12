@@ -2,7 +2,7 @@ import { EventRegistry } from '../events/registry.js';
 import { parse,parseModule } from './parse.js';
 import { fail } from './errors.js';
 import { validate } from '../sewn/validate.js';
-import { contextNames, safeKey, reservedNames, MAXIMA, sourceTypes } from '../sewn/schema.js';
+import { contextNames, safeKey, controlReservedNames as reservedNames, MAXIMA, sourceTypes } from '../sewn/schema.js';
 import { reads, methods } from '../sewn/bindings.js';
 const types=sourceTypes;
 const literal=value=>({op:'literal',value});
@@ -16,7 +16,7 @@ export function compileModule(source,{registry=new EventRegistry()}={}) { return
 // Public compilation starts from source; AST lowering remains an internal stage.
 function compileAst(ast,registry,prototype=false) {
   if(prototype&&ast.events.length)fail('TYPE','Prototype modules cannot declare EVENT blocks.',ast.events[0].location);
-  let symbols=new Map();let declared=new Set();const procedures=Object.create(null),declarations=new Map(),graph=new Map();let current=null;const modern=ast.kind==='module';let objects=prototype,versioned=false,members=false;
+  let symbols=new Map();let declared=new Set();const procedures=Object.create(null),declarations=new Map(),graph=new Map();let current=null;const modern=ast.kind==='module';let objects=prototype,versioned=false,members=false,control=false;
   const error=(n,code,message)=>fail(code,message,n.location);
   const checkType=(n,actual,expected)=>{if(expected!=='Unknown'&&actual!=='Unknown'&&actual!==expected)error(n,'TYPE',`Expected ${expected}, received ${actual}.`);};
   const key=(n,k)=>{if(!safeKey(k.toLowerCase()))error(n,'UNSUPPORTED',`Reserved member '${k}'.`);return k;};
@@ -29,6 +29,7 @@ function compileAst(ast,registry,prototype=false) {
   }
   function lowerExpression(n) {
     switch(n.kind) {
+      case 'isNull':{control=true;const v=expression(n.value);if(v.kind&&v.kind!=='handle')error(n,'TYPE','Null tests require data or a Wydgit reference.');return value({op:'isNull',value:v.sewn,negate:n.negate},'Boolean');}
       case 'construct':{if(!/^[a-z][a-z0-9.-]*\/[a-z][a-z0-9-]*$/.test(n.prototype))error(n,'NAME','NEW requires a qualified prototype identity.');objects=true;const id=expression(n.id);checkType(n,id.type,'String');return value({op:'construct',type:n.prototype,id:id.sewn},'Wydgit','handle');}
       case 'literal':return value(literal(n.value),typeOf(n.value));
       case 'name':{const context=n.name.toUpperCase();if(contextNames.includes(context))return value({op:'context',name:context},['ME','PAGE'].includes(context)?'Wydgit':context==='SESSION'?'Object':'Facade',['ME','PAGE'].includes(context)?'handle':context==='SESSION'?null:context);if(context==='SERVICES')error(n,'UNSUPPORTED','SERVICES is available only through Call.');const s=symbols.get(n.name.toLowerCase());if(!s)error(n,'NAME',`Unknown variable '${n.name}'.`);return {...value({op:'variable',name:n.name.toLowerCase()},s.type,s.kind),element:s.element};}
@@ -80,6 +81,7 @@ function compileAst(ast,registry,prototype=false) {
         if(explicit==='Wydgit'&&v?.type==='Unknown')error(n,'TYPE','A Wydgit initializer requires a known handle or NULL.');
         if(explicit&&v&&!(explicit==='Wydgit'&&v.type==='Null'))checkType(n,v.type,explicit);
         const name=reserve(n,n.name,type);if(v?.element)symbols.get(name).element=v.element;if(svc){if(type!=='Object')error(n,'TYPE','Service result is an Object.');out.push({...svc,into:name});}else out.push({op:'declare',name,value:v?.sewn??literal(defaults[type])});
+      }else if(n.kind==='exitFor'){if(!inLoop)error(n,'TYPE','EXIT FOR requires an enclosing FOR EACH in this procedure.');control=true;out.push({op:'exitFor'});
       }else if(n.kind==='memberSet'){const target=expression(n.target.target);if(target.kind!=='handle')error(n,'TYPE','Member assignment requires a Wydgit reference.');key(n,n.target.key);const v=expression(n.value);if(v.kind)error(n,'TYPE','Property values require JSON data.');members=true;out.push({op:'memberSet',target:target.sewn,name:n.target.key,exact:n.target.exact===true,value:v.sewn});
       }else if(n.kind==='set') {
         const s=symbols.get(n.name.toLowerCase());if(!s)error(n,'NAME',`Unknown variable '${n.name}'.`);if(n.reference!==(s.type==='Wydgit'))error(n,'TYPE',s.type==='Wydgit'?'Wydgit assignment requires SET.':'SET requires a Wydgit variable.');
@@ -102,7 +104,7 @@ function compileAst(ast,registry,prototype=false) {
     return out;
   }
   const validated=program=>{try{return validate(program);}catch{error(ast,'COMPILE','Generated workflow exceeds or violates canonical SEWN validation bounds.');}};
-  if(!modern){const lowered=body(ast.body);return validated({schema:members?'sewn/0.5':versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.1',...((objects||versioned||members)?{procedures:{}}:{}),body:lowered});}
+  if(!modern){const lowered=body(ast.body);return validated({schema:control?'sewn/0.6':members?'sewn/0.5':versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.1',...((objects||versioned||members||control)?{procedures:{}}:{}),body:lowered});}
   for(const proc of ast.procedures){
     if(proc.params.length>MAXIMA.parameters)error(proc.params[MAXIMA.parameters],'COMPILE','Procedure parameter count exceeds SEWN limits.');
     const id=reserve(proc,proc.name,'Null');if(!/^[a-z][a-z0-9_]*$/.test(id))error(proc,'NAME','Procedure names must start with a letter.');
@@ -121,10 +123,10 @@ function compileAst(ast,registry,prototype=false) {
   const eventNames=new Set(),events=[];
   for(const event of ast.events){
     let type;try{type=registry?.resolve(event.type);}catch{error(event,'NAME',`Unknown or ambiguous event '${event.type}'.`);}if(!type)error(event,'NAME','Module compilation requires an event registry.');
-    if(eventNames.has(type))error(event,'NAME',`Duplicate EVENT '${type}'.`);eventNames.add(type);reset();const lowered=body(event.body);events.push({type,workflow:validated({schema:members?'sewn/0.5':versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.2',procedures,body:lowered})});
+    if(eventNames.has(type))error(event,'NAME',`Duplicate EVENT '${type}'.`);eventNames.add(type);reset();const lowered=body(event.body);events.push({type,workflow:validated({schema:control?'sewn/0.6':members?'sewn/0.5':versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.2',procedures,body:lowered})});
   }
   // Even a declaration-only module is validated.
-  const behavior=validated({schema:members?'sewn/0.5':versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.2',procedures,body:[]});
+  const behavior=validated({schema:control?'sewn/0.6':members?'sewn/0.5':versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.2',procedures,body:[]});
   if(prototype)return behavior;
   return Object.freeze({events:Object.freeze(events.map(Object.freeze))});
 }

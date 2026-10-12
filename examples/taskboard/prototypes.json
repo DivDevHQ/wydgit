@@ -1,0 +1,91 @@
+[
+  {
+    "id": "divdev/taskboard-container",
+    "publisher": "divdev",
+    "public": true,
+    "extends": "wydgit.core/section",
+    "properties": {},
+    "slots": {
+      "blocks": {
+        "accepts": ["wydgit.core/block", "wydgit.core/section", "wydgit.core/form"],
+        "ordered": true
+      }
+    }
+  },
+  {
+    "id": "divdev/task-move-form",
+    "publisher": "divdev",
+    "public": true,
+    "extends": "wydgit.core/form",
+    "actions": {
+      "Submit": {
+        "capability": "app.forms.submit"
+      }
+    },
+    "properties": {
+      "label": {
+        "type": "string",
+        "default": "Move"
+      }
+    },
+    "slots": {
+      "blocks": {
+        "accepts": ["wydgit.core/block", "wydgit.core/hidden-input"],
+        "ordered": true
+      }
+    }
+  },
+  {
+    "id": "divdev/task-delete-form",
+    "publisher": "divdev",
+    "public": true,
+    "extends": "wydgit.core/form",
+    "actions": {
+      "Submit": {
+        "capability": "app.forms.submit"
+      }
+    },
+    "properties": {
+      "label": {
+        "type": "string",
+        "default": "Delete"
+      }
+    },
+    "slots": {
+      "blocks": {
+        "accepts": ["wydgit.core/block", "wydgit.core/hidden-input"],
+        "ordered": true
+      }
+    }
+  },
+  {
+    "id": "divdev/task-card",
+    "publisher": "divdev",
+    "public": true,
+    "extends": "wydgit.core/section",
+    "properties": {
+      "taskTitle": {
+        "type": "string",
+        "default": "Untitled Task"
+      },
+      "status": {
+        "type": "string",
+        "default": "todo"
+      },
+      "recordId": {
+        "type": "string",
+        "default": ""
+      }
+    },
+    "slots": {
+      "blocks": {
+        "accepts": [
+          "wydgit.core/block",
+          "divdev/task-move-form",
+          "divdev/task-delete-form"
+        ],
+        "ordered": true
+      }
+    }
+  }
+]

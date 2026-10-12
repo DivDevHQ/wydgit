@@ -1,0 +1,154 @@
+{
+  "schema": "wydgit/0.2",
+  "id": "taskboard-root",
+  "prototype": "divdev/taskboard-container",
+  "properties": {},
+  "slots": {
+    "blocks": [
+      {
+        "schema": "wydgit/0.2",
+        "id": "taskboard-header",
+        "prototype": "wydgit.core/block",
+        "properties": {
+          "content": {
+            "type": "markdown",
+            "value": "# Task Board\nAdd, move, or remove tasks below."
+          }
+        },
+        "slots": {},
+        "provenance": {}
+      },
+      {
+        "schema": "wydgit/0.2",
+        "id": "taskboard-status-msg",
+        "prototype": "wydgit.core/block",
+        "properties": {
+          "content": {
+            "type": "markdown",
+            "value": ""
+          }
+        },
+        "slots": {},
+        "provenance": {}
+      },
+      {
+        "schema": "wydgit/0.2",
+        "id": "taskboard-form",
+        "prototype": "wydgit.core/form",
+        "properties": {},
+        "slots": {
+          "blocks": [
+            {
+              "schema": "wydgit/0.2",
+              "id": "taskboard-title-field",
+              "prototype": "wydgit.core/text-input",
+              "properties": {
+                "name": "title",
+                "label": "Task Title",
+                "placeholder": "Enter task name...",
+                "required": true,
+                "maxLength": 100
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "taskboard-status-field",
+              "prototype": "wydgit.core/select",
+              "properties": {
+                "name": "status",
+                "label": "Status",
+                "value": "todo",
+                "required": true,
+                "options": [
+                  { "label": "To Do", "value": "todo", "enabled": true },
+                  { "label": "In Progress", "value": "doing", "enabled": true },
+                  { "label": "Done", "value": "done", "enabled": true }
+                ]
+              },
+              "slots": {},
+              "provenance": {}
+            }
+          ]
+        },
+        "provenance": {}
+      },
+      {
+        "schema": "wydgit/0.2",
+        "id": "taskboard-list-section",
+        "prototype": "wydgit.core/section",
+        "properties": {},
+        "slots": {
+          "blocks": [
+            {
+              "schema": "wydgit/0.2",
+              "id": "col-todo",
+              "prototype": "wydgit.core/section",
+              "properties": {},
+              "slots": {
+                "blocks": [
+                  {
+                    "schema": "wydgit/0.2",
+                    "id": "hdr-todo",
+                    "prototype": "wydgit.core/block",
+                    "properties": {
+                      "content": { "type": "markdown", "value": "### To Do" }
+                    },
+                    "slots": {},
+                    "provenance": {}
+                  }
+                ]
+              },
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "col-doing",
+              "prototype": "wydgit.core/section",
+              "properties": {},
+              "slots": {
+                "blocks": [
+                  {
+                    "schema": "wydgit/0.2",
+                    "id": "hdr-doing",
+                    "prototype": "wydgit.core/block",
+                    "properties": {
+                      "content": { "type": "markdown", "value": "### In Progress" }
+                    },
+                    "slots": {},
+                    "provenance": {}
+                  }
+                ]
+              },
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "col-done",
+              "prototype": "wydgit.core/section",
+              "properties": {},
+              "slots": {
+                "blocks": [
+                  {
+                    "schema": "wydgit/0.2",
+                    "id": "hdr-done",
+                    "prototype": "wydgit.core/block",
+                    "properties": {
+                      "content": { "type": "markdown", "value": "### Completed" }
+                    },
+                    "slots": {},
+                    "provenance": {}
+                  }
+                ]
+              },
+              "provenance": {}
+            }
+          ]
+        },
+        "provenance": {}
+      }
+    ]
+  },
+  "provenance": {}
+}

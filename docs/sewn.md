@@ -274,3 +274,24 @@ Existing v0.2 library calls, grants and ownership rules remain supported.
 preserve case. Existing schemas remain closed and existing lowercase behavior
 remains valid. Execution carries an unforgeable declaring-class frame separately
 from the unchanged caller SEAM context. See [canonical OOP](canonical-oop.md).
+
+## Version 0.6: explicit null tests and lexical loop exit
+
+`sewn/0.6` extends the closed 0.5 grammar using the same `{schema,procedures,body}`
+envelope. Older wire schemas remain unchanged and reject these operations.
+
+- Expression `isNull {value, negate}` evaluates its operand once and returns the
+  Boolean `value === null` (or its inverse when negate is true). negate is a
+  required Boolean. JSON data and opaque Wydgit references are accepted; facade
+  tokens are rejected. A live handle remains opaque and retains its binding,
+  invocation and construction-lifetime checks. Empty/falsy values remain non-null.
+- Statement `exitFor {}` returns an internal loop-exit signal. The nearest
+  forEach consumes it, releases its variable and continues after the loop. It is
+  validated only within a lexical loop in that procedure/workflow; a callee cannot
+  exit its caller's loop. The signal cannot escape as a workflow JSON result.
+
+All existing step, iteration, depth, variable, call, service and time budgets
+continue to apply. Early exit spends the work performed and skips remaining
+iterations, without resetting counters. Prototype methods may use schema 0.6.
+Independent hand-authored wire tests cover grammar/version boundaries, null/falsy
+values, handle guards, nested loops, procedure isolation, cleanup and resource limits.

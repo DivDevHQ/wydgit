@@ -26,6 +26,7 @@ export function parse(source,{module=false}={}) {
     while(true) {
       if(eat('.')){const exact=!!eat('[');const key=identifier();if(exact)expect(']');left=node('member',start,{target:left,key:key.value,keyLocation:key.location,exact});continue;}
       if(eat('(')){const args=[];blank();if(!is(')'))do{blank();args.push(expression());blank();}while(eat(','));expect(')');left=node('invoke',start,{target:left,args});continue;}
+      if(min<=3&&eat('IS')){const negate=!!eat('NOT');expect('NULL');left=node('isNull',start,{value:left,negate});continue;}
       const op=String(token().value).toUpperCase(),p=['identifier','symbol'].includes(token().kind)?precedence[op]:undefined;if(p===undefined||p<min)break;take();left=node('binary',start,{operator:op,left,right:expression(p+1)});
     }
     depth--;return left;
@@ -46,6 +47,7 @@ export function parse(source,{module=false}={}) {
     if(eat('DIM')) {const name=identifier();let type=null,value=null;if(eat('AS'))type=identifier().value;if(eat('='))value=expression();result=node('declare',start,{name:name.value,type,value});}
     else if(eat('IF'))return branch(start,nesting);
     else if(eat('FOR')){expect('EACH');const name=identifier();expect('IN');const items=expression();endLine();const body=block(['NEXT'],nesting+1);expect('NEXT');if(token().kind==='identifier'){const next=take();if(next.value.toLowerCase()!==name.value.toLowerCase())fail('NAME','NEXT variable does not match.',next.location);}endLine();return node('forEach',start,{name:name.value,items,body});}
+    else if(eat('EXIT')){expect('FOR');result=node('exitFor',start);}
     else if(eat('RETURN'))result=node('return',start,{value:['newline','eof'].includes(token().kind)?null:expression()});
     else if(eat('CALL'))result=node('procedureCall',start,{value:expression()});
     else if(eat('STOP'))result=node('stop',start,{value:['newline','eof'].includes(token().kind)?null:expression()});

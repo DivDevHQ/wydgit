@@ -105,6 +105,50 @@ safe handle methods in their loops. The executor owns all iteration/step limits.
 RETURN requires a JSON-safe result. STOP accepts an optional JSON-safe reason.
 They end only the current workflow, not the event lifecycle.
 
+## Explicit null tests and loop exit
+
+`value IS NULL` and `value IS NOT NULL` return Booleans for JSON data or nullable
+Wydgit references. Use the two keywords `IS NOT`; `IsNot` is not an alias.
+NULL is distinct from FALSE, zero, an empty String and empty containers. There is
+no implicit truthiness, object equality or conversion to Boolean. Safe facades
+such as REQUEST itself are not data/null-test operands. Checks on non-null Wydgit
+references retain context, invocation and consumed-draft guards and do not expose
+the handle as JSON.
+
+```basic
+DIM listSec AS Wydgit
+SET listSec = FindNode(rootSec, "blocks", "taskboard-list-section")
+IF listSec IS NOT NULL THEN
+    ' Use the reference returned by the single search.
+END IF
+```
+
+Null tests have comparison precedence, tighter than AND/OR. `NOT item IS NULL`
+means `NOT (item IS NULL)`. Only NULL is accepted on the right of IS.
+
+`EXIT FOR` exits the nearest enclosing FOR EACH in the current procedure or
+workflow. It works inside nested IF blocks, resumes after NEXT, and releases the
+loop variable. It cannot exit a caller's loop across a SUB/FUNCTION/method call,
+and is rejected outside a lexical loop. RETURN and STOP retain their existing
+meaning. It skips later iterations; it does not reset shared execution budgets.
+
+```basic
+DIM listSec AS Wydgit
+FOR EACH node IN rootSec.related("children", "blocks")
+    IF node.id = "taskboard-list-section" THEN
+        SET listSec = node
+        EXIT FOR
+    END IF
+NEXT node
+IF listSec IS NULL THEN
+    ' No matching visible child was found.
+END IF
+```
+
+These features select `sewn/0.6`; older source without them keeps its existing wire
+version. FindNode helpers may still RETURN a nullable Wydgit reference. Do not
+predeclare the loop variable: FOR EACH declares it.
+
 ## Contexts and calls
 
 ME (also Me), EVENT, REQUEST, RESPONSE, SESSION, PAGE, SERVER, CLIENT are recognized

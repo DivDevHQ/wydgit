@@ -1,0 +1,150 @@
+{
+  "schema": "wydgit-package/0.1",
+  "id": "divdev/taskboard",
+  "publisher": "divdev",
+  "version": "0.3.1-alpha.2",
+  "platform": ">=0.3.0-alpha.1 <0.4.0",
+  "runtime": ["server"],
+  "resources": {
+    "prototypes": "prototypes.json",
+    "template": "section.json",
+    "sources": {
+      "taskboard-init": "scripts/taskboard.bas",
+      "taskboard-submit": "scripts/submit_task.bas",
+      "resolve-move": "scripts/resolve_move.bas",
+      "resolve-delete": "scripts/resolve_delete.bas",
+      "taskboard-move": "scripts/move_task.bas",
+      "taskboard-delete": "scripts/delete_task.bas"
+    }
+  },
+  "requires": {
+    "schema": "wydgit.requirements/0.1",
+    "libraries": [
+      {
+        "library": "wydstore",
+        "version": "^0.1.0-alpha.2"
+      }
+    ]
+  },
+  "storage": [
+    {
+      "name": "tasks",
+      "fields": {
+        "title": {
+          "type": "string",
+          "required": true
+        },
+        "status": {
+          "type": "string",
+          "required": true
+        }
+      }
+    }
+  ],
+  "permissions": {
+    "capabilities": [
+      "object.instances.edit",
+      "object.instances.construct",
+      "app.forms.submit",
+      "store.records.read",
+      "store.records.create",
+      "store.records.write",
+      "store.records.delete"
+    ],
+    "traversal": ["children", "parent"],
+    "visible": [
+      "taskboard-root",
+      "taskboard-header",
+      "taskboard-status-msg",
+      "taskboard-form",
+      "taskboard-title-field",
+      "taskboard-status-field",
+      "taskboard-list-section",
+      "col-todo",
+      "col-doing",
+      "col-done",
+      "hdr-todo",
+      "hdr-doing",
+      "hdr-done",
+      "task-card-*",
+      "task-card-move-*",
+      "task-card-delete-*"
+    ],
+    "editable": [
+      "taskboard-root",
+      "taskboard-status-msg",
+      "taskboard-form",
+      "taskboard-title-field",
+      "taskboard-status-field",
+      "taskboard-list-section",
+      "col-todo",
+      "col-doing",
+      "col-done",
+      "hdr-todo",
+      "hdr-doing",
+      "hdr-done",
+      "task-card-*",
+      "task-card-move-*",
+      "task-card-delete-*"
+    ],
+    "scopes": {
+      "wydstore": ["tasks"],
+      "prototypes": [
+        "divdev/task-card",
+        "divdev/task-move-form",
+        "divdev/task-delete-form",
+        "wydgit.core/form",
+        "wydgit.core/block",
+        "wydgit.core/hidden-input"
+      ]
+    }
+  },
+  "bindings": [
+    {
+      "owner": "taskboard-root",
+      "event": "Page.PreRender",
+      "source": "taskboard-init",
+      "kind": "handler"
+    },
+    {
+      "owner": "taskboard-form",
+      "event": "Submit",
+      "source": "taskboard-submit",
+      "kind": "action",
+      "method": "POST",
+      "capability": "app.forms.submit"
+    },
+    {
+      "owner": "task-card-move-*",
+      "event": "Submit",
+      "source": "taskboard-move",
+      "kind": "action",
+      "method": "POST",
+      "capability": "app.forms.submit",
+      "delegation": {
+        "type": "divdev/task-move-form",
+        "root": "taskboard-root",
+        "resolver": "resolve-move"
+      }
+    },
+    {
+      "owner": "task-card-delete-*",
+      "event": "Submit",
+      "source": "taskboard-delete",
+      "kind": "action",
+      "method": "POST",
+      "capability": "app.forms.submit",
+      "delegation": {
+        "type": "divdev/task-delete-form",
+        "root": "taskboard-root",
+        "resolver": "resolve-delete"
+      }
+    }
+  ],
+  "installables": [
+    {
+      "id": "taskboard-section",
+      "kind": "section-template"
+    }
+  ]
+}

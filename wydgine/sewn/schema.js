@@ -27,3 +27,9 @@ export const serviceExpressions=Object.freeze({...objectExpressions,canonicalSer
 export const MEMBER_SCHEMA='sewn/0.5';
 export const memberStatements=Object.freeze({...serviceStatements,memberSet:['target','name','value','exact'],methodCall:['target','name','args','exact?']});
 export const memberExpressions=Object.freeze({...serviceExpressions,memberRead:['target','name','exact'],methodValue:['target','name','args','exact?']});
+
+// Explicit null tests and lexical loop exit; earlier schemas remain closed.
+export const CONTROL_SCHEMA='sewn/0.6';
+export const controlStatements=Object.freeze({...memberStatements,exitFor:[]});
+export const controlExpressions=Object.freeze({...memberExpressions,isNull:['value','negate']});
+export const controlReservedNames=Object.freeze([...reservedNames,'IS','EXIT']);

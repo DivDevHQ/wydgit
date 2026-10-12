@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Added WydBASIC `IS NULL`, `IS NOT NULL` and `EXIT FOR`, compiled through new closed SEWN 0.6 operations. Null checks preserve opaque-reference guards; loop exit affects only the nearest lexical loop without resetting shared budgets.
+- Preserved SEWN 0.1–0.5 wire grammars and strict Boolean conditions; added compiler, independent SEWN, prototype-method and Page integration tests.
+
 - Added prototype-constrained wildcard Submit bindings for dynamic native Forms, with bounded, read-only `Page.Resolve` reconstruction and package installation, Page, containment, and prototype checks before dispatch.
 - Added native `wydgit.core/hidden-input` Fields with escaped rendering and standard Form binding and validation. Hidden values remain untrusted input and grant no authority.
 - Preserved existing SEAM, session, CSRF, and storage authorization checks. Added regression and security tests; all 563 tests passed with current client changes included.
