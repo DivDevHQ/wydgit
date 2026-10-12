@@ -378,3 +378,12 @@ Form supplies public prototype methods `Bind(Object)`, `Validate() AS Boolean`, 
 See [canonical service contracts](canonical-services.md) for exact API versions,
 `SERVICES.Invoke`, `sewn/0.4`, execution identities and compatibility limitations.
 Existing v0.2 library calls, grants and ownership rules remain supported.
+
+## 0.3-H0 canonical members
+
+Wydgit references support direct property reads and assignments (`Me.content = value`).
+Ordinary names resolve case-insensitively to one discoverable canonical member.
+`Me.[content]` and `Me.[method]()` require exact spelling, including hidden members,
+and still enforce access and SEAM. Brackets after a dot contain one identifier;
+array literals are unchanged. These extensions emit `sewn/0.5`; existing Set and
+property-bag APIs remain. See [canonical OOP](canonical-oop.md).

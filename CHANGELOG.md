@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Implemented 0.3-H0 canonical OOP access, declaring-class execution frames, verified exact/publisher friendship, hidden member discovery and public serialization filtering.
+- Added exact bracket member lookup and case-insensitive property reads/assignments through the existing WydBASIC parser and versioned SEWN 0.5; retained public defaults and legacy wire versions.
+- Enforced inherited collision/override security contracts and documented runtime-neutral object/content semantics, publisher verification requirements and deferred client work.
+
 - Corrected 0.3-E WydFiles zero chunk limits, normalized S3 mount identity checks, and strict range header/body validation.
 - Verified ranged-body failures after partial downstream delivery, including upstream cleanup, sanitized aborts, transfer-capacity recovery and no successful sender completion; documented that delivered bytes cannot be recalled.
 - Propagated immutable effective caller limits and one operation deadline through S3 metadata, retries, pagination, quota inspection and transfers; added regression coverage without changing WydMedia storage.

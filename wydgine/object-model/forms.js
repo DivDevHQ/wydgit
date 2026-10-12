@@ -28,7 +28,7 @@ export function descendantFields(runtime,registry,id,context) {
 export function formOperation(fields,registry,operation,data,set) {
   check(['validate','isValid','values','bind','clear'].includes(operation),'FORM.OPERATION','Unknown Form operation');
   const names=new Set();for(const f of fields){fieldConfiguration(f.properties);check(!names.has(f.properties.name),'FORM.NAME','Duplicate field name');names.add(f.properties.name);}
-  if(operation==='values'){const out=Object.create(null);for(const f of fields)if(!sensitive(f.prototype,registry))out[f.properties.name]=clean(f.properties.value);return out;}
+  if(operation==='values'){const out=Object.create(null);for(const f of fields)if(!sensitive(f.prototype,registry)&&['name','value'].every(name=>Object.hasOwn(publicProperties(f,registry),name)))out[f.properties.name]=clean(f.properties.value);return out;}
   if(operation==='isValid')return fields.every(f=>f.properties.valid);
   if(operation==='bind'){
     const input=clean(data);check(input&&!Array.isArray(input)&&typeof input==='object','FORM.BIND','Expected binding object');
@@ -46,7 +46,10 @@ export function formTree(raw,registry,inside=false) {
   if(form){const names=new Set();const walk=n=>{if(registry.isA(n.prototype,'wydgit.core/field')){check(!names.has(n.properties.name),'FORM.NAME','Duplicate field name');names.add(n.properties.name);}Object.values(n.slots).flat().forEach(walk);};walk(raw);}
 }
 
-export function publicProperties(node,registry) { return sensitive(node.prototype,registry)?Object.freeze({...node.properties,value:''}):node.properties; }
+export function publicProperties(node,registry) {
+  const rules=registry.get(node.prototype).properties;
+  return Object.freeze(Object.fromEntries(Object.entries(node.properties).filter(([name])=>(rules[name].access??'public')==='public'&&rules[name].hidden!==true&&!(rules[name].requires?.length)).map(([name,value])=>[name,name==='value'&&sensitive(node.prototype,registry)?'':value])));
+}
 
 export function fieldOwner(runtime,registry,id) {
   let owner=null;

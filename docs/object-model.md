@@ -111,10 +111,9 @@ HTML stays outside the model. See [events.md](events.md) for Session/Page execut
 
 **Prototype = class; Wydgit instance = object.** There is one inheritance model.
 A trusted registry definition may carry `behavior`, a validated `sewn/0.3` program
-with an empty workflow body. Its procedure declarations are the prototype's public
-methods. They retain their lexical procedure table, so a method can call other
-procedures in its module. All declared procedures are public methods in this first
-version; there is no partial access-modifier system.
+with an empty workflow body. Its procedure declarations are the prototype's methods. They retain their lexical procedure table, so a method can call other
+procedures in its module. Omitted access remains public; 0.3-H0 adds declaring-class access and visibility
+rules described in [the canonical OOP contract](canonical-oop.md).
 
 The repository explicitly associates source through `behaviorSource` strings in
 `prototypes/objects.json`. `loadRepository` compiles these with `compilePrototype`
@@ -124,7 +123,8 @@ source definitions or supply canonical SEWN behavior directly. Prototype modules
 contain SUB/FUNCTION declarations and cannot contain EVENT blocks. Definitions
 without behavior retain their existing semantics.
 
-Method names are canonical lowercase and source names are case insensitive.
+Existing compiled method names are lowercase and source names are case insensitive.
+Canonical SEWN 0.5 also preserves explicit method-name casing.
 Duplicates and names colliding with kernel facade methods are rejected. Lookup
 starts at the actual prototype, following the existing single `extends` chain.
 Derived definitions must explicitly list inherited names in `overrides`, e.g.
@@ -170,7 +170,7 @@ and prospective ID's ordinary visibility/edit scopes. No implicit persistence is
 added. `acme/message-panel` and its derived important panel are explicit demo
 prototypes; their portable source and HTTP integration prove this model.
 
-Base calls, access modifiers, nominal prototype types, multiple inheritance,
+Base calls, nominal prototype types, multiple inheritance,
 interfaces/mixins, overloads/static members, reflection/dynamic names, closures,
 automatic IDs/persistence, remote loading and slot-property sugar are deferred.
 
@@ -192,3 +192,10 @@ migration is retained. Recursive field semantics and nested-Form denial are unch
 ## 0.2-P local packages
 
 Installed-package prototypes compose with core definitions in the normal registry; core source files remain distinct. Package templates attach through canonical mutations. See [packages](packages.md).
+
+## 0.3-H0 canonical OOP alignment
+
+[Canonical OOP](canonical-oop.md) is authoritative for member access, friend
+verification, exact/ordinary resolution, overrides and public serialization.
+[Inspection baseline](milestones/0.3-H0/inspection.md) records the behavior found
+before this correction. The JSON object envelope remains `wydgit/0.2`.

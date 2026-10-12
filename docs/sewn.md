@@ -265,3 +265,12 @@ The handle allowlist adds `FormState(operation, data?)`, the closed scoped Form 
 See [canonical service contracts](canonical-services.md) for exact API versions,
 `SERVICES.Invoke`, `sewn/0.4`, execution identities and compatibility limitations.
 Existing v0.2 library calls, grants and ownership rules remain supported.
+
+## SEWN 0.5 canonical member lookup
+
+`sewn/0.5` extends 0.4 with `memberRead {target,name,exact}` expressions and
+`memberSet {target,name,value,exact}` statements. Method operations can specify
+`exact:true`; otherwise lookup is ordinary. Canonical procedure identifiers may
+preserve case. Existing schemas remain closed and existing lowercase behavior
+remains valid. Execution carries an unforgeable declaring-class frame separately
+from the unchanged caller SEAM context. See [canonical OOP](canonical-oop.md).

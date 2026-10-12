@@ -1,11 +1,11 @@
-import { fieldKind,sensitive } from './object-model/forms.js';
+import { fieldKind,sensitive,publicProperties } from './object-model/forms.js';
 // Trusted web-renderer projection. These mutable DTOs are never SEAM handles.
 export function webModel(runtime, model) {
   const project = id => {
     const object = runtime.get(id);
     const kind = ['form','field','app','page','section','block','navigation'].find(kind=>model.registry?.isA(object.prototype,`wydgit.core/${kind}`))??object.prototype.split('/')[1];
     const presentation=model.registry?.get(object.prototype).presentation;
-    const properties=structuredClone(object.properties);delete properties.presentation;
+    const properties=structuredClone(publicProperties(object,model.registry));delete properties.presentation;
     const node = { ...properties, id, prototype: kind === 'app' ? 'site' : kind, ...(presentation?{presentation}:{} ) };
     if(kind==='field'){node.controlKind=fieldKind(object.prototype,model.registry);if(sensitive(object.prototype,model.registry))node.value='';}
     for (const [slot, children] of Object.entries(object.slots)) {

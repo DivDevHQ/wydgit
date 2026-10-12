@@ -24,7 +24,7 @@ export function parse(source,{module=false}={}) {
     else if(start.kind==='identifier')left=node('name',start,{name:start.value});
     else fail('SYNTAX','Expected expression.',start.location);
     while(true) {
-      if(eat('.')){const key=identifier();left=node('member',start,{target:left,key:key.value,keyLocation:key.location});continue;}
+      if(eat('.')){const exact=!!eat('[');const key=identifier();if(exact)expect(']');left=node('member',start,{target:left,key:key.value,keyLocation:key.location,exact});continue;}
       if(eat('(')){const args=[];blank();if(!is(')'))do{blank();args.push(expression());blank();}while(eat(','));expect(')');left=node('invoke',start,{target:left,args});continue;}
       const op=String(token().value).toUpperCase(),p=['identifier','symbol'].includes(token().kind)?precedence[op]:undefined;if(p===undefined||p<min)break;take();left=node('binary',start,{operator:op,left,right:expression(p+1)});
     }
@@ -49,7 +49,7 @@ export function parse(source,{module=false}={}) {
     else if(eat('RETURN'))result=node('return',start,{value:['newline','eof'].includes(token().kind)?null:expression()});
     else if(eat('CALL'))result=node('procedureCall',start,{value:expression()});
     else if(eat('STOP'))result=node('stop',start,{value:['newline','eof'].includes(token().kind)?null:expression()});
-    else {const reference=!!eat('SET');if(token().kind==='identifier'&&tokens[index+1].value==='='){const name=take();take();result=node('set',start,{name:name.value,reference,value:expression()});}else{if(reference)fail('SYNTAX','SET requires a variable assignment.',start.location);if(['SUB','FUNCTION','MODULE','EVENT','ASYNC','AWAIT','GOTO','REM','DO','WHILE','SELECT','IMPORT','NEW','TRY','THROW','ON'].some(is)&&tokens[index+1].value!=='.')fail('UNSUPPORTED',`Unsupported statement '${token().value}'.`,start.location);result=node('call',start,{value:expression()});}}
+    else {const reference=!!eat('SET');if(token().kind==='identifier'&&tokens[index+1].value==='='){const name=take();take();result=node('set',start,{name:name.value,reference,value:expression()});}else{if(reference)fail('SYNTAX','SET requires a variable assignment.',start.location);if(['SUB','FUNCTION','MODULE','EVENT','ASYNC','AWAIT','GOTO','REM','DO','WHILE','SELECT','IMPORT','NEW','TRY','THROW','ON'].some(is)&&tokens[index+1].value!=='.')fail('UNSUPPORTED',`Unsupported statement '${token().value}'.`,start.location);const cursor=index,target=expression(4);if(target.kind==='member'&&eat('='))result=node('memberSet',start,{target,value:expression()});else{index=cursor;result=node('call',start,{value:expression()});}}}
     endLine();return result;
   }
   const location={line:1,column:1,offset:0};

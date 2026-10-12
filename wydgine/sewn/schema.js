@@ -22,3 +22,8 @@ export const objectExpressions=Object.freeze({...procedureExpressions,methodValu
 export const SERVICE_SCHEMA='sewn/0.4';
 export const serviceStatements=Object.freeze({...objectStatements,canonicalService:['library','apiVersion','method','input','into?']});
 export const serviceExpressions=Object.freeze({...objectExpressions,canonicalServiceCall:['library','apiVersion','method','input']});
+
+// Canonical member lookup extensions; prior wire grammars remain closed.
+export const MEMBER_SCHEMA='sewn/0.5';
+export const memberStatements=Object.freeze({...serviceStatements,memberSet:['target','name','value','exact'],methodCall:['target','name','args','exact?']});
+export const memberExpressions=Object.freeze({...serviceExpressions,memberRead:['target','name','exact'],methodValue:['target','name','args','exact?']});

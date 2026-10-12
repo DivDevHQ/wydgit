@@ -74,10 +74,10 @@ function mapStorage(manifest,config,mappings,app) {
   }
   return {mappings:clean(mappings),scopes};
 }
-export async function planPackageInstall({root,packagePath,placement,approvals,storageMappings={},installationContext,hostConfig,additions=[],page,properties={},navigation}) {
+export async function planPackageInstall({root,packagePath,placement,approvals,storageMappings={},installationContext,hostConfig,verifiedPackages={},additions=[],page,properties={},navigation}) {
   root=path.resolve(root);
   check((readInstalledState(root)?.packages.length??0)<LIMITS.packages,'PACKAGE.LIMIT','Installed package safety ceiling reached');
-  const base=baseFingerprint(root),head=stateFingerprint(root);const model=loadRepository(root),candidate=loadPackage(packagePath),{manifest,resources,definitions,template}=candidate;
+  const base=baseFingerprint(root),head=stateFingerprint(root);const model=loadRepository(root,{verifiedPackages}),candidate=loadPackage(packagePath),{manifest,resources,definitions,template}=candidate;
   check(!(model.installed?.packages??[]).some(p=>p.manifest.id===manifest.id),'PACKAGE.ALREADY_INSTALLED','Package already installed');
   check(Array.isArray(additions)&&additions.length<=32,'PACKAGE.LIMIT','Too many initial attachments');
   jsonKeys(additions);const extra=additions.map(item=>{jsonKeys(item);fields(item,['placement','instance'],'PACKAGE.PLACEMENT');return {placement:clean(item.placement),instance:copyEnvelope(item.instance)};}),createdPage=page===undefined?undefined:copyEnvelope(page);
@@ -92,7 +92,8 @@ export async function planPackageInstall({root,packagePath,placement,approvals,s
   const pageIds=[];const visit=id=>{pageIds.push(id);Object.values(placementModel.get(id).slots).flat().forEach(visit);};visit(placement.page);check(pageIds.includes(placement.parent),'PACKAGE.PLACEMENT','Parent outside Page');
   check(!(model.installed?.packages??[]).some(p=>[p.placement.page,...(p.additions??[]).map(x=>x.placement.page)].includes(placement.page)),'PACKAGE.PRINCIPALS','One authorized package principal per Page');
   const raw=JSON.parse(safeRead(root,'prototypes/objects.json'));for(const p of model.installed?.packages??[])raw.push(...JSON.parse(p.resources[p.manifest.resources.prototypes]));raw.push(...definitions);
-  const registry=new PrototypeRegistry(compileDefinitions(raw));check(registry.isA(template.prototype,'wydgit.core/section'),'PACKAGE.TEMPLATE','Expected Section template');
+  const trusted=Object.fromEntries(JSON.parse(safeRead(root,'prototypes/objects.json')).map(d=>[d.id,d.publisher]));for(const entry of model.installed?.packages??[])if(verifiedPackages[entry.manifest.id]===entry.manifest.publisher)for(const d of JSON.parse(entry.resources[entry.manifest.resources.prototypes]))trusted[d.id]=entry.manifest.publisher;if(verifiedPackages[manifest.id]===manifest.publisher)for(const d of definitions)trusted[d.id]=manifest.publisher;
+  const registry=new PrototypeRegistry(compileDefinitions(raw),{verifiedPrototypes:trusted});check(registry.isA(template.prototype,'wydgit.core/section'),'PACKAGE.TEMPLATE','Expected Section template');
   properties=clean(properties);const configuredTemplate=copyEnvelope(template);check(properties&&typeof properties==='object'&&!Array.isArray(properties),'PACKAGE.TEMPLATE','Invalid template properties');
   const configure=node=>{if(Object.hasOwn(properties,node.id))Object.assign(node.properties,clean(properties[node.id]));Object.values(node.slots).flat().forEach(configure);};
   check(Object.keys(properties).every(id=>idsOf(template).includes(id)),'PACKAGE.TEMPLATE','Properties outside template');configure(configuredTemplate);

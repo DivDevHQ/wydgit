@@ -13,7 +13,7 @@ const read = file => JSON.parse(readFileSync(file, 'utf8'));
 export function compileDefinitions(definitions) {
   return definitions.map(({behaviorSource,...definition})=>{check(behaviorSource===undefined||definition.behavior===undefined,'PROTOTYPE.METHOD','Choose source or canonical behavior');return {...definition,...(behaviorSource===undefined?{}:{behavior:compilePrototype(behaviorSource)})};});
 }
-export function loadRepository(root) {
+export function loadRepository(root, { verifiedPackages = {} } = {}) {
   const prototypes = new Map();
   for (const name of ['site', 'navigation', 'page', 'section', 'block', 'skin']) {
     const definition = read(path.join(root, 'prototypes', `${name}.json`));
@@ -27,8 +27,9 @@ export function loadRepository(root) {
   const installed=readInstalledState(root);
   const packages=installed?.packages??[];
   const definitions=read(path.join(root,'prototypes/objects.json'));
-  for(const entry of packages){const manifest=validatePackageManifest(entry.manifest);check(entry.state==='installed','PACKAGE.CATALOG','Unsupported package state');definitions.push(...JSON.parse(entry.resources[manifest.resources.prototypes]));}
-  const registry = new PrototypeRegistry(compileDefinitions(definitions));
+  const verifiedPrototypes=Object.fromEntries(definitions.map(d=>[d.id,d.publisher]));
+  for(const entry of packages){const manifest=validatePackageManifest(entry.manifest);check(entry.state==='installed','PACKAGE.CATALOG','Unsupported package state');const published=JSON.parse(entry.resources[manifest.resources.prototypes]);definitions.push(...published);if(verifiedPackages[manifest.id]===manifest.publisher)for(const d of published)verifiedPrototypes[d.id]=manifest.publisher;}
+  const registry = new PrototypeRegistry(compileDefinitions(definitions),{verifiedPrototypes});
   const runtime = hydrate(installed?JSON.parse(installed.app):app, registry);
   const diagnostics = [];
   const skins = new Map();

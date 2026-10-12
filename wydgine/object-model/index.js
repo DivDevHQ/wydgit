@@ -1,3 +1,4 @@
+import { bindMembers } from './members.js';
 import { matchesObjectGrant } from '../seam/context.js';
 import { formTree,publicProperties } from './forms.js';
 import { validateEnvelope, resolveProperties } from './schema.js';
@@ -56,6 +57,7 @@ export function hydrate(input, registry, { revision = 0 } = {}) {
     get(id) { check(nodes.has(id), 'OBJECT.UNKNOWN', 'Unknown object'); return nodes.get(id); },
     scope(context, startId = context.self) {
       checkContext(context); check(nodes.has(context.self), 'SEAM.CONTEXT', 'Unknown self object');
+      check(context.app===null||context.app===root.id,'SEAM.CONTEXT','Wrong App context');
       const handles = new Map();
       const handle = id => {
         check(matchesObjectGrant(context.visible, id), 'SEAM.VISIBILITY', 'Object is not visible');
@@ -82,6 +84,7 @@ export function hydrate(input, registry, { revision = 0 } = {}) {
           },
           requireCapability(capability) { check(context.capabilities.includes(capability), 'SEAM.DENIED', 'Capability denied'); return true; }
         });
+        bindMembers(result,{context,node:()=>{check(matchesObjectGrant(context.visible,id),'SEAM.VISIBILITY','Object is not visible');return node;},read:name=>name==='value'&&registry.isA(node.prototype,'wydgit.core/password-input')?'':node.properties[name]});
         handles.set(id, result); return result;
       };
       return handle(startId);

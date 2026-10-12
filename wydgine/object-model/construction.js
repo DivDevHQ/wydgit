@@ -1,3 +1,4 @@
+import { bindMembers, authorizeMember, resolveMember } from './members.js';
 import { formTree,publicProperties } from './forms.js';
 // Invocation-local builders. This module never creates a canonical runtime or stores data.
 import { checkContext } from '../seam/context.js';
@@ -28,10 +29,11 @@ export function construction(registry,context,bounds,guard) {
     has:handle=>drafts.has(handle),
     create(type,id){tick();check(registry,'OBJECT.CONSTRUCTION','Construction unavailable');requireScope(type);check(++created<=bounds.drafts,'SEWN.LIMIT','Draft count limit');
       const s={raw:validate({id,prototype:type,properties:{},slots:{}}),consumed:false};
+      const set=(name,value)=>{tick();const current=state(handle),raw=copyEnvelope(current.raw);check(Object.hasOwn(registry.get(raw.prototype).properties,name),'OBJECT.PROPERTY','Unknown draft property');raw.properties[name]=clean(value);update(current,raw);};
       const handle=Object.freeze({get id(){return state(handle).raw.id;},get prototype(){return state(handle).raw.prototype;},get properties(){return freeze(clean(publicProperties(state(handle).raw,registry)));},
-        Set(name,value){tick();const s=state(handle),raw=copyEnvelope(s.raw);check(Object.hasOwn(registry.get(raw.prototype).properties,name),'OBJECT.PROPERTY','Unknown draft property');raw.properties[name]=clean(value);update(s,raw);},
+        Set(name,value){check(Object.hasOwn(registry.get(state(handle).raw.prototype).properties,name),'OBJECT.PROPERTY','Unknown draft property');authorizeMember(registry,resolveMember(registry.get(state(handle).raw.prototype),'property',name),null,context);set(name,value);},
         Insert(slot,index,child){tick();const s=state(handle),c=state(child);check(s!==c,'OBJECT.CONSTRUCTION','Draft cycle');const raw=copyEnvelope(s.raw);check(Object.hasOwn(raw.slots,slot),'OBJECT.UNKNOWN_SLOT','Unknown draft slot');check(Number.isSafeInteger(index)&&index>=0&&index<=raw.slots[slot].length,'MUTATION.INDEX','Invalid draft index');raw.slots[slot].splice(index,0,validate(c.raw,true));update(s,raw,c);consume(c);}
-      });drafts.set(handle,s);roots.add(s);try{size();}catch(error){roots.delete(s);throw error;}return handle;
+      });drafts.set(handle,s);roots.add(s);try{size();}catch(error){roots.delete(s);throw error;}return bindMembers(handle,{context,node:()=>state(handle).raw,set,read:name=>name==='value'&&registry.isA(state(handle).raw.prototype,'wydgit.core/password-input')?'':state(handle).raw.properties[name]});
     },
     envelope(handle){tick();return validate(state(handle).raw,true);},
     consume(handle){consume(state(handle));},

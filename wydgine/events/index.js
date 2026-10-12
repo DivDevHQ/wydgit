@@ -1,3 +1,4 @@
+import { sensitive } from '../object-model/forms.js';
 import { compile as compileWydBasic,compileModule } from '../wydbasic/index.js';
 import { validate as validateWorkflow } from '../sewn/validate.js';
 import { execute as executeWorkflow } from '../sewn/execute.js';
@@ -48,7 +49,13 @@ export function createDispatcher({registry=new EventRegistry(),handlers=[],conte
   let calls=0,count=0,closed=false,processing=false;const queue=[];
   const invoke=async task=>{
     check(Date.now()<deadline&&!closed&&++count<=bounds.dispatches&&task.depth<=bounds.depth,'EVENT.LIMIT','Dispatch limit');
-    const definition=registry.get(task.type),payload=registry.payload(task.type,task.payload??{});
+    const definition=registry.get(task.type);let payload=registry.payload(task.type,task.payload??{});
+    // Change is a generic observation contract, not an exact member access.
+    // Its returned envelope must be as safe as its handler-facing payload.
+    if(task.type==='Change'&&prototypeRegistry){
+      const target=handle(task.target,()=>{}),rule=prototypeRegistry.get(target.prototype).properties.value;
+      if(!rule||(rule.access??'public')!=='public'||rule.hidden===true||rule.requires?.length||sensitive(target.prototype,prototypeRegistry))payload=freeze({OldValue:'',NewValue:''});
+    }
     const envelope=freeze({schema:'wydgit.event/0.1',type:task.type,runtime:runtimeTarget,app:context.app,session:identifiers.session??null,page:identifiers.page??null,source:task.source,target:task.target,payload,cancelable:definition.cancelable});
     const structural=!['Semantic','Custom'].includes(definition.family);
     check(exists(task.target)&&exists(task.source),'EVENT.INVALID','Stale event target');
