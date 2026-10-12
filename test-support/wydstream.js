@@ -10,10 +10,11 @@ import { initializeHost } from '../wydgine/host.js';
 import { createGate } from '@wydgit/gate/client';
 import { activatePackages } from '../wydgine/packages/index.js';
 export const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aSpkAAAAASUVORK5CYII=','base64');
-export async function mediaFixture(t,provider='JSON',install=true) {
+export async function mediaFixture(t,provider='JSON',install=true,files=false) {
  const f=await packageFixture(t);f.packagePath=path.resolve('examples/media');f.manifest=JSON.parse(await fs.readFile(path.join(f.packagePath,'manifest.json')));
  const answers=['y','home',provider,'image,audio,video,file','y'];
  f.policy=await buildOperatorPolicy({...f,ask:async()=>answers.shift(),write:()=>{}});
+ if(f.policy.infrastructure.media&&!files)f.policy.infrastructure.media.legacyStorage=true;
  const gateRoot=path.join(f.root,'gate');await fs.mkdir(gateRoot);
  const gateConfig=configuration(gateRoot,provider.toLowerCase());
  const store=gateConfig.libraries.find(l=>l.id==='wydstore').options.stores[0];store.app='boilerplate';

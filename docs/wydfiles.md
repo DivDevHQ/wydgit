@@ -217,13 +217,9 @@ file-ID mapping, revision-aware reads, rate-limit-aware retries, and host-contro
 OAuth authority; unsupported capabilities must stay explicit. They need not supply
 POSIX paths, atomic rename, or strongly consistent inventory quotas.
 
-WydMedia currently uses `packages/wydstream/src/local-provider.js` methods stage,
-finalize, read, remove, objects and private opaque media IDs, with its WydStore
-ledger driving repair/publication. The smallest later migration is a trusted
-adapter mapping staged/ready IDs to private WydFiles logical paths, preserving
-ledger state transitions, hash checks, delivery authorization and API. This requires
-an explicit inter-library host binding and completion/repair semantics; WydFiles
-is not substituted into the media provider in 0.3-E. No media code is changed.
+WydMedia 0.3-F uses a narrowly host-bound WydFiles dependency for new assets.
+Legacy roots remain explicit compatibility storage. See [WydMedia integration](wydmedia.md)
+for exact-size upload coordination, publication, repair and safe migration.
 
 Run `node examples/wydfiles/index.js` for a disposable standalone mount demo.
 `test/wydfiles.test.js` shares local/simulated-S3 conformance checks and exercises

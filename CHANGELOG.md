@@ -4,6 +4,13 @@
 - Verified ranged-body failures after partial downstream delivery, including upstream cleanup, sanitized aborts, transfer-capacity recovery and no successful sender completion; documented that delivered bytes cannot be recalled.
 - Propagated immutable effective caller limits and one operation deadline through S3 metadata, retries, pagination, quota inspection and transfers; added regression coverage without changing WydMedia storage.
 
+## 0.3.0-alpha.6 — 0.3-F WydMedia/WydFiles integration
+
+- New media installations stream exact-size uploads and ranged delivery through private WydFiles mounts with a separate host-issued service identity; legacy root storage remains explicit.
+- Retained WydStore ledger publication/repair, added stable logical asset paths, Unicode display filenames and deterministic gallery ordering, and kept unavailable/private metadata responses uniform for new storage.
+- Added generic host-bound dependency transfers and optional requirements, plus reusable browser multipart upload progress, cancellation and exact-size adaptation.
+- Delivered local HTTP media demonstration and JSON/SQLite local/simulated-S3 integration and failure tests; documented limits, recovery, authorization and offline migration. No live cloud testing or broadcasting is claimed.
+
 ## 0.3.0-alpha.5 (fix) — 0.3-E media search integration correction
 
 - Corrected media source destinations to preserve existing query fields and encode the media ID once through a shared validated same-site link contract. WydSearch accepts bounded safe queries while retaining destination validation.

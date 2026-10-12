@@ -143,3 +143,13 @@ controls, bounded preload (none or metadata), file-input accept/required and app
 multipart POST forms. Text and attributes are escaped; raw HTML, scripts, event
 attributes and external/data media URLs remain forbidden. Transfer paths and
 implementation streams never become ordinary service objects.
+
+## Generic multipart adaptation — 0.3-F
+
+Approved single-file multipart forms receive the trusted WydClient upload adapter.
+It sends File.size via X-Wydgit-File-Size, shows an accessible upload progress/status,
+and handles completion and cancellation without executing package code. A `size`
+field before the file permits non-JavaScript exact-size clients. The trusted module
+is loaded only on pages containing multipart forms; CSP permits same-origin modules
+and requests while retaining the inline-code prohibition. Native image/audio/video
+and download semantics remain the existing portable presentation vocabulary.

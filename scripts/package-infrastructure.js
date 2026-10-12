@@ -64,7 +64,8 @@ export async function planOperatorInstall({policy,...options}) {
   }
   if(policy.infrastructure.media){
    const request=policy.infrastructure.media;
-   fields(request,['resource','provider','metadataLocation','binaryLocation','categories',...['limits','uploadPermission'].filter(k=>Object.hasOwn(request,k))],'PACKAGE.INFRASTRUCTURE');
+   fields(request,['resource','provider','metadataLocation','binaryLocation','categories',...['limits','uploadPermission','legacyStorage'].filter(k=>Object.hasOwn(request,k))],'PACKAGE.INFRASTRUCTURE');
+   check(request.legacyStorage===undefined||typeof request.legacyStorage==='boolean','PACKAGE.INFRASTRUCTURE','Invalid legacy storage selection');
    check(options.manifest.requires.libraries.some(r=>r.library==='wydstream')&&options.manifest.permissions.scopes.wydstream?.includes(request.resource)&&['json','sqlite'].includes(request.provider),'PACKAGE.INFRASTRUCTURE','Undeclared media resource');
    const app=policy.installationContext.app,root=storageLocation(options.root,request.metadataLocation),binary=storageLocation(options.root,request.binaryLocation);
    check(root!==binary&&!existsSync(root)&&!existsSync(binary)&&!roots.includes(root)&&!roots.includes(binary),'PACKAGE.STORAGE','Media requires unused separate roots');roots.push(root,binary);
@@ -74,9 +75,18 @@ export async function planOperatorInstall({policy,...options}) {
    const id='media-'+request.resource;
    check(!library.options.stores.some(s=>s.id===id),'PACKAGE.STORAGE','Media store ID collision');
    library.options.stores.push({id,app,publisher:'wydgit.core',package:'library:wydstream',provider:request.provider,root,collections:[{id:'media',schemaId:'media-ledger',schemaVersion:1,fields:implementation.metadataFields}]});
-   stream.options={apps:[{app,resource:request.resource,store:id,collection:'media',root:binary,categories:clean(request.categories),...(request.uploadPermission?{uploadPermission:request.uploadPermission}:{})}],...(request.limits?{limits:clean(request.limits)}:{})};
+   stream.options={apps:[{app,resource:request.resource,store:id,collection:'media',...(request.legacyStorage?{root:binary}:{storagePath:'/media'}),categories:clean(request.categories),...(request.uploadPermission?{uploadPermission:request.uploadPermission}:{})}],...(request.limits?{limits:clean(request.limits)}:{})};
    try{check(typeof implementation.validateOptions==='function','PACKAGE.INFRASTRUCTURE','Media provider cannot validate provisioning');implementation.validateOptions(stream.options);}catch{check(false,'PACKAGE.INFRASTRUCTURE','Invalid media resource policy');}
    stream.bindings=[{library:'wydstore',app,capabilities:['store.records.read','store.records.create','store.records.write'],scopes:{wydstore:[{store:id,collection:'media'}]}}];stream.enabled=true;
+   if(!request.legacyStorage){
+    let files=hostConfig.libraries.find(l=>l.id==='wydfiles');
+    if(!files){files={id:'wydfiles',package:'@wydgit/files',enabled:true,version:'^0.1.0-alpha.1',publisher:'wydgit.core',trust:'canonical',options:{schema:'wydfiles.host/1.0',apps:[{app,mounts:[],grants:[]}]}};hostConfig.libraries.push(files);}
+    check(files.enabled&&files.package==='@wydgit/files','PACKAGE.INFRASTRUCTURE','Incompatible WydFiles');
+    const scope=files.options.apps.find(a=>a.app===app);check(scope&&!scope.mounts.some(m=>m.path==='/media'),'PACKAGE.INFRASTRUCTURE','Media mount already configured');
+    scope.mounts.push({path:'/media',provider:'local',root:binary,permissions:['read','write','delete','list']});
+    scope.grants.push({publisher:'wydgit.core',package:'library:wydstream',principal:'library:wydstream',installation:'library:wydstream',path:'/media/assets',actions:['read','write','delete','list']});
+    stream.bindings.push({library:'wydfiles',app,installation:'library:wydstream',capabilities:['read','write','delete','list'].map(a=>'files.storage.'+a),scopes:{wydfiles:[{path:'/media/assets'}]}});
+   }
   }
   validateStoreConfig(library.options);validateConfig(hostConfig);
   for(const store of library.options.stores)if(!roots.includes(store.root))await safeRoot(store.root);

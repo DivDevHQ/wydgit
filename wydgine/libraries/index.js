@@ -61,20 +61,21 @@ export async function loadLibraries({ config: input, requirements: requested = e
   };
   // Requirement incompatibility cannot run registration code.
   resolveRequirements(requirements);
+  const requirementsFor = id => ({schema:'wydgit.requirements/0.1',libraries:[...(staged.get(id).manifest.requirements?.libraries??[]),...(staged.get(id).manifest.optionalRequirements?.libraries??[]).filter(r=>configured.get(id).bindings?.some(b=>b.library===r.library))]});
   // Resolve the complete dependency graph before running any registration.
   const order = [], visiting = new Set(), visited = new Set();
   const visit = id => {
     ensure(!visiting.has(id), 'LIBRARY.DEPENDENCY_CYCLE', 'Cyclic runtime library requirements');
     if (visited.has(id)) return;
     visiting.add(id);
-    const requirements = staged.get(id).manifest.requirements ?? emptyRequirements();
+    const requirements = requirementsFor(id);
     resolveRequirements(requirements).forEach(dependency => visit(dependency.id));
     visiting.delete(id); visited.add(id); order.push(id);
   };
   for (const id of staged.keys()) visit(id);
   const approved = new Map();
   for (const [id, {manifest}] of staged) {
-    const required = (manifest.requirements ?? emptyRequirements()).libraries.map(item => item.library);
+    const required = requirementsFor(id).libraries.map(item => item.library);
     const bindings = configured.get(id).bindings ?? [];
     ensure(bindings.length === required.length && bindings.every(binding => required.includes(binding.library)),
       'LIBRARY.DEPENDENCY_DENIED', 'Each dependency requires an explicit host binding');
@@ -84,7 +85,7 @@ export async function loadLibraries({ config: input, requirements: requested = e
       // The host grants a separate implementation identity. Libraries cannot
       // choose its publisher/package or modify the application caller's grants.
       return [binding.library,new ExecutionContext({publisher:manifest.publisher, package:`library:${id}`,
-        self:`library-${id}`, app:binding.app, capabilities:binding.capabilities, scopes:binding.scopes})];
+        self:`library-${id}`, installation:binding.installation??null, app:binding.app, capabilities:binding.capabilities, scopes:binding.scopes})];
     })));
   }
   const services = new Map(),transports=new Map(),starts=[];
@@ -107,8 +108,9 @@ export async function loadLibraries({ config: input, requirements: requested = e
         const context = approved.get(id).get(library);
         const dispatch = bindServices(context, (target,name) => services.get(target)?.get(name), target => staged.get(target)?.manifest);
         return Object.freeze({identity:Object.freeze({app:context.app,publisher:context.publisher,library:id}),
+          transfer(name,input,port,limits={}) { return registry.transfer(new ExecutionContext({...context,limits}),library,name,input,port); },
           call(name,input) { return dispatch.call(library,name,input); },
-          invoke(apiVersion,name,input) { return dispatch.invoke(library,apiVersion,name,input); }});
+          invoke(apiVersion,name,input,limits) { const selected=limits?bindServices(new ExecutionContext({...context,limits}),(target,operation)=>services.get(target)?.get(operation),target=>staged.get(target)?.manifest):dispatch;return selected.invoke(library,apiVersion,name,input); }});
       }, service(name, handler, policy = {}) {
       const valid = active && manifest.services.some(s => s.name === name) && !handlers.has(name) && typeof handler === 'function' && policy && Object.keys(policy).every(key => ['authorize','validate','presentation'].includes(key)) && (policy.presentation === undefined || typeof policy.presentation === 'boolean') && (policy.authorize === undefined || typeof policy.authorize === 'function') && (policy.validate === undefined || typeof policy.validate === 'function') && (!manifest.apiVersion || typeof policy.authorize === 'function' && typeof policy.validate === 'function');
       if (!valid) { invalid = true; throw new WydgitError('LIBRARY.REGISTRATION_FAILED', 'Invalid service registration'); }

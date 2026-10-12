@@ -64,7 +64,7 @@ export function resolveLink(item, currentPage, model) {
 }
 
 function documentHtml(title, description, body, bodyAttributes = '', themeMode = 'system') {
-  return `<!doctype html><html lang="en" data-wyd-theme="${escapeHtml(themeMode)}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(title)}</title><meta name="description" content="${escapeHtml(description)}"><link rel="stylesheet" href="/css/site.css"><link rel="stylesheet" href="/css/skins.css"></head><body${bodyAttributes}>${body}</body></html>`;
+  return `<!doctype html><html lang="en" data-wyd-theme="${escapeHtml(themeMode)}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(title)}</title><meta name="description" content="${escapeHtml(description)}"><link rel="stylesheet" href="/css/site.css"><link rel="stylesheet" href="/css/skins.css">${body.includes('enctype="multipart/form-data"')?'<script type="module" src="/runtime/wydclient/uploads.js"></script>':''}</head><body${bodyAttributes}>${body}</body></html>`;
 }
 export function errorDocument(status = 500) {
   const title = status === 404 ? 'Page not found' : 'Page temporarily unavailable';

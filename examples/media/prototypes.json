@@ -90,6 +90,20 @@
           },
           {
             "tag": "label",
+            "text": "Exact file size in bytes (automatically supplied by the browser adapter)",
+            "children": [
+              {
+                "tag": "input",
+                "attrs": {
+                  "type": "number",
+                  "name": "size",
+                  "aria-label": "File size in bytes"
+                }
+              }
+            ]
+          },
+          {
+            "tag": "label",
             "text": "Choose a file",
             "children": [
               {

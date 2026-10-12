@@ -7,10 +7,10 @@ export async function receiveFile(body,headers,limits,consume) {
   if(!body||headers.encoding!=='identity'||!Number.isSafeInteger(limits.fileBytes)||limits.fileBytes<1||!Number.isSafeInteger(limits.durationMs)||limits.durationMs<1||!Array.isArray(limits.fields)||limits.fields.length>16)throw new Error('TRANSFER.INVALID');
   const parser=Busboy({headers:{'content-type':headers.type},limits:{fileSize:limits.fileBytes+1,files:1,fields:limits.fields.length,parts:limits.fields.length+2,fieldSize:1024,fieldNameSize:32}});
   const fields=Object.create(null);let count=0,work,fileStream,failed=false;
-  const reject=()=>{if(failed)return;failed=true;queueMicrotask(()=>parser.destroy(new Error('TRANSFER.LIMIT')));};
+  const reject=reason=>{if(failed)return;failed=true;queueMicrotask(()=>parser.destroy(reason instanceof Error?reason:new Error('TRANSFER.LIMIT')));};
   for(const name of ['filesLimit','fieldsLimit','partsLimit'])parser.on(name,reject);
   parser.on('field',(name,value,info)=>{if(!limits.fields.includes(name)||Object.hasOwn(fields,name)||info.valueTruncated||info.nameTruncated)reject();else fields[name]=value;});
-  parser.on('file',(_name,stream)=>{fileStream=stream;count++;if(count!==1||_name!=='file'){stream.resume();reject();return;}stream.on('limit',reject);work=Promise.resolve().then(()=>consume(stream));work.catch(()=>reject());});
+  parser.on('file',(_name,stream,info)=>{fileStream=stream;count++;if(count!==1||_name!=='file'){stream.resume();reject();return;}stream.on('limit',reject);work=Promise.resolve().then(()=>consume(stream,{...fields},info));work.catch(error=>reject(error));});
   let bytes=0;
   const source=Readable.fromWeb(body);
   const bounded=async function*(){for await(const chunk of source){bytes+=chunk.length;if(bytes>limits.fileBytes+8192)throw new Error('TRANSFER.LIMIT');yield chunk;}};

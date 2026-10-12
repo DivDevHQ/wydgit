@@ -31,7 +31,7 @@ async function pageRoot(t) {
   return root;
 }
 const security = response => {
-  assert.equal(response.headers.get('content-security-policy'), "default-src 'none'; style-src 'self'; img-src 'self'; media-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
+  assert.equal(response.headers.get('content-security-policy'), "default-src 'none'; style-src 'self'; img-src 'self'; media-src 'self'; script-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
   assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
   assert.equal(response.headers.get('x-powered-by'), null);
 };
@@ -151,6 +151,6 @@ for (const signal of ['SIGINT', 'SIGTERM']) test(`server entrypoint gracefully e
   const exited = once(child, 'exit');
   let output = '';
   await new Promise((resolve, reject) => { child.stdout.on('data', chunk => { output += chunk; if (/http:\/\/127\.0\.0\.1:\d+/.test(output)) resolve(); }); child.once('error', reject); child.once('exit', () => reject(new Error('Server exited before listen'))); });
-  assert.match(output, /Wydgit 0\.3\.0-alpha\.5/); child.kill(signal);
+  assert.match(output, /Wydgit 0\.3\.0-alpha\.6/); child.kill(signal);
   const [code, termination] = await exited; assert.equal(code, 0); assert.equal(termination, null);
 });

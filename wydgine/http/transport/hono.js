@@ -8,10 +8,10 @@ import { Readable } from 'node:stream';
 import { createGunzip, createInflate, createBrotliDecompress } from 'node:zlib';
 import { errorDocument } from '../../index.js';
 
-const policy = "default-src 'none'; style-src 'self'; img-src 'self'; media-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'";
+const policy = "default-src 'none'; style-src 'self'; img-src 'self'; media-src 'self'; script-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'";
 // Explicit browser-safe dependency closure; no server/provider modules are exposed.
 const clientModules = [
-  'wydclient/index.js', 'wydgine/events/index.js', 'wydgine/events/registry.js',
+  'wydclient/uploads.js', 'wydclient/index.js', 'wydgine/events/index.js', 'wydgine/events/registry.js',
   'wydgine/object-model/forms.js', 'wydgine/object-model/validation.js', 'wydgine/object-model/schema.js', 'wydgine/object-model/construction.js', 'wydgine/object-model/prototypes.js', 'wydgine/seam/context.js',
   'wydgine/seam/capabilities.js', 'wydgine/http/input.js',
   'wydgine/sewn/schema.js', 'wydgine/sewn/validate.js',
@@ -123,7 +123,7 @@ export function createTransport({ root, projectRoot, renderer, pipeline, logger 
         }
       }
       if(pathname.startsWith('/_transfer/')) {
-        await pipeline.request({method:request.method,path:pathname,query:url.search.slice(1),cookie:request.headers.get('cookie')??'',transfer:{body:request.body,headers:{type:request.headers.get('content-type')??'',encoding:request.headers.get('content-encoding')??'identity',accept:request.headers.get('accept')??'',range:request.headers.get('range'),ifNoneMatch:request.headers.get('if-none-match'),ifRange:request.headers.get('if-range')}}},res);
+        await pipeline.request({method:request.method,path:pathname,query:url.search.slice(1),cookie:request.headers.get('cookie')??'',transfer:{body:request.body,headers:{type:request.headers.get('content-type')??'',fileSize:request.headers.get('x-wydgit-file-size'),encoding:request.headers.get('content-encoding')??'identity',accept:request.headers.get('accept')??'',range:request.headers.get('range'),ifNoneMatch:request.headers.get('if-none-match'),ifRange:request.headers.get('if-range')}}},res);
         return RESPONSE_ALREADY_SENT;
       }
       let form;

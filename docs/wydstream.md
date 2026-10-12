@@ -1,3 +1,7 @@
+> 0.3-F: new media installations use WydFiles. Existing root configurations retain
+> legacy storage. See [integration, lifecycle and migration](wydmedia.md) for the
+> current backend contract; the legacy provider sections below still apply to root mode.
+
 # WydStream — 0.3-D
 
 WydStream is the host-approved canonical library `wydstream` implemented by

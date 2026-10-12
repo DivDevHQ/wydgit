@@ -36,7 +36,8 @@ export function validateConfig(input) {
     if (Object.hasOwn(entry,'bindings')) {
       ensure(Array.isArray(entry.bindings), code, 'Expected dependency bindings');
       for (const binding of entry.bindings) {
-        fields(binding, ['library','app','capabilities','scopes'], code);
+        fields(binding, ['library','app','capabilities','scopes',...['installation'].filter(k=>Object.hasOwn(binding,k))], code);
+        ensure(binding.installation===undefined||typeof binding.installation==='string'&&binding.installation.length>0&&binding.installation.length<=256,code,'Invalid dependency installation');
         ensure(identity(binding.library) && typeof binding.app === 'string' && binding.app.length > 0 &&
           Array.isArray(binding.capabilities) && binding.capabilities.every(isCapability) && record(binding.scopes), code, 'Invalid dependency binding');
         unique(binding.capabilities, x => x, code);
@@ -54,8 +55,9 @@ export function validateConfig(input) {
 export function validateManifest(input) {
   const code = 'LIBRARY.INVALID_MANIFEST', manifest = data(input, code);
   ensure(record(manifest), code, 'Expected library manifest');
-  fields(manifest, ['schema','id','version','publisher','trust','platform','targets','capabilities','services', ...['requirements','apiVersion','legacyOperations'].filter(key => Object.hasOwn(manifest,key))], code);
+  fields(manifest, ['schema','id','version','publisher','trust','platform','targets','capabilities','services', ...['requirements','optionalRequirements','apiVersion','legacyOperations'].filter(key => Object.hasOwn(manifest,key))], code);
   if (Object.hasOwn(manifest,'apiVersion')) ensure(version(manifest.apiVersion) && typeof manifest.apiVersion === 'string' && /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/.test(manifest.apiVersion), code, 'Invalid service API version');
+  if (Object.hasOwn(manifest,'optionalRequirements')) manifest.optionalRequirements = validateRequirements(manifest.optionalRequirements);
   if (Object.hasOwn(manifest,'requirements')) {
     try { manifest.requirements = validateRequirements(manifest.requirements); }
     catch { throw new WydgitError(code, 'Invalid library requirements'); }

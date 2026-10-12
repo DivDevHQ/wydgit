@@ -10,14 +10,14 @@ import { createHostApp } from '../app.js';
 import { applyOperatorInstall } from '../scripts/package-infrastructure.js';
 const start=async(f,t)=>{const app=await createHostApp({root:f.root,execution:{gateContext:f.gateContext}}),server=app.listen(0,'127.0.0.1');await once(server,'listening');t.after(()=>{server.closeAllConnections();server.close();});return {app,server,base:'http://127.0.0.1:'+server.address().port};};
 for(const provider of ['JSON','SQLite'])test(`${provider}: existing App installs media, authenticated form uploads, Gallery/Player, HTTP ranges and restart`,async t=>{
- const f=await mediaFixture(t,provider,false),before=await fs.readFile(path.join(f.root,'content/pages/home.json'),'utf8');
+ const f=await mediaFixture(t,provider,false,true),before=await fs.readFile(path.join(f.root,'content/pages/home.json'),'utf8');
  const appFile=path.join(f.root,'content/app.json'),document=JSON.parse(await fs.readFile(appFile));document.properties.themeMode=provider==='JSON'?'light':'dark';await fs.writeFile(appFile,JSON.stringify(document));
  await applyOperatorInstall(await f.plan());
  const {initializeHost}=await import('../wydgine/host.js'),{createGate}=await import('@wydgit/gate/client'),{ExecutionContext}=await import('../wydgine/seam/context.js');
  f.libraries=await initializeHost({root:f.root});f.gateContext=new ExecutionContext({publisher:'host',package:'host:gate',app:'boilerplate',self:'home',capabilities:['gate.users.create','gate.credentials.authenticate','gate.sessions.use','gate.sessions.manage'],scopes:{wydgate:['boilerplate']}});f.gate=createGate(f.libraries.bind(f.gateContext));await f.gate.createUser({username:'alice',password:'long media fixture passphrase'});const login=await f.gate.login('alice','long media fixture passphrase');f.token=login.token;
  const model=loadRepository(f.root);for(const name of ['upload','player','gallery'])assert.equal(model.registry.get('divdev/media-'+name).public,true);
  assert.equal(await fs.readFile(path.join(f.root,'content/pages/home.json'),'utf8'),before);assert.ok(model.runtime.get('home').slots.sections.length>1);
- const host=await start(f,t),headers={Cookie:'__Host-wydgit-auth='+f.token};
+ const host=await start(f,t),headers={'X-Wydgit-File-Size':String(png.length),Cookie:'__Host-wydgit-auth='+f.token};
  const page=await fetch(host.base+'/',{headers}),text=await page.text(),view=html(text);assert.equal(page.status,200,text);assert.equal(view('html').attr('data-wyd-theme'),document.properties.themeMode);
  const form=view('#wydmedia-upload');assert.equal(form.attr('method'),'post');assert.equal(form.attr('enctype'),'multipart/form-data');assert.ok(form.find('input[type=file]').length);const action=form.attr('action');assert.ok(action?.includes('_csrf='),text);
  const uploadForm=new FormData();uploadForm.append('file',new Blob([png],{type:'text/html'}),'../../execute.js');uploadForm.append('title','HTTP image');uploadForm.append('description','Original content is preserved');
@@ -35,7 +35,7 @@ for(const provider of ['JSON','SQLite'])test(`${provider}: existing App installs
  const conditional=await fetch(host.base+delivery,{headers:{...headers,'If-None-Match':'"'+item.hash+'"'}});assert.equal(conditional.status,304);
  for(const [filename,type,tag] of [['tone.wav','audio','audio'],['black.mp4','video','video']]){
   const bytes=await fs.readFile(new URL('../test-support/media/'+filename,import.meta.url)),form=new FormData();form.append('file',new Blob([bytes]),'spoofed.txt');
-  const uploaded=await (await fetch(host.base+action,{headers,method:'POST',body:form})).json();assert.equal(uploaded.value.type,type);
+  const uploaded=await (await fetch(host.base+action,{headers:{...headers,'X-Wydgit-File-Size':String(bytes.length)},method:'POST',body:form})).json();assert.equal(uploaded.value.type,type);
   const player=html(await(await fetch(host.base+'/?media='+uploaded.value.id,{headers})).text());const element=player('#wydmedia-player '+tag);assert.equal(element.length,1);assert.ok(Object.hasOwn(element[0].attribs,'controls'));
   const part=await fetch(host.base+element.attr('src'),{headers:{...headers,Range:'bytes=0-15'}});assert.equal(part.status,206);assert.deepEqual(Buffer.from(await part.arrayBuffer()),bytes.subarray(0,16));
  }
@@ -50,7 +50,7 @@ for(const provider of ['JSON','SQLite'])test(`${provider}: existing App installs
  await f.gate.logout(f.token);assert.equal((await fetch(restarted.base+delivery,{headers})).status,403);
 });
 for(const hook of ['beforeProviderSetup','beforeConfigReplace','beforeStateReplace'])test(`media installation ${hook} rollback preserves App and removes metadata/binary roots`,async t=>{
- const f=await mediaFixture(t,'JSON',false),before=await fs.readFile(path.join(f.root,'wydgit.config.json'),'utf8');
+ const f=await mediaFixture(t,'JSON',false,true),before=await fs.readFile(path.join(f.root,'wydgit.config.json'),'utf8');
  await assert.rejects(applyOperatorInstall(await f.plan(),{[hook]:()=>{throw new Error('injected failure');}}),/injected failure/);
  assert.equal(await fs.readFile(path.join(f.root,'wydgit.config.json'),'utf8'),before);assert.ok(!loadRepository(f.root).runtime.has?.('wydmedia'));
  for(const location of ['media-metadata','media-binary'])await assert.rejects(fs.stat(path.join(f.root,'.wydgit-data',location)),{code:'ENOENT'});

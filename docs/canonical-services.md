@@ -12,7 +12,7 @@ register handlers, construct ExecutionContexts or access raw registry handlers.
 
 Three versions describe different things:
 
-- Platform release version: root `package.json`, currently `0.3.0-alpha.5`.
+- Platform release version: root `package.json`, currently `0.3.0-alpha.6`.
   Existing canonical libraries and the Guestbook example explicitly accept the 0.3
   prerelease series while retaining their v0.2 compatibility. Their own package
   versions and service APIs remain unchanged. This bump creates no Git release.
@@ -227,3 +227,15 @@ Other legacy providers retain their previous limits unless serviceLimits is
 explicitly configured, in which case the host policy applies to both paths.
 See [WydStore resource policies](wydstore.md#resource-policies) for defaults,
 capacity guarantees, structural compatibility and memory/concurrency limitations.
+
+## Host-bound optional dependencies and transfers — 0.3-F
+
+A library may declare `optionalRequirements` with the same requirements schema.
+Only an explicitly supplied host binding activates an optional dependency; its
+version, graph order and capability approvals are then checked like required ones.
+There is no automatic enablement. Dependency bindings may include a host-issued
+`installation` string; older bindings retain null installation. The trusted
+`dependency(library).transfer(name,input,port,limits)` uses the same dispatcher,
+validation and binding identity as registry.transfer. Lower effective caller limits
+can be forwarded without forwarding external caller identity, scopes or authority.
+Neither the dependency transfer port nor registry crosses into ordinary packages.
