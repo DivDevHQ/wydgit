@@ -153,3 +153,10 @@ field before the file permits non-JavaScript exact-size clients. The trusted mod
 is loaded only on pages containing multipart forms; CSP permits same-origin modules
 and requests while retaining the inline-code prohibition. Native image/audio/video
 and download semantics remain the existing portable presentation vocabulary.
+
+## 0.3-G generic sensitive controls
+
+Declarative inputs may use bounded `maxlength` and semantic `autocomplete` hints
+(`username`, `nickname`, `current-password`, `new-password`, `off`). Password input
+values always render empty. These generic hints apply independently of WydGate;
+portable forms still use the existing labelled input and approved submission binding.

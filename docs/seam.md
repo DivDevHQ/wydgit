@@ -209,3 +209,12 @@ visibility/editability and resource scopes; logical mappings expose no provider/
 See [canonical service contracts](canonical-services.md) for exact API versions,
 `SERVICES.Invoke`, `sewn/0.4`, execution identities and compatibility limitations.
 Existing v0.2 library calls, grants and ownership rules remain supported.
+
+## 0.3-G membership facts
+
+Trusted Gate resolution may add `membershipId`, `membershipStatus` and
+`membershipRole` to identity metadata. Context construction validates/fixes neither
+identity nor membership authority: the host must pass fresh verified facts. They
+remain independent of capabilities, resource scopes, principal and installation
+receipts. See [WydGate membership](wydgate-membership.md) for the live self-service
+validation and explicit member/bootstrap grants.

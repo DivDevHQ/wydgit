@@ -1,0 +1,679 @@
+[
+  {
+    "id": "divdev/login",
+    "publisher": "divdev",
+    "public": true,
+    "extends": "wydgit.core/block",
+    "properties": {
+      "content": {
+        "type": "object",
+        "default": {
+          "type": "markdown",
+          "value": ""
+        }
+      }
+    },
+    "slots": {},
+    "presentation": {
+      "schema": "wydgit.presentation/0.1",
+      "submission": {
+        "library": "wydgate",
+        "apiVersion": "1.0.0",
+        "operation": "browser-login",
+        "input": {}
+      },
+      "template": {
+        "tag": "form",
+        "attrs": {
+          "id": {
+            "get": "id"
+          },
+          "method": "post",
+          "action": {
+            "op": "url",
+            "path": {
+              "get": "transfer"
+            },
+            "params": [
+              [
+                "_csrf",
+                {
+                  "get": "csrf"
+                }
+              ]
+            ]
+          }
+        },
+        "children": [
+          {
+            "tag": "label",
+            "attrs": {
+              "for": {
+                "op": "concat",
+                "args": [
+                  {
+                    "get": "id"
+                  },
+                  "-username"
+                ]
+              }
+            },
+            "text": "Username"
+          },
+          {
+            "tag": "input",
+            "attrs": {
+              "id": {
+                "op": "concat",
+                "args": [
+                  {
+                    "get": "id"
+                  },
+                  "-username"
+                ]
+              },
+              "name": "username",
+              "type": "text",
+              "autocomplete": "username",
+              "required": true,
+              "maxlength": 128
+            }
+          },
+          {
+            "tag": "label",
+            "attrs": {
+              "for": {
+                "op": "concat",
+                "args": [
+                  {
+                    "get": "id"
+                  },
+                  "-password"
+                ]
+              }
+            },
+            "text": "Password"
+          },
+          {
+            "tag": "input",
+            "attrs": {
+              "id": {
+                "op": "concat",
+                "args": [
+                  {
+                    "get": "id"
+                  },
+                  "-password"
+                ]
+              },
+              "name": "password",
+              "type": "password",
+              "autocomplete": "current-password",
+              "required": true,
+              "maxlength": 256
+            }
+          },
+          {
+            "tag": "button",
+            "attrs": {
+              "type": "submit"
+            },
+            "text": "Login"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "divdev/register",
+    "publisher": "divdev",
+    "public": true,
+    "extends": "wydgit.core/block",
+    "properties": {
+      "content": {
+        "type": "object",
+        "default": {
+          "type": "markdown",
+          "value": ""
+        }
+      }
+    },
+    "slots": {},
+    "presentation": {
+      "schema": "wydgit.presentation/0.1",
+      "submission": {
+        "library": "wydgate",
+        "apiVersion": "1.0.0",
+        "operation": "browser-register",
+        "input": {}
+      },
+      "template": {
+        "tag": "form",
+        "attrs": {
+          "id": {
+            "get": "id"
+          },
+          "method": "post",
+          "action": {
+            "op": "url",
+            "path": {
+              "get": "transfer"
+            },
+            "params": [
+              [
+                "_csrf",
+                {
+                  "get": "csrf"
+                }
+              ]
+            ]
+          }
+        },
+        "children": [
+          {
+            "tag": "label",
+            "attrs": {
+              "for": {
+                "op": "concat",
+                "args": [
+                  {
+                    "get": "id"
+                  },
+                  "-username"
+                ]
+              }
+            },
+            "text": "Username"
+          },
+          {
+            "tag": "input",
+            "attrs": {
+              "id": {
+                "op": "concat",
+                "args": [
+                  {
+                    "get": "id"
+                  },
+                  "-username"
+                ]
+              },
+              "name": "username",
+              "type": "text",
+              "autocomplete": "username",
+              "required": true,
+              "maxlength": 128
+            }
+          },
+          {
+            "tag": "label",
+            "attrs": {
+              "for": {
+                "op": "concat",
+                "args": [
+                  {
+                    "get": "id"
+                  },
+                  "-displayName"
+                ]
+              }
+            },
+            "text": "Display name (optional)"
+          },
+          {
+            "tag": "input",
+            "attrs": {
+              "id": {
+                "op": "concat",
+                "args": [
+                  {
+                    "get": "id"
+                  },
+                  "-displayName"
+                ]
+              },
+              "name": "displayName",
+              "type": "text",
+              "autocomplete": "nickname",
+              "required": false,
+              "maxlength": 128
+            }
+          },
+          {
+            "tag": "label",
+            "attrs": {
+              "for": {
+                "op": "concat",
+                "args": [
+                  {
+                    "get": "id"
+                  },
+                  "-password"
+                ]
+              }
+            },
+            "text": "Password (at least 15 characters)"
+          },
+          {
+            "tag": "input",
+            "attrs": {
+              "id": {
+                "op": "concat",
+                "args": [
+                  {
+                    "get": "id"
+                  },
+                  "-password"
+                ]
+              },
+              "name": "password",
+              "type": "password",
+              "autocomplete": "new-password",
+              "required": true,
+              "maxlength": 256
+            }
+          },
+          {
+            "tag": "label",
+            "attrs": {
+              "for": {
+                "op": "concat",
+                "args": [
+                  {
+                    "get": "id"
+                  },
+                  "-invitation"
+                ]
+              }
+            },
+            "text": "Invitation code (when required)"
+          },
+          {
+            "tag": "input",
+            "attrs": {
+              "id": {
+                "op": "concat",
+                "args": [
+                  {
+                    "get": "id"
+                  },
+                  "-invitation"
+                ]
+              },
+              "name": "invitationToken",
+              "type": "password",
+              "autocomplete": "off",
+              "maxlength": 64
+            }
+          },
+          {
+            "tag": "button",
+            "attrs": {
+              "type": "submit"
+            },
+            "text": "Register"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "divdev/logout",
+    "publisher": "divdev",
+    "public": true,
+    "extends": "wydgit.core/block",
+    "properties": {
+      "content": {
+        "type": "object",
+        "default": {
+          "type": "markdown",
+          "value": ""
+        }
+      }
+    },
+    "slots": {},
+    "presentation": {
+      "schema": "wydgit.presentation/0.1",
+      "submission": {
+        "library": "wydgate",
+        "apiVersion": "1.0.0",
+        "operation": "browser-logout",
+        "input": {}
+      },
+      "template": {
+        "tag": "form",
+        "attrs": {
+          "id": {
+            "get": "id"
+          },
+          "method": "post",
+          "action": {
+            "op": "url",
+            "path": {
+              "get": "transfer"
+            },
+            "params": [
+              [
+                "_csrf",
+                {
+                  "get": "csrf"
+                }
+              ]
+            ]
+          }
+        },
+        "children": [
+          {
+            "tag": "button",
+            "attrs": {
+              "type": "submit"
+            },
+            "text": "Logout"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "divdev/account-profile",
+    "publisher": "divdev",
+    "public": true,
+    "extends": "wydgit.core/block",
+    "properties": {
+      "content": {
+        "type": "object",
+        "default": {
+          "type": "markdown",
+          "value": ""
+        }
+      }
+    },
+    "slots": {},
+    "presentation": {
+      "schema": "wydgit.presentation/0.1",
+      "submission": {
+        "library": "wydgate",
+        "apiVersion": "1.0.0",
+        "operation": "browser-profile",
+        "input": {}
+      },
+      "template": {
+        "tag": "form",
+        "attrs": {
+          "id": {
+            "get": "id"
+          },
+          "method": "post",
+          "action": {
+            "op": "url",
+            "path": {
+              "get": "transfer"
+            },
+            "params": [
+              [
+                "_csrf",
+                {
+                  "get": "csrf"
+                }
+              ]
+            ]
+          }
+        },
+        "children": [
+          {
+            "tag": "label",
+            "attrs": {
+              "for": {
+                "op": "concat",
+                "args": [
+                  {
+                    "get": "id"
+                  },
+                  "-displayName"
+                ]
+              }
+            },
+            "text": "Display name"
+          },
+          {
+            "tag": "input",
+            "attrs": {
+              "id": {
+                "op": "concat",
+                "args": [
+                  {
+                    "get": "id"
+                  },
+                  "-displayName"
+                ]
+              },
+              "name": "displayName",
+              "type": "text",
+              "autocomplete": "nickname",
+              "required": false,
+              "maxlength": 128
+            }
+          },
+          {
+            "tag": "button",
+            "attrs": {
+              "type": "submit"
+            },
+            "text": "Account profile"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "divdev/change-password",
+    "publisher": "divdev",
+    "public": true,
+    "extends": "wydgit.core/block",
+    "properties": {
+      "content": {
+        "type": "object",
+        "default": {
+          "type": "markdown",
+          "value": ""
+        }
+      }
+    },
+    "slots": {},
+    "presentation": {
+      "schema": "wydgit.presentation/0.1",
+      "submission": {
+        "library": "wydgate",
+        "apiVersion": "1.0.0",
+        "operation": "browser-password",
+        "input": {}
+      },
+      "template": {
+        "tag": "form",
+        "attrs": {
+          "id": {
+            "get": "id"
+          },
+          "method": "post",
+          "action": {
+            "op": "url",
+            "path": {
+              "get": "transfer"
+            },
+            "params": [
+              [
+                "_csrf",
+                {
+                  "get": "csrf"
+                }
+              ]
+            ]
+          }
+        },
+        "children": [
+          {
+            "tag": "label",
+            "attrs": {
+              "for": {
+                "op": "concat",
+                "args": [
+                  {
+                    "get": "id"
+                  },
+                  "-currentPassword"
+                ]
+              }
+            },
+            "text": "Current password"
+          },
+          {
+            "tag": "input",
+            "attrs": {
+              "id": {
+                "op": "concat",
+                "args": [
+                  {
+                    "get": "id"
+                  },
+                  "-currentPassword"
+                ]
+              },
+              "name": "currentPassword",
+              "type": "password",
+              "autocomplete": "current-password",
+              "required": true,
+              "maxlength": 256
+            }
+          },
+          {
+            "tag": "label",
+            "attrs": {
+              "for": {
+                "op": "concat",
+                "args": [
+                  {
+                    "get": "id"
+                  },
+                  "-password"
+                ]
+              }
+            },
+            "text": "New password (at least 15 characters)"
+          },
+          {
+            "tag": "input",
+            "attrs": {
+              "id": {
+                "op": "concat",
+                "args": [
+                  {
+                    "get": "id"
+                  },
+                  "-password"
+                ]
+              },
+              "name": "password",
+              "type": "password",
+              "autocomplete": "new-password",
+              "required": true,
+              "maxlength": 256
+            }
+          },
+          {
+            "tag": "button",
+            "attrs": {
+              "type": "submit"
+            },
+            "text": "Change password"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "divdev/member-list",
+    "publisher": "divdev",
+    "public": true,
+    "extends": "wydgit.core/block",
+    "properties": {
+      "content": {
+        "type": "object",
+        "default": {
+          "type": "markdown",
+          "value": ""
+        }
+      }
+    },
+    "slots": {},
+    "presentation": {
+      "schema": "wydgit.presentation/0.1",
+      "request": {
+        "library": "wydgate",
+        "apiVersion": "1.0.0",
+        "operation": "list-members",
+        "input": {
+          "limit": 20
+        }
+      },
+      "template": {
+        "tag": "section",
+        "attrs": {
+          "id": {
+            "get": "id"
+          },
+          "aria-label": "App members"
+        },
+        "children": [
+          {
+            "tag": "p",
+            "attrs": {
+              "role": "status"
+            },
+            "text": "Member list unavailable or not authorized.",
+            "if": {
+              "op": "eq",
+              "args": [
+                {
+                  "get": "data.state"
+                },
+                "error"
+              ]
+            }
+          },
+          {
+            "tag": "ul",
+            "children": [
+              {
+                "tag": "li",
+                "each": {
+                  "in": {
+                    "get": "data.value.members"
+                  },
+                  "as": "item"
+                },
+                "text": {
+                  "get": "item.displayName"
+                }
+              }
+            ],
+            "if": {
+              "op": "eq",
+              "args": [
+                {
+                  "get": "data.state"
+                },
+                "ready"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "divdev/membership-section",
+    "publisher": "divdev",
+    "extends": "wydgit.core/section",
+    "properties": {},
+    "slots": {}
+  }
+]

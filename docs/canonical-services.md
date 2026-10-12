@@ -12,7 +12,7 @@ register handlers, construct ExecutionContexts or access raw registry handlers.
 
 Three versions describe different things:
 
-- Platform release version: root `package.json`, currently `0.3.0-alpha.6`.
+- Platform release version: root `package.json`, currently `0.3.0-alpha.7`.
   Existing canonical libraries and the Guestbook example explicitly accept the 0.3
   prerelease series while retaining their v0.2 compatibility. Their own package
   versions and service APIs remain unchanged. This bump creates no Git release.

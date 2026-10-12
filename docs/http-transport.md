@@ -78,7 +78,7 @@ replaceable and is not an architectural permanence requirement. No alternate
 adapter, Bun/Deno/Cloudflare host, WebSocket or HTTP/2 support is implemented here.
 Workspace package contracts and versions remain unchanged. Their platform
 compatibility ranges now also accept the 0.3 prerelease series; the host platform
-is `0.3.0-alpha.6`.
+is `0.3.0-alpha.7`.
 
 Verification includes the full `npm test` suite and `npm run check`. Focused real
 TCP tests exercise asset/cache policy, malformed/oversized/chunked/compressed

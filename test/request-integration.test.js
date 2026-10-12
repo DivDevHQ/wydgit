@@ -42,6 +42,6 @@ test('authenticated HTTP Page resolves fresh Gate identity; revoked and forged t
  const app=createApp({libraries:registry,execution:{gateContext:gateCtx,handlers:[{type:'Page.Load',owner:'home',run:function(){seen.push(this.SESSION.identity.userId);assert.equal(this.SESSION.authenticated,true);assert.throws(()=>this.REQUEST.Cookies.Get('__Host-wydgit-auth'));}}]}});
  const server=app.listen(0,'127.0.0.1');await once(server,'listening');t.after(()=>{server.closeAllConnections();server.close();});const url=`http://127.0.0.1:${server.address().port}`;
  const response=await fetch(url,{headers:{cookie:`__Host-wydgit-auth=${login.token}`}});assert.equal(response.status,200);assert.deepEqual(seen,[user.id]);assert.ok(!(await response.text()).includes(login.token));
- await gate.logout(login.token);assert.equal((await fetch(url,{headers:{cookie:`__Host-wydgit-auth=${login.token}`}})).status,400);assert.equal(seen.length,1);
- assert.equal((await fetch(url,{headers:{cookie:'__Host-wydgit-auth=forged'}})).status,400);
+ await gate.logout(login.token);assert.equal((await fetch(url,{headers:{cookie:`__Host-wydgit-auth=${login.token}`}})).status,403);assert.equal(seen.length,1);
+ assert.equal((await fetch(url,{headers:{cookie:'__Host-wydgit-auth=forged'}})).status,403);
 });

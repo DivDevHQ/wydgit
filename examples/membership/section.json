@@ -1,0 +1,51 @@
+{
+  "schema": "wydgit/0.2",
+  "id": "membership",
+  "prototype": "divdev/membership-section",
+  "properties": {},
+  "slots": {
+    "blocks": [
+      {
+        "schema": "wydgit/0.2",
+        "id": "membership-login",
+        "prototype": "divdev/login",
+        "properties": {},
+        "slots": {},
+        "provenance": {}
+      },
+      {
+        "schema": "wydgit/0.2",
+        "id": "membership-register",
+        "prototype": "divdev/register",
+        "properties": {},
+        "slots": {},
+        "provenance": {}
+      },
+      {
+        "schema": "wydgit/0.2",
+        "id": "membership-logout",
+        "prototype": "divdev/logout",
+        "properties": {},
+        "slots": {},
+        "provenance": {}
+      },
+      {
+        "schema": "wydgit/0.2",
+        "id": "membership-account-profile",
+        "prototype": "divdev/account-profile",
+        "properties": {},
+        "slots": {},
+        "provenance": {}
+      },
+      {
+        "schema": "wydgit/0.2",
+        "id": "membership-change-password",
+        "prototype": "divdev/change-password",
+        "properties": {},
+        "slots": {},
+        "provenance": {}
+      }
+    ]
+  },
+  "provenance": {}
+}

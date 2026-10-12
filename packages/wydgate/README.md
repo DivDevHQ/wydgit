@@ -29,3 +29,5 @@ See the platform documentation for APIs, host-only configuration and capacity li
 0.2-H adds post-commit Session lifecycle notifications to the trusted library host,
 including idempotent authoritative expiry/revocation processing. No storage schema
 change or new authority grant is introduced. Notifications are not a durable queue.
+
+Current membership, browser and recovery contract: [0.3-G](../../docs/wydgate-membership.md).

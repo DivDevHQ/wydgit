@@ -4,6 +4,13 @@
 - Verified ranged-body failures after partial downstream delivery, including upstream cleanup, sanitized aborts, transfer-capacity recovery and no successful sender completion; documented that delivered bytes cannot be recalled.
 - Propagated immutable effective caller limits and one operation deadline through S3 metadata, retries, pagination, quota inspection and transfers; added regression coverage without changing WydMedia storage.
 
+## 0.3.0-alpha.7 — 0.3-G WydGate identity and membership
+
+- Added canonical Gate API 1.0.0, optional App membership schema, trusted registration/invitation policies, atomic first-owner bootstrap, self-service accounts/sessions and explicitly capability-controlled member administration.
+- Added persisted idle session validation, authentication rotation, bounded attempt limits, secret-free security auditing, and optional host-delivered hashed, expiring, single-use recovery challenges with atomic consumption.
+- Delivered an installable declarative membership package using generic components and CSRF-protected submissions; trusted Gate verification owns cookie transitions and membership facts never grant SEAM authority.
+- Added JSON/SQLite, recovery concurrency, isolation, installer rollback and actual HTTP regression tests and disposable demonstrations; documented private history/retention, small-directory limits and deferred provider/multi-App integration.
+
 ## 0.3.0-alpha.6 — 0.3-F WydMedia/WydFiles integration
 
 - New media installations stream exact-size uploads and ranged delivery through private WydFiles mounts with a separate host-issued service identity; legacy root storage remains explicit.

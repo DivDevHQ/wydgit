@@ -109,7 +109,7 @@ test('administration requires exact capabilities and App scope; client input can
  for(const extra of [{token:login.token},{sessionId:login.session.id},{userId:user.id},{identity:{authenticated:true}},{expiresAt:Date.now()+999999}]) {
   assert.equal((await registry.bind(gateContext()).call('wydgate','login',{username:'alice',password:secret,...extra})).code,'GATE.INVALID_USER');
  }
- assert.equal((await registry.bind(gateContext()).call('wydgate','create-session',{userId:user.id})).code,'SEAM.DENIED');
+ assert.equal((await registry.bind(gateContext()).call('wydgate','create-session',{userId:user.id})).code,'SERVICE.VERSION_REQUIRED');
  await reject(()=>gate.login('unknown',secret),'GATE.AUTH_FAILED');await reject(()=>gate.login('alice','wrong long password'),'GATE.AUTH_FAILED');
 });
 

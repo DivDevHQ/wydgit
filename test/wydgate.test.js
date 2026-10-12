@@ -46,13 +46,13 @@ for(const provider of ['json','sqlite']) {
   const inputs={'create-user':{username:'other',password:secret},'get-user':{id:user.id},'find-user':{username:'alice'},'update-user':{id:user.id,active:false},authenticate:{username:'alice',password:secret},'change-password':{id:user.id,password:secret}};
   for(const service of manifest.services){
    const context=gateContext({capabilities:manifest.capabilities.filter(cap=>cap!==service.capability)}),before=JSON.stringify(context);
-   const result=await registry.bind(context).call('wydgate',service.name,inputs[service.name]);assert.equal(result.code,'SEAM.DENIED');assert.equal(JSON.stringify(context),before);
+   const result=await registry.bind(context).invoke('wydgate','1.0.0',service.name,inputs[service.name]);assert.equal(result.code,'SEAM.DENIED');assert.equal(JSON.stringify(context),before);
   }
   for(const extra of [{scopes:{}},{app:'appB'},{scopes:{wydgate:['appB']}}])await reject(()=>createGate(registry.bind(gateContext(extra))).getUser(user.id),'GATE.DENIED');
   const caller=gateContext({capabilities:[...manifest.capabilities,'store.records.read'],scopes:{wydgate:['appA'],wydstore:[{store:'identity',collection:'directory'}]}}),before=JSON.stringify(caller);
   const dispatch=registry.bind(caller);assert.equal((await dispatch.call('wydstore','get',directoryRequest)).code,'STORE.DENIED');
   assert.equal((await dispatch.call('wydstore','history',directoryRequest)).code,'STORE.DENIED');
-  assert.equal((await dispatch.call('wydgate','dependency',{library:'wydstore'})).code,'SEAM.DENIED');
+  assert.equal((await dispatch.call('wydgate','dependency',{library:'wydstore'})).code,'SERVICE.VERSION_REQUIRED');
   const authOnly=gateContext({capabilities:['gate.credentials.authenticate']});assert.equal((await createGate(registry.bind(authOnly)).authenticate('alice',secret)).user.id,user.id);assert.deepEqual(authOnly.capabilities,['gate.credentials.authenticate']);
   safe(await createGate(dispatch).authenticate('alice',secret));assert.equal(JSON.stringify(caller),before);
   assert.ok(['authenticate','changePassword','createUser','findUserByUsername','getUser','updateUser'].every(name=>typeof createGate(dispatch)[name]==='function'));
@@ -71,7 +71,7 @@ for(const provider of ['json','sqlite']) {
 }
 
 test('Gate package declares portable requirements and dependency failures stop initialization',async t=>{
- const require=createRequire(import.meta.url),pkg=require('@wydgit/gate/package.json');assert.equal(pkg.version,'0.1.0-alpha.3');assert.equal(pkg.version,manifest.version);assert.equal(pkg.dependencies.argon2,'0.45.1');
+ const require=createRequire(import.meta.url),pkg=require('@wydgit/gate/package.json');assert.equal(pkg.version,'0.1.0-alpha.4');assert.equal(pkg.version,manifest.version);assert.equal(pkg.dependencies.argon2,'0.45.1');
  assert.equal(await fs.realpath(path.dirname(require.resolve('@wydgit/gate/package.json'))),path.join(project,'packages/wydgate'));
  assert.deepEqual(manifest.requirements,{schema:'wydgit.requirements/0.1',libraries:[{library:'wydstore',version:'^0.1.0-alpha.2'}]});
  const root=await temp(t),config=configuration(root);config.libraries.pop();await reject(()=>load(config),'LIBRARY.UNKNOWN');
@@ -137,6 +137,6 @@ test('password hashing is bounded and missing accounts use the same verification
 test('platform and Gate versions are synchronized and canonical App data has no authentication wiring',async()=>{
  const read=async name=>JSON.parse(await fs.readFile(path.join(project,name),'utf8'));
  const [pkg,lock,app]=await Promise.all(['package.json','package-lock.json','content/app.json'].map(read));
- assert.equal(pkg.version,'0.3.0-alpha.6');assert.equal(lock.version,pkg.version);assert.equal(lock.packages[''].version,pkg.version);assert.equal(lock.packages['packages/wydgate'].version,manifest.version);assert.equal(app.properties.revision,'Wydgit 0.3 alpha 6');
+ assert.equal(pkg.version,'0.3.0-alpha.7');assert.equal(lock.version,pkg.version);assert.equal(lock.packages[''].version,pkg.version);assert.equal(lock.packages['packages/wydgate'].version,manifest.version);assert.equal(app.properties.revision,'Wydgit 0.3 alpha 7');
  assert.doesNotMatch(JSON.stringify(app),/argon2|password|credential|@wydgit|sqlite|identity/i);
 });

@@ -1,3 +1,8 @@
+> For the current 0.3-G extension, API 1.0.0, browser forms, membership policies,
+> recovery and operational limits, see [WydGate membership](wydgate-membership.md).
+> The sections below describe the retained earlier foundation; their deferred
+> behavior statements reflect those earlier milestones.
+
 # WydGate — 0.2-H
 
 **Libraries provide capabilities. SEAM grants authority.**

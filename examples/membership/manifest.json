@@ -1,0 +1,56 @@
+{
+  "schema": "wydgit-package/0.1",
+  "id": "divdev/membership",
+  "publisher": "divdev",
+  "version": "0.1.0",
+  "platform": ">=0.3.0-alpha.7 <0.4.0",
+  "runtime": [
+    "server"
+  ],
+  "resources": {
+    "prototypes": "prototypes.json",
+    "template": "section.json",
+    "sources": {}
+  },
+  "requires": {
+    "schema": "wydgit.requirements/0.1",
+    "libraries": [
+      {
+        "library": "wydgate",
+        "version": "^0.1.0-alpha.4"
+      }
+    ]
+  },
+  "storage": [],
+  "permissions": {
+    "capabilities": [
+      "gate.credentials.authenticate",
+      "gate.registration.use",
+      "gate.sessions.use",
+      "gate.accounts.use"
+    ],
+    "traversal": [],
+    "visible": [
+      "membership",
+      "membership-login",
+      "membership-register",
+      "membership-logout",
+      "membership-account-profile",
+      "membership-change-password"
+    ],
+    "editable": [],
+    "scopes": {
+      "wydgate": [
+        "current-app"
+      ],
+      "wydstore": []
+    }
+  },
+  "bindings": [],
+  "installables": [
+    {
+      "id": "membership-section",
+      "kind": "section-template"
+    }
+  ]
+}

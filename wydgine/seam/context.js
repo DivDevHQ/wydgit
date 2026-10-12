@@ -37,12 +37,13 @@ export class ExecutionContext {
     const subject = clean(identity);
     if (subject !== null) {
       const keys=['authenticated','app','userId','sessionId','createdAt','expiresAt','roles','groups','permissions'];
-      check(record(subject) && Object.keys(subject).length===keys.length && keys.every(key=>Object.hasOwn(subject,key)) &&
+      check(record(subject) && Object.keys(subject).every(k=>[...keys,'membershipId','membershipStatus','membershipRole'].includes(k)) && keys.every(key=>Object.hasOwn(subject,key)) &&
         subject.authenticated===true && subject.app===app && typeof subject.userId==='string' && typeof subject.sessionId==='string' &&
         Number.isSafeInteger(subject.createdAt) && subject.createdAt>=0 && Number.isSafeInteger(subject.expiresAt) && subject.expiresAt>subject.createdAt &&
         ['roles','groups','permissions'].every(key=>Array.isArray(subject[key])&&subject[key].every(value=>typeof value==='string')),
         'SEAM.CONTEXT','Invalid identity metadata');
     }
+    if(subject&&['membershipId','membershipStatus','membershipRole'].some(k=>Object.hasOwn(subject,k)))check(typeof subject.membershipId==='string'&&subject.membershipStatus==='active'&&['owner','administrator','member'].includes(subject.membershipRole),'SEAM.CONTEXT','Invalid membership facts');
     const resources = clean(limits);
     check(record(resources) && Object.values(resources).every(n => Number.isSafeInteger(n) && n >= 0), 'SEAM.CONTEXT', 'Limits must be non-negative integers');
     Object.assign(this, { publisher, package: packageId, self, app, identity: subject, installation, template, principal, scopes: scopeData, capabilities: [...new Set(capabilities)], visible: [...new Set([self, ...visible])], editable: [...new Set(editable)], traversal: [...new Set(traversal)], limits: resources });
