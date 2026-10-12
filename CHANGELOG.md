@@ -1,3 +1,9 @@
+## Unreleased
+
+- Corrected 0.3-E WydFiles zero chunk limits, normalized S3 mount identity checks, and strict range header/body validation.
+- Verified ranged-body failures after partial downstream delivery, including upstream cleanup, sanitized aborts, transfer-capacity recovery and no successful sender completion; documented that delivered bytes cannot be recalled.
+- Propagated immutable effective caller limits and one operation deadline through S3 metadata, retries, pagination, quota inspection and transfers; added regression coverage without changing WydMedia storage.
+
 ## 0.3.0-alpha.5 (fix) — 0.3-E media search integration correction
 
 - Corrected media source destinations to preserve existing query fields and encode the media ID once through a shared validated same-site link contract. WydSearch accepts bounded safe queries while retaining destination validation.

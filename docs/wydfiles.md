@@ -61,7 +61,10 @@ This conservative initial syntax avoids unsafe Unicode representations.
 Longest prefix wins only at segment boundaries: `/media/a` uses `/media`, while
 `/media-archive/a` does not. Nested logical mounts are deliberate, unambiguous
 shadowing. Duplicate logical mounts and overlapping physical roots/namespaces are
-rejected. Authorization occurs against the resolved mount. Listings exclude
+rejected. S3 physical identities use the validated URL origin, bucket and namespace;
+trailing origin slashes, hostname case and explicit HTTPS port 443 cannot create
+alias mounts. Distinct namespaces and nested logical mounts remain supported.
+Authorization occurs against the resolved mount. Listings exclude
 shadowed backing objects and unauthorized entries, including metadata/existence.
 
 ## Canonical operations
@@ -108,6 +111,13 @@ completion/disconnect as the existing transfer sender does. Empty files are allo
 
 Providers expose `capabilities`, `stat(key)`, `inventory(limit)`, `read(key,start,end)`,
 `write(key,stream,exactSize)`, and `delete(key)` to trusted library code only.
+Every method accepts an optional immutable operation policy: `stat(key,operation)`,
+`inventory(limit,operation)`, `read(key,start,end,operation,expectedSize)`,
+`write(key,stream,exactSize,operation)`, and `delete(key,operation)`. WydFiles supplies
+the same effective limits and monotonic deadline throughout one canonical operation
+or transfer, including quota inventories, queued writes, copies and move cleanup.
+S3 adapters must honor that policy without mutable per-caller provider state; direct
+trusted provider calls without a policy start a new host-default operation.
 Keys encode canonical virtual paths in hex, independently of physical location.
 Inventory returns bounded key/size/version records; opened reads supply stream and
 close. Providers must throw safe FILES errors and have private exclusive namespaces.
@@ -120,7 +130,19 @@ close. Providers must throw safe FILES errors and have private exclusive namespa
 | maxObjectSize | 64 MiB | 64 MiB platform ceiling |
 
 Unsupported streaming/range requests explicitly fail; S3 refusing a Range request
-fails instead of returning the entire object. No silent destructive downgrade.
+fails instead of returning the entire object. A 206 response must provide a valid
+Content-Range matching the requested boundaries and known total size. Declared
+Content-Length, when present, must match; streamed bytes must match the expected
+length, with truncated/oversized bodies failing explicitly. Rejected response bodies
+are closed. Validation remains incremental and preserves streaming backpressure;
+files are not buffered in full. If a body truncates, exceeds its bounds, or aborts
+after output starts, the stream fails, upstream is closed, and the trusted sender
+releases transfer capacity without calling successful response completion. Wydgine
+destroys an HTTP response whose headers were already sent. Already-delivered bytes
+and status headers cannot be recalled or changed; consumers must handle stream
+failure. A client that has already accepted the declared byte count may not observe
+a later server-side failure, so initial HTTP status alone is not proof of completed
+validation. No silent destructive downgrade.
 Local storage uses flat encoded filenames, O_NOFOLLOW/nonblocking regular-file
 opens, single-link checks, private exclusive temporary files, fsync and rename.
 Root ancestors are checked before access. This prevents package-controlled nested
@@ -142,7 +164,9 @@ inspect stat before retry. No multipart or atomic multi-object semantics.
 Host `limits` sets the following policy; App and mount `quotaBytes` can only lower
 its quota. Context numeric `filesFileBytes`, `filesQuotaBytes`, `filesChunkBytes`,
 `filesPageSize`, `filesObjects`, `filesTransfers`, `filesDurationMs` and
-`filesRetries` may further lower numeric limits. Packages cannot raise limits.
+`filesRetries` may further lower numeric limits. Chunk size and duration must remain
+positive: zero values fail with FILES.LIMIT before storage access. Zero retries is
+valid (one attempt). Packages cannot raise limits.
 
 | Policy | Default | Ceiling |
 | --- | --- | --- |
@@ -156,7 +180,12 @@ its quota. Context numeric `filesFileBytes`, `filesQuotaBytes`, `filesChunkBytes
 | retries (read requests only) | 2 | 5 |
 
 Transfers use backpressure and chunk splitting; declared size and elapsed duration
-are enforced. S3 response XML is bounded to 1 MiB and inventory pagination to
+are enforced. One monotonic operation deadline covers S3 metadata, requests, retries,
+inventory pagination, quota checks and stream consumption; subsequent phases and
+retries never reset it. Each caller has independent immutable limits. Timeout aborts
+in-flight fetches and closes consumed streams; a late response from a non-cooperative
+test/provider transport is discarded and closed. PUT/DELETE remain non-retrying.
+S3 response XML is bounded to 1 MiB and inventory pagination to
 objects+1 requests, with duplicate token/key rejection. Metadata JSON retains the
 registry's default 64 KiB budgets; large listings can fail its response budget.
 Copies and writes serialize per App. Before publication a fresh bounded inventory
