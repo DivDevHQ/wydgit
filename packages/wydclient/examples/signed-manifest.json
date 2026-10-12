@@ -1,0 +1,17 @@
+{
+  "schema": "wydgit.registry/0.1",
+  "protocol": "0.1",
+  "prototypes": [],
+  "packages": [
+    {
+      "id": "acme/pages",
+      "publisher": "acme",
+      "version": "1.0.0",
+      "url": "publisher/prototypes-1.0.0.json",
+      "integrity": "sha256-yMVC0Eyv/3bXd7k+DpQUVFyLUSOmGSdI1rzfcoxUpyU=",
+      "algorithm": "Ed25519",
+      "keyId": "demo-2026",
+      "signature": "p2R0jlBCL6/dkqoLzJO8+kVqwY/hbgE4UiiPV5N8Oa7JyrShJPCScY0Xi9yFGjIIa+jrOE/DBR+A3Qam0wfLBA=="
+    }
+  ]
+}

@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Added independently versioned WydClient 0.1.0-alpha.1 / WydSUB 0.1 standalone browser artifacts, idempotent canonical Page bootstrap and logical Top/Bottom regions for static hosts.
+- Added bounded inline/external manifest discovery and staged H0 registry validation, plus pinned SHA-256/Ed25519 external prototype packages with independently trusted host keys and explicit revocation bindings; no portable execution or SEAM grants.
+- Added static/default/derived/signed examples, copyable publisher declarations, DOM/bundle/security tests and real Chrome smoke tooling; documented trust boundaries and deferred H2 construction/rendering.
+
 - Implemented 0.3-H0 canonical OOP access, declaring-class execution frames, verified exact/publisher friendship, hidden member discovery and public serialization filtering.
 - Added exact bracket member lookup and case-insensitive property reads/assignments through the existing WydBASIC parser and versioned SEWN 0.5; retained public defaults and legacy wire versions.
 - Enforced inherited collision/override security contracts and documented runtime-neutral object/content semantics, publisher verification requirements and deferred client work.

@@ -1,0 +1,5 @@
+{
+  "schema": "wydgit.registry/0.1",
+  "protocol": "0.1",
+  "prototypes": [{"id":"acme/home-page","publisher":"acme","extends":"wydgit.core/page","properties":{"greeting":{"type":"string","default":"External JSON, no JavaScript execution"}}}]
+}

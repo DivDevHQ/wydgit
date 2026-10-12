@@ -12,7 +12,10 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "test": "node --test",
-    "check": "node scripts/check-content.js"
+    "check": "node scripts/check-content.js",
+    "build:client": "node packages/wydclient/build.js",
+    "pretest": "npm run build:client",
+    "test:client": "npm run build:client && node --test --test-isolation=none packages/wydclient/test/*.test.js"
   },
   "dependencies": {
     "@hono/node-server": "2.1.4",
@@ -23,13 +26,16 @@
     "semver": "^7.8.5"
   },
   "devDependencies": {
-    "cheerio": "1.0.0"
+    "cheerio": "1.0.0",
+    "esbuild": "0.25.12",
+    "happy-dom": "20.8.4"
   },
   "workspaces": [
     "packages/*"
   ],
   "allowScripts": {
     "argon2@0.45.1": true,
-    "better-sqlite3@13.0.3": true
+    "better-sqlite3@13.0.3": true,
+    "esbuild@0.25.12": true
   }
 }

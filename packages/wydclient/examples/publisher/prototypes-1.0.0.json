@@ -1,0 +1,22 @@
+{
+  "schema": "wydgit.prototype-package/0.1",
+  "id": "acme/pages",
+  "publisher": "acme",
+  "version": "1.0.0",
+  "prototypes": [
+    {
+      "id": "acme/home-page",
+      "publisher": "acme",
+      "extends": "wydgit.core/page",
+      "friends": [
+        "acme/*"
+      ],
+      "properties": {
+        "greeting": {
+          "type": "string",
+          "default": "Cryptographically verified origin; no SEAM authority"
+        }
+      }
+    }
+  ]
+}
