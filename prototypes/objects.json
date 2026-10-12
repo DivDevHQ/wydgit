@@ -293,6 +293,22 @@
     "slots": {}
   },
   {
+    "id": "wydgit.core/hidden-input",
+    "publisher": "wydgit.core",
+    "public": true,
+    "extends": "wydgit.core/field",
+    "properties": {
+      "maxLength": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "default": null
+      }
+    },
+    "slots": {}
+  },
+  {
     "id": "acme/message-panel",
     "publisher": "acme",
     "extends": "wydgit.core/block",

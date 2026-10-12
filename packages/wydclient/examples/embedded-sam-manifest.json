@@ -1,0 +1,4 @@
+{
+  "schema": "wydgit.registry/0.1",
+  "prototypes": [{"id":"orbit/sam","publisher":"orbit","extends":"wydgit.core/page","properties":{"label":{"type":"string","default":"Sam's independent external manifest"}}}]
+}

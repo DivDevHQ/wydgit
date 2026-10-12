@@ -1,6 +1,7 @@
 import { bindMembers, authorizeMember, resolveMember } from '../object-model/members.js';
 import { matchesObjectGrant } from '../seam/context.js';
 import { descendantFields,formOperation,fieldKind,fieldValidation,publicProperties } from '../object-model/forms.js';
+import { validId } from '../object-model/schema.js';
 import { hydrate,dehydrate } from '../object-model/index.js';
 import { clean,freeze,requireThat as check } from '../object-model/validation.js';
 import { createDispatcher,EventRegistry,safeError,prepareHandlers,prepareAction } from '../events/index.js';
@@ -16,7 +17,7 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
   check((context.identity?.sessionId??null)===(session.identity?.sessionId??null),'EVENT.DENIED','Wrong Session identity');
   const presentationLedger=createPresentationLedger(context,pageId,runtimeSettings);
   let runtime=hydrate(dehydrate(model.runtime,{includeSensitive:true}),model.registry),alive=true,writable=true,unloading=false;
-  const ledger=[],initialized=new Set(),archive=new Map(),errors=[];let failure;
+  const ledger=[],initialized=new Set(),archive=new Map(),errors=[];let failure;let resolving=false;
   const response=createResponse(context),requestData={...input,route:{page:pageId}};
   const tree=(state=runtime)=>{const ids=[];const walk=id=>{ids.push(id);for(const slot of Object.keys(state.get(id).slots).sort())state.get(id).slots[slot].forEach(walk);};walk(pageId);return ids;};
   const reserved=new Set(tree());
@@ -60,13 +61,15 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
     });
     return mapped;
   };
-  const contexts=guard=>({PAGE:handle(pageId,guard),SESSION:freeze(clean(session.view)),REQUEST:requestFacade(requestData,context,guard),RESPONSE:response.facade(guard),SERVER:Object.freeze({App:context.app}),
-    FILESYS:Object.freeze({Get(id){guard();check(files,'FILE.DENIED','No approved files');return files.get(id,context,guard);}}),
-    SERVICES:Object.freeze({async Invoke(library,apiVersion,name,input){guard();await session.authorize();guard();check(libraries,'SEAM.DENIED','No services');input=storageInput(library,name,input);return libraries.bind(context).invoke(library,apiVersion,name,input);},async Call(library,name,input){guard();await session.authorize();guard();check(libraries,'SEAM.DENIED','No services');input=storageInput(library,name,input);return libraries.bind(context).call(library,name,input);}})
+  const contexts=guard=>({PAGE:handle(pageId,guard),SESSION:freeze(clean(session.view)),REQUEST:requestFacade(requestData,context,guard),...(resolving?{}:{RESPONSE:response.facade(guard)}),SERVER:Object.freeze({App:context.app}),
+    ...(resolving?{}:{FILESYS:Object.freeze({Get(id){guard();check(files,'FILE.DENIED','No approved files');return files.get(id,context,guard);}})}),
+    SERVICES:Object.freeze({async Invoke(library,apiVersion,name,input){guard();check(!resolving||library==='wydstore'&&['get','query'].includes(name),'EVENT.DENIED','Resolvers may only read records');await session.authorize();guard();check(libraries,'SEAM.DENIED','No services');input=storageInput(library,name,input);return libraries.bind(context).invoke(library,apiVersion,name,input);},async Call(library,name,input){guard();check(!resolving||library==='wydstore'&&['get','query'].includes(name),'EVENT.DENIED','Resolvers may only read records');await session.authorize();guard();check(libraries,'SEAM.DENIED','No services');input=storageInput(library,name,input);return libraries.bind(context).call(library,name,input);}})
   });
-  const action=actions.find(a=>a.page===pageId&&a.target===input.action?.target&&a.type===input.action?.type);
+  const candidates=actions.filter(a=>a.page===pageId&&a.type===input.action?.type&&(a.delegation?matchesObjectGrant([a.target],input.action?.target):a.target===input.action?.target));
+  let action=candidates.length===1?candidates[0]:null;
   const defaults={};
   if(action)defaults[action.type]=async()=>{
+    if(action.delegation)verifyDelegation(action);
     context.require(action.capability);await session.authorize();
     // Default is a trusted registered adapter; receives the same safe contexts, no grants.
     const dispatcher=createDispatcher({prototypeRegistry:model.registry,registry:events,handlers:[{type:action.type,owner:action.target,...(action.workflow!==undefined?{workflow:action.workflow}:{run:action.run})}],context,handle,contexts,exists});
@@ -85,12 +88,31 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
     // Trusted input binding only touches declared semantic fields, not arbitrary data.
     const raw=dehydrate(runtime,{includeSensitive:true});const walk=node=>{if(node.id===id)Object.assign(node.properties,properties);Object.values(node.slots).flat().forEach(walk);};walk(raw);runtime=hydrate(raw,model.registry);
   };
+  const verifyDelegation=record=>{
+    const d=record.delegation,target=input.action.target;
+    check(context.package===d.package&&context.installation===d.installation&&exists(d.root)&&exists(target)&&matchesObjectGrant(context.visible,target),'EVENT.DENIED','Unresolved delegated target');
+    const within=[];const walk=id=>{within.push(id);Object.values(runtime.get(id).slots).flat().forEach(walk);};walk(d.root);
+    const node=runtime.get(target);
+    check(within.includes(target)&&model.registry.isA(node.prototype,d.type)&&model.registry.get(node.prototype).actions?.[record.type]?.capability===record.capability,'EVENT.DENIED','Target does not delegate action');
+    check(record.type!=='Submit'||model.registry.isA(node.prototype,'wydgit.core/form'),'EVENT.DENIED','Submit requires Form');
+  };
   try {
     check(exists(pageId),'EVENT.INVALID','Page missing');
     if(input.method==='POST') {
-      check(action&&action.method==='POST'&&exists(action.target)&&matchesObjectGrant(context.visible, action.target),'EVENT.DENIED','Action denied');
+      check(action&&action.method==='POST'&&validId(input.action.target)&&matchesObjectGrant(context.visible,input.action.target),'EVENT.DENIED','Action denied');
+      if(!action.delegation)check(exists(action.target),'EVENT.DENIED','Action target missing');
       check(input.action.csrf===csrf&&typeof csrf==='string'&&csrf.length>=32,'REQUEST.FORGERY','Invalid action origin');
       check(session.active(),'EVENT.DENIED','Session ended');events.payload(action.type,input.action.payload??{});
+      if(action.delegation){
+        context.require(action.capability);await session.authorize();
+        const d=action.delegation;
+        check(context.package===d.package&&context.installation===d.installation&&exists(d.root),'EVENT.DENIED','Wrong delegation principal');
+        requestData.route.target=input.action.target;
+        const resolver=createDispatcher({prototypeRegistry:model.registry,registry:events,handlers:[{type:'Page.Resolve',owner:d.root,workflow:d.resolver}],context,handle,contexts,exists});
+        resolving=true;
+        try{await resolver.dispatch({type:'Page.Resolve',source:d.root,target:d.root,payload:{}});}finally{resolving=false;resolver.close();}
+        verifyDelegation(action);action={...action,target:input.action.target};
+      }
     } else check(!input.action,'EVENT.DENIED','GET cannot invoke action');
     ledger.push(pageId);archive.set(pageId,runtime.get(pageId));
     await dispatch('Page.Start',pageId);
@@ -118,6 +140,7 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
       for(const id of tree())if(model.registry.isA(runtime.get(id).prototype,'wydgit.core/form'))systemSet(id,{valid:runtime.get(id).properties.valid&&descendantFields(runtime,model.registry,id).every(child=>child.properties.valid)});
     }
     if(!response.explicit&&input.action) {
+      if(action.delegation)verifyDelegation(action);
       context.require(action.capability);await session.authorize();
       await dispatch(action.type,action.target,input.action.payload??{},action.type!=='Submit'||runtime.get(action.target).properties.valid!==false);
       await initialize();

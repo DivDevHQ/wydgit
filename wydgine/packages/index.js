@@ -39,10 +39,19 @@ function loadPackage(packagePath) {
 }
 export function packageBindings(entry,registry,runtime) {
   const handlers=[],actions=[],events=new EventRegistry(),m=validatePackageManifest(entry.manifest);
-  for(const b of m.bindings){check(entry.instanceIds.includes(b.owner),'PACKAGE.BINDING','Owner outside installed template');runtime.get(b.owner);
-    const source=entry.resources[m.resources.sources[b.source]],module=compileModule(source,{registry:events});
-    check(module.events.length===1&&module.events[0].type===events.resolve(b.event),'PACKAGE.BINDING','Binding source must declare exactly its event');
-    if(b.kind==='handler'){check(events.get(b.event).family==='Page','PACKAGE.BINDING','Only Page lifecycle handlers supported');handlers.push(...prepareHandlers([{owner:b.owner,wydBasicModule:source}],events));}
+  const moduleFor=(source,event)=>{const text=entry.resources[m.resources.sources[source]],module=compileModule(text,{registry:events});check(module.events.length===1&&module.events[0].type===events.resolve(event),'PACKAGE.BINDING','Binding source must declare exactly its event');return text;};
+  for(const b of m.bindings){
+    const source=moduleFor(b.source,b.event);
+    if(b.delegation){
+      const d=b.delegation,declared=JSON.parse(entry.resources[m.resources.prototypes]).some(p=>p.id===d.type);
+      check(declared&&entry.instanceIds.includes(d.root),'PACKAGE.BINDING','Delegation must belong to installed package');runtime.get(d.root);
+      check(registry.isA(d.type,'wydgit.core/form')&&registry.get(d.type).actions?.[b.event]?.capability===b.capability,'PACKAGE.BINDING','Prototype does not delegate this action');
+      const resolver=prepareHandlers([{owner:d.root,wydBasicModule:moduleFor(d.resolver,'Page.Resolve')}],events)[0];
+      actions.push(prepareAction({page:entry.placement.page,target:b.owner,type:b.event,method:b.method,capability:b.capability,wydBasicModule:source,delegation:{type:d.type,root:d.root,resolver:resolver.workflow,package:m.id,installation:entry.receipt?.id??null}},events));
+      continue;
+    }
+    check(entry.instanceIds.includes(b.owner),'PACKAGE.BINDING','Owner outside installed template');runtime.get(b.owner);
+    if(b.kind==='handler'){check(events.get(b.event).family==='Page'&&b.event!=='Page.Resolve','PACKAGE.BINDING','Only ordinary Page lifecycle handlers supported');handlers.push(...prepareHandlers([{owner:b.owner,wydBasicModule:source}],events));}
     else {check(events.get(b.event).family==='Semantic','PACKAGE.BINDING','Expected semantic action');check(b.event!=='Submit'||registry.isA(runtime.get(b.owner).prototype,'wydgit.core/form'),'PACKAGE.BINDING','Submit requires Form');actions.push(prepareAction({page:entry.placement.page,target:b.owner,type:b.event,method:b.method,capability:b.capability,wydBasicModule:source},events));}
   }
   for(const id of entry.instanceIds){const presentation=registry.get(runtime.get(id).prototype).presentation;for(const binding of [presentation?.request,presentation?.submission,presentation?.delivery].filter(Boolean))check(m.requires.libraries.some(r=>r.library===binding.library),'PACKAGE.LIBRARY','Component service provider must be declared');}

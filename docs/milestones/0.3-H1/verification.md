@@ -1,9 +1,16 @@
 # H1 verification and handoff
 
-Branch: `develop/0.3`. Starting and final HEAD (uncommitted work):
+Branch: `develop/0.3`. Pre-H1 implementation baseline and HEAD when Codex
+performed the implementation tests below:
 `c0e0f93421b2d02ad5fb265530aecf65452f6dc5`.
-The initial working tree was clean. No commits, pushes, tags, releases or
-downstream changes were made; all H1 changes remain available for review.
+The initial working tree was clean. Codex left the implementation uncommitted at
+that baseline; it did not commit, push, tag, release or change downstream projects.
+
+The subsequently committed, independently reviewed H1 revision was
+`bb7e771d90a3ce9778296ed7b46600786fd2592b`. The H1b prerequisite records independent
+review of that revision, including 534 full-suite passes, 22 focused client passes,
+10 Chrome smoke passes and adversarial testing. Those later independent audit
+results are distinct from the implementation-time checks recorded below.
 
 ## Changes
 

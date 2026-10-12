@@ -1,6 +1,6 @@
 import { check, LIMITS } from './data.js';
 // Trusted browser adapter only. Never used as a portable execution handle.
-export async function download(href, host, policy) {
+export async function download(href, host, policy, signal) {
   let url;
   try { url = new URL(href, host.location.href); }
   catch { check(false, 'NETWORK.URL', 'Invalid manifest URL'); }
@@ -8,6 +8,9 @@ export async function download(href, host, policy) {
     'NETWORK.ORIGIN', 'Manifest origin denied');
   check(url.origin === host.location.origin || policy.allowedOrigins.includes(url.origin), 'NETWORK.ORIGIN', 'Manifest origin denied');
   const controller = new AbortController();
+  const abort = () => controller.abort();
+  if (signal?.aborted) abort();
+  else signal?.addEventListener('abort', abort, { once: true });
   const timer = setTimeout(() => controller.abort(), LIMITS.timeout);
   let reader;
   try {
@@ -30,10 +33,12 @@ export async function download(href, host, policy) {
     for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
     return bytes;
   } catch (error) {
-    if (error.code === 'MANIFEST.LIMIT' || error.code?.startsWith('NETWORK.')) throw error;
+    const code = typeof error?.code === 'string' ? error.code : '';
+    if (code === 'MANIFEST.LIMIT' || code.startsWith('NETWORK.')) throw error;
     check(false, 'NETWORK.FAILED', 'Manifest request failed');
   } finally {
     clearTimeout(timer);
+    signal?.removeEventListener('abort', abort);
     if (reader) { try { await reader.cancel(); } catch { /* already aborted */ } }
   }
 }

@@ -1,5 +1,15 @@
 ## Unreleased
 
+- Added prototype-constrained wildcard Submit bindings for dynamic native Forms, with bounded, read-only `Page.Resolve` reconstruction and package installation, Page, containment, and prototype checks before dispatch.
+- Added native `wydgit.core/hidden-input` Fields with escaped rendering and standard Form binding and validation. Hidden values remain untrusted input and grant no authority.
+- Preserved existing SEAM, session, CSRF, and storage authorization checks. Added regression and security tests; all 563 tests passed with current client changes included.
+
+- Added WydClient 0.1.0-alpha.2 container-scoped bootstrap with per-root manifests, Page/destination identities and publisher policies, idempotent mounting and cancellation-safe unmount/remount; nested roots have independent lifecycles.
+- Corrected native abort error normalization and clarified unsigned manifest declarations versus signed external packages; corrected H1 baseline/review revision documentation and added embedded profile examples and regressions.
+
+- Added package-scoped wildcard Submit delegation with explicit Form prototype contracts, bounded read-only Page.Resolve reconstruction, and installation/Page/containment checks before dispatch.
+- Added native String hidden-input Fields with escaped server rendering and ordinary Form validation; hidden values grant no authority.
+
 - Added independently versioned WydClient 0.1.0-alpha.1 / WydSUB 0.1 standalone browser artifacts, idempotent canonical Page bootstrap and logical Top/Bottom regions for static hosts.
 - Added bounded inline/external manifest discovery and staged H0 registry validation, plus pinned SHA-256/Ed25519 external prototype packages with independently trusted host keys and explicit revocation bindings; no portable execution or SEAM grants.
 - Added static/default/derived/signed examples, copyable publisher declarations, DOM/bundle/security tests and real Chrome smoke tooling; documented trust boundaries and deferred H2 construction/rendering.

@@ -266,3 +266,7 @@ commit and new-directory rollback as WydStore. See
 Package prototypes can define bounded declarative `presentation` templates and
 canonical read-service bindings. See [generic components](components.md). There
 is no package JavaScript, custom route or raw-HTML escape hatch.
+
+## Delegated dynamic Submit actions
+
+Wildcard owners are supported only with explicit prototype action delegation and a bounded read-only resolver. See [dynamic actions](dynamic-actions.md) for the declaration, reconstruction flow, authority checks and rendering limits. Exact bindings remain supported unchanged.

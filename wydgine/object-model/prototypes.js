@@ -1,3 +1,4 @@
+import { isCapability } from '../seam/capabilities.js';
 import { accessOf, validateMember, resolveMember, authorizeMember } from './members.js';
 import { validatePresentation } from '../components.js';
 import { validate } from '../sewn/validate.js';
@@ -70,8 +71,16 @@ export class PrototypeRegistry {
         check(record(rule) && Array.isArray(rule.accepts) && rule.accepts.length > 0 && rule.accepts.every(x => typeof x === 'string'), 'PROTOTYPE.SLOT', 'Slot needs accepted prototypes');
         check(rule.ordered === true && Number.isInteger(rule.min ?? 0) && (rule.min ?? 0) >= 0 && (rule.max === undefined || (Number.isInteger(rule.max) && rule.max >= (rule.min ?? 0))), 'PROTOTYPE.SLOT', 'Invalid ordered slot cardinality');
       }
+      const actions={...base?.actions};
+      check(record(d.actions??{})&&Object.keys(d.actions??{}).every(name=>name==='Submit'),'PROTOTYPE.ACTION','Only Submit delegation is supported');
+      for(const [name,rule] of Object.entries(d.actions??{})){
+        check(record(rule)&&Object.keys(rule).length===1&&isCapability(rule.capability),'PROTOTYPE.ACTION','Invalid action declaration');
+        check(!actions[name]||actions[name].capability===rule.capability,'PROTOTYPE.ACTION','Inherited action capability cannot change');
+        check(d.id==='wydgit.core/form'||base&&(base.id==='wydgit.core/form'||base.ancestors.includes('wydgit.core/form')),'PROTOTYPE.ACTION','Submit delegation requires Form');
+        actions[name]=rule;
+      }
       const presentation=d.presentation===undefined?base?.presentation:validatePresentation(d.presentation);
-      const result = freeze({ ...d, ...(presentation?{presentation}:{}), abstract: d.abstract ?? false, properties, propertyOwners, slots, methods, methodRules, friends, ancestors: base ? [base.id, ...base.ancestors] : [] });
+      const result = freeze({ ...d, ...(presentation?{presentation}:{}), abstract: d.abstract ?? false, properties, propertyOwners, slots, methods, methodRules, friends, actions, ancestors: base ? [base.id, ...base.ancestors] : [] });
       visiting.delete(id); this.#definitions.set(id, result); return result;
     };
     for (const id of raw.keys()) resolve(id);

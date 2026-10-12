@@ -7,7 +7,7 @@ export const versionPattern = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9
 export function signedPayload(ref) {
   return new TextEncoder().encode(JSON.stringify(['wydgit.prototype-signature/0.1', ref.publisher, ref.id, ref.version, ref.integrity, ref.algorithm, ref.keyId]));
 }
-export async function loadPackage(ref, host, policy) {
+export async function loadPackage(ref, host, policy, signal) {
   shape(ref, ['id', 'publisher', 'version', 'url', 'integrity', 'algorithm', 'keyId', 'signature'], ['id', 'publisher', 'version', 'url', 'integrity', 'algorithm', 'keyId', 'signature']);
   check(identityPattern.test(ref.id) && ref.publisher === ref.id.split('/')[0] && ref.publisher !== 'wydgit.core' && versionPattern.test(ref.version), 'PACKAGE.IDENTITY', 'Invalid package identity');
   check(typeof ref.url === 'string' && typeof ref.keyId === 'string' && /^[A-Za-z0-9._-]{1,64}$/.test(ref.keyId), 'PACKAGE.IDENTITY', 'Invalid package identity');
@@ -16,7 +16,7 @@ export async function loadPackage(ref, host, policy) {
   const binding = policy.trustedKeys.find(k => k.publisher === ref.publisher && k.keyId === ref.keyId && k.status === 'active');
   check(binding, 'PACKAGE.UNTRUSTED_KEY', 'Publisher key is not trusted');
   check(host.crypto?.subtle, 'PACKAGE.CRYPTO', 'Package verification unavailable');
-  const bytes = await download(ref.url, host, policy);
+  const bytes = await download(ref.url, host, policy, signal);
   let digest, key, valid;
   try {
     digest = new Uint8Array(await host.crypto.subtle.digest('SHA-256', bytes));

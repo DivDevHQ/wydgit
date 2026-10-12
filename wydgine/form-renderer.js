@@ -3,6 +3,7 @@ export function renderField(f,escape,claim=()=>{}) {
   if(f.visible===false)return '';
   const e=escape,id=`wyd-field-${f.id}`,message=`${id}-error`,kind=f.controlKind??'text-input';
   const common=` name="${e(f.name)}" data-wydgit="${e(f.id)}"${f.enabled===false?' disabled':''}${f.required?' required':''}${f.valid===false?` aria-invalid="true" aria-describedby="${e(message)}"`:''}`;
+  if(kind==='hidden-input'){claim(id);return `<input type="hidden" id="${e(id)}" name="${e(f.name)}" data-wydgit="${e(f.id)}" value="${e(f.value)}"${f.enabled===false?' disabled':''}>`;}
   claim(id);if(f.valid===false)claim(message);
   const options=f.options??[],multi=kind==='checkbox-group'||kind==='select'&&f.multiple;
   const selected=v=>multi?Array.isArray(f.value)&&f.value.includes(v):f.value===v;

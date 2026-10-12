@@ -41,7 +41,22 @@ export function validatePackageManifest(input) {
   }
   m.permissions=permissions(m.permissions);check(m.permissions.scopes.wydstore.every(n=>names.has(n)),code,'Undeclared storage scope');
   check(Array.isArray(m.bindings)&&m.bindings.length<=LIMITS.bindings,code,'Invalid bindings');const bindings=new Set();
-  for(const b of m.bindings){fields(b,['owner','event','source','kind',...(b.kind==='action'?['method','capability']:[])],code);check(typeof b.owner==='string'&&matchesObjectGrant(m.permissions.visible,b.owner)&&typeof b.event==='string'&&Object.hasOwn(m.resources.sources,b.source)&&['handler','action'].includes(b.kind),code,'Invalid binding');check(b.kind!=='action'||b.method==='POST'&&m.permissions.capabilities.includes(b.capability),code,'Invalid action');const key=b.owner+':'+b.event;check(!bindings.has(key),code,'Duplicate binding');bindings.add(key);}
+  for(const b of m.bindings){
+    const delegated=b.delegation!==undefined;
+    fields(b,['owner','event','source','kind',...(b.kind==='action'?['method','capability']:[]),...(delegated?['delegation']:[])],code);
+    check(typeof b.owner==='string'&&typeof b.event==='string'&&Object.hasOwn(m.resources.sources,b.source)&&['handler','action'].includes(b.kind),code,'Invalid binding');
+    if(delegated){
+      fields(b.delegation,['type','root','resolver'],code);
+      check(b.kind==='action'&&b.event==='Submit'&&validObjectGrant(b.owner)&&b.owner.endsWith('-*')&&objectGrantCovers(m.permissions.visible,b.owner),code,'Invalid delegated owner');
+      check(qualified(b.delegation.type)&&b.delegation.type.startsWith(m.publisher+'/')&&m.permissions.scopes.prototypes?.includes(b.delegation.type),code,'Delegation requires approved package prototype');
+      check(typeof b.delegation.root==='string'&&!b.delegation.root.includes('*')&&matchesObjectGrant(m.permissions.visible,b.delegation.root)&&Object.hasOwn(m.resources.sources,b.delegation.resolver),code,'Invalid action resolver');
+    }else check(!b.owner.includes('*')&&matchesObjectGrant(m.permissions.visible,b.owner),code,'Invalid binding');
+    check(b.kind!=='action'||b.method==='POST'&&m.permissions.capabilities.includes(b.capability),code,'Invalid action');
+    const key=b.owner+':'+b.event;check(!bindings.has(key),code,'Duplicate binding');bindings.add(key);
+  }
+  for(let i=0;i<m.bindings.length;i++)for(const b of m.bindings.slice(i+1)){
+    const a=m.bindings[i];if(a.kind==='action'&&b.kind==='action'&&a.event===b.event)check(!objectGrantCovers([a.owner],b.owner)&&!objectGrantCovers([b.owner],a.owner),code,'Overlapping action owners');
+  }
   check(Array.isArray(m.installables)&&m.installables.length===1,code,'Exactly one installable supported');fields(m.installables[0],['id','kind'],code);check(localName(m.installables[0].id)&&m.installables[0].kind==='section-template',code,'Invalid installable');
   return freeze(m);
 }

@@ -1,6 +1,6 @@
-# WydClient 0.1 — Bootstrap foundation (0.3-H1)
+# WydClient 0.1 — Standalone and container bootstrap (0.3-H1/H1b)
 
-WydClient **0.1.0-alpha.1** is a standalone browser runtime bootstrap. It works on
+WydClient **0.1.0-alpha.2** is a standalone browser runtime bootstrap. It works on
 static HTTP websites without Wydgine, a database, npm, module imports or build
 tools on the consuming host. Wydgine remains **0.3.0-alpha.7**. WydSUB compatibility
 is independently declared as **0.1**, not derived from implementation SemVer.
@@ -9,7 +9,7 @@ JSON Page snapshot are the renderer-independent contract for later adapters.
 
 ## Distribution and host API
 
-Self-host `dist/wydgit-client-0.1.0-alpha.1.min.js` or upload the exact artifact to
+Self-host `dist/wydgit-client-0.1.0-alpha.2.min.js` or upload the exact artifact to
 your CDN under that immutable filename. Do not overwrite deployed version paths;
 pin upgrades explicitly. A readable `.js` artifact accompanies it. CDN hosting is
 a deployment approach, not an existing hosted CDN or published npm release. This
@@ -17,11 +17,12 @@ repository workspace is distributable with `npm pack --workspace @wydgit/client`
 publishing, tags and releases remain manual. Build tooling is repository-only.
 
 ```html
-<script defer src="/wydgit/wydgit-client-0.1.0-alpha.1.min.js"></script>
+<script defer src="/wydgit/wydgit-client-0.1.0-alpha.2.min.js"></script>
 ```
 
 The frozen global API is only `WydClient.version`, `WydClient.protocol`
-(`{name:"WydSUB",version:"0.1"}`), `WydClient.state` and `WydClient.ready()`.
+(`{name:"WydSUB",version:"0.1"}`), `WydClient.state`, `WydClient.ready()` and the
+trusted-host `WydClient.mount(options)` integration entry point.
 `ready()` returns the same promise and frozen result on every call. It resolves
 with `ok`, `state`, sanitized `diagnostics`, a generic public `page` snapshot,
 logical `SUB` destinations and `registry.approved`. Failure is explicit through
@@ -31,6 +32,111 @@ and creates no additional Page or regions. The trusted factory in source is an
 internal browser-adapter boundary, not a portable object constructor or public
 package export. A preexisting global named WydClient belongs to the trusted host;
 it is not overwritten.
+
+## Embedded containers and ownership (H1b)
+
+The document runtime still initializes automatically in `document.body`, with the
+same H1 Page identity, manifest conventions and `WydClient.ready()` result. Existing
+standalone HTML requires no change. The alpha.1 artifacts are retained unchanged;
+new integrations pin alpha.2. One loaded global owns the runtime manager, and
+loading its script twice never replaces it or adds another document context.
+
+```html
+<section id="profile" data-wydgit-root data-wydgit-page="acme/profile"
+         data-wydgit-title="My profile">
+  <script type="application/json" data-wydgit-manifest>
+  {"schema":"wydgit.registry/0.1","prototypes":[{"id":"acme/profile","publisher":"acme","extends":"wydgit.core/page"}]}
+  </script>
+  <p>Existing host content</p>
+</section>
+```
+
+```javascript
+const profile = WydClient.mount({
+  root: document.getElementById("profile"),
+  // Optional, independent of WydClientConfig and every other root:
+  policy: { allowedOrigins: [], trustedKeys: [], verifiedPrototypes: {} },
+  // Optional overrides of root-local Page selection/properties:
+  page: "acme/profile",
+  properties: { title: "Configured title", slug: "/profile" }
+});
+const result = await profile.ready(); // inspect result.ok and diagnostics
+profile.unmount();
+```
+
+`mount()` synchronously returns a frozen handle with only `ready()`, `state` and
+`unmount()`, and starts initialization. This permits cleanup even while bootstrap
+is pending. Invalid root/options throw sanitized `MOUNT.ROOT`/`MOUNT.CONFIG` errors;
+manifest/policy/Page errors resolve through the normal failed readiness result.
+Roots must be HTML container elements connected inside this document's body.
+Body/document roots, head/configuration/void elements, foreign-document nodes and
+roots inside runtime-owned regions are rejected. Shadow DOM and detached initial
+mounts are not supported in H1b. No DOM ID is used as ownership evidence.
+
+A private WeakMap keyed by the actual root owns one handle. Repeated and concurrent
+calls for that root return that exact handle/promise; **the first request wins**,
+and subsequent options do not replace its policy or Page. Root policies and
+property inputs are copied on creation. Each root independently stages the
+existing manifest, network, cryptographic, H0 registry and Page validations; no
+trusted keys or exact publisher bindings are inherited from the document, parent
+or sibling. Shared implementation code supplies no shared mutable registry.
+
+Place `data-wydgit-root` on intended containers **before document bootstrap** to
+declare configuration boundaries even before mounting. Registration also creates
+a private boundary while mounted, but cannot retroactively change an already
+completed document manifest discovery. The marker itself neither initializes the
+root nor grants trust. Embedded inline configuration is a **direct child**
+`script[type="application/json"][data-wydgit-manifest]`; alternatively use one
+direct child `link[rel="wydgit-manifest"]`. Nested arbitrary descendants are not
+configuration. One authoritative source is allowed per root; duplicate or mixed
+sources fail closed. There is no implicit merging or trusted manifest-object API.
+The document's existing manifest selectors exclude marked/registered boundaries,
+including legacy manifest IDs and links located inside them. Embedded roots never
+read the enclosing document's `data-wydgit-page` or manifest. Signature and origin
+requirements are unchanged by placement, nesting or mounting.
+
+Embedded Page selection comes from `page`, then the root's `data-wydgit-page`, then
+`wydgit.core/page`. Embedded defaults use root-local `data-wydgit-title` (otherwise
+empty) and `data-wydgit-slug` (otherwise URL pathname); explicit `properties`
+override those values and use the existing H0 validator. Pages retain the same
+canonical `wydgit/0.2` envelope, slots and export filtering. Their IDs are
+`WydClientPage-1`, `WydClientPage-2`, etc., unique within the loaded runtime manager;
+remount receives a new ID. IDs are not global persistent identities. There are no
+cross-root Wydgit parent, child or sibling relationships.
+
+Every root prepends/appends its own empty Top/Bottom containers without moving
+host content. `SUB.Page.Top` and `.Bottom` keep the same semantic `destination`
+strings; embedded descriptors additionally carry `context: <Page ID>`. The pair
+of context and destination identifies one logical mounting destination.
+`SUB.Page.default` continues to mean Bottom **within that environment**. No DOM
+anchor or placement operation is exposed. Document descriptors retain their H1
+shape. Regions are private runtime-owned nodes; outer containers never claim
+inner destinations or inner registries.
+
+Nested roots are supported with **independent lifecycles** in either mounting
+order. Unmounting outer leaves inner active, connected in its host container;
+unmounting inner leaves outer active. An HTML-contained Page is not a child Wydgit.
+Unmount is synchronous/idempotent, aborts pending requests and DOM-ready waiting,
+deactivates the Page, releases ownership/private runtime state, and removes only
+that environment's region wrappers. H1 has no portable children, so any host-added
+children inside those wrappers are preserved, including host-moved nested roots.
+Pending native cryptographic operations may finish, but cannot activate a disposed
+context. `ready()` after unmount resolves a frozen disposed result with null Page
+and destinations. Already delivered readiness snapshots remain immutable historical
+JSON; they are not live execution handles. `state` reports the current lifecycle.
+An old handle cannot dispose its replacement. Hosts may reconnect a removed root,
+unmount its old handle, and mount it cleanly again; no automatic removal observer
+or hierarchy-wide disposal exists. A root detached during pending bootstrap fails
+without inserting regions. Hosts are responsible for later DOM relocation/removal.
+
+Container ownership is a logical runtime boundary, **not a JavaScript sandbox**.
+Same-document host JavaScript can inspect its page and share globals. Executable
+untrusted third-party code needs additional host isolation; H1b executes none.
+The [embedded profiles example](examples/embedded.html) demonstrates two independent
+Pages without AppCaboodle-specific services or a profile builder. Future H2/H3
+construction, placement, rendering and execution must bind to an explicitly scoped
+context and independently granted SEAM authority, never infer authority from HTML
+containment, publisher signatures or these diagnostic descriptors.
 
 ## Initialization and Page semantics
 
@@ -116,9 +222,11 @@ globalThis.WydClientConfig = {
 };
 ```
 
-External definitions always require signatures and independently trusted keys.
-Inline/local manifest declarations alone are site-author configuration, not
-authenticated publisher origin. Only the trusted host may explicitly bind exact
+External prototype packages require signatures and independently trusted publisher
+keys. Manifest-authored declarations, whether inline or fetched, remain site-author
+configuration. Fetching an unsigned JSON manifest does not authenticate its
+publisher. Namespace claims alone cannot establish authenticated friendship or
+grant SEAM execution authority. Only the trusted host may explicitly bind exact
 local prototype IDs to their publisher with `verifiedPrototypes`; it must have
 independent evidence. Portable manifests cannot set this field or supply keys.
 
@@ -227,8 +335,9 @@ npm test
 npm run check
 ```
 
-Examples cover no-manifest defaults, inline derived Page, external manifests and
-signed external definitions. Tests use Happy DOM plus actual headless Chrome
+Examples cover no-manifest defaults, inline derived Page, external manifests,
+signed external definitions and container-scoped profiles. Tests use Happy DOM
+plus actual headless Chrome
 smoke cases; DOM emulation is not a claim of full browser compatibility. Build
 dependencies (`esbuild`, Happy DOM) are development-only; distribution has no
 runtime npm dependencies or module imports. Current byte measurements are in
@@ -245,7 +354,7 @@ A single-file host (the immutable runtime remains an external script):
 <script type="application/json" id="wydgit-manifest">
 {"schema":"wydgit.registry/0.1","prototypes":[{"id":"acme/home-page","publisher":"acme","extends":"wydgit.core/page"}]}
 </script>
-<script defer src="/wydgit/wydgit-client-0.1.0-alpha.1.min.js"></script>
+<script defer src="/wydgit/wydgit-client-0.1.0-alpha.2.min.js"></script>
 <script>addEventListener('DOMContentLoaded', async () => {
   const result = await WydClient.ready();
   document.getElementById('status').textContent = JSON.stringify(result, null, 2);

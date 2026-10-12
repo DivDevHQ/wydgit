@@ -6,7 +6,7 @@ import { Window } from 'happy-dom';
 const root = new URL('../', import.meta.url);
 test('both standalone classic browser artifacts bootstrap without imports; loading twice reuses canonical context', async t => {
   for (const suffix of ['', '.min']) {
-    const code = await readFile(new URL(`dist/wydgit-client-0.1.0-alpha.1${suffix}.js`, root), 'utf8');
+    const code = await readFile(new URL(`dist/wydgit-client-0.1.0-alpha.2${suffix}.js`, root), 'utf8');
     assert.doesNotMatch(code, /\bimport\s|(?<![\w.])require\s*\(|\beval\s*\(|new Function\s*\(|node:|innerHTML\s*=/);
     assert.doesNotMatch(code, /acme\/message-panel|wydgit\.core\/app/);
     const window = new Window({ url: 'https://site.example/' });

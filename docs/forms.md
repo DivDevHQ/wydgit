@@ -25,6 +25,7 @@ remains a text control for compatibility.
 | Prototype suffix | Value | Empty value |
 | --- | --- | --- |
 | text-input | String | `""` |
+| hidden-input | String, browser-editable transport | `""` |
 | password-input | String, sensitive | `""` |
 | text-area | String, multiline | `""` |
 | checkbox | Boolean | `false` |
@@ -150,3 +151,5 @@ deferred. The tracked Guestbook package exercises server Forms and dynamic rende
 `test/forms.test.js` provides the ProfileForm vertical fixture and direct hostile
 object/mutation/draft, shared rule, portable source/Page and client tests. Existing
 real HTTP tests continue proving the transport boundary, CSRF and isolation.
+
+Native hidden-input and delegated server Form actions are described in [dynamic actions](dynamic-actions.md). Hidden values are untrusted request data; visual concealment grants no authority.

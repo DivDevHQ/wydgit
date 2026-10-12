@@ -8,14 +8,14 @@
   <script type="application/json" id="wydgit-manifest">
   {"schema":"wydgit.registry/0.1","protocol":"0.1","prototypes":[{"id":"acme/home-page","publisher":"acme","extends":"wydgit.core/page","properties":{"greeting":{"type":"string","default":"Hello from a derived canonical Page"}}}]}
   </script>
-  <script defer src="../dist/wydgit-client-0.1.0-alpha.1.min.js"></script>
+  <script defer src="../dist/wydgit-client-0.1.0-alpha.2.min.js"></script>
   <script defer src="report.js"></script>
 </head>
 <body>
   <main id="host-content">
     <h1>An ordinary static website</h1>
     <p>This host content remains intact. The empty regions are visible through host CSS only. There is no backend or portable renderer.</p>
-    <p><a href="default.html">Default Page, no manifest</a> · <a href="external.html">External manifest</a> · <a href="signed.html">Signed prototype package</a></p>
+    <p><a href="default.html">Default Page, no manifest</a> · <a href="external.html">External manifest</a> · <a href="signed.html">Signed prototype package</a> · <a href="embedded.html">Embedded profiles</a></p>
     <p>Actual Wydgit construction and rendering arrive in later H iterations.</p>
     <pre id="diagnostics" aria-live="polite">Initializing…</pre>
   </main>

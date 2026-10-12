@@ -3,7 +3,7 @@ import { matchesObjectGrant } from '../seam/context.js';
 import { clean, requireThat as check } from './validation.js';
 export const sensitive = (type, registry) => registry.isA(type, 'wydgit.core/password-input');
 export function fieldKind(type, registry) {
-  return ['password-input','text-area','checkbox','radio-group','checkbox-group','select','text-input'].find(k=>registry.isA(type,`wydgit.core/${k}`)) ?? 'text-input';
+  return ['hidden-input','password-input','text-area','checkbox','radio-group','checkbox-group','select','text-input'].find(k=>registry.isA(type,`wydgit.core/${k}`)) ?? 'text-input';
 }
 export function emptyValue(kind,p) { return kind==='checkbox'?false:kind==='checkbox-group'||kind==='select'&&p.multiple?[]:['radio-group','select'].includes(kind)?null:''; }
 export function fieldValidation(kind,p) {

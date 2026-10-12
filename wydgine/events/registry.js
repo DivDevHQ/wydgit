@@ -3,7 +3,7 @@ const types=['string','number','boolean','object','array','null','json'];
 export class EventRegistry {
   #events=new Map();
   constructor() {
-    for(const [family,names] of Object.entries({Server:['Start','Stop'],Session:['Start','Authenticated','Logout','Timeout','End'],Page:['Start','Initialize','Load','Validate','PreRender','Unload'],Client:['Mount','Ready','Unmount']}))
+    for(const [family,names] of Object.entries({Server:['Start','Stop'],Session:['Start','Authenticated','Logout','Timeout','End'],Page:['Start','Initialize','Load','Validate','Resolve','PreRender','Unload'],Client:['Mount','Ready','Unmount']}))
       for(const name of names)this.define(`${family}.${name}`,{family,fields:{},cancelable:false});
     this.define('Activate',{family:'Semantic',cancelable:true,fields:{Command:{type:'string',optional:true}}});
     this.define('Change',{family:'Semantic',cancelable:true,fields:{OldValue:{type:'json'},NewValue:{type:'json'}}});
