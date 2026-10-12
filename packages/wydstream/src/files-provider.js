@@ -22,6 +22,23 @@ export function filesMediaProvider(files,root) {
    return {size,file};
   },
   async remove(id,staging=false,limits){if(staging)return;try{await result('delete',{path:location(id)},limits);}catch(e){if(e.code!=='ENOENT')throw e;}},
-  async objects(limit,limits){const items=[];let offset=0;do{const page=await result('list',{path:root+'/assets',offset,limit:Math.min(20,limits?.filesPageSize??20,limit-items.length)},limits);for(const i of page.items){const id=i.path.slice((root+'/assets/').length);if(/^m-[a-f0-9]{32}$/.test(id))items.push({id,staging:false});}if(page.nextOffset===null)break;if(items.length>=limit)throw new Error('Media object limit');offset=page.nextOffset;}while(true);return items;}
+  async objects(limit,limits){
+   const items=[];let offset=0;
+   do{
+    // WydFiles selects the page size from both host and caller limits.
+    const page=await result('list',{path:root+'/assets',offset},limits);
+    for(const i of page.items){
+     const id=i.path.slice((root+'/assets/').length);
+     if(/^m-[a-f0-9]{32}$/.test(id)){
+      items.push({id,staging:false});
+      if(items.length>limit)throw new Error('Media object limit');
+     }
+    }
+    if(page.nextOffset===null)break;
+    if(items.length>=limit)throw new Error('Media object limit');
+    offset=page.nextOffset;
+   }while(true);
+   return items;
+  }
  });
 }

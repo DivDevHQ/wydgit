@@ -2,11 +2,37 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import {Readable} from 'node:stream';
+import {keyFor} from '../packages/wydfiles/src/contract.js';
 import {initializeHost} from '../wydgine/host.js';
 import {localProvider} from '../packages/wydfiles/src/local.js';
 import {s3Provider} from '../packages/wydfiles/src/s3.js';
 import {simulatedS3} from '../test-support/s3.js';
 import {mediaFixture,png} from '../test-support/wydstream.js';
+
+for(const metadata of ['JSON','SQLite'])for(const reduced of ['host','caller'])test(`${metadata}: reconciliation paginates orphan cleanup with reduced ${reduced} file page size`,async t=>{
+ const f=await mediaFixture(t,metadata,true,true),filename=path.join(f.root,'wydgit.config.json'),config=JSON.parse(await fs.readFile(filename));
+ const files=config.libraries.find(l=>l.id==='wydfiles'),mount=files.options.apps[0].mounts[0];
+ if(reduced==='host')files.options.limits={pageSize:1};
+ await fs.writeFile(filename,JSON.stringify(config));
+ const provider=await localProvider(mount.root);
+ for(const suffix of ['a','b'])await provider.write(keyFor('/media/assets/m-'+suffix.repeat(32)),Readable.from([png]),png.length);
+ const registry=await initializeHost({root:f.root}),repair=f.context({principal:'host:media-repair',capabilities:['stream.media.repair'],limits:reduced==='caller'?{filesPageSize:1}:{}});
+ const reconcile=()=>registry.bind(repair).invoke('wydstream','1.0.0','reconcile',{resource:'media'});
+ const result=await reconcile();assert.equal(result.ok,true,JSON.stringify(result));assert.equal(result.value.changed,2);
+ assert.deepEqual(await fs.readdir(mount.root),[]);assert.equal((await reconcile()).value.changed,0);
+});
+
+test('reconciliation rejects excess media objects even when all fit in the final file page',async t=>{
+ const f=await mediaFixture(t,'JSON',true,true),filename=path.join(f.root,'wydgit.config.json'),config=JSON.parse(await fs.readFile(filename));
+ config.libraries.find(l=>l.id==='wydstream').options.limits={items:1};
+ const mount=config.libraries.find(l=>l.id==='wydfiles').options.apps[0].mounts[0],provider=await localProvider(mount.root);
+ for(const suffix of ['a','b','c'])await provider.write(keyFor('/media/assets/m-'+suffix.repeat(32)),Readable.from([png]),png.length);
+ await fs.writeFile(filename,JSON.stringify(config));const registry=await initializeHost({root:f.root});
+ const repair=f.context({principal:'host:media-repair',capabilities:['stream.media.repair']});
+ const result=await registry.bind(repair).invoke('wydstream','1.0.0','reconcile',{resource:'media'});
+ assert.equal(result.ok,false);assert.equal(result.code,'STREAM.STORAGE');assert.equal((await fs.readdir(mount.root)).length,3);
+});
 const port=(bytes=png,size=bytes.length)=>{const form=new FormData();form.append('file',new Blob([bytes]),'../image.png');const r=new Request('http://localhost',{method:'POST',body:form});return {method:'POST',body:r.body,headers:{type:r.headers.get('content-type'),encoding:'identity',fileSize:String(size)},authorize:async()=>{}};};
 for(const adapter of ['JSON','SQLite'])test(`${adapter}: WydFiles media publication, scoped streaming, gallery, deletion and limits`,async t=>{
  const f=await mediaFixture(t,adapter,true,true);
