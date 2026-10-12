@@ -1,5 +1,4 @@
 FUNCTION FindNode(parent AS Wydgit, slotName AS String, sId AS String) AS Wydgit
-    Dim node AS Wydgit
     FOR EACH node IN parent.related("children", slotName)
         IF node.id = sId THEN
             RETURN node
@@ -23,7 +22,7 @@ EVENT Submit
     SET rootSec = Me.related("parent")
 
     Dim statusBlock As Wydgit
-    IF rootSec IsNot NULL THEN
+    IF rootSec IS NOT NULL THEN
         SET statusBlock = FindNode(rootSec, "blocks", "taskboard-status-msg")
     END IF
 
@@ -43,7 +42,7 @@ EVENT Submit
         })
 
         If res.ok Then
-            IF statusBlock IsNot NULL THEN
+            IF statusBlock IS NOT NULL THEN
                 statusBlock.content = {
                     "type": "markdown",
                     "value": "Task created successfully!"
@@ -53,11 +52,11 @@ EVENT Submit
             Dim titleField As Wydgit
             SET titleField = FindNode(Me, "blocks", "taskboard-title-field")
 
-            IF titleField IsNot NULL THEN
+            IF titleField IS NOT NULL THEN
                 titleField.value = ""
             END IF
         Else
-            IF statusBlock IsNot NULL THEN
+            IF statusBlock IS NOT NULL THEN
                 statusBlock.content = {
                     "type": "markdown",
                     "value": "Failed to create task in store."

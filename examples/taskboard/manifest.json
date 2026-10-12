@@ -2,7 +2,7 @@
   "schema": "wydgit-package/0.1",
   "id": "divdev/taskboard",
   "publisher": "divdev",
-  "version": "0.3.1-alpha.2",
+  "version": "0.4.0-alpha.2",
   "platform": ">=0.3.0-alpha.1 <0.4.0",
   "runtime": ["server"],
   "resources": {

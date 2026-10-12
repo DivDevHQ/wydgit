@@ -1,5 +1,4 @@
 FUNCTION FindNode(parent AS Wydgit, slotName AS String, sId AS String) AS Wydgit
-    Dim node AS Wydgit
     FOR EACH node IN parent.related("children", slotName)
         IF node.id = sId THEN
             RETURN node
@@ -30,7 +29,7 @@ EVENT Page.PreRender
         Dim colDoing As Wydgit
         Dim colDone As Wydgit
 
-        IF listSec IsNot NULL THEN
+        IF listSec IS NOT NULL THEN
             SET colTodo = FindNode(listSec, "blocks", "col-todo")
             SET colDoing = FindNode(listSec, "blocks", "col-doing")
             SET colDone = FindNode(listSec, "blocks", "col-done")
@@ -95,10 +94,26 @@ EVENT Page.PreRender
 
             cardId = "task-card-" & recId
 
-            IF targetCol IsNot NULL THEN
-                SET existingCard = FindNode(targetCol, "blocks", cardId)
+            ' Search across all columns for existing reconstructed card
+            SET existingCard = NULL
+            IF colTodo IS NOT NULL THEN
+                IF existingCard IS NULL THEN
+                    SET existingCard = FindNode(colTodo, "blocks", cardId)
+                END IF
+            END IF
+            IF colDoing IS NOT NULL THEN
+                IF existingCard IS NULL THEN
+                    SET existingCard = FindNode(colDoing, "blocks", cardId)
+                END IF
+            END IF
+            IF colDone IS NOT NULL THEN
+                IF existingCard IS NULL THEN
+                    SET existingCard = FindNode(colDone, "blocks", cardId)
+                END IF
+            END IF
 
-                If existingCard Is NULL Then
+            IF existingCard IS NULL THEN
+                IF targetCol IS NOT NULL THEN
                     SET card = NEW "divdev/task-card"(cardId)
                     card.taskTitle = titleStr
                     card.status = statusStr
@@ -112,7 +127,7 @@ EVENT Page.PreRender
                     }
                     card.Insert("blocks", 0, titleBlock)
 
-                    ' 2. Move Form (Native Label)
+                    ' 2. Move Form
                     SET moveForm = NEW "divdev/task-move-form"("task-card-move-" & recId)
                     moveForm.label = btnLabel
 
@@ -128,7 +143,7 @@ EVENT Page.PreRender
 
                     card.Insert("blocks", 1, moveForm)
 
-                    ' 3. Delete Form (Native Label)
+                    ' 3. Delete Form
                     SET delForm = NEW "divdev/task-delete-form"("task-card-delete-" & recId)
                     delForm.label = "Delete"
 
@@ -140,11 +155,11 @@ EVENT Page.PreRender
                     card.Insert("blocks", 2, delForm)
 
                     targetCol.Insert("blocks", targetIdx, card)
-                End If
+                END IF
             END IF
         NEXT rec
     Else
-        IF statusBlock IsNot NULL THEN
+        IF statusBlock IS NOT NULL THEN
             statusBlock.content = {
                 "type": "markdown",
                 "value": "Failed to load tasks from storage."

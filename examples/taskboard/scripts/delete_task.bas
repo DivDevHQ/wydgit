@@ -24,6 +24,16 @@ EVENT Submit
                 "id": targetRecId,
                 "version": currentVersion
             })
+
+            If delRes.ok Then
+                ' Detach deleted card receiver from tree using zero-argument Remove()
+                Dim cardObj As Wydgit
+                SET cardObj = Me.related("parent")
+
+                If cardObj IS NOT NULL Then
+                    cardObj.Remove()
+                End If
+            End If
         End If
     End If
 END EVENT
