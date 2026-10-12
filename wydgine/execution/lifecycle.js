@@ -26,14 +26,20 @@ export function createLifecycle({app,handlers=[],context=new ExecutionContext({p
 }
 export function createSessionResolver({app,gate,lifecycle,max=1024}) {
   const anonymous=new Map();const digest=value=>createHash('sha256').update(value).digest('hex');
+  const retire=async key=>{
+    const entry=anonymous.get(key);if(!entry)return;
+    // Remove authority and release capacity before invoking terminal observers.
+    anonymous.delete(key);
+    await lifecycle.session({app,type:'End',session:{id:entry.id,app,authenticated:false,expiresAt:entry.expiresAt}});
+  };
   return Object.freeze({async resolve(cookies) {
     if(cookies['__Host-wydgit-auth']) {
       check(gate,'EVENT.DENIED','Authentication unavailable');const identity=await gate.resolveSession(cookies['__Host-wydgit-auth']);check(identity.app===app,'EVENT.DENIED','Cross-App Session');
-      return {view:{id:identity.sessionId,app,authenticated:true,identity},active:()=>identity.expiresAt>Date.now(),async authorize(){const fresh=await gate.resolveSession(cookies['__Host-wydgit-auth']);check(fresh.app===app&&fresh.sessionId===identity.sessionId,'EVENT.DENIED','Session changed');return fresh;},identity,csrf:digest(cookies['__Host-wydgit-auth']+'csrf'),cookie:null};
+      return {view:{id:identity.sessionId,app,authenticated:true,identity},active:()=>identity.expiresAt>Date.now(),async authorize(){const fresh=await gate.resolveSession(cookies['__Host-wydgit-auth']);check(fresh.app===app&&fresh.sessionId===identity.sessionId,'EVENT.DENIED','Session changed');return fresh;},retire:()=>retire(cookies['__Host-wydgit-session']&&digest(cookies['__Host-wydgit-session'])),identity,csrf:digest(cookies['__Host-wydgit-auth']+'csrf'),cookie:null};
     }
     const now=Date.now();for(const [key,entry] of anonymous)if(entry.expiresAt<=now){anonymous.delete(key);await lifecycle.session({app,type:'Timeout',session:{id:entry.id,app,authenticated:false,expiresAt:entry.expiresAt}});await lifecycle.session({app,type:'End',session:{id:entry.id,app,authenticated:false,expiresAt:entry.expiresAt}});}
-    const token=cookies['__Host-wydgit-session'];let entry=token&&anonymous.get(digest(token));let cookie=null;
-    if(!entry){check(anonymous.size<max,'EVENT.LIMIT','Session capacity');const token=randomBytes(32).toString('hex');entry={id:randomBytes(16).toString('hex'),app,authenticated:false,expiresAt:now+3600000,csrf:randomBytes(32).toString('hex')};anonymous.set(digest(token),entry);cookie=`__Host-wydgit-session=${token}; Path=/; Secure; HttpOnly; SameSite=Lax`;await lifecycle.session({app,type:'Start',session:{id:entry.id,app,authenticated:false,expiresAt:entry.expiresAt}});}
-    return {view:{id:entry.id,app,authenticated:false},active:()=>entry.expiresAt>Date.now(),async authorize(){check(entry.expiresAt>Date.now(),'EVENT.DENIED','Session ended');},identity:null,csrf:entry.csrf,cookie};
+    const token=cookies['__Host-wydgit-session'];let key=token&&digest(token),entry=anonymous.get(key);let cookie=null;
+    if(!entry){check(anonymous.size<max,'EVENT.LIMIT','Session capacity');const token=randomBytes(32).toString('hex');key=digest(token);entry={id:randomBytes(16).toString('hex'),app,authenticated:false,expiresAt:now+3600000,csrf:randomBytes(32).toString('hex')};anonymous.set(key,entry);cookie=`__Host-wydgit-session=${token}; Path=/; Secure; HttpOnly; SameSite=Lax`;await lifecycle.session({app,type:'Start',session:{id:entry.id,app,authenticated:false,expiresAt:entry.expiresAt}});}
+    return {view:{id:entry.id,app,authenticated:false},active:()=>anonymous.get(key)===entry&&entry.expiresAt>Date.now(),async authorize(){check(anonymous.get(key)===entry&&entry.expiresAt>Date.now(),'EVENT.DENIED','Session ended');},retire:()=>retire(key),identity:null,csrf:entry.csrf,cookie};
   }});
 }

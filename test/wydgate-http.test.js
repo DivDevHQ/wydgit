@@ -6,6 +6,24 @@ import { once } from 'node:events';
 import { load as html } from 'cheerio';
 import { membershipFixture } from '../test-support/membership.js';
 import { createHostApp } from '../app.js';
+for(const provider of ['json','sqlite'])test(`${provider}: successful browser login retires old anonymous CSRF authority while failed login preserves it`,async t=>{
+ const f=await membershipFixture(t,provider);await f.gate.register({username:'alice',password:f.password});
+ const app=await createHostApp({root:f.root,execution:{gateContext:f.gateContext}}),server=app.listen(0,'127.0.0.1');
+ await once(server,'listening');t.after(()=>app.shutdown(server));const base='http://127.0.0.1:'+server.address().port;
+ const first=await fetch(base+'/'),cookie=first.headers.getSetCookie().find(c=>c.startsWith('__Host-wydgit-session=')).split(';')[0];
+ const action=html(await first.text())('#membership-login').attr('action');
+ const login=password=>fetch(base+action,{method:'POST',headers:{Cookie:cookie,'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({username:'alice',password})});
+ const failed=await login('incorrect long passphrase');assert.equal(failed.status,400);await failed.text();
+ const successful=await login(f.password);assert.equal(successful.status,200);await successful.text();
+ const auth=successful.headers.getSetCookie().find(c=>c.startsWith('__Host-wydgit-auth=')).split(';')[0];
+ const replay=await login(f.password);assert.equal(replay.status,403);await replay.text();
+ const authenticated=await fetch(base+'/',{headers:{Cookie:auth}});assert.equal(authenticated.status,200);
+ const logout=html(await authenticated.text())('#membership-logout').attr('action');
+ const loggedOut=await fetch(base+logout,{method:'POST',headers:{Cookie:auth,'Content-Type':'application/x-www-form-urlencoded'},body:''});
+ assert.equal(loggedOut.status,200);await loggedOut.text();
+ const fresh=await fetch(base+'/');assert.equal(fresh.status,200);await fresh.text();
+ assert.ok(fresh.headers.getSetCookie().some(c=>c.startsWith('__Host-wydgit-session=')));
+});
 test('administrator member-list presentation denies anonymous/member callers and renders only approved safe data',async t=>{
  const f=await membershipFixture(t,'json','open',true,{administration:true});const alice=await f.gate.register({username:'alice',password:f.password,displayName:'Alice'});await f.gate.register({username:'bobby',password:f.password,displayName:'Bob <safe>'});
  const app=await createHostApp({root:f.root,execution:{gateContext:f.gateContext}}),server=app.listen(0,'127.0.0.1');await once(server,'listening');t.after(()=>app.shutdown(server));const base='http://127.0.0.1:'+server.address().port;

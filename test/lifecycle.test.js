@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadLibraries } from '../wydgine/libraries/index.js';
-import { createLifecycle } from '../wydgine/execution/lifecycle.js';
+import { createLifecycle,createSessionResolver } from '../wydgine/execution/lifecycle.js';
 import { ExecutionContext } from '../wydgine/seam/context.js';
 import { createGate } from '@wydgit/gate/client';
 import { configuration,temp,gateContext,secret,project } from '../test-support/wydgate.js';
@@ -22,4 +22,29 @@ test('Server lifecycle activates/stops once with no fabricated request or Sessio
  const trace=[],context=new ExecutionContext({publisher:'wydgit.core',app:'app',self:'app'});
  const lifecycle=createLifecycle({app:'app',context,handlers:['Start','Stop'].map(type=>({type:`Server.${type}`,owner:'app',run:function(){trace.push(type);assert.equal(this.SERVER.App,'app');for(const name of ['SESSION','REQUEST','RESPONSE','PAGE'])assert.throws(()=>this[name],e=>e.code==='EVENT.CONTEXT');}}))});
  await Promise.all([lifecycle.start(),lifecycle.start()]);await Promise.all([lifecycle.stop(),lifecycle.stop()]);assert.deepEqual(trace,['Start','Stop']);
+});
+
+test('anonymous retirement invalidates retained handles, emits End once and reuses capacity across authentication cycles',async()=>{
+ const events=[],resolver=createSessionResolver({app:'app',max:1,lifecycle:{session:async event=>events.push(event)},gate:{resolveSession:async()=>({app:'app',sessionId:'authenticated',expiresAt:Date.now()+60000})}});
+ for(let i=0;i<3;i++){
+  const anonymous=await resolver.resolve({}),token=anonymous.cookie.split(';')[0].split('=')[1];
+  const retained=await resolver.resolve({'__Host-wydgit-session':token});assert.equal(retained.view.id,anonymous.view.id);
+  await Promise.all([anonymous.retire(),retained.retire()]);
+  assert.equal(anonymous.active(),false);assert.equal(retained.active(),false);
+  await assert.rejects(()=>retained.authorize(),{code:'EVENT.DENIED'});
+  assert.equal(events.filter(e=>e.type==='End'&&e.session.id===anonymous.view.id).length,1);
+  // Login followed by logout must leave room for the next anonymous session.
+  const authenticated=await resolver.resolve({'__Host-wydgit-auth':'auth'});await authenticated.retire();
+ }
+ assert.deepEqual(events.map(e=>e.type),['Start','End','Start','End','Start','End']);
+});
+
+test('authenticated transition retires a companion anonymous cookie without ending the Gate session',async()=>{
+ const events=[],resolver=createSessionResolver({app:'app',max:1,lifecycle:{session:async event=>events.push(event)},gate:{resolveSession:async()=>({app:'app',sessionId:'authenticated',expiresAt:Date.now()+60000})}});
+ const anonymous=await resolver.resolve({}),token=anonymous.cookie.split(';')[0].split('=')[1];
+ const authenticated=await resolver.resolve({'__Host-wydgit-auth':'auth','__Host-wydgit-session':token});
+ await authenticated.retire();assert.equal(authenticated.active(),true);assert.equal(anonymous.active(),false);
+ assert.deepEqual(events.map(e=>e.type),['Start','End']);assert.equal(events[1].session.id,anonymous.view.id);
+ const replacement=await resolver.resolve({'__Host-wydgit-session':token});
+ assert.notEqual(replacement.view.id,anonymous.view.id);assert.notEqual(replacement.csrf,anonymous.csrf);
 });

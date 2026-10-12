@@ -128,8 +128,11 @@ Public authentication failures share the existing generic error.
 Host `execution.gateContext` must explicitly grant session resolution for the App.
 It is separate from package grants. A new opaque token is accepted by the kernel
 only after trusted Gate resolution, then issued as `__Host-wydgit-auth`, `Path=/`,
-`HttpOnly`, `Secure`, `SameSite=Lax`, bounded Max-Age. Anonymous cookies are retired
-on authentication and logout. HTTPS is required for browser deployments; Secure
+`HttpOnly`, `Secure`, `SameSite=Lax`, bounded Max-Age. Anonymous cookies and their
+server-side session records are retired on successful authentication and logout.
+Retirement releases resolver capacity, invalidates retained anonymous authority
+and emits Session.End once. Failed login preserves the anonymous session so its
+approved form can be retried. HTTPS is required for browser deployments; Secure
 is unconditional and no forwarding header controls it. This implementation does
 not add proxy trust configuration, TLS, hostname routing or distributed cookies.
 The disposable HTTP demonstration manually supplies cookies to loopback fetch;
