@@ -344,3 +344,12 @@ steps. Selected bodies consume nesting; procedure/service/construction counters
 and the deadline remain shared. RETURN/STOP/EXIT FOR propagate through selection;
 TRY catches only existing recoverable TYPE failures. See [WBasic](wydbasic.md) and
 [the milestone decisions](milestones/sewn-0.9.md) for grammar and security details.
+
+## Numeric foundations — sewn/0.10
+
+The closed 0.10 grammar adds numeric, numericCheck, numericPredicate and xor
+expressions, and Integer/Float procedure contracts. Historical binary operations
+and schemas remain unchanged. All public numeric values remain finite JavaScript
+Numbers; checked Integer results are exact and safe. No new SEAM authority is
+introduced. See [the numeric milestone](milestones/wbasic-sewn-0.10.md) for field
+contracts, arithmetic policies, predicates, limits and compiler compatibility.

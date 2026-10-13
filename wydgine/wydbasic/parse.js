@@ -10,7 +10,7 @@ export function parse(source,{module=false}={}) {
   const node=(kind,start,fields={})=>({kind,location:start.location,end:tokens[index-1].end,...fields});
   const blank=()=>{while(token().kind==='newline')take();};
   const endLine=()=>{if(!['newline','eof'].includes(token().kind))fail('SYNTAX','Expected end of line.',token().location);blank();};
-  const precedence={OR:1,AND:2,'=':3,'<>':3,'<':3,'<=':3,'>':3,'>=':3,'&':4,'+':5,'-':5,'*':6,'/':6};
+  const precedence={OR:0,XOR:1,AND:2,'=':3,'<>':3,'<':3,'<=':3,'>':3,'>=':3,'&':4,'+':5,'-':5,'*':6,'/':6,'\\':6,MOD:6,'^':8};
   function expression(min=0) {
     if(++depth>32)fail('SYNTAX','Expression nesting limit.',token().location);
     const start=take();let left;
@@ -27,7 +27,7 @@ export function parse(source,{module=false}={}) {
       if(eat('.')){const exact=!!eat('[');const key=identifier();if(exact)expect(']');left=node('member',start,{target:left,key:key.value,keyLocation:key.location,exact});continue;}
       if(eat('(')){const args=[];blank();if(!is(')'))do{blank();args.push(expression());blank();}while(eat(','));expect(')');left=node('invoke',start,{target:left,args});continue;}
       if(min<=3&&eat('IS')){const negate=!!eat('NOT');if(eat('NULL'))left=node('isNull',start,{value:left,negate});else left=node('identity',start,{left,right:expression(4),negate});continue;}
-      const op=String(token().value).toUpperCase(),p=['identifier','symbol'].includes(token().kind)?precedence[op]:undefined;if(p===undefined||p<min)break;take();left=node('binary',start,{operator:op,left,right:expression(p+1)});
+      const op=String(token().value).toUpperCase(),p=['identifier','symbol'].includes(token().kind)?precedence[op]:undefined;if(p===undefined||p<min)break;take();left=node('binary',start,{operator:op,left,right:expression(op==='^'?p:p+1)});
     }
     depth--;return left;
   }

@@ -318,6 +318,10 @@
   var selectionStatements = Object.freeze({ ...exceptionStatements, select: ["value", "cases", "else?"] });
   var selectionExpressions = Object.freeze({ ...conversionExpressions, identity: ["left", "right", "negate"] });
   var selectionReservedNames = Object.freeze([...exceptionReservedNames]);
+  var NUMERIC_SCHEMA = "sewn/0.10";
+  var numericTypes = Object.freeze([...sourceTypes, "Integer", "Float"]);
+  var numericExpressions = Object.freeze({ ...selectionExpressions, numeric: ["operator", "left", "right", "type"], numericCheck: ["type", "value"], numericPredicate: ["predicate", "value"], xor: ["left", "right"] });
+  var numericReservedNames = Object.freeze([...selectionReservedNames, "ISINTEGER", "ISSAFEINTEGER"]);
 
   // wydgine/sewn/validate.js
   var fail = (code) => {
@@ -374,11 +378,12 @@
       ensure(Object.keys(n).every((k) => k === "op" || fields.some((f) => f.replace("?", "") === k)));
       for (const f of fields) if (!f.endsWith("?")) ensure(Object.hasOwn(n, f));
     };
-    const selection = p?.schema === SELECTION_SCHEMA, exceptions = selection || p?.schema === EXCEPTION_SCHEMA, conversion = exceptions || p?.schema === CONVERSION_SCHEMA, control = conversion || p?.schema === CONTROL_SCHEMA, reserved = selection ? selectionReservedNames : exceptions ? exceptionReservedNames : conversion ? conversionReservedNames : control ? controlReservedNames : reservedNames;
+    const numeric = p?.schema === NUMERIC_SCHEMA, types = numeric ? numericTypes : sourceTypes;
+    const selection = numeric || p?.schema === SELECTION_SCHEMA, exceptions = selection || p?.schema === EXCEPTION_SCHEMA, conversion = exceptions || p?.schema === CONVERSION_SCHEMA, control = conversion || p?.schema === CONTROL_SCHEMA, reserved = numeric ? numericReservedNames : selection ? selectionReservedNames : exceptions ? exceptionReservedNames : conversion ? conversionReservedNames : control ? controlReservedNames : reservedNames;
     const members = control || p?.schema === MEMBER_SCHEMA;
     const versioned = members || p?.schema === SERVICE_SCHEMA, objects = versioned || p?.schema === OBJECT_SCHEMA, modern = objects || p?.schema === PROCEDURE_SCHEMA;
-    const statementGrammar = selection ? selectionStatements : exceptions ? exceptionStatements : control ? controlStatements : members ? memberStatements : versioned ? serviceStatements : objects ? objectStatements : modern ? procedureStatements : statements, expressionGrammar = selection ? selectionExpressions : conversion ? conversionExpressions : control ? controlExpressions : members ? memberExpressions : versioned ? serviceExpressions : objects ? objectExpressions : modern ? procedureExpressions : expressions;
-    ensure(p && [SCHEMA2, PROCEDURE_SCHEMA, OBJECT_SCHEMA, SERVICE_SCHEMA, MEMBER_SCHEMA, CONTROL_SCHEMA, CONVERSION_SCHEMA, EXCEPTION_SCHEMA, SELECTION_SCHEMA].includes(p.schema) && Object.keys(p).every((k) => (modern ? ["schema", "body", "procedures"] : ["schema", "body"]).includes(k)));
+    const statementGrammar = selection ? selectionStatements : exceptions ? exceptionStatements : control ? controlStatements : members ? memberStatements : versioned ? serviceStatements : objects ? objectStatements : modern ? procedureStatements : statements, expressionGrammar = numeric ? numericExpressions : selection ? selectionExpressions : conversion ? conversionExpressions : control ? controlExpressions : members ? memberExpressions : versioned ? serviceExpressions : objects ? objectExpressions : modern ? procedureExpressions : expressions;
+    ensure(p && [SCHEMA2, PROCEDURE_SCHEMA, OBJECT_SCHEMA, SERVICE_SCHEMA, MEMBER_SCHEMA, CONTROL_SCHEMA, CONVERSION_SCHEMA, EXCEPTION_SCHEMA, SELECTION_SCHEMA, NUMERIC_SCHEMA].includes(p.schema) && Object.keys(p).every((k) => (modern ? ["schema", "body", "procedures"] : ["schema", "body"]).includes(k)));
     const procedures = modern ? p.procedures : {};
     ensure(procedures && typeof procedures === "object" && !Array.isArray(procedures));
     const graph = /* @__PURE__ */ new Map();
@@ -403,6 +408,19 @@
       ensure(d <= MAXIMA.expressionDepth, "LIMIT");
       ensure(n && Object.hasOwn(expressionGrammar, n.op));
       shape2(n, expressionGrammar[n.op]);
+      if (n.op === "numericCheck") {
+        ensure(["Integer", "Float"].includes(n.type));
+        expr(n.value, d + 1);
+      }
+      if (n.op === "numericPredicate") {
+        ensure(["IsInteger", "IsSafeInteger"].includes(n.predicate));
+        expr(n.value, d + 1);
+      }
+      if (n.op === "numeric" || n.op === "xor") {
+        if (n.op === "numeric") ensure(["+", "-", "*", "/", "MOD", "\\", "^"].includes(n.operator) && ["Integer", "Float", "Auto"].includes(n.type));
+        expr(n.left, d + 1);
+        expr(n.right, d + 1);
+      }
       if (n.op === "identity") {
         ensure(typeof n.negate === "boolean");
         expr(n.left, d + 1);
@@ -543,13 +561,13 @@
       ensure(!Object.hasOwn(proc, "op"));
       ensure(["function", "sub"].includes(proc.kind) && Array.isArray(proc.params));
       ensure(proc.params.length <= MAXIMA.parameters, "LIMIT");
-      if (proc.kind === "function") ensure(sourceTypes.includes(proc.returns));
+      if (proc.kind === "function") ensure(types.includes(proc.returns));
       const names = /* @__PURE__ */ new Set();
       for (const param of proc.params) {
         shape2(param, ["name", "type"]);
         ensure(!Object.hasOwn(param, "op"));
         name(param.name);
-        ensure(!reserved.includes(param.name.toUpperCase()) && !names.has(param.name) && sourceTypes.includes(param.type));
+        ensure(!reserved.includes(param.name.toUpperCase()) && !names.has(param.name) && types.includes(param.type));
         names.add(param.name);
       }
       graph.set(id, /* @__PURE__ */ new Set());
@@ -626,7 +644,7 @@
         }
         requireThat(d.methods === void 0 && d.behaviorSource === void 0, "PROTOTYPE.METHOD", "Behavior must be compiled by trusted setup");
         requireThat(new Set(d.overrides ?? []).size === (d.overrides ?? []).length, "PROTOTYPE.METHOD", "Duplicate overrides");
-        requireThat(!behavior || ["sewn/0.3", "sewn/0.4", "sewn/0.5", "sewn/0.6", "sewn/0.7", "sewn/0.8", "sewn/0.9"].includes(behavior.schema) && behavior.body.length === 0, "PROTOTYPE.METHOD", "Expected portable prototype behavior");
+        requireThat(!behavior || ["sewn/0.3", "sewn/0.4", "sewn/0.5", "sewn/0.6", "sewn/0.7", "sewn/0.8", "sewn/0.9", "sewn/0.10"].includes(behavior.schema) && behavior.body.length === 0, "PROTOTYPE.METHOD", "Expected portable prototype behavior");
         for (const [name2, proc] of Object.entries(behavior?.procedures ?? {})) {
           requireThat(!Object.keys(methods.handle).some((x) => x.toLowerCase() === name2.toLowerCase()), "PROTOTYPE.METHOD", "Method conflicts with kernel facade");
           const old = inheritedMethods[name2];

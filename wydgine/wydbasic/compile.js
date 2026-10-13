@@ -4,10 +4,11 @@ import { fail } from './errors.js';
 import { validate } from '../sewn/validate.js';
 import { contextNames, safeKey, selectionReservedNames as reservedNames, MAXIMA, sourceTypes } from '../sewn/schema.js';
 import { reads, methods } from '../sewn/bindings.js';
-const types=sourceTypes;
+const types=[...sourceTypes,'Integer','Float'];
+const numericTypes=['Number','Integer','Float'];
 const literal=value=>({op:'literal',value});
 const typeOf=value=>value===null?'Null':Array.isArray(value)?'Array':({string:'String',number:'Number',boolean:'Boolean',object:'Object'})[typeof value];
-const defaults={String:'',Number:0,Boolean:false,Null:null,Array:[],Object:{},Wydgit:null};
+const defaults={String:'',Number:0,Integer:0,Float:0,Boolean:false,Null:null,Array:[],Object:{},Wydgit:null};
 const canonical=(list,name)=>list.find(x=>x.toLowerCase()===name.toLowerCase());
 export function compile(source) { return compileAst(parse(source)); }
 // Event resolution is injected by preparation; standalone callers provide a registry.
@@ -16,13 +17,15 @@ export function compileModule(source,{registry=new EventRegistry()}={}) { return
 // Public compilation starts from source; AST lowering remains an internal stage.
 function compileAst(ast,registry,prototype=false) {
   if(prototype&&ast.events.length)fail('TYPE','Prototype modules cannot declare EVENT blocks.',ast.events[0].location);
-  let symbols=new Map();let declared=new Set();const procedures=Object.create(null),declarations=new Map(),graph=new Map();let current=null;const modern=ast.kind==='module';let objects=prototype,versioned=false,members=false,control=false,conversion=false,exceptions=false,selection=false;
+  let symbols=new Map();let declared=new Set();const procedures=Object.create(null),declarations=new Map(),graph=new Map();let current=null;const modern=ast.kind==='module';let objects=prototype,versioned=false,members=false,control=false,conversion=false,exceptions=false,selection=false,numeric=false;
   const error=(n,code,message)=>fail(code,message,n.location);
-  const checkType=(n,actual,expected)=>{if(expected!=='Unknown'&&actual!=='Unknown'&&actual!==expected)error(n,'TYPE',`Expected ${expected}, received ${actual}.`);};
+  const checkType=(n,actual,expected)=>{if(expected!=='Unknown'&&actual!=='Unknown'&&actual!==expected&&!(numericTypes.includes(actual)&&numericTypes.includes(expected)))error(n,'TYPE',`Expected ${expected}, received ${actual}.`);};
   const key=(n,k)=>{if(!safeKey(k.toLowerCase()))error(n,'UNSUPPORTED',`Reserved member '${k}'.`);return k;};
-  const reserve=(n,name,type)=>{const id=name.toLowerCase();if(!/^[a-z_][a-z0-9_]{0,63}$/.test(id))error(n,'NAME','Variable names must contain at most 64 ASCII letters, digits or underscores.');if(reservedNames.includes(name.toUpperCase())||contextNames.includes(name.toUpperCase())||id==='services'||!safeKey(id))error(n,'NAME',`Reserved name '${name}'.`);if(declared.has(id))error(n,'NAME',`Duplicate declaration '${name}'.`);declared.add(id);symbols.set(id,{type,kind:type==='Wydgit'?'handle':null});return id;};
+  const reserve=(n,name,type)=>{const id=name.toLowerCase();if(!/^[a-z_][a-z0-9_]{0,63}$/.test(id))error(n,'NAME','Variable names must contain at most 64 ASCII letters, digits or underscores.');if(['ISINTEGER','ISSAFEINTEGER'].includes(name.toUpperCase())||reservedNames.includes(name.toUpperCase())||contextNames.includes(name.toUpperCase())||id==='services'||!safeKey(id))error(n,'NAME',`Reserved name '${name}'.`);if(declared.has(id))error(n,'NAME',`Duplicate declaration '${name}'.`);declared.add(id);symbols.set(id,{type,kind:type==='Wydgit'?'handle':null});return id;};
+  const constrain=(n,v,type)=>{if(!['Integer','Float'].includes(type))return v;numeric=true;if(v.op==='literal'&&!(type==='Integer'?Number.isSafeInteger(v.value):typeof v.value==='number'&&Number.isFinite(v.value)))error(n,'TYPE',`Invalid ${type} value.`);return {op:'numericCheck',type,value:v};};
   const value=(sewn,type='Unknown',kind=null)=>({sewn,type,kind});
-  let expressionDepth=0;
+  let expressionDepth=0,numericContext=false;
+  const constrainedExpression=(n,type)=>{const previous=numericContext;numericContext=['Integer','Float'].includes(type)?type:false;try{return expression(n);}finally{numericContext=previous;}};
   function expression(n) {
     if(++expressionDepth>32)error(n,'COMPILE','Expression nesting exceeds SEWN limits.');
     try{return lowerExpression(n);}finally{expressionDepth--;}
@@ -32,7 +35,7 @@ function compileAst(ast,registry,prototype=false) {
       case 'identity':{selection=true;const a=expression(n.left),b=expression(n.right);for(const v of [a,b])if(v.type!=='Null'&&v.kind!=='handle')error(n,'TYPE','Identity requires Wydgit references or NULL.');return value({op:'identity',left:a.sewn,right:b.sewn,negate:n.negate},'Boolean');}
       case 'isNull':{control=true;const v=expression(n.value);if(v.kind&&v.kind!=='handle')error(n,'TYPE','Null tests require data or a Wydgit reference.');return value({op:'isNull',value:v.sewn,negate:n.negate},'Boolean');}
       case 'construct':{if(!/^[a-z][a-z0-9.-]*\/[a-z][a-z0-9-]*$/.test(n.prototype))error(n,'NAME','NEW requires a qualified prototype identity.');objects=true;const id=expression(n.id);checkType(n,id.type,'String');return value({op:'construct',type:n.prototype,id:id.sewn},'Wydgit','handle');}
-      case 'literal':return value(literal(n.value),typeOf(n.value));
+      case 'literal':return value(literal(n.value),typeof n.value==='number'&&numericContext?(numericContext==='Float'?'Float':Number.isSafeInteger(n.value)?'Integer':'Float'):typeOf(n.value));
       case 'name':{const context=n.name.toUpperCase();if(contextNames.includes(context))return value({op:'context',name:context},['ME','PAGE'].includes(context)?'Wydgit':context==='SESSION'?'Object':'Facade',['ME','PAGE'].includes(context)?'handle':context==='SESSION'?null:context);if(context==='SERVICES')error(n,'UNSUPPORTED','SERVICES is available only through Call.');const s=symbols.get(n.name.toLowerCase());if(!s)error(n,'NAME',`Unknown variable '${n.name}'.`);return {...value({op:'variable',name:n.name.toLowerCase()},s.type,s.kind),element:s.element};}
       case 'array':{const items=n.items.map(expression);if(items.some(x=>x.kind))error(n,'TYPE','Array literals require JSON values.');return value({op:'array',items:items.map(x=>x.sewn)},'Array');}
       case 'object':{const fields=Object.create(null);for(const f of n.fields){key(f,f.key);if(Object.hasOwn(fields,f.key))error(f,'NAME',`Duplicate object key '${f.key}'.`);const v=expression(f.value);if(v.kind)error(f,'TYPE','Objects require JSON values.');fields[f.key]=v.sewn;}return value({op:'object',fields},'Object');}
@@ -43,9 +46,10 @@ function compileAst(ast,registry,prototype=false) {
         }else if(!['Object','Unknown'].includes(target.type))error(n,'TYPE','Member reads require an Object or facade.');
         return value({op:'read',target:target.sewn,key:name},type,kind);}
       case 'invoke':{
+        if(n.target.kind==='name'&&['ISINTEGER','ISSAFEINTEGER'].includes(n.target.name.toUpperCase())){if(n.args.length!==1)error(n,'TYPE','Numeric predicate requires one argument.');numeric=true;const arg=expression(n.args[0]);if(arg.kind)error(n,'TYPE','Numeric predicates require portable data.');return value({op:'numericPredicate',predicate:n.target.name.toUpperCase()==='ISINTEGER'?'IsInteger':'IsSafeInteger',value:arg.sewn},'Boolean');}
         if(n.target.kind==='name'&&['CSTR','VAL'].includes(n.target.name.toUpperCase())){
           const method=n.target.name.toUpperCase();if(n.args.length!==1)error(n,'TYPE',method+' requires exactly one argument.');
-          const arg=expression(n.args[0]),allowed=method==='CSTR'?['String','Number','Boolean','Unknown']:['String','Number','Unknown'];
+          const arg=expression(n.args[0]),allowed=method==='CSTR'?['String','Number','Integer','Float','Boolean','Unknown']:['String','Number','Integer','Float','Unknown'];
           if(arg.kind||!allowed.includes(arg.type))error(n,'TYPE',method+' requires primitive data.');
           conversion=true;const type=method==='CSTR'?'String':'Number';return value({op:'convert',type,value:arg.sewn},type);
         }
@@ -55,19 +59,38 @@ function compileAst(ast,registry,prototype=false) {
         if(n.target.kind!=='member')error(n,'UNSUPPORTED','Only safe facade methods can be called.');const target=expression(n.target.target);key(n,n.target.key);const method=n.target.exact?null:canonical(Object.keys(methods[target.kind]??{}),n.target.key);if(!method){if(target.kind!=='handle')error(n,'UNSUPPORTED',`Unsupported method '${n.target.key}'.`);objects=true;if(n.target.exact)members=true;return value({op:'methodValue',target:target.sewn,name:n.target.exact?n.target.key:n.target.key.toLowerCase(),...(n.target.exact?{exact:true}:{}),args:n.args.map(x=>expression(x).sewn)});}const args=n.args.map(expression),arity=methods[target.kind][method];if(args.length<arity[0]||args.length>arity[1])error(n,'TYPE',`Invalid argument count for ${method}.`);args.forEach((v,i)=>{if(v.kind&&!(method==='Move'&&i===0||method==='Raise'&&i===1||method==='Insert'&&i===2||method==='Replace'&&i===0))error(n,'TYPE','This argument requires JSON data.');});
         let type='Unknown',kind=null;if(method==='related'){const relation=n.args[0];if(relation.kind!=='literal'||typeof relation.value!=='string')error(n,'TYPE','related requires a literal relationship.');if(relation.value==='children')type='Array';else{type='Wydgit';kind='handle';}}else if(['Set','Insert','Remove','Replace','Move','Cancel','Raise','WriteMarkdown','Delete'].includes(method))type='Null';else if(method==='GetAll')type='Array';
         return {...value({op:'invoke',target:target.sewn,method,args:args.map(x=>x.sewn)},type,kind),...(method==='related'&&type==='Array'?{element:'Wydgit'}:{})};}
-      case 'unary':{const v=expression(n.value);checkType(n,v.type,n.operator==='NOT'?'Boolean':'Number');return value(n.operator==='NOT'?{op:'not',value:v.sewn}:n.operator==='+'?v.sewn:{op:'binary',operator:'-',left:literal(0),right:v.sewn},n.operator==='NOT'?'Boolean':'Number');}
-      case 'binary':{const a=expression(n.left),b=expression(n.right),op=n.operator;if(a.kind||b.kind)error(n,'TYPE','Operators require JSON scalar values.');let type='Boolean';if(['AND','OR'].includes(op)){checkType(n,a.type,'Boolean');checkType(n,b.type,'Boolean');}else if(['+','-','*','/','&'].includes(op)){type=op==='&'?'String':'Number';checkType(n,a.type,type);checkType(n,b.type,type);}else{for(const v of [a,b])if(['Array','Object'].includes(v.type))error(n,'TYPE','Comparison requires scalar values.');if(!['=','<>'].includes(op)&&a.type!=='Unknown'&&b.type!=='Unknown'&&(a.type!==b.type||!['Number','String'].includes(a.type)))error(n,'TYPE','Ordering requires matching Numbers or Strings.');}return value({op:'binary',operator:op==='<>'?'!=':op==='&'?'concat':op,left:a.sewn,right:b.sewn},type);}
+      case 'unary':{const v=expression(n.value);checkType(n,v.type,n.operator==='NOT'?'Boolean':'Number');if(numericContext&&n.operator!=='NOT'&&v.sewn.op==='literal')return value(literal(n.operator==='-'?-v.sewn.value:v.sewn.value),v.type);return {...value(n.operator==='NOT'?{op:'not',value:v.sewn}:n.operator==='+'?v.sewn:{op:(['Integer','Float'].includes(v.type)||v.numeric)?'numeric':'binary',operator:'-',left:literal(0),right:v.sewn,...((['Integer','Float'].includes(v.type)||v.numeric)?{type:['Integer','Float'].includes(v.type)?v.type:'Auto'}:{})},n.operator==='NOT'?'Boolean':numericTypes.includes(v.type)?v.type:'Number'),...(n.operator!=='NOT'&&v.numeric?{numeric:true}:{})};}
+      case 'binary':{const a=expression(n.left),b=expression(n.right),op=n.operator;if(a.kind||b.kind)error(n,'TYPE','Operators require JSON scalar values.');const computed=numericBinary(n,a,b);if(computed)return computed;let type='Boolean';if(['AND','OR'].includes(op)){checkType(n,a.type,'Boolean');checkType(n,b.type,'Boolean');}else if(['+','-','*','/','&'].includes(op)){type=op==='&'?'String':'Number';checkType(n,a.type,type);checkType(n,b.type,type);}else{for(const v of [a,b])if(['Array','Object'].includes(v.type))error(n,'TYPE','Comparison requires scalar values.');if(!['=','<>'].includes(op)&&a.type!=='Unknown'&&b.type!=='Unknown'&&(a.type!==b.type&&!(numericTypes.includes(a.type)&&numericTypes.includes(b.type))||![...numericTypes,'String'].includes(a.type)))error(n,'TYPE','Ordering requires matching Numbers or Strings.');}return value({op:'binary',operator:op==='<>'?'!=':op==='&'?'concat':op,left:a.sewn,right:b.sewn},type);}
       default:error(n,'COMPILE','Unknown expression.');
     }
+  }
+  function numericBinary(n,a,b) {
+    const op=n.operator;
+    if(op==='XOR') {
+      numeric=true;checkType(n,a.type,'Boolean');checkType(n,b.type,'Boolean');
+      return value({op:'xor',left:a.sewn,right:b.sewn},'Boolean');
+    }
+    const integerOnly=['MOD','\\'].includes(op);
+    const checked=integerOnly||op==='^'||['+','-','*','/'].includes(op)&&
+      (numericContext||a.numeric||b.numeric||[a.type,b.type].some(t=>['Integer','Float'].includes(t)));
+    if(!checked)return null;
+    numeric=true;checkType(n,a.type,'Number');checkType(n,b.type,'Number');
+    if(integerOnly&&[a,b].some(v=>v.sewn.op==='literal'&&!Number.isSafeInteger(v.sewn.value)))
+      error(n,'TYPE','Integer operands required.');
+    const category=v=>v.type==='Number'&&v.sewn.op==='literal'?(Number.isSafeInteger(v.sewn.value)?'Integer':'Float'):v.type;
+    const categories=[a,b].map(category);
+    const type=integerOnly?'Integer':op==='/'?'Float':op==='^'?'Auto':
+      categories.includes('Float')?'Float':categories.every(t=>t==='Integer')?'Integer':'Auto';
+    return {...value({op:'numeric',operator:op,left:a.sewn,right:b.sewn,type},type==='Auto'?'Number':type),numeric:true};
   }
   function procedureCall(n,kind){
     if(n.kind!=='invoke'||n.target.kind!=='name')error(n,'SYNTAX','CALL requires a named SUB invocation.');
     const name=n.target.name.toLowerCase(),proc=declarations.get(name);if(!proc)error(n,'NAME',`Unknown procedure '${n.target.name}'.`);
     if(proc.procedureKind!==kind)error(n,'TYPE',kind==='sub'?'A FUNCTION must be used as an expression.':'A SUB cannot be used as an expression.');
     if(n.args.length!==proc.params.length)error(n,'TYPE',`Wrong argument count for '${proc.name}'.`);
-    const args=n.args.map(expression);args.forEach((arg,i)=>{if(!(proc.params[i].type==='Wydgit'&&arg.type==='Null'))checkType(n,arg.type,proc.params[i].type);if(arg.kind&&proc.params[i].type!=='Wydgit')error(n,'TYPE','Parameter requires portable data.');});
+    const args=n.args.map((arg,i)=>constrainedExpression(arg,proc.params[i].type));args.forEach((arg,i)=>{if(!(proc.params[i].type==='Wydgit'&&arg.type==='Null'))checkType(n,arg.type,proc.params[i].type);if(arg.kind&&proc.params[i].type!=='Wydgit')error(n,'TYPE','Parameter requires portable data.');});
     if(current)graph.get(current.name.toLowerCase()).add(name);
-    return value({op:kind==='sub'?'procedureCall':'functionCall',name,args:args.map(x=>x.sewn)},proc.returns??'Null',proc.returns==='Wydgit'?'handle':null);
+    return value({op:kind==='sub'?'procedureCall':'functionCall',name,args:args.map((x,i)=>constrain(n.args[i],x.sewn,proc.params[i].type))},proc.returns??'Null',proc.returns==='Wydgit'?'handle':null);
   }
   function service(n) {
     if(n?.kind!=='invoke'||n.target.kind!=='member'||n.target.target.kind!=='name'||n.target.target.name.toUpperCase()!=='SERVICES')return null;
@@ -82,19 +105,19 @@ function compileAst(ast,registry,prototype=false) {
     for(const n of nodes) {
       if(n.kind==='declare') {
         if(inLoop)error(n,'UNSUPPORTED','DIM inside FOR EACH is deferred; SEWN declarations live for the invocation.');
-        const svc=service(n.value);let v=n.value&&!svc?expression(n.value):null;
+        const svc=service(n.value);let v=n.value&&!svc?constrainedExpression(n.value,canonical(types,n.type??'')):null;
         const explicit=n.type&&canonical(types,n.type);if(n.type&&!explicit)error(n,'TYPE',`Unknown type '${n.type}'.`);
         const type=explicit??(svc?'Object':v?.type);if(!type||type==='Facade')error(n,'TYPE','Declaration requires a data type or initializer.');
         if(explicit==='Wydgit'&&v?.type==='Unknown')error(n,'TYPE','A Wydgit initializer requires a known handle or NULL.');
         if(explicit&&v&&!(explicit==='Wydgit'&&v.type==='Null'))checkType(n,v.type,explicit);
-        const name=reserve(n,n.name,type);if(v?.element)symbols.get(name).element=v.element;if(svc){if(type!=='Object')error(n,'TYPE','Service result is an Object.');out.push({...svc,into:name});}else out.push({op:'declare',name,value:v?.sewn??literal(defaults[type])});
-      }else if(n.kind==='select'){selection=true;const selector=expression(n.value);if(selector.kind&&selector.kind!=='handle'||['Array','Object'].includes(selector.type))error(n,'TYPE','Selection requires a scalar or Wydgit reference.');const before=new Map(symbols);const cases=n.cases.map(branch=>{symbols=new Map(before);const tests=branch.tests.map(test=>{const v=expression(test.value),identity=test.operator.startsWith('IS');if(identity){for(const x of [selector,v])if(x.type!=='Null'&&x.kind!=='handle')error(n,'TYPE','Identity cases require Wydgit references or NULL.');}else{if(selector.kind||v.kind||['Array','Object'].includes(v.type))error(n,'TYPE','Value cases require scalars.');if(!['=','<>'].includes(test.operator)&&selector.type!=='Unknown'&&v.type!=='Unknown'&&(selector.type!==v.type||!['Number','String'].includes(v.type)))error(n,'TYPE','Ordering requires matching Numbers or Strings.');}return {operator:test.operator==='<>'?'!=':test.operator,value:v.sewn};});return {tests,body:body(branch.body,inLoop)};});symbols=new Map(before);const otherwise=n.else===null?null:body(n.else,inLoop);symbols=before;out.push({op:'select',value:selector.sewn,cases,...(otherwise!==null?{else:otherwise}:{})});
+        const name=reserve(n,n.name,type);if(v?.element)symbols.get(name).element=v.element;if(svc){if(type!=='Object')error(n,'TYPE','Service result is an Object.');out.push({...svc,into:name});}else out.push({op:'declare',name,value:constrain(n,v?.sewn??literal(defaults[type]),type)});
+      }else if(n.kind==='select'){selection=true;const selector=expression(n.value);if(selector.kind&&selector.kind!=='handle'||['Array','Object'].includes(selector.type))error(n,'TYPE','Selection requires a scalar or Wydgit reference.');const before=new Map(symbols);const cases=n.cases.map(branch=>{symbols=new Map(before);const tests=branch.tests.map(test=>{const v=expression(test.value),identity=test.operator.startsWith('IS');if(identity){for(const x of [selector,v])if(x.type!=='Null'&&x.kind!=='handle')error(n,'TYPE','Identity cases require Wydgit references or NULL.');}else{if(selector.kind||v.kind||['Array','Object'].includes(v.type))error(n,'TYPE','Value cases require scalars.');if(!['=','<>'].includes(test.operator)&&selector.type!=='Unknown'&&v.type!=='Unknown'&&(selector.type!==v.type&&!(numericTypes.includes(selector.type)&&numericTypes.includes(v.type))||![...numericTypes,'String'].includes(v.type)))error(n,'TYPE','Ordering requires matching Numbers or Strings.');}return {operator:test.operator==='<>'?'!=':test.operator,value:v.sewn};});return {tests,body:body(branch.body,inLoop)};});symbols=new Map(before);const otherwise=n.else===null?null:body(n.else,inLoop);symbols=before;out.push({op:'select',value:selector.sewn,cases,...(otherwise!==null?{else:otherwise}:{})});
       }else if(n.kind==='try'){exceptions=true;const before=new Map(symbols),children=body(n.body,inLoop);symbols=new Map(before);let handler;if(n.handler){const name=reserve(n,n.handler.name,'Object');handler={name,body:body(n.handler.body,inLoop)};declared.delete(name);symbols=new Map(before);}const cleanup=n.cleanup===null?null:body(n.cleanup,inLoop);symbols=before;out.push({op:'try',body:children,...(handler?{catch:handler}:{}),...(cleanup!==null?{finally:cleanup}:{})});
       }else if(n.kind==='exitFor'){if(!inLoop)error(n,'TYPE','EXIT FOR requires an enclosing FOR EACH in this procedure.');control=true;out.push({op:'exitFor'});
       }else if(n.kind==='memberSet'){const target=expression(n.target.target);if(target.kind!=='handle')error(n,'TYPE','Member assignment requires a Wydgit reference.');key(n,n.target.key);const v=expression(n.value);if(v.kind)error(n,'TYPE','Property values require JSON data.');members=true;out.push({op:'memberSet',target:target.sewn,name:n.target.key,exact:n.target.exact===true,value:v.sewn});
       }else if(n.kind==='set') {
         const s=symbols.get(n.name.toLowerCase());if(!s)error(n,'NAME',`Unknown variable '${n.name}'.`);if(n.reference!==(s.type==='Wydgit'))error(n,'TYPE',s.type==='Wydgit'?'Wydgit assignment requires SET.':'SET requires a Wydgit variable.');
-        const v=expression(n.value);if(s.type==='Wydgit'&&v.type==='Unknown')error(n,'TYPE','SET requires a known handle or NULL.');if(!(s.type==='Wydgit'&&v.type==='Null'))checkType(n,v.type,s.type);if(s.type!=='Wydgit'&&v.kind)error(n,'TYPE','Reference requires a Wydgit variable.');out.push({op:'set',name:n.name.toLowerCase(),value:v.sewn});
+        const v=constrainedExpression(n.value,s.type);if(s.type==='Wydgit'&&v.type==='Unknown')error(n,'TYPE','SET requires a known handle or NULL.');if(!(s.type==='Wydgit'&&v.type==='Null'))checkType(n,v.type,s.type);if(s.type!=='Wydgit'&&v.kind)error(n,'TYPE','Reference requires a Wydgit variable.');out.push({op:'set',name:n.name.toLowerCase(),value:constrain(n,v.sewn,s.type)});
       }else if(n.kind==='procedureCall'&&n.value.target?.kind==='name'){out.push(procedureCall(n.value,'sub').sewn);}
       else if(n.kind==='call'||n.kind==='procedureCall') {const svc=service(n.value);if(svc)out.push(svc);else{const v=expression(n.value);if(v.sewn.op==='methodValue'){out.push({...v.sewn,op:'methodCall'});continue;}if(v.sewn.op!=='invoke')error(n,'UNSUPPORTED','Expected method call.');out.push({op:'call',target:v.sewn.target,method:v.sewn.method,args:v.sewn.args});}}
       else if(n.kind==='if') {const condition=expression(n.condition);checkType(n,condition.type,'Boolean');const before=new Map(symbols);const then=body(n.then,inLoop);symbols=new Map(before);const otherwise=body(n.else,inLoop);symbols=before;out.push({op:'if',condition:condition.sewn,then,...(otherwise.length?{else:otherwise}:{})});}
@@ -104,7 +127,7 @@ function compileAst(ast,registry,prototype=false) {
           if(n.kind==='stop')error(n,'UNSUPPORTED','STOP is workflow-only; use RETURN in a procedure.');
           if(current.procedureKind==='sub'&&n.value)error(n,'TYPE','A SUB must not return a value.');
           if(current.procedureKind==='function'&&!n.value)error(n,'TYPE','A FUNCTION must return a value.');
-          if(n.value){const v=expression(n.value);if(!(current.returns==='Wydgit'&&v.type==='Null'))checkType(n,v.type,current.returns);if(v.kind&&current.returns!=='Wydgit')error(n,'TYPE','Result requires portable data.');out.push({op:'return',value:v.sewn});}
+          if(n.value){const v=constrainedExpression(n.value,current.returns);if(!(current.returns==='Wydgit'&&v.type==='Null'))checkType(n,v.type,current.returns);if(v.kind&&current.returns!=='Wydgit')error(n,'TYPE','Result requires portable data.');out.push({op:'return',value:constrain(n,v.sewn,current.returns)});}
           else out.push({op:'return'});continue;
         }
         if(n.kind==='return'&&!n.value)error(n,'SYNTAX','Workflow RETURN requires a value.');
@@ -113,12 +136,12 @@ function compileAst(ast,registry,prototype=false) {
     return out;
   }
   const validated=program=>{try{return validate(program);}catch{error(ast,'COMPILE','Generated workflow exceeds or violates canonical SEWN validation bounds.');}};
-  if(!modern){const lowered=body(ast.body);return validated({schema:selection?'sewn/0.9':exceptions?'sewn/0.8':conversion?'sewn/0.7':control?'sewn/0.6':members?'sewn/0.5':versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.1',...((objects||versioned||members||control||conversion||exceptions||selection)?{procedures:{}}:{}),body:lowered});}
+  if(!modern){const lowered=body(ast.body);return validated({schema:numeric?'sewn/0.10':selection?'sewn/0.9':exceptions?'sewn/0.8':conversion?'sewn/0.7':control?'sewn/0.6':members?'sewn/0.5':versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.1',...((objects||versioned||members||control||conversion||exceptions||selection||numeric)?{procedures:{}}:{}),body:lowered});}
   for(const proc of ast.procedures){
     if(proc.params.length>MAXIMA.parameters)error(proc.params[MAXIMA.parameters],'COMPILE','Procedure parameter count exceeds SEWN limits.');
     const id=reserve(proc,proc.name,'Null');if(!/^[a-z][a-z0-9_]*$/.test(id))error(proc,'NAME','Procedure names must start with a letter.');
-    proc.params=proc.params.map(param=>{const type=canonical(types,param.type);if(!type)error(param,'TYPE',`Unknown parameter type '${param.type}'.`);return {...param,type};});
-    if(proc.returns){const type=canonical(types,proc.returns);if(!type)error(proc,'TYPE',`Unknown result type '${proc.returns}'.`);proc.returns=type;}
+    proc.params=proc.params.map(param=>{const type=canonical(types,param.type);if(!type)error(param,'TYPE',`Unknown parameter type '${param.type}'.`);if(['Integer','Float'].includes(type))numeric=true;return {...param,type};});
+    if(proc.returns){const type=canonical(types,proc.returns);if(!type)error(proc,'TYPE',`Unknown result type '${proc.returns}'.`);if(['Integer','Float'].includes(type))numeric=true;proc.returns=type;}
     declarations.set(id,proc);graph.set(id,new Set());
   }
   const reset=()=>{symbols=new Map();declared=new Set();};
@@ -132,10 +155,10 @@ function compileAst(ast,registry,prototype=false) {
   const eventNames=new Set(),events=[];
   for(const event of ast.events){
     let type;try{type=registry?.resolve(event.type);}catch{error(event,'NAME',`Unknown or ambiguous event '${event.type}'.`);}if(!type)error(event,'NAME','Module compilation requires an event registry.');
-    if(eventNames.has(type))error(event,'NAME',`Duplicate EVENT '${type}'.`);eventNames.add(type);reset();const lowered=body(event.body);events.push({type,workflow:validated({schema:selection?'sewn/0.9':exceptions?'sewn/0.8':conversion?'sewn/0.7':control?'sewn/0.6':members?'sewn/0.5':versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.2',procedures,body:lowered})});
+    if(eventNames.has(type))error(event,'NAME',`Duplicate EVENT '${type}'.`);eventNames.add(type);reset();const lowered=body(event.body);events.push({type,workflow:validated({schema:numeric?'sewn/0.10':selection?'sewn/0.9':exceptions?'sewn/0.8':conversion?'sewn/0.7':control?'sewn/0.6':members?'sewn/0.5':versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.2',procedures,body:lowered})});
   }
   // Even a declaration-only module is validated.
-  const behavior=validated({schema:selection?'sewn/0.9':exceptions?'sewn/0.8':conversion?'sewn/0.7':control?'sewn/0.6':members?'sewn/0.5':versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.2',procedures,body:[]});
+  const behavior=validated({schema:numeric?'sewn/0.10':selection?'sewn/0.9':exceptions?'sewn/0.8':conversion?'sewn/0.7':control?'sewn/0.6':members?'sewn/0.5':versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.2',procedures,body:[]});
   if(prototype)return behavior;
   return Object.freeze({events:Object.freeze(events.map(Object.freeze))});
 }

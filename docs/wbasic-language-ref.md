@@ -1,7 +1,7 @@
 # WBasic Language Reference
 **Wydgit Platform — Draft Language Specification 1.0**
 
-**Status:** Proposed future-state specification  
+**Status:** Implemented through SEWN 0.10; later milestones are proposed
 **Language:** WBasic (WB)  
 **Source extension:** `.bas`  
 **Execution representation:** SEWN  
@@ -71,10 +71,12 @@ Each milestone introduces a closed, versioned SEWN extension where necessary. Th
 | 0.6 | `IS NULL`, `IS NOT NULL`, `EXIT FOR` | Implemented |
 | 0.7 | Explicit `CStr()` and `Val()` conversions | Implemented |
 | 0.8 | `TRY / CATCH / FINALLY` | Implemented |
+| 0.9 | Selection and reference identity | Implemented |
+| 0.10 | Numeric foundations and predicates | Implemented |
 
 These earlier versions must remain valid.
 
-## 2.2 Proposed milestones
+## 2.2 Milestone sequence (0.9–0.10 completed)
 
 | Iteration | Primary changes |
 |---|---|
@@ -263,7 +265,7 @@ Declarations may include initial values.
 
 ## 5.2 Type inference
 
-When no type is declared, WBasic may infer a type from a statically known initializer.
+When no type is declared, WBasic infers a type from a statically known initializer. In 0.10, unannotated numeric declarations retain legacy Number inference for compatibility (DIM x=0 may later receive 0.5). Within explicit Integer expression contracts, safe numeric literals infer Integer and other finite literals Float; explicit Float expression contracts use Float. Integer/Float assignments and procedure contracts are checked at runtime, including dynamic values. See the [numeric milestone](milestones/wbasic-sewn-0.10.md).
 
 ```vb
 DIM title = "Taskboard"
@@ -316,7 +318,7 @@ The completed language will support the following operator categories.
 | Boolean exclusive OR | `XOR` |
 | Boolean disjunction | `OR` |
 
-This table describes operator families, not yet the complete precedence ordering. The 0.10 specification must formally establish associativity, especially for exponentiation, unary negation, and Boolean XOR.
+SEWN 0.10 is implemented. Highest to lowest: ^ (right-associative), unary signs, *, /, backslash and MOD, + and -, &, comparisons/identity, NOT, AND, XOR, OR. Other binary levels associate left. Thus -2 ^ 2 is -4; 2 ^ 3 ^ 2 is 512. XOR evaluates both Boolean operands; AND/OR short circuit. See the [numeric milestone](milestones/wbasic-sewn-0.10.md) for the complete contract.
 
 ## 6.2 Parenthetical expressions
 
@@ -342,7 +344,7 @@ Floating-point arithmetic uses the documented IEEE 754 behavior.
 
 Division by zero and operations producing nonfinite results must yield controlled errors.
 
-Integer division, exponentiation, negative remainder rules, and promotion between Integer and Float require exact conformance tests before SEWN 0.10 is finalized.
+Implemented in 0.10: MOD is signed truncating remainder; backslash is truncation toward zero. Both require safe-integer values and nonzero divisors. Integer +,-,* are exact and checked; division and mixed Float arithmetic return finite Float. Power uses right associativity and rejects unsafe exact Integer results; negative/fractional exponents use finite IEEE 754 results. IsInteger(value) and IsSafeInteger(value) expose the JavaScript predicates without coercion through trusted intrinsics; supported nonnumeric data returns FALSE. Scalar-based wrappers remain future work.
 
 ## 6.4 Boolean operators
 
@@ -435,7 +437,7 @@ For ordinary scalar values, the descriptor identifies the concrete runtime type.
 
 For objects, TypeOf identifies the object's public Wydgit type rather than exposing host-language constructors.
 
-The precise rules for dynamically deserialized JSON numbers, especially distinguishing Integer from Float, must be finalized in the numeric type specification.
+In 0.10 numeric classification is value-based: safe whole values are Integer, other finite Numbers are Float. Dynamic assignments enforce declared Integer/Float constraints; no textual literal distinction is retained.
 
 ---
 
@@ -1226,9 +1228,9 @@ The following must be resolved before their respective milestones are finalized.
 |---|---|
 | Final SELECT CASE grammar, including relational cases | 0.9 |
 | Object identity across scopes and invocation boundaries | 0.9 |
-| Integer/Float literal inference and preservation | 0.10 |
-| Arithmetic promotion, remainder and rounding rules | 0.10 |
-| Whether legacy Number remains concrete or becomes a contract | 0.10–0.11 |
+| Integer/Float literal inference and preservation | Resolved in 0.10 milestone |
+| Arithmetic promotion, remainder and rounding rules | Resolved in 0.10 milestone |
+| Whether legacy Number remains concrete or becomes a contract | Remains concrete in 0.10; future changes require compatibility design |
 | Whether Scalar includes nullable variants | 0.11 |
 | Whether TypeOf distinguishes declared versus observable numeric types | 0.11 |
 | Whether type comparisons provide flow-sensitive narrowing | 0.11 |

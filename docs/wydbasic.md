@@ -1,4 +1,4 @@
-# WBasic — implemented through SEWN 0.9
+# WBasic — implemented through SEWN 0.10
 
 WBasic (formerly WydBASIC) is the first WydStitch dialect. **WydBASIC should feel like VB6 evolved
 into a portable, capability-safe application language.** Make common application
@@ -33,7 +33,7 @@ DIM item AS Wydgit
 SET item = Me
 ```
 
-Types: String, Number, Boolean, Null, Array, Object, Wydgit. Explicit declarations
+Types: String, Number, Integer, Float, Boolean, Null, Array, Object, Wydgit. Integer and Float default to zero; see the numeric section below. Legacy defaults: Explicit declarations
 without initialization default to `""`, `0`, `FALSE`, `NULL`, `[]`, `{}`, `NULL`
 respectively. `DIM item AS Wydgit = Me` is also supported. Initialization through DIM
 does not need SET; subsequent Wydgit assignment requires SET, including NULL.
@@ -43,7 +43,7 @@ Inference uses literal/expression types, known facade reads, variable types,
 `related` relationship results and service results (Object). Dynamic JSON member
 reads and Get results infer Unknown, a data type checked by SEWN when consumed.
 Explicit types check statically known initializer/assignment/operator mismatches;
-they do not add runtime casts or a second runtime type checker. Dynamically typed
+legacy declarations do not add runtime casts or additional assignment checks. Integer/Float contracts added in 0.10 do check assignment values. Dynamically typed
 values still obey SEWN's strict operator and facade checks. A null Wydgit variable
 cannot be called until assigned a valid handle.
 
@@ -553,6 +553,17 @@ New selection/identity source selects sewn/0.9. Source using only older features
 retains its prior wire version. All new operations share invocation budgets:
 selector/operand expression evaluation, each inspected branch and test, selected
 body nesting, procedures, services, construction, steps and deadline. Skipped tests
-and bodies do not execute. No Integer/Float, Scalar/DataType/TypeOf, new Convert,
+and bodies do not execute. The 0.9 extension introduced no Integer/Float, Scalar/DataType/TypeOf, new Convert,
 interfaces, regex, numeric FOR or library linking is introduced.
 
+
+## Numeric foundations (SEWN 0.10)
+
+Integer and Float are checked native Number contracts, defaulting to zero.
+Integer requires a safe integer; Float requires a finite numeric value. Assignments
+and procedure boundaries enforce the contracts for static and dynamic inputs.
+Legacy unannotated numeric declarations retain Number inference. MOD, backslash,
+right-associative ^, Boolean XOR, IsInteger and IsSafeInteger are implemented.
+See [numeric foundations](milestones/wbasic-sewn-0.10.md) for exact arithmetic,
+precedence, promotion, canonical grammar and compatibility decisions. The earlier
+type/inference description above describes legacy Number behavior.

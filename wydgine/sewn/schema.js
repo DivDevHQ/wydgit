@@ -49,3 +49,9 @@ export const SELECTION_SCHEMA='sewn/0.9';
 export const selectionStatements=Object.freeze({...exceptionStatements,select:['value','cases','else?']});
 export const selectionExpressions=Object.freeze({...conversionExpressions,identity:['left','right','negate']});
 export const selectionReservedNames=Object.freeze([...exceptionReservedNames]);
+
+// Numeric foundations; historical grammars remain unchanged.
+export const NUMERIC_SCHEMA='sewn/0.10';
+export const numericTypes=Object.freeze([...sourceTypes,'Integer','Float']);
+export const numericExpressions=Object.freeze({...selectionExpressions,numeric:['operator','left','right','type'],numericCheck:['type','value'],numericPredicate:['predicate','value'],xor:['left','right']});
+export const numericReservedNames=Object.freeze([...selectionReservedNames,'ISINTEGER','ISSAFEINTEGER']);

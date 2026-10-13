@@ -1,3 +1,4 @@
+import {numeric,numericCheck} from './numeric.js';
 import { readMember, writeMember, memberAdapter, resolveMember, authorizeMember, checkMemberCapabilities } from '../object-model/members.js';
 import { construction } from '../object-model/construction.js';
 import {clean,freeze,WydgitError} from '../object-model/validation.js';
@@ -32,7 +33,7 @@ export async function execute(document,{scope,context,prototypeRegistry}) {
   ensure(typeof r.value[method]==='function','DENIED');const value=await r.value[method](...actual);if(draft?.kind==='handle'&&builders.has(draft.value)&&!builders.has(r.value))builders.consume(draft.value);tick();if(method==='related'){if(Array.isArray(value))ensure(value.length<=bounds.valueNodes,'LIMIT');return Array.isArray(value)?Object.freeze(value.map(v=>ref(v,'handle'))):value===null?null:ref(value,'handle');}return value===undefined?null:data(value);
  };
  // All frames share this execution's tokens, authority, deadline and counters.
- const typed=(v,type)=>{const r=refs.get(v);if(type==='Wydgit'){ensure(v===null||r?.kind==='handle','TYPE');return safe(v);}ensure(!r,'TYPE');const result=json(v),actual=result===null?'Null':Array.isArray(result)?'Array':({string:'String',number:'Number',boolean:'Boolean',object:'Object'})[typeof result];ensure(actual===type,'TYPE');return result;};
+ const typed=(v,type)=>{const r=refs.get(v);if(type==='Wydgit'){ensure(v===null||r?.kind==='handle','TYPE');return safe(v);}ensure(!r,'TYPE');const result=json(v);if(['Integer','Float'].includes(type))return numericCheck(result,type);const actual=result===null?'Null':Array.isArray(result)?'Array':({string:'String',number:'Number',boolean:'Boolean',object:'Object'})[typeof result];ensure(actual===type,'TYPE');return result;};
  const service=async(n,evaluate=expr)=>{ensure(++services<=bounds.serviceCalls,'LIMIT');const input=json(await evaluate(n.input));tick();ensure(scope.SERVICES,'DENIED');const v=n.op.startsWith('canonical')?await scope.SERVICES.Invoke(n.library,n.apiVersion,n.method,input):await scope.SERVICES.Call(n.library,n.method,input);tick();return v;};
  const procedure=async(n,kind,evaluate=expr,calleeProgram=frameProgram,calleeReceiver=receiver,calleeDeclaring=declaring)=>{
   tick();ensure(++procedureCalls<=bounds.procedureCalls&&procedureDepth<bounds.procedureDepth,'LIMIT');
@@ -60,7 +61,7 @@ export async function execute(document,{scope,context,prototypeRegistry}) {
  const compare=(a,b,op)=>{ensure(!refs.has(a)&&!refs.has(b),'TYPE');if(op==='='||op==='!='){ensure(a===null||['string','number','boolean'].includes(typeof a),'TYPE');ensure(b===null||['string','number','boolean'].includes(typeof b),'TYPE');return op==='='?a===b:a!==b;}if(['<','<=','>','>='].includes(op)){ensure(typeof a===typeof b&&['string','number'].includes(typeof a),'TYPE');return op==='<'?a<b:op==='<='?a<=b:op==='>'?a>b:a>=b;}};
  const boolean=v=>{ensure(typeof v==='boolean','TYPE');return v;};
  const expr=async(n,d=0)=>{tick();ensure(d<=bounds.expressionDepth,'LIMIT');const e=x=>expr(x,d+1);
-  switch(n.op){case 'identity':return identity(await e(n.left),await e(n.right),n.negate);case 'convert':{
+  switch(n.op){case 'numericCheck':return numericCheck(json(await e(n.value)),n.type);case 'numericPredicate':{const v=json(await e(n.value));return n.predicate==='IsInteger'?Number.isInteger(v):Number.isSafeInteger(v);}case 'numeric':return numeric(n.operator,json(await e(n.left)),json(await e(n.right)),n.type);case 'xor':{const a=boolean(await e(n.left)),b=boolean(await e(n.right));return a!==b;}case 'identity':return identity(await e(n.left),await e(n.right),n.negate);case 'convert':{
    const value=await e(n.value);ensure(!refs.has(value),'TYPE');
    if(n.type==='String'){
     ensure(['string','number','boolean'].includes(typeof value),'TYPE');
