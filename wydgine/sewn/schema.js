@@ -38,3 +38,8 @@ export const controlReservedNames=Object.freeze([...reservedNames,'IS','EXIT']);
 export const CONVERSION_SCHEMA='sewn/0.7';
 export const conversionExpressions=Object.freeze({...controlExpressions,convert:['type','value']});
 export const conversionReservedNames=Object.freeze([...controlReservedNames,'CSTR','VAL']);
+
+// Structured recovery; previous wire grammars remain closed.
+export const EXCEPTION_SCHEMA='sewn/0.8';
+export const exceptionStatements=Object.freeze({...controlStatements,try:['body','catch?','finally?']});
+export const exceptionReservedNames=Object.freeze([...conversionReservedNames,'FINALLY']);

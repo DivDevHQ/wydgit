@@ -45,6 +45,7 @@ export function parse(source,{module=false}={}) {
   function statement(nesting) {
     const start=token();let result;
     if(eat('DIM')) {const name=identifier();let type=null,value=null;if(eat('AS'))type=identifier().value;if(eat('='))value=expression();result=node('declare',start,{name:name.value,type,value});}
+    else if(eat('TRY')){endLine();const body=block(['CATCH','FINALLY','END'],nesting+1);let handler=null,cleanup=null;if(eat('CATCH')){const name=identifier();endLine();handler={name:name.value,body:block(['FINALLY','END'],nesting+1)};}if(eat('FINALLY')){endLine();cleanup=block(['END'],nesting+1);}if(!handler&&!cleanup)fail('SYNTAX','TRY requires CATCH or FINALLY.',start.location);expect('END');expect('TRY');endLine();return node('try',start,{body,handler,cleanup});}
     else if(eat('IF'))return branch(start,nesting);
     else if(eat('FOR')){expect('EACH');const name=identifier();expect('IN');const items=expression();endLine();const body=block(['NEXT'],nesting+1);expect('NEXT');if(token().kind==='identifier'){const next=take();if(next.value.toLowerCase()!==name.value.toLowerCase())fail('NAME','NEXT variable does not match.',next.location);}endLine();return node('forEach',start,{name:name.value,items,body});}
     else if(eat('EXIT')){expect('FOR');result=node('exitFor',start);}

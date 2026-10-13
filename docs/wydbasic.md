@@ -466,3 +466,25 @@ Ordinary names resolve case-insensitively to one discoverable canonical member.
 and still enforce access and SEAM. Brackets after a dot contain one identifier;
 array literals are unchanged. These extensions emit `sewn/0.5`; existing Set and
 property-bag APIs remain. See [canonical OOP](canonical-oop.md).
+
+
+## Structured error recovery (SEWN 0.8)
+
+```vb
+DIM offset AS Number = 0
+TRY
+    offset = Val(REQUEST.Form.Get("offset"))
+CATCH err
+    offset = 0
+FINALLY
+    ' Optional cleanup.
+END TRY
+```
+
+TRY requires one CATCH, one FINALLY, or both, in that order, followed by END TRY. CATCH requires a variable name. That structured error value has only `code` and `message` and is visible inside the catch body; it exposes no native exception, stack, or host details. The variable follows ordinary Object assignment rules but its original value is immutable. Declare values needed across branches before TRY. DIM inside FOR EACH remains unsupported.
+
+Initially only `SEWN.TYPE` data/conversion/operation errors are catchable. Unknown native failures, authorization failures and resource limits abort execution and skip further CATCH/FINALLY code. WydStore's expected `{ok:false,...}` results remain ordinary values for IF checks. All handlers and cleanup use the invocation's existing authority, deadline and counters.
+
+FINALLY runs after successful completion, catchable errors (including uncaught ones), RETURN, STOP and EXIT FOR. Cleanup control exits replace prior successful control exits; pending uncaught errors still propagate. A cleanup error replaces an earlier pending error. Catch variables are removed when the handler exits. Nested TRY blocks and procedure/prototype methods are supported. This is recovery, not rollback: completed property changes or storage writes are not undone.
+
+SEWN 0.8 adds `{op:"try",body:[...],catch:{name:"err",body:[...]},finally:[...]}` with catch/finally optional individually, but at least one required. Previous SEWN schemas remain closed and reject this operation.
