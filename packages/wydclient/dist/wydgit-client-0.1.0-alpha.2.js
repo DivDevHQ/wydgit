@@ -304,6 +304,20 @@
   var MEMBER_SCHEMA = "sewn/0.5";
   var memberStatements = Object.freeze({ ...serviceStatements, memberSet: ["target", "name", "value", "exact"], methodCall: ["target", "name", "args", "exact?"] });
   var memberExpressions = Object.freeze({ ...serviceExpressions, memberRead: ["target", "name", "exact"], methodValue: ["target", "name", "args", "exact?"] });
+  var CONTROL_SCHEMA = "sewn/0.6";
+  var controlStatements = Object.freeze({ ...memberStatements, exitFor: [] });
+  var controlExpressions = Object.freeze({ ...memberExpressions, isNull: ["value", "negate"] });
+  var controlReservedNames = Object.freeze([...reservedNames, "IS", "EXIT"]);
+  var CONVERSION_SCHEMA = "sewn/0.7";
+  var conversionExpressions = Object.freeze({ ...controlExpressions, convert: ["type", "value"] });
+  var conversionReservedNames = Object.freeze([...controlReservedNames, "CSTR", "VAL"]);
+  var EXCEPTION_SCHEMA = "sewn/0.8";
+  var exceptionStatements = Object.freeze({ ...controlStatements, try: ["body", "catch?", "finally?"] });
+  var exceptionReservedNames = Object.freeze([...conversionReservedNames, "FINALLY"]);
+  var SELECTION_SCHEMA = "sewn/0.9";
+  var selectionStatements = Object.freeze({ ...exceptionStatements, select: ["value", "cases", "else?"] });
+  var selectionExpressions = Object.freeze({ ...conversionExpressions, identity: ["left", "right", "negate"] });
+  var selectionReservedNames = Object.freeze([...exceptionReservedNames]);
 
   // wydgine/sewn/validate.js
   var fail = (code) => {
@@ -360,17 +374,18 @@
       ensure(Object.keys(n).every((k) => k === "op" || fields.some((f) => f.replace("?", "") === k)));
       for (const f of fields) if (!f.endsWith("?")) ensure(Object.hasOwn(n, f));
     };
-    const members = p?.schema === MEMBER_SCHEMA;
+    const selection = p?.schema === SELECTION_SCHEMA, exceptions = selection || p?.schema === EXCEPTION_SCHEMA, conversion = exceptions || p?.schema === CONVERSION_SCHEMA, control = conversion || p?.schema === CONTROL_SCHEMA, reserved = selection ? selectionReservedNames : exceptions ? exceptionReservedNames : conversion ? conversionReservedNames : control ? controlReservedNames : reservedNames;
+    const members = control || p?.schema === MEMBER_SCHEMA;
     const versioned = members || p?.schema === SERVICE_SCHEMA, objects = versioned || p?.schema === OBJECT_SCHEMA, modern = objects || p?.schema === PROCEDURE_SCHEMA;
-    const statementGrammar = members ? memberStatements : versioned ? serviceStatements : objects ? objectStatements : modern ? procedureStatements : statements, expressionGrammar = members ? memberExpressions : versioned ? serviceExpressions : objects ? objectExpressions : modern ? procedureExpressions : expressions;
-    ensure(p && [SCHEMA2, PROCEDURE_SCHEMA, OBJECT_SCHEMA, SERVICE_SCHEMA, MEMBER_SCHEMA].includes(p.schema) && Object.keys(p).every((k) => (modern ? ["schema", "body", "procedures"] : ["schema", "body"]).includes(k)));
+    const statementGrammar = selection ? selectionStatements : exceptions ? exceptionStatements : control ? controlStatements : members ? memberStatements : versioned ? serviceStatements : objects ? objectStatements : modern ? procedureStatements : statements, expressionGrammar = selection ? selectionExpressions : conversion ? conversionExpressions : control ? controlExpressions : members ? memberExpressions : versioned ? serviceExpressions : objects ? objectExpressions : modern ? procedureExpressions : expressions;
+    ensure(p && [SCHEMA2, PROCEDURE_SCHEMA, OBJECT_SCHEMA, SERVICE_SCHEMA, MEMBER_SCHEMA, CONTROL_SCHEMA, CONVERSION_SCHEMA, EXCEPTION_SCHEMA, SELECTION_SCHEMA].includes(p.schema) && Object.keys(p).every((k) => (modern ? ["schema", "body", "procedures"] : ["schema", "body"]).includes(k)));
     const procedures = modern ? p.procedures : {};
     ensure(procedures && typeof procedures === "object" && !Array.isArray(procedures));
     const graph = /* @__PURE__ */ new Map();
     let current = null;
     const procedureName = (n) => {
       name(n);
-      ensure((members || n === n.toLowerCase()) && !reservedNames.includes(n.toUpperCase()));
+      ensure((members || n === n.toLowerCase()) && !reserved.includes(n.toUpperCase()));
     };
     const procedureCall = (n, kind, d) => {
       procedureName(n.name);
@@ -388,6 +403,19 @@
       ensure(d <= MAXIMA.expressionDepth, "LIMIT");
       ensure(n && Object.hasOwn(expressionGrammar, n.op));
       shape2(n, expressionGrammar[n.op]);
+      if (n.op === "identity") {
+        ensure(typeof n.negate === "boolean");
+        expr(n.left, d + 1);
+        expr(n.right, d + 1);
+      }
+      if (n.op === "convert") {
+        ensure(["String", "Number"].includes(n.type));
+        expr(n.value, d + 1);
+      }
+      if (n.op === "isNull") {
+        ensure(typeof n.negate === "boolean");
+        expr(n.value, d + 1);
+      }
       if (n.op === "array") {
         ensure(Array.isArray(n.items));
         n.items.forEach((x) => expr(x, d + 1));
@@ -435,7 +463,7 @@
       }
       if (n.op === "not") expr(n.value, d + 1);
     };
-    const body = (b, d = 0) => {
+    const body = (b, d = 0, loops = 0) => {
       ensure(d <= MAXIMA.nesting, "LIMIT");
       ensure(Array.isArray(b));
       for (const n of b) {
@@ -459,16 +487,44 @@
         if (n.op === "return") {
           ensure(current ? procedures[current].kind === "sub" ? !Object.hasOwn(n, "value") : Object.hasOwn(n, "value") : Object.hasOwn(n, "value"));
         }
+        if (n.op === "select") {
+          expr(n.value);
+          ensure(Array.isArray(n.cases) && (n.cases.length > 0 || Object.hasOwn(n, "else")));
+          for (const branch of n.cases) {
+            shape2(branch, ["tests", "body"]);
+            ensure(!Object.hasOwn(branch, "op") && Array.isArray(branch.tests) && branch.tests.length > 0);
+            for (const test of branch.tests) {
+              shape2(test, ["operator", "value"]);
+              ensure(!Object.hasOwn(test, "op") && ["=", "!=", "<", "<=", ">", ">=", "IS", "IS NOT"].includes(test.operator));
+              expr(test.value);
+            }
+            body(branch.body, d + 1, loops);
+          }
+          if (Object.hasOwn(n, "else")) body(n.else, d + 1, loops);
+        }
+        if (n.op === "try") {
+          ensure(Object.hasOwn(n, "catch") || Object.hasOwn(n, "finally"));
+          body(n.body, d + 1, loops);
+          if (Object.hasOwn(n, "catch")) {
+            shape2(n.catch, ["name", "body"]);
+            ensure(!Object.hasOwn(n.catch, "op"));
+            name(n.catch.name);
+            ensure(!reserved.includes(n.catch.name.toUpperCase()));
+            body(n.catch.body, d + 1, loops);
+          }
+          if (Object.hasOwn(n, "finally")) body(n.finally, d + 1, loops);
+        }
+        if (n.op === "exitFor") ensure(loops > 0);
         if (n.op === "stop") ensure(!current);
         if (["declare", "set"].includes(n.op) || n.op === "return" && Object.hasOwn(n, "value") || n.op === "stop" && Object.hasOwn(n, "value")) expr(n.value);
         if (n.op === "if") {
           expr(n.condition);
-          body(n.then, d + 1);
-          if (n.else !== void 0) body(n.else, d + 1);
+          body(n.then, d + 1, loops);
+          if (n.else !== void 0) body(n.else, d + 1, loops);
         }
         if (n.op === "forEach") {
           expr(n.items);
-          body(n.body, d + 1);
+          body(n.body, d + 1, loops + 1);
         }
         if (n.op === "call") {
           expr(n.target);
@@ -493,7 +549,7 @@
         shape2(param, ["name", "type"]);
         ensure(!Object.hasOwn(param, "op"));
         name(param.name);
-        ensure(!reservedNames.includes(param.name.toUpperCase()) && !names.has(param.name) && sourceTypes.includes(param.type));
+        ensure(!reserved.includes(param.name.toUpperCase()) && !names.has(param.name) && sourceTypes.includes(param.type));
         names.add(param.name);
       }
       graph.set(id, /* @__PURE__ */ new Set());
@@ -570,7 +626,7 @@
         }
         requireThat(d.methods === void 0 && d.behaviorSource === void 0, "PROTOTYPE.METHOD", "Behavior must be compiled by trusted setup");
         requireThat(new Set(d.overrides ?? []).size === (d.overrides ?? []).length, "PROTOTYPE.METHOD", "Duplicate overrides");
-        requireThat(!behavior || ["sewn/0.3", "sewn/0.4", "sewn/0.5"].includes(behavior.schema) && behavior.body.length === 0, "PROTOTYPE.METHOD", "Expected portable prototype behavior");
+        requireThat(!behavior || ["sewn/0.3", "sewn/0.4", "sewn/0.5", "sewn/0.6", "sewn/0.7", "sewn/0.8", "sewn/0.9"].includes(behavior.schema) && behavior.body.length === 0, "PROTOTYPE.METHOD", "Expected portable prototype behavior");
         for (const [name2, proc] of Object.entries(behavior?.procedures ?? {})) {
           requireThat(!Object.keys(methods.handle).some((x) => x.toLowerCase() === name2.toLowerCase()), "PROTOTYPE.METHOD", "Method conflicts with kernel facade");
           const old = inheritedMethods[name2];

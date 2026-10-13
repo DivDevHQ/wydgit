@@ -2,7 +2,7 @@ import { EventRegistry } from '../events/registry.js';
 import { parse,parseModule } from './parse.js';
 import { fail } from './errors.js';
 import { validate } from '../sewn/validate.js';
-import { contextNames, safeKey, exceptionReservedNames as reservedNames, MAXIMA, sourceTypes } from '../sewn/schema.js';
+import { contextNames, safeKey, selectionReservedNames as reservedNames, MAXIMA, sourceTypes } from '../sewn/schema.js';
 import { reads, methods } from '../sewn/bindings.js';
 const types=sourceTypes;
 const literal=value=>({op:'literal',value});
@@ -16,7 +16,7 @@ export function compileModule(source,{registry=new EventRegistry()}={}) { return
 // Public compilation starts from source; AST lowering remains an internal stage.
 function compileAst(ast,registry,prototype=false) {
   if(prototype&&ast.events.length)fail('TYPE','Prototype modules cannot declare EVENT blocks.',ast.events[0].location);
-  let symbols=new Map();let declared=new Set();const procedures=Object.create(null),declarations=new Map(),graph=new Map();let current=null;const modern=ast.kind==='module';let objects=prototype,versioned=false,members=false,control=false,conversion=false,exceptions=false;
+  let symbols=new Map();let declared=new Set();const procedures=Object.create(null),declarations=new Map(),graph=new Map();let current=null;const modern=ast.kind==='module';let objects=prototype,versioned=false,members=false,control=false,conversion=false,exceptions=false,selection=false;
   const error=(n,code,message)=>fail(code,message,n.location);
   const checkType=(n,actual,expected)=>{if(expected!=='Unknown'&&actual!=='Unknown'&&actual!==expected)error(n,'TYPE',`Expected ${expected}, received ${actual}.`);};
   const key=(n,k)=>{if(!safeKey(k.toLowerCase()))error(n,'UNSUPPORTED',`Reserved member '${k}'.`);return k;};
@@ -29,6 +29,7 @@ function compileAst(ast,registry,prototype=false) {
   }
   function lowerExpression(n) {
     switch(n.kind) {
+      case 'identity':{selection=true;const a=expression(n.left),b=expression(n.right);for(const v of [a,b])if(v.type!=='Null'&&v.kind!=='handle')error(n,'TYPE','Identity requires Wydgit references or NULL.');return value({op:'identity',left:a.sewn,right:b.sewn,negate:n.negate},'Boolean');}
       case 'isNull':{control=true;const v=expression(n.value);if(v.kind&&v.kind!=='handle')error(n,'TYPE','Null tests require data or a Wydgit reference.');return value({op:'isNull',value:v.sewn,negate:n.negate},'Boolean');}
       case 'construct':{if(!/^[a-z][a-z0-9.-]*\/[a-z][a-z0-9-]*$/.test(n.prototype))error(n,'NAME','NEW requires a qualified prototype identity.');objects=true;const id=expression(n.id);checkType(n,id.type,'String');return value({op:'construct',type:n.prototype,id:id.sewn},'Wydgit','handle');}
       case 'literal':return value(literal(n.value),typeOf(n.value));
@@ -87,6 +88,7 @@ function compileAst(ast,registry,prototype=false) {
         if(explicit==='Wydgit'&&v?.type==='Unknown')error(n,'TYPE','A Wydgit initializer requires a known handle or NULL.');
         if(explicit&&v&&!(explicit==='Wydgit'&&v.type==='Null'))checkType(n,v.type,explicit);
         const name=reserve(n,n.name,type);if(v?.element)symbols.get(name).element=v.element;if(svc){if(type!=='Object')error(n,'TYPE','Service result is an Object.');out.push({...svc,into:name});}else out.push({op:'declare',name,value:v?.sewn??literal(defaults[type])});
+      }else if(n.kind==='select'){selection=true;const selector=expression(n.value);if(selector.kind&&selector.kind!=='handle'||['Array','Object'].includes(selector.type))error(n,'TYPE','Selection requires a scalar or Wydgit reference.');const before=new Map(symbols);const cases=n.cases.map(branch=>{symbols=new Map(before);const tests=branch.tests.map(test=>{const v=expression(test.value),identity=test.operator.startsWith('IS');if(identity){for(const x of [selector,v])if(x.type!=='Null'&&x.kind!=='handle')error(n,'TYPE','Identity cases require Wydgit references or NULL.');}else{if(selector.kind||v.kind||['Array','Object'].includes(v.type))error(n,'TYPE','Value cases require scalars.');if(!['=','<>'].includes(test.operator)&&selector.type!=='Unknown'&&v.type!=='Unknown'&&(selector.type!==v.type||!['Number','String'].includes(v.type)))error(n,'TYPE','Ordering requires matching Numbers or Strings.');}return {operator:test.operator==='<>'?'!=':test.operator,value:v.sewn};});return {tests,body:body(branch.body,inLoop)};});symbols=new Map(before);const otherwise=n.else===null?null:body(n.else,inLoop);symbols=before;out.push({op:'select',value:selector.sewn,cases,...(otherwise!==null?{else:otherwise}:{})});
       }else if(n.kind==='try'){exceptions=true;const before=new Map(symbols),children=body(n.body,inLoop);symbols=new Map(before);let handler;if(n.handler){const name=reserve(n,n.handler.name,'Object');handler={name,body:body(n.handler.body,inLoop)};declared.delete(name);symbols=new Map(before);}const cleanup=n.cleanup===null?null:body(n.cleanup,inLoop);symbols=before;out.push({op:'try',body:children,...(handler?{catch:handler}:{}),...(cleanup!==null?{finally:cleanup}:{})});
       }else if(n.kind==='exitFor'){if(!inLoop)error(n,'TYPE','EXIT FOR requires an enclosing FOR EACH in this procedure.');control=true;out.push({op:'exitFor'});
       }else if(n.kind==='memberSet'){const target=expression(n.target.target);if(target.kind!=='handle')error(n,'TYPE','Member assignment requires a Wydgit reference.');key(n,n.target.key);const v=expression(n.value);if(v.kind)error(n,'TYPE','Property values require JSON data.');members=true;out.push({op:'memberSet',target:target.sewn,name:n.target.key,exact:n.target.exact===true,value:v.sewn});
@@ -111,7 +113,7 @@ function compileAst(ast,registry,prototype=false) {
     return out;
   }
   const validated=program=>{try{return validate(program);}catch{error(ast,'COMPILE','Generated workflow exceeds or violates canonical SEWN validation bounds.');}};
-  if(!modern){const lowered=body(ast.body);return validated({schema:exceptions?'sewn/0.8':conversion?'sewn/0.7':control?'sewn/0.6':members?'sewn/0.5':versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.1',...((objects||versioned||members||control||conversion||exceptions)?{procedures:{}}:{}),body:lowered});}
+  if(!modern){const lowered=body(ast.body);return validated({schema:selection?'sewn/0.9':exceptions?'sewn/0.8':conversion?'sewn/0.7':control?'sewn/0.6':members?'sewn/0.5':versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.1',...((objects||versioned||members||control||conversion||exceptions||selection)?{procedures:{}}:{}),body:lowered});}
   for(const proc of ast.procedures){
     if(proc.params.length>MAXIMA.parameters)error(proc.params[MAXIMA.parameters],'COMPILE','Procedure parameter count exceeds SEWN limits.');
     const id=reserve(proc,proc.name,'Null');if(!/^[a-z][a-z0-9_]*$/.test(id))error(proc,'NAME','Procedure names must start with a letter.');
@@ -120,7 +122,7 @@ function compileAst(ast,registry,prototype=false) {
     declarations.set(id,proc);graph.set(id,new Set());
   }
   const reset=()=>{symbols=new Map();declared=new Set();};
-  const returns=nodes=>nodes.some(n=>n.kind==='return'||n.kind==='if'&&returns(n.then)&&returns(n.else)||n.kind==='try'&&(n.cleanup&&returns(n.cleanup)||returns(n.body)&&(!n.handler||returns(n.handler.body))));
+  const returns=nodes=>nodes.some(n=>n.kind==='return'||n.kind==='select'&&n.else!==null&&returns(n.else)&&n.cases.every(b=>returns(b.body))||n.kind==='if'&&returns(n.then)&&returns(n.else)||n.kind==='try'&&(n.cleanup&&returns(n.cleanup)||returns(n.body)&&(!n.handler||returns(n.handler.body))));
   for(const [id,proc] of declarations){reset();current=proc;for(const param of proc.params)reserve(param,param.name,param.type);
     const lowered=body(proc.body);if(proc.procedureKind==='function'&&!returns(proc.body))error(proc,'TYPE','FUNCTION may reach its end without a result.');
     procedures[id]={kind:proc.procedureKind,params:proc.params.map(p=>({name:p.name.toLowerCase(),type:p.type})),...(proc.returns?{returns:proc.returns}:{}),body:lowered};
@@ -130,10 +132,10 @@ function compileAst(ast,registry,prototype=false) {
   const eventNames=new Set(),events=[];
   for(const event of ast.events){
     let type;try{type=registry?.resolve(event.type);}catch{error(event,'NAME',`Unknown or ambiguous event '${event.type}'.`);}if(!type)error(event,'NAME','Module compilation requires an event registry.');
-    if(eventNames.has(type))error(event,'NAME',`Duplicate EVENT '${type}'.`);eventNames.add(type);reset();const lowered=body(event.body);events.push({type,workflow:validated({schema:exceptions?'sewn/0.8':conversion?'sewn/0.7':control?'sewn/0.6':members?'sewn/0.5':versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.2',procedures,body:lowered})});
+    if(eventNames.has(type))error(event,'NAME',`Duplicate EVENT '${type}'.`);eventNames.add(type);reset();const lowered=body(event.body);events.push({type,workflow:validated({schema:selection?'sewn/0.9':exceptions?'sewn/0.8':conversion?'sewn/0.7':control?'sewn/0.6':members?'sewn/0.5':versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.2',procedures,body:lowered})});
   }
   // Even a declaration-only module is validated.
-  const behavior=validated({schema:exceptions?'sewn/0.8':conversion?'sewn/0.7':control?'sewn/0.6':members?'sewn/0.5':versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.2',procedures,body:[]});
+  const behavior=validated({schema:selection?'sewn/0.9':exceptions?'sewn/0.8':conversion?'sewn/0.7':control?'sewn/0.6':members?'sewn/0.5':versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.2',procedures,body:[]});
   if(prototype)return behavior;
   return Object.freeze({events:Object.freeze(events.map(Object.freeze))});
 }

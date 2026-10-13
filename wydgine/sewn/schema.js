@@ -43,3 +43,9 @@ export const conversionReservedNames=Object.freeze([...controlReservedNames,'CST
 export const EXCEPTION_SCHEMA='sewn/0.8';
 export const exceptionStatements=Object.freeze({...controlStatements,try:['body','catch?','finally?']});
 export const exceptionReservedNames=Object.freeze([...conversionReservedNames,'FINALLY']);
+
+// Selection and opaque reference identity; earlier grammars remain closed.
+export const SELECTION_SCHEMA='sewn/0.9';
+export const selectionStatements=Object.freeze({...exceptionStatements,select:['value','cases','else?']});
+export const selectionExpressions=Object.freeze({...conversionExpressions,identity:['left','right','negate']});
+export const selectionReservedNames=Object.freeze([...exceptionReservedNames]);

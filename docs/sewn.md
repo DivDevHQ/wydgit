@@ -312,3 +312,35 @@ conversion additionally rejects Booleans. No custom coercion method is invoked.
 Data boundaries and all existing execution budgets still apply to inputs/outputs.
 Prototype methods may use 0.7. See WydBASIC conversion documentation for examples
 and rounding details; domain-specific validation remains the caller's responsibility.
+
+## SEWN 0.9 — selection and identity
+
+The document envelope remains `{schema:"sewn/0.9",procedures:{...},body:[...]}`.
+This version extends 0.8 without modifying any earlier closed grammar.
+
+- Expression `identity`: required `left`, `right` expressions and Boolean `negate`.
+- Statement `select`: required selector expression `value`, Array `cases`, optional
+  statement Array `else`.
+- Each case has exactly `tests` (nonempty Array) and `body` (statement Array).
+- Each test has exactly `operator` and expression `value`. Operators are `=`, `!=`,
+  `<`, `<=`, `>`, `>=`, `IS`, `IS NOT`. No `op` field is allowed on cases/tests.
+
+At least one case or an explicit else is required. Every nested expression/body
+is validated, including unreachable tests, procedure graph edges and lexical loop
+exits. Unknown keys/operators, malformed cases and invalid negate flags fail closed.
+Older schemas reject both new operations and preserve their previous name rules.
+
+The selector executes once. Tests execute in source order until the first match;
+then only that body executes, otherwise else (or nothing). Value tests use existing
+strict scalar comparison; ordering requires matching String/Number types. Identity
+tests require nullable opaque Wydgit handles and compare live trusted underlying
+nodes after context/lifetime/draft checks. IDs and properties are never compared.
+JSON containers and facades have no identity operation. Frames share tokens and
+underlying identity within an invocation; references never cross JSON or invocation
+boundaries. All visibility and SEAM checks remain authoritative.
+
+The select statement, inspected branches/tests and evaluated expressions consume
+steps. Selected bodies consume nesting; procedure/service/construction counters
+and the deadline remain shared. RETURN/STOP/EXIT FOR propagate through selection;
+TRY catches only existing recoverable TYPE failures. See [WBasic](wydbasic.md) and
+[the milestone decisions](milestones/sewn-0.9.md) for grammar and security details.

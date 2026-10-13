@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Added WBasic SELECT CASE and nullable opaque Wydgit IS / IS NOT identity through closed SEWN 0.9, with single selector evaluation, ordered lazy tests, strict comparisons and no fallthrough. Retained SEAM/lifetime guards, shared budgets and SEWN 0.1–0.8 compatibility; documented the rebrand and milestone decisions and added language/wire/security/integration regressions.
+
 - Added WydBASIC `TRY / CATCH / FINALLY` through closed SEWN 0.8. Catch exposes safe structured type errors; cleanup runs on ordinary completion and control exits under shared budgets. Authorization, resource-limit and unknown host failures remain fatal. Older wire schemas remain unchanged.
 
 - Added explicit WydBASIC `CStr()` and strict decimal `Val()` intrinsics through closed SEWN 0.7 primitive conversion expressions. Rejected malformed/nonfinite numeric input and object/reference coercion; retained shared execution limits and older wire grammars.
