@@ -2,7 +2,7 @@ import { EventRegistry } from '../events/registry.js';
 import { parse,parseModule } from './parse.js';
 import { fail } from './errors.js';
 import { validate } from '../sewn/validate.js';
-import { contextNames, safeKey, controlReservedNames as reservedNames, MAXIMA, sourceTypes } from '../sewn/schema.js';
+import { contextNames, safeKey, conversionReservedNames as reservedNames, MAXIMA, sourceTypes } from '../sewn/schema.js';
 import { reads, methods } from '../sewn/bindings.js';
 const types=sourceTypes;
 const literal=value=>({op:'literal',value});
@@ -16,7 +16,7 @@ export function compileModule(source,{registry=new EventRegistry()}={}) { return
 // Public compilation starts from source; AST lowering remains an internal stage.
 function compileAst(ast,registry,prototype=false) {
   if(prototype&&ast.events.length)fail('TYPE','Prototype modules cannot declare EVENT blocks.',ast.events[0].location);
-  let symbols=new Map();let declared=new Set();const procedures=Object.create(null),declarations=new Map(),graph=new Map();let current=null;const modern=ast.kind==='module';let objects=prototype,versioned=false,members=false,control=false;
+  let symbols=new Map();let declared=new Set();const procedures=Object.create(null),declarations=new Map(),graph=new Map();let current=null;const modern=ast.kind==='module';let objects=prototype,versioned=false,members=false,control=false,conversion=false;
   const error=(n,code,message)=>fail(code,message,n.location);
   const checkType=(n,actual,expected)=>{if(expected!=='Unknown'&&actual!=='Unknown'&&actual!==expected)error(n,'TYPE',`Expected ${expected}, received ${actual}.`);};
   const key=(n,k)=>{if(!safeKey(k.toLowerCase()))error(n,'UNSUPPORTED',`Reserved member '${k}'.`);return k;};
@@ -42,6 +42,12 @@ function compileAst(ast,registry,prototype=false) {
         }else if(!['Object','Unknown'].includes(target.type))error(n,'TYPE','Member reads require an Object or facade.');
         return value({op:'read',target:target.sewn,key:name},type,kind);}
       case 'invoke':{
+        if(n.target.kind==='name'&&['CSTR','VAL'].includes(n.target.name.toUpperCase())){
+          const method=n.target.name.toUpperCase();if(n.args.length!==1)error(n,'TYPE',method+' requires exactly one argument.');
+          const arg=expression(n.args[0]),allowed=method==='CSTR'?['String','Number','Boolean','Unknown']:['String','Number','Unknown'];
+          if(arg.kind||!allowed.includes(arg.type))error(n,'TYPE',method+' requires primitive data.');
+          conversion=true;const type=method==='CSTR'?'String':'Number';return value({op:'convert',type,value:arg.sewn},type);
+        }
         if(n.target.kind==='name'&&n.target.name.toUpperCase()==='NEWID'){if(n.args.length)error(n,'TYPE','NewId takes no arguments.');objects=true;return value({op:'newId'},'String');}
         if(n.target.kind==='name'&&modern)return procedureCall(n,'function');
         if(modern){const svc=service(n);if(svc)return value({...svc,op:svc.op==='canonicalService'?'canonicalServiceCall':'serviceCall'},'Object');}
@@ -104,7 +110,7 @@ function compileAst(ast,registry,prototype=false) {
     return out;
   }
   const validated=program=>{try{return validate(program);}catch{error(ast,'COMPILE','Generated workflow exceeds or violates canonical SEWN validation bounds.');}};
-  if(!modern){const lowered=body(ast.body);return validated({schema:control?'sewn/0.6':members?'sewn/0.5':versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.1',...((objects||versioned||members||control)?{procedures:{}}:{}),body:lowered});}
+  if(!modern){const lowered=body(ast.body);return validated({schema:conversion?'sewn/0.7':control?'sewn/0.6':members?'sewn/0.5':versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.1',...((objects||versioned||members||control||conversion)?{procedures:{}}:{}),body:lowered});}
   for(const proc of ast.procedures){
     if(proc.params.length>MAXIMA.parameters)error(proc.params[MAXIMA.parameters],'COMPILE','Procedure parameter count exceeds SEWN limits.');
     const id=reserve(proc,proc.name,'Null');if(!/^[a-z][a-z0-9_]*$/.test(id))error(proc,'NAME','Procedure names must start with a letter.');
@@ -123,10 +129,10 @@ function compileAst(ast,registry,prototype=false) {
   const eventNames=new Set(),events=[];
   for(const event of ast.events){
     let type;try{type=registry?.resolve(event.type);}catch{error(event,'NAME',`Unknown or ambiguous event '${event.type}'.`);}if(!type)error(event,'NAME','Module compilation requires an event registry.');
-    if(eventNames.has(type))error(event,'NAME',`Duplicate EVENT '${type}'.`);eventNames.add(type);reset();const lowered=body(event.body);events.push({type,workflow:validated({schema:control?'sewn/0.6':members?'sewn/0.5':versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.2',procedures,body:lowered})});
+    if(eventNames.has(type))error(event,'NAME',`Duplicate EVENT '${type}'.`);eventNames.add(type);reset();const lowered=body(event.body);events.push({type,workflow:validated({schema:conversion?'sewn/0.7':control?'sewn/0.6':members?'sewn/0.5':versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.2',procedures,body:lowered})});
   }
   // Even a declaration-only module is validated.
-  const behavior=validated({schema:control?'sewn/0.6':members?'sewn/0.5':versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.2',procedures,body:[]});
+  const behavior=validated({schema:conversion?'sewn/0.7':control?'sewn/0.6':members?'sewn/0.5':versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.2',procedures,body:[]});
   if(prototype)return behavior;
   return Object.freeze({events:Object.freeze(events.map(Object.freeze))});
 }

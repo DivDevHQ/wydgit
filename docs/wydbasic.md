@@ -149,6 +149,41 @@ These features select `sewn/0.6`; older source without them keeps its existing w
 version. FindNode helpers may still RETURN a nullable Wydgit reference. Do not
 predeclare the loop variable: FOR EACH declares it.
 
+## Explicit primitive conversion
+
+`CStr(value)` and `Val(value)` take exactly one argument, are case-insensitive,
+and select `sewn/0.7`. They are compiler intrinsics in bodies, EVENT modules and
+prototype methods, not host functions or user-overridable procedures.
+
+| Call | Accepted input | Result |
+| --- | --- | --- |
+| CStr | String, finite Number, Boolean | String; String unchanged, locale-independent Number formatting, Boolean as `"True"` / `"False"` |
+| Val | String or finite Number | Number; Number unchanged, String parsed as a complete decimal value |
+
+Val accepts surrounding ASCII space/tab/CR/LF, an optional sign, decimal fraction
+and optional e/E exponent. It rejects empty/whitespace-only text, numeric prefixes
+followed by junk, hexadecimal, grouping separators, NaN, Infinity and overflow.
+Unlike legacy VB's prefix parser, `Val("10junk")` fails rather than returning 10.
+Normal finite binary64 rounding applies; very small values may underflow to zero.
+CStr formats numeric negative zero as `"0"`. Neither conversion is locale-aware.
+
+Both reject NULL, Arrays, Objects, Wydgit references and context facades. Val also
+rejects Boolean input. Known incompatible types and incorrect arity fail at
+compilation; dynamic invalid values fail with SEWN.TYPE. There is no implicit
+conversion, object-to-string method invocation, generic serialization or new
+capability. Existing string, step, expression-depth and time limits apply.
+
+```basic
+DIM offset AS Number = Val(REQUEST.Query.Get("offset"))
+DIM label AS String = "Offset " & CStr(offset)
+```
+
+Handle an absent value before calling Val: request Get may return NULL. Conversion
+is not application validation; a paging offset still needs nonnegative, integer
+and maximum checks. These functions do not add paging routes, controls or retained
+page state by themselves. `CSTR` and `VAL` are reserved intrinsic identifiers in
+new source; older wire grammars/procedure names remain unchanged.
+
 ## Contexts and calls
 
 ME (also Me), EVENT, REQUEST, RESPONSE, SESSION, PAGE, SERVER, CLIENT are recognized

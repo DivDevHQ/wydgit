@@ -33,3 +33,8 @@ export const CONTROL_SCHEMA='sewn/0.6';
 export const controlStatements=Object.freeze({...memberStatements,exitFor:[]});
 export const controlExpressions=Object.freeze({...memberExpressions,isNull:['value','negate']});
 export const controlReservedNames=Object.freeze([...reservedNames,'IS','EXIT']);
+
+// Explicit primitive conversion; older wire grammars remain closed.
+export const CONVERSION_SCHEMA='sewn/0.7';
+export const conversionExpressions=Object.freeze({...controlExpressions,convert:['type','value']});
+export const conversionReservedNames=Object.freeze([...controlReservedNames,'CSTR','VAL']);

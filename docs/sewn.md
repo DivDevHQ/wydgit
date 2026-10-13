@@ -295,3 +295,20 @@ continue to apply. Early exit spends the work performed and skips remaining
 iterations, without resetting counters. Prototype methods may use schema 0.6.
 Independent hand-authored wire tests cover grammar/version boundaries, null/falsy
 values, handle guards, nested loops, procedure isolation, cleanup and resource limits.
+
+## Version 0.7: primitive conversion
+
+`sewn/0.7` preserves the 0.6 envelope/operations and adds only the expression
+`{op:"convert",type:"String"|"Number",value:expression}`. Old schemas remain closed.
+The operand evaluates once, in ordinary sequence. String conversion accepts
+String/finite Number/Boolean, formatting Booleans as True/False and Numbers with
+locale-independent shortest decimal formatting. Number conversion accepts a
+finite Number unchanged or an entire signed decimal String with optional fraction,
+e/E exponent and surrounding ASCII space/tab/CR/LF. Invalid inputs fail SEWN.TYPE;
+no legacy prefix parsing, hexadecimal, nonfinite values or null defaults exist.
+
+No reference/facade tokens, Arrays, Objects or NULL may be converted. Number
+conversion additionally rejects Booleans. No custom coercion method is invoked.
+Data boundaries and all existing execution budgets still apply to inputs/outputs.
+Prototype methods may use 0.7. See WydBASIC conversion documentation for examples
+and rounding details; domain-specific validation remains the caller's responsibility.

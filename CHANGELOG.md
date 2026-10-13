@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Added explicit WydBASIC `CStr()` and strict decimal `Val()` intrinsics through closed SEWN 0.7 primitive conversion expressions. Rejected malformed/nonfinite numeric input and object/reference coercion; retained shared execution limits and older wire grammars.
+
 - Added WydBASIC `IS NULL`, `IS NOT NULL` and `EXIT FOR`, compiled through new closed SEWN 0.6 operations. Null checks preserve opaque-reference guards; loop exit affects only the nearest lexical loop without resetting shared budgets.
 - Preserved SEWN 0.1–0.5 wire grammars and strict Boolean conditions; added compiler, independent SEWN, prototype-method and Page integration tests.
 
