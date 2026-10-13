@@ -14,6 +14,9 @@ EVENT Page.Resolve
     Dim reqRecId As String
     reqRecId = REQUEST.Form.Get("recordId")
 
+    Dim reqOffset As String
+    reqOffset = REQUEST.Form.Get("pageOffset")
+
     If reqRecId <> "" Then
         Dim expectedTarget As String
         expectedTarget = "task-card-delete-" & reqRecId
@@ -53,23 +56,18 @@ EVENT Page.Resolve
 
                 Dim card As Wydgit
                 SET card = NEW "divdev/task-card"(cardId)
-                card.taskTitle = titleStr
+                card.taskTitle = "**" & titleStr & "**"
                 card.status = currentStatus
                 card.recordId = reqRecId
 
-                ' Title Block
-                Dim titleBlock As Wydgit
-                SET titleBlock = NEW "wydgit.core/block"(cardId & "-title")
-                titleBlock.content = {
-                    "type": "markdown",
-                    "value": "**" & titleStr & "**"
-                }
-                card.Insert("blocks", 0, titleBlock)
+                If reqOffset = "" Then
+                    reqOffset = "0"
+                End If
 
                 ' Move Form
                 Dim moveForm As Wydgit
                 SET moveForm = NEW "divdev/task-move-form"("task-card-move-" & reqRecId)
-                moveForm.label = "Move"
+                moveForm.label = titleStr
 
                 Dim hiddenRecMove As Wydgit
                 SET hiddenRecMove = NEW "wydgit.core/hidden-input"("task-card-move-" & reqRecId & "-recid")
@@ -77,7 +75,13 @@ EVENT Page.Resolve
                 hiddenRecMove.value = reqRecId
                 moveForm.Insert("blocks", 0, hiddenRecMove)
 
-                card.Insert("blocks", 1, moveForm)
+                Dim hiddenOffsetMove As Wydgit
+                SET hiddenOffsetMove = NEW "wydgit.core/hidden-input"("task-card-move-" & reqRecId & "-offset")
+                hiddenOffsetMove.name = "pageOffset"
+                hiddenOffsetMove.value = reqOffset
+                moveForm.Insert("blocks", 1, hiddenOffsetMove)
+
+                card.Insert("blocks", 0, moveForm)
 
                 ' Delete Form Receiver (Target)
                 Dim reconstructedForm As Wydgit
@@ -90,7 +94,13 @@ EVENT Page.Resolve
                 hiddenRecDel.value = reqRecId
                 reconstructedForm.Insert("blocks", 0, hiddenRecDel)
 
-                card.Insert("blocks", 2, reconstructedForm)
+                Dim hiddenOffsetDel As Wydgit
+                SET hiddenOffsetDel = NEW "wydgit.core/hidden-input"(expectedTarget & "-offset")
+                hiddenOffsetDel.name = "pageOffset"
+                hiddenOffsetDel.value = reqOffset
+                reconstructedForm.Insert("blocks", 1, hiddenOffsetDel)
+
+                card.Insert("blocks", 1, reconstructedForm)
 
                 Dim listSec As Wydgit
                 SET listSec = FindNode(Me, "blocks", "taskboard-list-section")

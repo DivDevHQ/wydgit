@@ -147,6 +147,54 @@
           ]
         },
         "provenance": {}
+      },
+      {
+        "schema": "wydgit/0.2",
+        "id": "taskboard-prev-form",
+        "prototype": "wydgit.core/form",
+        "properties": {
+          "label": "<- Previous Page"
+        },
+        "slots": {
+          "blocks": [
+            {
+              "schema": "wydgit/0.2",
+              "id": "taskboard-prev-offset",
+              "prototype": "wydgit.core/hidden-input",
+              "properties": {
+                "name": "offset",
+                "value": "0"
+              },
+              "slots": {},
+              "provenance": {}
+            }
+          ]
+        },
+        "provenance": {}
+      },
+      {
+        "schema": "wydgit/0.2",
+        "id": "taskboard-page-form",
+        "prototype": "wydgit.core/form",
+        "properties": {
+          "label": "Next Page ->"
+        },
+        "slots": {
+          "blocks": [
+            {
+              "schema": "wydgit/0.2",
+              "id": "taskboard-page-offset",
+              "prototype": "wydgit.core/hidden-input",
+              "properties": {
+                "name": "offset",
+                "value": "0"
+              },
+              "slots": {},
+              "provenance": {}
+            }
+          ]
+        },
+        "provenance": {}
       }
     ]
   },

@@ -14,6 +14,9 @@ EVENT Submit
     Dim newStatus As String
     newStatus = REQUEST.Form.Get("targetStatus")
 
+    Dim postedOffset As String
+    postedOffset = REQUEST.Form.Get("pageOffset")
+
     If newStatus = "todo" OR newStatus = "doing" OR newStatus = "done" Then
         If targetRecId <> "" Then
             Dim getRes As Object
@@ -78,6 +81,21 @@ EVENT Submit
                                 SET listSec = oldColObj.related("parent")
 
                                 If listSec IS NOT NULL Then
+                                    Dim rootSec As Wydgit
+                                    SET rootSec = listSec.related("parent")
+
+                                    If rootSec IS NOT NULL AND postedOffset <> "" Then
+                                        Dim pageForm As Wydgit
+                                        SET pageForm = FindNode(rootSec, "blocks", "taskboard-page-form")
+                                        If pageForm IS NOT NULL Then
+                                            Dim offsetField AS Wydgit
+                                            SET offsetField = FindNode(pageForm, "blocks", "taskboard-page-offset")
+                                            IF offsetField IS NOT NULL THEN
+                                                offsetField.value = postedOffset
+                                            END IF
+                                        End If
+                                    End If
+
                                     Dim targetColId As String
                                     Dim nextStatusArg As String
                                     Dim nextBtnLabel As String
@@ -100,20 +118,15 @@ EVENT Submit
                                     SET newColObj = FindNode(listSec, "blocks", targetColId)
 
                                     If newColObj IS NOT NULL Then
-                                        ' Atomic reparenting via Move()
                                         cardObj.Move(newColObj, "blocks", 1)
-
-                                        ' Sync card status property
                                         cardObj.status = newStatus
-
-                                        ' Update move form label & next status hidden input
-                                        moveForm.label = nextBtnLabel
+                                        moveForm.label = titleStr & " | " & nextBtnLabel
 
                                         Dim statusHidden As Wydgit
                                         SET statusHidden = FindNode(moveForm, "blocks", "task-card-move-" & targetRecId & "-status")
-                                        If statusHidden IS NOT NULL Then
+                                        If statusHidden IS NOT NULL THEN
                                             statusHidden.value = nextStatusArg
-                                        End If
+                                        END IF
                                     End If
                                 End If
                             End If

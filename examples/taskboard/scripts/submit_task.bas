@@ -54,7 +54,7 @@ EVENT Submit
 
             IF titleField IS NOT NULL THEN
                 titleField.value = ""
-            END IF
+            End If
         Else
             IF statusBlock IS NOT NULL THEN
                 statusBlock.content = {

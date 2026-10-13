@@ -8,11 +8,41 @@ FUNCTION FindNode(parent AS Wydgit, slotName AS String, sId AS String) AS Wydgit
 END FUNCTION
 
 EVENT Page.PreRender
+    Dim currentOffset As Number
+    currentOffset = 0
+
+    Dim pageForm As Wydgit
+    SET pageForm = FindNode(Me, "blocks", "taskboard-page-form")
+
+    ' Read current offset state set by action handlers or form defaults
+    If pageForm IS NOT NULL Then
+        Dim offsetField AS Wydgit
+        SET offsetField = FindNode(pageForm, "blocks", "taskboard-page-offset")
+        If offsetField IS NOT NULL Then
+            Dim rawOffsetVal AS String
+            rawOffsetVal = offsetField.properties.value
+            If rawOffsetVal IS NOT NULL THEN
+                If rawOffsetVal <> "" Then
+                    TRY
+                        currentOffset = Val(rawOffsetVal)
+                        If currentOffset < 0 Then
+                            currentOffset = 0
+                        End If
+                    CATCH err
+                        currentOffset = 0
+                    FINALLY
+                    END TRY
+                End If
+            End If
+        End If
+    End If
+
     Dim res As Object
     res = SERVICES.Call("wydstore", "query", {
         "store": "tasks",
         "collection": "tasks",
-        "limit": 8
+        "limit": 8,
+        "offset": currentOffset
     })
 
     Dim rootSec As Wydgit
@@ -38,7 +68,6 @@ EVENT Page.PreRender
         Dim records As Array
         records = res.value
 
-        ' Hoisted variables
         Dim taskData As Object
         Dim titleStr As String
         Dim statusStr As String
@@ -58,12 +87,13 @@ EVENT Page.PreRender
         Dim nextStatus As String
         Dim btnLabel As String
 
-        Dim titleBlock As Wydgit
         Dim moveForm As Wydgit
         Dim recIdHiddenMove As Wydgit
         Dim nextStatusHidden As Wydgit
+        Dim offsetHiddenMove As Wydgit
         Dim delForm As Wydgit
         Dim recIdHiddenDel As Wydgit
+        Dim offsetHiddenDel As Wydgit
         Dim existingCard As Wydgit
 
         FOR EACH rec IN records
@@ -94,7 +124,6 @@ EVENT Page.PreRender
 
             cardId = "task-card-" & recId
 
-            ' Search across all columns for existing reconstructed card
             SET existingCard = NULL
             IF colTodo IS NOT NULL THEN
                 IF existingCard IS NULL THEN
@@ -115,21 +144,13 @@ EVENT Page.PreRender
             IF existingCard IS NULL THEN
                 IF targetCol IS NOT NULL THEN
                     SET card = NEW "divdev/task-card"(cardId)
-                    card.taskTitle = titleStr
+                    card.taskTitle = "**" & titleStr & "**"
                     card.status = statusStr
                     card.recordId = recId
 
-                    ' 1. Title Block
-                    SET titleBlock = NEW "wydgit.core/block"(cardId & "-title")
-                    titleBlock.content = {
-                        "type": "markdown",
-                        "value": "**" & titleStr & "**"
-                    }
-                    card.Insert("blocks", 0, titleBlock)
-
-                    ' 2. Move Form
+                    ' 1. Move Form
                     SET moveForm = NEW "divdev/task-move-form"("task-card-move-" & recId)
-                    moveForm.label = btnLabel
+                    moveForm.label = titleStr & " | " & btnLabel
 
                     SET recIdHiddenMove = NEW "wydgit.core/hidden-input"("task-card-move-" & recId & "-recid")
                     recIdHiddenMove.name = "recordId"
@@ -141,9 +162,14 @@ EVENT Page.PreRender
                     nextStatusHidden.value = nextStatus
                     moveForm.Insert("blocks", 1, nextStatusHidden)
 
-                    card.Insert("blocks", 1, moveForm)
+                    SET offsetHiddenMove = NEW "wydgit.core/hidden-input"("task-card-move-" & recId & "-offset")
+                    offsetHiddenMove.name = "pageOffset"
+                    offsetHiddenMove.value = CStr(currentOffset)
+                    moveForm.Insert("blocks", 2, offsetHiddenMove)
 
-                    ' 3. Delete Form
+                    card.Insert("blocks", 0, moveForm)
+
+                    ' 2. Delete Form
                     SET delForm = NEW "divdev/task-delete-form"("task-card-delete-" & recId)
                     delForm.label = "Delete"
 
@@ -152,12 +178,42 @@ EVENT Page.PreRender
                     recIdHiddenDel.value = recId
                     delForm.Insert("blocks", 0, recIdHiddenDel)
 
-                    card.Insert("blocks", 2, delForm)
+                    SET offsetHiddenDel = NEW "wydgit.core/hidden-input"("task-card-delete-" & recId & "-offset")
+                    offsetHiddenDel.name = "pageOffset"
+                    offsetHiddenDel.value = CStr(currentOffset)
+                    delForm.Insert("blocks", 1, offsetHiddenDel)
+
+                    card.Insert("blocks", 1, delForm)
 
                     targetCol.Insert("blocks", targetIdx, card)
                 END IF
             END IF
         NEXT rec
+
+        ' Calculate next/previous target offsets for subsequent render actions
+        Dim prevForm As Wydgit
+        SET prevForm = FindNode(rootSec, "blocks", "taskboard-prev-form")
+
+        IF prevForm IS NOT NULL THEN
+            Dim prevOffsetField AS Wydgit
+            SET prevOffsetField = FindNode(prevForm, "blocks", "taskboard-prev-offset")
+            IF prevOffsetField IS NOT NULL THEN
+                Dim prevVal AS Number
+                prevVal = currentOffset - 8
+                If prevVal < 0 Then
+                    prevVal = 0
+                End If
+                prevOffsetField.value = CStr(prevVal)
+            END IF
+        END IF
+
+        IF pageForm IS NOT NULL THEN
+            Dim nextOffsetField AS Wydgit
+            SET nextOffsetField = FindNode(pageForm, "blocks", "taskboard-page-offset")
+            IF nextOffsetField IS NOT NULL THEN
+                nextOffsetField.value = CStr(currentOffset + 8)
+            END IF
+        END IF
     Else
         IF statusBlock IS NOT NULL THEN
             statusBlock.content = {
