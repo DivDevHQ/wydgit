@@ -377,3 +377,10 @@ Current SEWN 0.7 `CStr()` and `Val()` intrinsic lowering remains implemented.
 Migration to static-library wrappers is planned, not complete. Canonical package-ID
 casing and normalization remain unresolved; the `WBasic` source alias stays
 case-preserving.
+
+## SEWN 0.12 canonical operations
+
+The closed 0.12 grammar adds operation {name,args} and explicitly marked
+convert {type,value,mode:"canonical"}. Legacy convert remains unchanged.
+See [the operation contracts](milestones/wbasic-sewn-0.12.md) for the closed
+vocabulary, conversion matrix, rounding, Unicode, limits and runtime checks.

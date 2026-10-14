@@ -1,5 +1,11 @@
 ## Unreleased
 
+### WBasic / SEWN 0.12
+
+- Add portable canonical Convert, checked UTF-16 string primitives and finite math operations, including decimal half-away-from-zero Round.
+- Preserve historical conversion/schema behavior, SEAM authority and shared execution limits; add compiler/runtime contracts and WydClient conformance coverage.
+- Document the conversion matrix, wire grammar, precision and Unicode constraints; rebuild current client artifacts with measured sizes.
+
 - WBasic / SEWN 0.11: add Scalar contracts, immutable DataType descriptors and canonical TypeOf inspection.
 - Add explicit UTC DateTime construction, chronological comparisons and typed selection.
 - Preserve typed values within execution; document explicit SEWN reconstitution and external JSON boundaries.

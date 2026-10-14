@@ -39,7 +39,7 @@ test('identity compares underlying objects across fresh tokens and procedure fra
 
 test('grammar and compiler reject malformed, unsupported and incompatible selection',()=>{
  for(const bad of ['SELECT CASE 1\nEND SELECT','SELECT CASE 1\nCASE ELSE\nCASE 1\nEND SELECT','SELECT CASE 1\nCASE\nEND SELECT','SELECT CASE 1\nCASE 1,\nEND SELECT','SELECT CASE 1\nCASE 1 TO 2\nEND SELECT','SELECT CASE []\nCASE ELSE\nEND SELECT','SELECT CASE Me\nCASE Me\nEND SELECT','SELECT CASE 1\nCASE IS Me\nEND SELECT','SELECT CASE 1\nCASE IS < "x"\nEND SELECT','RETURN REQUEST IS Me','RETURN {} IS Me','RETURN 1 IS 1','SELECT CASE 1\nCASE 1\nDIM x=1\nEND SELECT\nRETURN x'])assert.throws(()=>compile(bad),e=>e.code.startsWith('WYDBASIC.'));
- for(const bad of ['RETURN Convert(1, String)','FOR i=1 TO 2\nNEXT i'])assert.throws(()=>compile(bad));
+ for(const bad of ['FOR i=1 TO 2\nNEXT i'])assert.throws(()=>compile(bad));
  assert.equal(compile('DIM case=1\nRETURN case').schema,'sewn/0.1');
  assert.equal(compile('RETURN NULL IS NULL').schema,'sewn/0.6');assert.equal(compile('RETURN Val("1")').schema,'sewn/0.7');assert.equal(compile('TRY\nRETURN 1\nFINALLY\nEND TRY').schema,'sewn/0.8');
 });

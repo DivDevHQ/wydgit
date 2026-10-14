@@ -39,11 +39,11 @@ New development should favor WBasic's canonical function vocabulary.
 
 Traditional BASIC functions are planned as public static methods of the versioned `divdev/wbasic` compatibility library. The compiler must not automatically import this library; modules must explicitly import it. See [Static Wydgits and library resolution](wydgit-static-libraries-spec.md).
 
-Proposed examples (canonical string operations and static imports are not yet implemented):
+Canonical string operations are implemented in 0.12; the static import example remains proposed:
 
 ```vb
 ' Canonical
-DIM result AS String = Substring("Goober", 1, 3)
+DIM result AS String = Substring("Goober", 0, 3)
 ```
 
 ```vb
@@ -724,7 +724,7 @@ DIM found AS Boolean = Contains(name, "ber")
 
 `Substring("Goober", 0, 3)` returns `"Goo"`.
 
-The exact Unicode case-conversion and whitespace rules must be defined for cross-runtime conformance.
+The implemented indexing, empty-search, checked range, Unicode and allocation rules are documented in [SEWN 0.12](milestones/wbasic-sewn-0.12.md).
 
 String operations must respect SEWN value-size and allocation limits.
 
@@ -747,7 +747,7 @@ String operations must respect SEWN value-size and allocation limits.
 | `Sqrt(value)` | Square root |
 | `Sign(value)` | Sign of value |
 
-The math specification must define edge cases involving overflow, negative zero, rounding ties, and nonfinite results.
+Round uses decimal half-away-from-zero on the shortest Number representation, with digits 0–15. See [SEWN 0.12](milestones/wbasic-sewn-0.12.md) for numeric domains, overflow and zero rules.
 
 For integer-producing operations, the result must satisfy the required integer range.
 
@@ -791,7 +791,7 @@ Invalid conversions produce controlled type errors.
 
 The initial contract should reject ambiguous or lossy numerical conversion unless a specific policy has been documented.
 
-The primitive conversion matrix must specify which operations are supported. `Convert` does not imply that every Scalar can be transformed into every other Scalar.
+The implemented [conversion matrix](milestones/wbasic-sewn-0.12.md#conversion-matrix) specifies accepted values and precision limits. `Convert` does not imply that every Scalar can be transformed into every other Scalar.
 
 ## 13.2 Legacy CStr and Val
 
@@ -1299,7 +1299,7 @@ New numeric and string operations must be tested independently of host-specific 
 **End of initial future-state WBasic Language Reference draft.**
 ## Implemented 0.11 boundaries
 
-DateTime is a fundamental scalar in 0.11. Explicit Convert support arrives in 0.12;
+DateTime is a fundamental scalar in 0.11. Explicit Convert support is implemented in 0.12;
 broader date/time utilities remain deferred. Scalar excludes Null and descriptors.
 No flow-sensitive narrowing is implemented. Uninitialized Scalar, DataType and
 DateTime declarations require an initializer. NULL retains its literal meaning;

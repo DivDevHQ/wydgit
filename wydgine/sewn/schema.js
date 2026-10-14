@@ -61,3 +61,13 @@ export const CONTRACT_SCHEMA='sewn/0.11';
 export const contractTypes=Object.freeze([...numericTypes,'Scalar','DataType','DateTime']);
 export const contractExpressions=Object.freeze({...numericExpressions,typeLiteral:['type'],typeOf:['value'],dateTime:['value'],typeCheck:['type','value']});
 export const contractReservedNames=Object.freeze([...numericReservedNames,'SCALAR','DATATYPE','DATETIME','TYPEOF']);
+
+// Canonical pure operations; legacy convert remains unchanged unless mode is explicit.
+export const OPERATION_SCHEMA='sewn/0.12';
+export const operationSignatures=Object.freeze({
+ Length:['String'],Substring:['String','Integer','Integer'],IndexOf:['String','String'],LastIndexOf:['String','String'],StartsWith:['String','String'],EndsWith:['String','String'],Contains:['String','String'],ToUpper:['String'],ToLower:['String'],Trim:['String'],TrimStart:['String'],TrimEnd:['String'],Replace:['String','String','String'],Repeat:['String','Integer'],
+ Abs:['Number'],Floor:['Number'],Ceiling:['Number'],Truncate:['Number'],Round:['Number','Integer'],Min:['Number','Number'],Max:['Number','Number'],Power:['Number','Number'],Sqrt:['Number'],Sign:['Number']
+});
+export const conversionTargets=Object.freeze(['String','Integer','Float','Number','Boolean','DateTime']);
+export const operationExpressions=Object.freeze({...contractExpressions,convert:['type','value','mode?'],operation:['name','args']});
+export const operationReservedNames=Object.freeze([...contractReservedNames,'CONVERT',...Object.keys(operationSignatures).map(x=>x.toUpperCase())]);

@@ -1,3 +1,4 @@
+import {OPERATION_SCHEMA,operationExpressions,operationReservedNames,operationSignatures,conversionTargets} from './schema.js';
 import {CONTRACT_SCHEMA,contractTypes,contractExpressions,contractReservedNames} from './schema.js';
 import {NUMERIC_SCHEMA,numericTypes,numericExpressions,numericReservedNames} from './schema.js';
 import { clean,freeze,jsonKeys,WydgitError } from '../object-model/validation.js';
@@ -11,12 +12,12 @@ export function validate(document) {
  let p;try{p=clean(document);}catch{fail('INVALID');}
  let nodes=0;const size=(v,d=0)=>{ensure(d<=64,'LIMIT');ensure(++nodes<=MAXIMA.programNodes,'LIMIT');if(v&&typeof v==='object')Object.values(v).forEach(x=>size(x,d+1));};size(p);ensure(JSON.stringify(p).length<=MAXIMA.programSize,'LIMIT');
  const shape=(n,fields)=>{ensure(n&&typeof n==='object'&&!Array.isArray(n));ensure(Object.keys(n).every(k=>k==='op'||fields.some(f=>f.replace('?','')===k)));for(const f of fields)if(!f.endsWith('?'))ensure(Object.hasOwn(n,f));};
- const contracts=p?.schema===CONTRACT_SCHEMA,numeric=contracts||p?.schema===NUMERIC_SCHEMA,types=contracts?contractTypes:numeric?numericTypes:sourceTypes;
- const selection=numeric||p?.schema===SELECTION_SCHEMA,exceptions=selection||p?.schema===EXCEPTION_SCHEMA,conversion=exceptions||p?.schema===CONVERSION_SCHEMA,control=conversion||p?.schema===CONTROL_SCHEMA,reserved=contracts?contractReservedNames:numeric?numericReservedNames:selection?selectionReservedNames:exceptions?exceptionReservedNames:conversion?conversionReservedNames:control?controlReservedNames:reservedNames;
+ const operations=p?.schema===OPERATION_SCHEMA,contracts=operations||p?.schema===CONTRACT_SCHEMA,numeric=contracts||p?.schema===NUMERIC_SCHEMA,types=contracts?contractTypes:numeric?numericTypes:sourceTypes;
+ const selection=numeric||p?.schema===SELECTION_SCHEMA,exceptions=selection||p?.schema===EXCEPTION_SCHEMA,conversion=exceptions||p?.schema===CONVERSION_SCHEMA,control=conversion||p?.schema===CONTROL_SCHEMA,reserved=operations?operationReservedNames:contracts?contractReservedNames:numeric?numericReservedNames:selection?selectionReservedNames:exceptions?exceptionReservedNames:conversion?conversionReservedNames:control?controlReservedNames:reservedNames;
  const members=control||p?.schema===MEMBER_SCHEMA;
  const versioned=members||p?.schema===SERVICE_SCHEMA,objects=versioned||p?.schema===OBJECT_SCHEMA,modern=objects||p?.schema===PROCEDURE_SCHEMA;
- const statementGrammar=selection?selectionStatements:exceptions?exceptionStatements:control?controlStatements:members?memberStatements:versioned?serviceStatements:objects?objectStatements:modern?procedureStatements:statements,expressionGrammar=contracts?contractExpressions:numeric?numericExpressions:selection?selectionExpressions:conversion?conversionExpressions:control?controlExpressions:members?memberExpressions:versioned?serviceExpressions:objects?objectExpressions:modern?procedureExpressions:expressions;
- ensure(p&&[SCHEMA,PROCEDURE_SCHEMA,OBJECT_SCHEMA,SERVICE_SCHEMA,MEMBER_SCHEMA,CONTROL_SCHEMA,CONVERSION_SCHEMA,EXCEPTION_SCHEMA,SELECTION_SCHEMA,NUMERIC_SCHEMA,CONTRACT_SCHEMA].includes(p.schema)&&Object.keys(p).every(k=>(modern?['schema','body','procedures']:['schema','body']).includes(k)));
+ const statementGrammar=selection?selectionStatements:exceptions?exceptionStatements:control?controlStatements:members?memberStatements:versioned?serviceStatements:objects?objectStatements:modern?procedureStatements:statements,expressionGrammar=operations?operationExpressions:contracts?contractExpressions:numeric?numericExpressions:selection?selectionExpressions:conversion?conversionExpressions:control?controlExpressions:members?memberExpressions:versioned?serviceExpressions:objects?objectExpressions:modern?procedureExpressions:expressions;
+ ensure(p&&[SCHEMA,PROCEDURE_SCHEMA,OBJECT_SCHEMA,SERVICE_SCHEMA,MEMBER_SCHEMA,CONTROL_SCHEMA,CONVERSION_SCHEMA,EXCEPTION_SCHEMA,SELECTION_SCHEMA,NUMERIC_SCHEMA,CONTRACT_SCHEMA,OPERATION_SCHEMA].includes(p.schema)&&Object.keys(p).every(k=>(modern?['schema','body','procedures']:['schema','body']).includes(k)));
  const procedures=modern?p.procedures:{};
  ensure(procedures&&typeof procedures==='object'&&!Array.isArray(procedures));
  const graph=new Map();let current=null;
@@ -30,7 +31,8 @@ export function validate(document) {
   if(n.op==='numericPredicate'){ensure(['IsInteger','IsSafeInteger'].includes(n.predicate));expr(n.value,d+1);}
   if(n.op==='numeric'||n.op==='xor'){if(n.op==='numeric')ensure(['+','-','*','/','MOD','\\','^'].includes(n.operator)&&['Integer','Float','Auto'].includes(n.type));expr(n.left,d+1);expr(n.right,d+1);}
   if(n.op==='identity'){ensure(typeof n.negate==='boolean');expr(n.left,d+1);expr(n.right,d+1);}
-  if(n.op==='convert'){ensure(['String','Number'].includes(n.type));expr(n.value,d+1);}
+  if(n.op==='convert'){ensure(n.mode===undefined?['String','Number'].includes(n.type):operations&&n.mode==='canonical'&&conversionTargets.includes(n.type));expr(n.value,d+1);}
+  if(n.op==='operation'){ensure(Object.hasOwn(operationSignatures,n.name)&&Array.isArray(n.args)&&n.args.length===operationSignatures[n.name].length);n.args.forEach(x=>expr(x,d+1));}
   if(n.op==='isNull'){ensure(typeof n.negate==='boolean');expr(n.value,d+1);}
   if(n.op==='array'){ensure(Array.isArray(n.items));n.items.forEach(x=>expr(x,d+1));}if(n.op==='object'){ensure(n.fields&&typeof n.fields==='object'&&!Array.isArray(n.fields));Object.values(n.fields).forEach(x=>expr(x,d+1));}
   if(n.op==='construct'){ensure(typeof n.type==='string'&&/^[a-z][a-z0-9.-]*\/[a-z][a-z0-9-]*$/.test(n.type));expr(n.id,d+1);}
