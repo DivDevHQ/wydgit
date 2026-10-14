@@ -567,3 +567,9 @@ right-associative ^, Boolean XOR, IsInteger and IsSafeInteger are implemented.
 See [numeric foundations](milestones/wbasic-sewn-0.10.md) for exact arithmetic,
 precedence, promotion, canonical grammar and compatibility decisions. The earlier
 type/inference description above describes legacy Number behavior.
+
+## SEWN 0.11 core contracts
+
+Scalar, DataType, TypeOf and explicit UTC DateTime construction are implemented.
+See [the complete contract and serialization boundaries](milestones/wbasic-sewn-0.11.md).
+Uninitialized declarations of these types require an initializer. Earlier grammars remain closed.

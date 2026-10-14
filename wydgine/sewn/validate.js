@@ -1,3 +1,4 @@
+import {CONTRACT_SCHEMA,contractTypes,contractExpressions,contractReservedNames} from './schema.js';
 import {NUMERIC_SCHEMA,numericTypes,numericExpressions,numericReservedNames} from './schema.js';
 import { clean,freeze,jsonKeys,WydgitError } from '../object-model/validation.js';
 import {SCHEMA,MAXIMA,statements,expressions,operators,contextNames,safeKey,PROCEDURE_SCHEMA,procedureStatements,procedureExpressions,sourceTypes,reservedNames,OBJECT_SCHEMA,objectStatements,objectExpressions,SERVICE_SCHEMA,serviceStatements,serviceExpressions,MEMBER_SCHEMA,memberStatements,memberExpressions,CONTROL_SCHEMA,controlStatements,controlExpressions,controlReservedNames,CONVERSION_SCHEMA,conversionExpressions,conversionReservedNames,EXCEPTION_SCHEMA,exceptionStatements,exceptionReservedNames,SELECTION_SCHEMA,selectionStatements,selectionExpressions,selectionReservedNames} from './schema.js';
@@ -10,12 +11,12 @@ export function validate(document) {
  let p;try{p=clean(document);}catch{fail('INVALID');}
  let nodes=0;const size=(v,d=0)=>{ensure(d<=64,'LIMIT');ensure(++nodes<=MAXIMA.programNodes,'LIMIT');if(v&&typeof v==='object')Object.values(v).forEach(x=>size(x,d+1));};size(p);ensure(JSON.stringify(p).length<=MAXIMA.programSize,'LIMIT');
  const shape=(n,fields)=>{ensure(n&&typeof n==='object'&&!Array.isArray(n));ensure(Object.keys(n).every(k=>k==='op'||fields.some(f=>f.replace('?','')===k)));for(const f of fields)if(!f.endsWith('?'))ensure(Object.hasOwn(n,f));};
- const numeric=p?.schema===NUMERIC_SCHEMA,types=numeric?numericTypes:sourceTypes;
- const selection=numeric||p?.schema===SELECTION_SCHEMA,exceptions=selection||p?.schema===EXCEPTION_SCHEMA,conversion=exceptions||p?.schema===CONVERSION_SCHEMA,control=conversion||p?.schema===CONTROL_SCHEMA,reserved=numeric?numericReservedNames:selection?selectionReservedNames:exceptions?exceptionReservedNames:conversion?conversionReservedNames:control?controlReservedNames:reservedNames;
+ const contracts=p?.schema===CONTRACT_SCHEMA,numeric=contracts||p?.schema===NUMERIC_SCHEMA,types=contracts?contractTypes:numeric?numericTypes:sourceTypes;
+ const selection=numeric||p?.schema===SELECTION_SCHEMA,exceptions=selection||p?.schema===EXCEPTION_SCHEMA,conversion=exceptions||p?.schema===CONVERSION_SCHEMA,control=conversion||p?.schema===CONTROL_SCHEMA,reserved=contracts?contractReservedNames:numeric?numericReservedNames:selection?selectionReservedNames:exceptions?exceptionReservedNames:conversion?conversionReservedNames:control?controlReservedNames:reservedNames;
  const members=control||p?.schema===MEMBER_SCHEMA;
  const versioned=members||p?.schema===SERVICE_SCHEMA,objects=versioned||p?.schema===OBJECT_SCHEMA,modern=objects||p?.schema===PROCEDURE_SCHEMA;
- const statementGrammar=selection?selectionStatements:exceptions?exceptionStatements:control?controlStatements:members?memberStatements:versioned?serviceStatements:objects?objectStatements:modern?procedureStatements:statements,expressionGrammar=numeric?numericExpressions:selection?selectionExpressions:conversion?conversionExpressions:control?controlExpressions:members?memberExpressions:versioned?serviceExpressions:objects?objectExpressions:modern?procedureExpressions:expressions;
- ensure(p&&[SCHEMA,PROCEDURE_SCHEMA,OBJECT_SCHEMA,SERVICE_SCHEMA,MEMBER_SCHEMA,CONTROL_SCHEMA,CONVERSION_SCHEMA,EXCEPTION_SCHEMA,SELECTION_SCHEMA,NUMERIC_SCHEMA].includes(p.schema)&&Object.keys(p).every(k=>(modern?['schema','body','procedures']:['schema','body']).includes(k)));
+ const statementGrammar=selection?selectionStatements:exceptions?exceptionStatements:control?controlStatements:members?memberStatements:versioned?serviceStatements:objects?objectStatements:modern?procedureStatements:statements,expressionGrammar=contracts?contractExpressions:numeric?numericExpressions:selection?selectionExpressions:conversion?conversionExpressions:control?controlExpressions:members?memberExpressions:versioned?serviceExpressions:objects?objectExpressions:modern?procedureExpressions:expressions;
+ ensure(p&&[SCHEMA,PROCEDURE_SCHEMA,OBJECT_SCHEMA,SERVICE_SCHEMA,MEMBER_SCHEMA,CONTROL_SCHEMA,CONVERSION_SCHEMA,EXCEPTION_SCHEMA,SELECTION_SCHEMA,NUMERIC_SCHEMA,CONTRACT_SCHEMA].includes(p.schema)&&Object.keys(p).every(k=>(modern?['schema','body','procedures']:['schema','body']).includes(k)));
  const procedures=modern?p.procedures:{};
  ensure(procedures&&typeof procedures==='object'&&!Array.isArray(procedures));
  const graph=new Map();let current=null;
@@ -23,6 +24,8 @@ export function validate(document) {
  const procedureCall=(n,kind,d)=>{procedureName(n.name);ensure(Object.hasOwn(procedures,n.name));const proc=procedures[n.name];ensure(proc.kind===kind&&Array.isArray(n.args)&&n.args.length===proc.params.length);if(current)graph.get(current).add(n.name);n.args.forEach(x=>expr(x,d+1));};
  const service=n=>{ensure(safeKey(n.library)&&safeKey(n.method));if(n.op.startsWith('canonical'))ensure(typeof n.apiVersion==='string'&&/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/.test(n.apiVersion));};
  const expr=(n,d=0)=>{ensure(d<=MAXIMA.expressionDepth,'LIMIT');ensure(n&&Object.hasOwn(expressionGrammar,n.op));shape(n,expressionGrammar[n.op]);
+  if(n.op==='typeLiteral')ensure(contractTypes.includes(n.type));
+  if(['typeOf','dateTime','typeCheck'].includes(n.op)){if(n.op==='typeCheck')ensure(['Scalar','DataType','DateTime'].includes(n.type));expr(n.value,d+1);}
   if(n.op==='numericCheck'){ensure(['Integer','Float'].includes(n.type));expr(n.value,d+1);}
   if(n.op==='numericPredicate'){ensure(['IsInteger','IsSafeInteger'].includes(n.predicate));expr(n.value,d+1);}
   if(n.op==='numeric'||n.op==='xor'){if(n.op==='numeric')ensure(['+','-','*','/','MOD','\\','^'].includes(n.operator)&&['Integer','Float','Auto'].includes(n.type));expr(n.left,d+1);expr(n.right,d+1);}

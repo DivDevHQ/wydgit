@@ -1,5 +1,10 @@
 ## Unreleased
 
+- WBasic / SEWN 0.11: add Scalar contracts, immutable DataType descriptors and canonical TypeOf inspection.
+- Add explicit UTC DateTime construction, chronological comparisons and typed selection.
+- Preserve typed values within execution; document explicit SEWN reconstitution and external JSON boundaries.
+- Keep earlier wire grammars closed and retain existing numeric and reference behavior.
+
 - Added WBasic/SEWN 0.10 numeric foundations: checked Integer/Float contracts, bounded exact Integer arithmetic, signed MOD and truncating integer division, right-associative exponentiation, Boolean XOR and canonical numeric predicates. Preserved legacy Number inference and SEWN 0.1–0.9 grammars; added conformance tests and documented precedence, compatibility and runtime limits.
 
 - Added WBasic SELECT CASE and nullable opaque Wydgit IS / IS NOT identity through closed SEWN 0.9, with single selector evaluation, ordered lazy tests, strict comparisons and no fallthrough. Retained SEAM/lifetime guards, shared budgets and SEWN 0.1–0.8 compatibility; documented the rebrand and milestone decisions and added language/wire/security/integration regressions.

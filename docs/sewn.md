@@ -353,3 +353,9 @@ and schemas remain unchanged. All public numeric values remain finite JavaScript
 Numbers; checked Integer results are exact and safe. No new SEAM authority is
 introduced. See [the numeric milestone](milestones/wbasic-sewn-0.10.md) for field
 contracts, arithmetic policies, predicates, limits and compiler compatibility.
+
+## SEWN 0.11 core contracts
+
+Scalar, DataType, TypeOf and explicit UTC DateTime construction are implemented.
+See [the complete contract and serialization boundaries](milestones/wbasic-sewn-0.11.md).
+Uninitialized declarations of these types require an initializer. Earlier grammars remain closed.

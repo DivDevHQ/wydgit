@@ -1,7 +1,7 @@
 # WBasic Language Reference
 **Wydgit Platform — Draft Language Specification 1.0**
 
-**Status:** Implemented through SEWN 0.10; later milestones are proposed
+**Status:** Implemented through SEWN 0.11; later milestones are proposed
 **Language:** WBasic (WB)  
 **Source extension:** `.bas`  
 **Execution representation:** SEWN  
@@ -76,14 +76,14 @@ Each milestone introduces a closed, versioned SEWN extension where necessary. Th
 
 These earlier versions must remain valid.
 
-## 2.2 Milestone sequence (0.9–0.10 completed)
+## 2.2 Milestone sequence (0.9–0.11 completed)
 
 | Iteration | Primary changes |
 |---|---|
 | **0.9 — Selection and identity** | `SELECT CASE`, value cases, relational cases, `IS` reference identity, `IS NOT` |
 | **0.10 — Numeric foundations** | `Integer`, `Float`, legacy `Number`, numeric type rules, `MOD`, `XOR`, exponentiation, integer division |
-| **0.11 — Type contracts** | `Scalar`, `DataType`, `TypeOf()`, type comparisons, type-aware `SELECT CASE` |
-| **0.12 — Canonical operations** | `Convert()`, string primitives, math primitives, additional comparison utilities |
+| **0.11 — Type contracts** | `Scalar`, `DataType`, `TypeOf()`, type comparisons, type-aware `SELECT CASE`, fundamental UTC `DateTime` |
+| **0.12 — Canonical operations** | `Convert()` including DateTime conversion, string primitives, math primitives, additional comparison utilities |
 | **0.13 — Collections and loops** | Array indexing, collection utilities, numeric `FOR / NEXT`, `CONST` |
 | **0.14 — Standard-library linking** | Automatically linked `.bas` modules, WBasic compatibility library, migration of `CStr()` and `Val()` |
 | **0.15 — Regular expressions** | ECMAScript-compatible regex operations with bounded execution |
@@ -197,6 +197,7 @@ WBasic supports types that define the allowable set of values rather than a sepa
 - Float
 - Boolean
 - Legacy Number
+- DateTime
 
 An underlying value retains its actual concrete type.
 
@@ -435,7 +436,7 @@ END IF
 
 For ordinary scalar values, the descriptor identifies the concrete runtime type.
 
-For objects, TypeOf identifies the object's public Wydgit type rather than exposing host-language constructors.
+Plain data objects report Object. Wydgit references report only Wydgit, without prototype disclosure. See [the implemented 0.11 contract](milestones/wbasic-sewn-0.11.md) for construction, defaults and serialization boundaries.
 
 In 0.10 numeric classification is value-based: safe whole values are Integer, other finite Numbers are Float. Dynamic assignments enforce declared Integer/Float constraints; no textual literal distinction is retained.
 
@@ -1266,3 +1267,11 @@ New numeric and string operations must be tested independently of host-specific 
 ---
 
 **End of initial future-state WBasic Language Reference draft.**
+## Implemented 0.11 boundaries
+
+DateTime is a fundamental scalar in 0.11. Explicit Convert support arrives in 0.12;
+broader date/time utilities remain deferred. Scalar excludes Null and descriptors.
+No flow-sensitive narrowing is implemented. Uninitialized Scalar, DataType and
+DateTime declarations require an initializer. NULL retains its literal meaning;
+TypeOf(NULL) obtains the Null descriptor. Future examples elsewhere in this reference
+do not extend the [implemented milestone contract](milestones/wbasic-sewn-0.11.md).

@@ -55,3 +55,9 @@ export const NUMERIC_SCHEMA='sewn/0.10';
 export const numericTypes=Object.freeze([...sourceTypes,'Integer','Float']);
 export const numericExpressions=Object.freeze({...selectionExpressions,numeric:['operator','left','right','type'],numericCheck:['type','value'],numericPredicate:['predicate','value'],xor:['left','right']});
 export const numericReservedNames=Object.freeze([...selectionReservedNames,'ISINTEGER','ISSAFEINTEGER']);
+
+// Core contracts; prior grammars stay closed.
+export const CONTRACT_SCHEMA='sewn/0.11';
+export const contractTypes=Object.freeze([...numericTypes,'Scalar','DataType','DateTime']);
+export const contractExpressions=Object.freeze({...numericExpressions,typeLiteral:['type'],typeOf:['value'],dateTime:['value'],typeCheck:['type','value']});
+export const contractReservedNames=Object.freeze([...numericReservedNames,'SCALAR','DATATYPE','DATETIME','TYPEOF']);
