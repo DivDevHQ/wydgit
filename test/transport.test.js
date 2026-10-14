@@ -75,6 +75,12 @@ test('Hono TCP host preserves routes, HEAD, security, asset cache and approved r
   assert.ok(![...visited].some(file=>/wydbasic|static-libraries/.test(file)));
   for(const file of ['wydgine/wydbasic/compile.js','wydgine/static-libraries/index.js','wydgine/static-libraries/package.js'])assert.equal((await fetch(url+'/runtime/'+file)).status,404);
   assert.ok(visited.has(url + '/runtime/wydgine/sewn/execute.js'));
+  // The optional matcher is a local module loaded only by the executor's fixed import.
+  assert.ok(!visited.has(url + '/runtime/wydgine/sewn/regex.js'));
+  for(const module of ['wydgine/sewn/regex.js','wydgine/sewn/vendor/re2js.js']){
+    const response=await fetch(url+'/runtime/'+module);assert.equal(response.status,200);assert.match(response.headers.get('content-type'),/javascript/);security(response);assert.equal(await response.text(),await fs.readFile(path.join(projectRoot,module),'utf8'));
+  }
+  assert.equal((await fetch(url+'/runtime/node_modules/re2js/build/index.js')).status,404);
   for (const module of ['wydgine/execution/page.js', 'wydgine/http/transport/hono.js', 'packages/wydstore/src/core.js']) assert.equal((await fetch(url + '/runtime/' + module)).status, 404);
 });
 

@@ -1,5 +1,17 @@
 ## Unreleased
 
+### WBasic / SEWN 0.15
+
+- Add RegexTest, RegexMatch, RegexMatches, RegexReplace and RegexSplit as reserved
+  canonical intrinsics in closed sewn/0.15, with portable UTF-16 match/capture data.
+- Use pinned RE2JS 2.8.6's Thompson NFA behind an explicit grammar/Unicode gate,
+  pre-reserved cumulative work and bounded compilation, enumeration and output;
+  malformed patterns recover while resource limits remain fatal.
+- Lazily serve the same local matcher in WydClient, retaining caller authority and
+  budgets through static linking; preserve historical schemas and literal operations.
+- Add shared server/browser conformance, adversarial/security and deployment tests;
+  document exact semantics, limitations, dependency review and bundle measurements.
+
 ### WBasic / SEWN 0.14
 
 - Add dedicated static Wydgit prototypes, metadata public/private procedures,

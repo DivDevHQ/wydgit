@@ -1,3 +1,4 @@
+import {REGEX_SCHEMA,regexReservedNames,regexOperationSignatures} from './schema.js';
 import {STATIC_SCHEMA} from './schema.js';
 import {COLLECTION_SCHEMA,collectionExpressions,collectionStatements,collectionReservedNames,collectionSignatures,constantTypes} from './schema.js';
 import {OPERATION_SCHEMA,operationExpressions,operationReservedNames,operationSignatures,conversionTargets} from './schema.js';
@@ -14,18 +15,18 @@ export function validate(document) {
  let p;try{p=clean(document);}catch{fail('INVALID');}
  let nodes=0;const size=(v,d=0)=>{ensure(d<=64,'LIMIT');ensure(++nodes<=MAXIMA.programNodes,'LIMIT');if(v&&typeof v==='object')Object.values(v).forEach(x=>size(x,d+1));};size(p);ensure(JSON.stringify(p).length<=MAXIMA.programSize,'LIMIT');
  const shape=(n,fields)=>{ensure(n&&typeof n==='object'&&!Array.isArray(n));ensure(Object.keys(n).every(k=>k==='op'||fields.some(f=>f.replace('?','')===k)));for(const f of fields)if(!f.endsWith('?'))ensure(Object.hasOwn(n,f));};
- const staticLinked=p?.schema===STATIC_SCHEMA,collections=staticLinked||p?.schema===COLLECTION_SCHEMA,operations=collections||p?.schema===OPERATION_SCHEMA,contracts=operations||p?.schema===CONTRACT_SCHEMA,numeric=contracts||p?.schema===NUMERIC_SCHEMA,types=contracts?contractTypes:numeric?numericTypes:sourceTypes;
- const selection=numeric||p?.schema===SELECTION_SCHEMA,exceptions=selection||p?.schema===EXCEPTION_SCHEMA,conversion=exceptions||p?.schema===CONVERSION_SCHEMA,control=conversion||p?.schema===CONTROL_SCHEMA,reserved=collections?collectionReservedNames:operations?operationReservedNames:contracts?contractReservedNames:numeric?numericReservedNames:selection?selectionReservedNames:exceptions?exceptionReservedNames:conversion?conversionReservedNames:control?controlReservedNames:reservedNames;
+ const regex=p?.schema===REGEX_SCHEMA,staticLinked=regex||p?.schema===STATIC_SCHEMA,collections=staticLinked||p?.schema===COLLECTION_SCHEMA,operations=collections||p?.schema===OPERATION_SCHEMA,contracts=operations||p?.schema===CONTRACT_SCHEMA,numeric=contracts||p?.schema===NUMERIC_SCHEMA,types=contracts?contractTypes:numeric?numericTypes:sourceTypes;
+ const selection=numeric||p?.schema===SELECTION_SCHEMA,exceptions=selection||p?.schema===EXCEPTION_SCHEMA,conversion=exceptions||p?.schema===CONVERSION_SCHEMA,control=conversion||p?.schema===CONTROL_SCHEMA,reserved=regex?regexReservedNames:collections?collectionReservedNames:operations?operationReservedNames:contracts?contractReservedNames:numeric?numericReservedNames:selection?selectionReservedNames:exceptions?exceptionReservedNames:conversion?conversionReservedNames:control?controlReservedNames:reservedNames;
  const members=control||p?.schema===MEMBER_SCHEMA;
  const versioned=members||p?.schema===SERVICE_SCHEMA,objects=versioned||p?.schema===OBJECT_SCHEMA,modern=objects||p?.schema===PROCEDURE_SCHEMA;
  const statementGrammar=collections?collectionStatements:selection?selectionStatements:exceptions?exceptionStatements:control?controlStatements:members?memberStatements:versioned?serviceStatements:objects?objectStatements:modern?procedureStatements:statements,expressionGrammar=collections?collectionExpressions:operations?operationExpressions:contracts?contractExpressions:numeric?numericExpressions:selection?selectionExpressions:conversion?conversionExpressions:control?controlExpressions:members?memberExpressions:versioned?serviceExpressions:objects?objectExpressions:modern?procedureExpressions:expressions;
- ensure(p&&[SCHEMA,PROCEDURE_SCHEMA,OBJECT_SCHEMA,SERVICE_SCHEMA,MEMBER_SCHEMA,CONTROL_SCHEMA,CONVERSION_SCHEMA,EXCEPTION_SCHEMA,SELECTION_SCHEMA,NUMERIC_SCHEMA,CONTRACT_SCHEMA,OPERATION_SCHEMA,COLLECTION_SCHEMA,STATIC_SCHEMA].includes(p.schema)&&Object.keys(p).every(k=>(modern?['schema','body','procedures',...(staticLinked?['libraries']:[])]:['schema','body']).includes(k)));
+ ensure(p&&[SCHEMA,PROCEDURE_SCHEMA,OBJECT_SCHEMA,SERVICE_SCHEMA,MEMBER_SCHEMA,CONTROL_SCHEMA,CONVERSION_SCHEMA,EXCEPTION_SCHEMA,SELECTION_SCHEMA,NUMERIC_SCHEMA,CONTRACT_SCHEMA,OPERATION_SCHEMA,COLLECTION_SCHEMA,STATIC_SCHEMA,REGEX_SCHEMA].includes(p.schema)&&Object.keys(p).every(k=>(modern?['schema','body','procedures',...(staticLinked?['libraries']:[])]:['schema','body']).includes(k)));
  const procedures=modern?p.procedures:{};
  ensure(procedures&&typeof procedures==='object'&&!Array.isArray(procedures));
  const owners=new Map();
  if(staticLinked){
-  ensure(Array.isArray(p.libraries)&&p.libraries.length<=64);const ids=new Set();
-  for(const lib of p.libraries){shape(lib,['id','version','alias','methods']);ensure(!Object.hasOwn(lib,'op')&&typeof lib.id==='string'&&/^[a-z][a-z0-9.-]*\/[a-z][a-z0-9-]*$/.test(lib.id)&&!ids.has(lib.id));ids.add(lib.id);
+  ensure(regex&&p.libraries===undefined||Array.isArray(p.libraries));const linkedLibraries=p.libraries??[];ensure(Array.isArray(linkedLibraries)&&linkedLibraries.length<=64);const ids=new Set();
+  for(const lib of linkedLibraries){shape(lib,['id','version','alias','methods']);ensure(!Object.hasOwn(lib,'op')&&typeof lib.id==='string'&&/^[a-z][a-z0-9.-]*\/[a-z][a-z0-9-]*$/.test(lib.id)&&!ids.has(lib.id));ids.add(lib.id);
    ensure(typeof lib.version==='string'&&/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/.test(lib.version));name(lib.alias);
    ensure(lib.methods&&typeof lib.methods==='object'&&!Array.isArray(lib.methods));
    for(const [id,m] of Object.entries(lib.methods)){name(id);shape(m,['name','access','requires']);ensure(!Object.hasOwn(m,'op'));name(m.name);ensure(['public','private'].includes(m.access)&&Array.isArray(m.requires)&&new Set(m.requires).size===m.requires.length&&m.requires.every(x=>typeof x==='string'&&/^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*$/.test(x)));ensure(Object.hasOwn(procedures,id)&&!owners.has(id));owners.set(id,{library:lib.id,...m});}
@@ -43,7 +44,7 @@ export function validate(document) {
   if(n.op==='numeric'||n.op==='xor'){if(n.op==='numeric')ensure(['+','-','*','/','MOD','\\','^'].includes(n.operator)&&['Integer','Float','Auto'].includes(n.type));expr(n.left,d+1);expr(n.right,d+1);}
   if(n.op==='identity'){ensure(typeof n.negate==='boolean');expr(n.left,d+1);expr(n.right,d+1);}
   if(n.op==='convert'){ensure(n.mode===undefined?['String','Number'].includes(n.type):operations&&n.mode==='canonical'&&conversionTargets.includes(n.type));expr(n.value,d+1);}
-  if(n.op==='operation'){const signatures=collections?collectionSignatures:operationSignatures;ensure(Object.hasOwn(signatures,n.name)&&Array.isArray(n.args)&&n.args.length===signatures[n.name].length);n.args.forEach(x=>expr(x,d+1));}
+  if(n.op==='operation'){const signatures=regex?regexOperationSignatures:collections?collectionSignatures:operationSignatures;ensure(Object.hasOwn(signatures,n.name)&&Array.isArray(n.args)&&n.args.length===signatures[n.name].length);n.args.forEach(x=>expr(x,d+1));}
   if(n.op==='index'){expr(n.target,d+1);expr(n.index,d+1);}
   if(n.op==='isNull'){ensure(typeof n.negate==='boolean');expr(n.value,d+1);}
   if(n.op==='array'){ensure(Array.isArray(n.items));n.items.forEach(x=>expr(x,d+1));}if(n.op==='object'){ensure(n.fields&&typeof n.fields==='object'&&!Array.isArray(n.fields));Object.values(n.fields).forEach(x=>expr(x,d+1));}

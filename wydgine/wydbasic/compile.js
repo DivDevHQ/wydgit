@@ -1,5 +1,6 @@
+import {regexOperationSignatures,regexReservedNames,regexSignatures} from '../sewn/schema.js';
 import {libraryScope,createLinker} from '../static-libraries/index.js';
-import {collectionSignatures,collectionReservedNames,constantTypes} from '../sewn/schema.js';
+import {constantTypes} from '../sewn/schema.js';
 import {operationSignatures,conversionTargets} from '../sewn/schema.js';
 import { EventRegistry } from '../events/registry.js';
 import { parse,parseModule } from './parse.js';
@@ -22,11 +23,11 @@ function compileAst(ast,registry,prototype=false,options={}) {
   const imported=libraryScope(ast.imports??[],options),linker=createLinker((ast.procedures??[]).map(p=>p.name.toLowerCase()),imported.resolve),staticMode=options.static===true;
   const linked=staticMode||ast.imports?.length>0;
   if(prototype&&ast.events.length)fail('TYPE','Prototype modules cannot declare EVENT blocks.',ast.events[0].location);
-  let symbols=new Map();let declared=new Set();const procedures=Object.create(null),declarations=new Map(),graph=new Map();let current=null;const modern=ast.kind==='module';let objects=prototype,versioned=false,members=false,control=false,conversion=false,exceptions=false,selection=false,numeric=false,contracts=false,operations=false,collections=false;
+  let symbols=new Map();let declared=new Set();const procedures=Object.create(null),declarations=new Map(),graph=new Map();let current=null;const modern=ast.kind==='module';let objects=prototype,versioned=false,members=false,control=false,conversion=false,exceptions=false,selection=false,numeric=false,contracts=false,operations=false,collections=false,regex=false;
   const error=(n,code,message)=>fail(code,message,n.location);
   const checkType=(n,actual,expected)=>{if(expected!=='Unknown'&&actual!=='Unknown'&&actual!==expected&&!(expected==='Scalar'&&['String','Number','Integer','Float','Boolean','DateTime'].includes(actual))&&!(numericTypes.includes(actual)&&numericTypes.includes(expected)))error(n,'TYPE',`Expected ${expected}, received ${actual}.`);};
   const key=(n,k)=>{if(!safeKey(k.toLowerCase()))error(n,'UNSUPPORTED',`Reserved member '${k}'.`);return k;};
-  const reserve=(n,name,type)=>{const id=name.toLowerCase();if(!/^[a-z_][a-z0-9_]{0,63}$/.test(id))error(n,'NAME','Variable names must contain at most 64 ASCII letters, digits or underscores.');if((collectionReservedNames.includes(name.toUpperCase())&&!(staticMode&&['CSTR','VAL'].includes(name.toUpperCase())))||['ISINTEGER','ISSAFEINTEGER','TYPEOF','SCALAR','DATATYPE','DATETIME'].includes(name.toUpperCase())||(reservedNames.includes(name.toUpperCase())&&!(staticMode&&['CSTR','VAL'].includes(name.toUpperCase())))||contextNames.includes(name.toUpperCase())||id==='services'||!safeKey(id))error(n,'NAME',`Reserved name '${name}'.`);if(imported.aliases.has(id))error(n,'NAME','Library alias conflicts with a local declaration.');if(declared.has(id))error(n,'NAME',`Duplicate declaration '${name}'.`);declared.add(id);symbols.set(id,{type,kind:type==='Wydgit'?'handle':null});return id;};
+  const reserve=(n,name,type)=>{const id=name.toLowerCase();if(!/^[a-z_][a-z0-9_]{0,63}$/.test(id))error(n,'NAME','Variable names must contain at most 64 ASCII letters, digits or underscores.');if((regexReservedNames.includes(name.toUpperCase())&&!(staticMode&&['CSTR','VAL'].includes(name.toUpperCase())))||['ISINTEGER','ISSAFEINTEGER','TYPEOF','SCALAR','DATATYPE','DATETIME'].includes(name.toUpperCase())||(reservedNames.includes(name.toUpperCase())&&!(staticMode&&['CSTR','VAL'].includes(name.toUpperCase())))||contextNames.includes(name.toUpperCase())||id==='services'||!safeKey(id))error(n,'NAME',`Reserved name '${name}'.`);if(imported.aliases.has(id))error(n,'NAME','Library alias conflicts with a local declaration.');if(declared.has(id))error(n,'NAME',`Duplicate declaration '${name}'.`);declared.add(id);symbols.set(id,{type,kind:type==='Wydgit'?'handle':null});return id;};
   const constrain=(n,v,type)=>{if(collections&&sourceTypes.includes(type)&&type!=='Wydgit')return {op:'typeCheck',type,value:v};if(['Scalar','DataType','DateTime'].includes(type)){contracts=true;return {op:'typeCheck',type,value:v};}if(!['Integer','Float'].includes(type))return v;numeric=true;if(v.op==='literal'&&!(type==='Integer'?Number.isSafeInteger(v.value):typeof v.value==='number'&&Number.isFinite(v.value)))error(n,'TYPE',`Invalid ${type} value.`);return {op:'numericCheck',type,value:v};};
   const value=(sewn,type='Unknown',kind=null)=>({sewn,type,kind});
   let expressionDepth=0,numericContext=false;
@@ -53,7 +54,7 @@ function compileAst(ast,registry,prototype=false,options={}) {
         return value({op:'read',target:target.sewn,key:name},type,kind);}
       case 'invoke':{
         const local=n.target.kind==='name'&&declarations.has(n.target.name.toLowerCase());
-        const candidate=local?null:imported.lookup(n.target);
+        const candidate=local||n.target.kind==='name'&&canonical(Object.keys(regexSignatures),n.target.name)?null:imported.lookup(n.target);
         if(n.target.kind==='member'&&n.target.target.kind==='name'&&imported.aliases.has(n.target.target.name.toLowerCase())&&symbols.has(n.target.target.name.toLowerCase()))error(n,'NAME','Library alias conflicts with a local declaration.');
         if(local&&['CSTR','VAL'].includes(n.target.name.toUpperCase()))return procedureCall(n,'function');
         if(candidate)return staticCall(n,'function',candidate);
@@ -66,8 +67,8 @@ function compileAst(ast,registry,prototype=false,options={}) {
           return value({op:'convert',mode:'canonical',type,value:arg.sewn},type);
         }
         if(n.target.kind==='name'){
-          const name=canonical(Object.keys(collectionSignatures),n.target.name);
-          if(name){operations=true;const signature=collectionSignatures[name];if(n.args.length!==signature.length)error(n,'TYPE','Invalid canonical operation arity.');
+          const name=canonical(Object.keys(regexOperationSignatures),n.target.name);
+          if(name){if(Object.hasOwn(regexSignatures,name)){regex=true;collections=true;}operations=true;const signature=regexOperationSignatures[name];if(n.args.length!==signature.length)error(n,'TYPE','Invalid canonical operation arity.');
             const args=n.args.map(expression),shared=['Length','Contains','IndexOf'].includes(name);
             const extended=['Slice','Join','Split'].includes(name)||shared&&args[0].type!=='String';if(extended)collections=true;
             args.forEach((arg,i)=>{
@@ -78,7 +79,7 @@ function compileAst(ast,registry,prototype=false,options={}) {
               else checkType(n,arg.type,expected);
               if(expected==='Integer'&&arg.sewn.op==='literal'&&!Number.isSafeInteger(arg.sewn.value))error(n,'TYPE','Integer argument required.');
             });
-            const result=['Length','IndexOf','LastIndexOf','Sign'].includes(name)?'Integer':['StartsWith','EndsWith','Contains'].includes(name)?'Boolean':['Split','Slice'].includes(name)?'Array':name==='Join'||signature[0]==='String'?'String':name==='Sqrt'?'Float':name==='Power'?'Number':args.every(x=>x.type==='Integer')?'Integer':'Number';
+            const result=name==='RegexMatch'?'Unknown':name==='RegexTest'?'Boolean':['RegexMatches','RegexSplit'].includes(name)?'Array':name==='RegexReplace'?'String':['Length','IndexOf','LastIndexOf','Sign'].includes(name)?'Integer':['StartsWith','EndsWith','Contains'].includes(name)?'Boolean':['Split','Slice'].includes(name)?'Array':name==='Join'||signature[0]==='String'?'String':name==='Sqrt'?'Float':name==='Power'?'Number':args.every(x=>x.type==='Integer')?'Integer':'Number';
             return {...value({op:'operation',name,args:args.map(x=>x.sewn)},result),...(signature[0]==='Number'?{numeric:true}:{})};
           }
         }
@@ -191,7 +192,7 @@ function compileAst(ast,registry,prototype=false,options={}) {
     return out;
   }
   const validated=program=>{try{return linked?linker.finish(program):validate(program);}catch{error(ast,'COMPILE','Generated workflow exceeds or violates canonical SEWN validation bounds.');}};
-  if(!modern){const lowered=body(ast.body);return validated({schema:collections?'sewn/0.13':operations?'sewn/0.12':contracts?'sewn/0.11':numeric?'sewn/0.10':selection?'sewn/0.9':exceptions?'sewn/0.8':conversion?'sewn/0.7':control?'sewn/0.6':members?'sewn/0.5':versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.1',...((objects||versioned||members||control||conversion||exceptions||selection||numeric||contracts||operations||collections)?{procedures:{}}:{}),body:lowered});}
+  if(!modern){const lowered=body(ast.body);return validated({schema:regex?'sewn/0.15':collections?'sewn/0.13':operations?'sewn/0.12':contracts?'sewn/0.11':numeric?'sewn/0.10':selection?'sewn/0.9':exceptions?'sewn/0.8':conversion?'sewn/0.7':control?'sewn/0.6':members?'sewn/0.5':versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.1',...((objects||versioned||members||control||conversion||exceptions||selection||numeric||contracts||operations||collections||regex)?{procedures:{}}:{}),body:lowered});}
   for(const proc of ast.procedures){
     if(proc.params.length>MAXIMA.parameters)error(proc.params[MAXIMA.parameters],'COMPILE','Procedure parameter count exceeds SEWN limits.');
     const id=reserve(proc,proc.name,'Null');if(!/^[a-z][a-z0-9_]*$/.test(id))error(proc,'NAME','Procedure names must start with a letter.');
@@ -210,10 +211,10 @@ function compileAst(ast,registry,prototype=false,options={}) {
   const eventNames=new Set(),events=[];
   for(const event of ast.events){
     let type;try{type=registry?.resolve(event.type);}catch{error(event,'NAME',`Unknown or ambiguous event '${event.type}'.`);}if(!type)error(event,'NAME','Module compilation requires an event registry.');
-    if(eventNames.has(type))error(event,'NAME',`Duplicate EVENT '${type}'.`);eventNames.add(type);reset();const lowered=body(event.body);events.push({type,workflow:validated({schema:collections?'sewn/0.13':operations?'sewn/0.12':contracts?'sewn/0.11':numeric?'sewn/0.10':selection?'sewn/0.9':exceptions?'sewn/0.8':conversion?'sewn/0.7':control?'sewn/0.6':members?'sewn/0.5':versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.2',procedures,body:lowered})});
+    if(eventNames.has(type))error(event,'NAME',`Duplicate EVENT '${type}'.`);eventNames.add(type);reset();const lowered=body(event.body);events.push({type,workflow:validated({schema:regex?'sewn/0.15':collections?'sewn/0.13':operations?'sewn/0.12':contracts?'sewn/0.11':numeric?'sewn/0.10':selection?'sewn/0.9':exceptions?'sewn/0.8':conversion?'sewn/0.7':control?'sewn/0.6':members?'sewn/0.5':versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.2',procedures,body:lowered})});
   }
   // Even a declaration-only module is validated.
-  const behavior=validated({schema:collections?'sewn/0.13':operations?'sewn/0.12':contracts?'sewn/0.11':numeric?'sewn/0.10':selection?'sewn/0.9':exceptions?'sewn/0.8':conversion?'sewn/0.7':control?'sewn/0.6':members?'sewn/0.5':versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.2',procedures,body:[]});
+  const behavior=validated({schema:regex?'sewn/0.15':collections?'sewn/0.13':operations?'sewn/0.12':contracts?'sewn/0.11':numeric?'sewn/0.10':selection?'sewn/0.9':exceptions?'sewn/0.8':conversion?'sewn/0.7':control?'sewn/0.6':members?'sewn/0.5':versioned?'sewn/0.4':objects?'sewn/0.3':'sewn/0.2',procedures,body:[]});
   if(prototype)return behavior;
   return Object.freeze({events:Object.freeze(events.map(Object.freeze))});
 }

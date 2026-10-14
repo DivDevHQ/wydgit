@@ -1,0 +1,27 @@
+{
+  "schema": "sewn/0.15",
+  "procedures": {
+    "lib0": {
+      "kind": "function",
+      "params": [{"name": "text", "type": "String"}],
+      "returns": "Boolean",
+      "body": [{"op": "return", "value": {"op": "functionCall", "name": "lib1", "args": [{"op": "variable", "name": "text"}]}}]
+    },
+    "lib1": {
+      "kind": "function",
+      "params": [{"name": "text", "type": "String"}],
+      "returns": "Boolean",
+      "body": [{"op": "return", "value": {"op": "operation", "name": "RegexTest", "args": [{"op": "variable", "name": "text"}, {"op": "literal", "value": "^[A-Z]{3}-\\d{4}$"}, {"op": "literal", "value": ""}]}}]
+    }
+  },
+  "libraries": [{
+    "id": "acme/patterns",
+    "version": "1.0.0",
+    "alias": "Patterns",
+    "methods": {
+      "lib0": {"name": "valid", "access": "public", "requires": []},
+      "lib1": {"name": "helper", "access": "private", "requires": []}
+    }
+  }],
+  "body": [{"op": "return", "value": {"op": "functionCall", "name": "lib0", "args": [{"op": "literal", "value": "ABC-1234"}]}}]
+}

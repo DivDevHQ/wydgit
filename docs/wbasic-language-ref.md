@@ -971,54 +971,76 @@ It does not perform a cast or grant access.
 
 **Introduced: SEWN 0.15**
 
-WBasic supports ECMAScript-compatible regular-expression syntax through canonical regex operations.
+WBasic implements five reserved canonical intrinsics using a bounded RE2JS
+Thompson NFA. This is a restricted ECMAScript-compatible subset, with controlled
+errors for unsupported features. Patterns and flags are Strings, and every
+positional argument (including explicit flags) is required. No WITH LIBRARY is
+needed. Backslashes in WBasic literals retain their ordinary literal meaning:
+`"\d+"` contains a backslash followed by d+.
 
-Initial patterns are represented as Strings.
-
-| Function | Description |
-|---|---|
-| `RegexTest(text, pattern, flags)` | Boolean pattern match |
-| `RegexMatch(text, pattern, flags)` | First match and associated data |
-| `RegexMatches(text, pattern, flags)` | Bounded collection of matches |
-| `RegexReplace(text, pattern, replacement, flags)` | Pattern-based replacement |
-| `RegexSplit(text, pattern, flags)` | Pattern-based splitting |
-
-Examples:
-
-```vb
-DIM valid AS Boolean = RegexTest(
-    "ABC-1234",
-    "^[A-Z]{3}-\d{4}$",
-    ""
-)
-```
+| Function | Result and behavior |
+| --- | --- |
+| RegexTest(text, pattern, flags) | Boolean for first match; g does not change the result. |
+| RegexMatch(text, pattern, flags) | First match Object, or Null. |
+| RegexMatches(text, pattern, flags) | Bounded Array of nonoverlapping matches in source order, with or without g. |
+| RegexReplace(text, pattern, replacement, flags) | String; first replacement, or all replacements with g. Replacement text is literal, including $1, $&, $$ and backslashes. |
+| RegexSplit(text, pattern, flags) | Array of Strings; all delimiters regardless of g, retaining empty fields and excluding captures. |
 
 ```vb
-DIM cleaned AS String = RegexReplace(
-    "Task   123",
-    "\s+",
-    " ",
-    "g"
-)
+DIM valid AS Boolean = RegexTest("ABC-1234", "^[A-Z]{3}-\d{4}$", "")
+DIM cleaned AS String = RegexReplace("Task   123", "\s+", " ", "g")
+DIM found = RegexMatch("ABC-1234", "([A-Z]+)-(\d+)", "")
 ```
 
-WBasic string literals preserve backslashes rather than introducing JavaScript string-escape behavior.
+A match has exactly `{value:String, index:Integer, groups:Array}`. index is a
+zero-based UTF-16 offset; groups holds positional captures, excluding whole-match
+0. Unmatched optional captures are Null; participating empty captures are "".
+No native regex object, named capture data or mutable engine state is exposed.
+
+Supported syntax: literals, dot, ^/$, alternation, nonempty classes/ranges/negation,
+capturing and noncapturing groups, greedy/lazy quantifiers (* + ? and bounded
+repetition), ASCII digit/word classes, ECMAScript whitespace, word boundaries and
+ordinary punctuation/control/hex escapes. Reject backreferences, all lookarounds,
+named captures, inline flags, property escapes, POSIX/nested classes, possessive
+quantifiers and repeated groups containing captures (except optional groups).
+Complement escapes inside character classes are deferred. Range endpoints must
+be individual characters; repetition bounds cannot have leading zeros.
+
+Flags are g/i/m/s/u, once each in any order; duplicates, unknown flags, d/v/y and
+uppercase flags fail. i requires ASCII text and pattern, including hex escapes.
+u supports whole code points and empty-match advancement while indices stay
+UTF-16. Non-BMP text/patterns without u, lone surrogates in either mode and surrogate
+hex escapes are rejected. No normalization occurs. Dot excludes all four
+ECMAScript line terminators unless s is present. m anchors support LF lines;
+anchored m patterns reject CR/U+2028/U+2029 input. Patterns containing $ without m
+reject text ending in a line terminator, avoiding RE2's differing final-newline
+semantics. These restrictions produce SEWN.REGEX, not silently different results.
+
+Empty matches advance the search one UTF-16 unit (one code point with u), including
+one possible match at the end. Replacement and split do not discard that character.
+RegexReplace("ab", "", "-", "g") returns "-a-b-"; RegexSplit("ab", "", "") returns
+["", "a", "b", ""]. Splitting includes leading/trailing/adjacent empty fields and
+omits captured delimiters. Literal Split/Replace keep their existing contracts.
 
 ### Regex execution safety
 
-Regular expressions must not provide a way to exceed SEWN resource limits.
+Hard maxima: pattern 256 UTF-16 units, input 4,096, captures 8, matches 128,
+aggregate output 16,384 units, group depth 16, finite repetition bounds 32,
+expanded atoms 128, compiled instructions 512 and cumulative work 1,000,000.
+Shared steps, String/value-node limits and deadline apply; host context can reduce
+all maxima. Work is reserved before each bounded NFA search, not estimated only
+from elapsed time. Enumeration can exhaust work before its match maximum.
 
-Native ECMAScript regex engines can perform catastrophic backtracking. A simple input-size restriction does not guarantee bounded execution.
+Wrong types produce SEWN.TYPE. Malformed/unsupported patterns, flags and Unicode
+contexts produce SEWN.REGEX. Both are recoverable in 0.15 TRY/CATCH. Resource
+violations produce fatal SEWN.LIMIT and cannot be caught and retried. Callers and
+static libraries share the original execution budgets and authority.
 
-Consequently, the regex implementation must use an enforceable isolation or bounded-execution strategy, or explicitly restrict supported patterns.
-
-Until that is established, a full ECMAScript regex promise cannot be made.
-
-Pattern and input lengths, result counts, capture groups, replacement expansion, and execution time must all be controlled.
-
-Replacement callbacks and arbitrary JavaScript execution are not available.
-
-JavaScript-style `/pattern/flags` literals are deferred.
+See [the 0.15 milestone](milestones/wbasic-sewn-0.15.md) for the complete supported
+grammar, context restrictions, resource accounting, engine review, portable wire
+contract, server/browser conformance and measured WydClient impact. Full ECMAScript
+compatibility, regex literals, replacement expansion, callbacks and regex objects
+remain deferred.
 
 ---
 

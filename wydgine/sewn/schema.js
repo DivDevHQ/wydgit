@@ -1,6 +1,6 @@
 // Runtime-neutral closed grammar. Every operand is a structured expression.
 export const SCHEMA='sewn/0.1';
-export const MAXIMA=Object.freeze({steps:10000,expressionDepth:32,nesting:16,iterations:1000,variables:64,valueNodes:4096,string:16384,serviceCalls:32,procedureCalls:256,procedureDepth:16,parameters:16,drafts:64,draftDepth:32,draftNodes:256,constructionOperations:512,constructionSize:65536,timeMs:1000,programNodes:8192,programSize:65536});
+export const MAXIMA=Object.freeze({steps:10000,expressionDepth:32,nesting:16,iterations:1000,variables:64,valueNodes:4096,string:16384,serviceCalls:32,procedureCalls:256,procedureDepth:16,parameters:16,drafts:64,draftDepth:32,draftNodes:256,constructionOperations:512,constructionSize:65536,regexPattern:256,regexInput:4096,regexCaptures:8,regexMatches:128,regexOutput:16384,regexDepth:16,regexRepeat:32,regexAtoms:128,regexInstructions:512,regexWork:1000000,timeMs:1000,programNodes:8192,programSize:65536});
 export const statements=Object.freeze({declare:['name','value'],set:['name','value'],if:['condition','then','else?'],forEach:['name','items','body'],call:['target','method','args','into?'],service:['library','method','input','into?'],return:['value'],stop:['value?']});
 export const expressions=Object.freeze({array:['items'],object:['fields'],literal:['value'],variable:['name'],context:['name'],read:['target','key'],invoke:['target','method','args'],binary:['operator','left','right'],not:['value']});
 export const operators=['=','!=','<','<=','>','>=','AND','OR','+','-','*','/','concat'];
@@ -85,3 +85,9 @@ export const collectionReservedNames=Object.freeze([...operationReservedNames,'S
 
 // Static linking is a build-time feature; calls reuse ordinary procedure operations.
 export const STATIC_SCHEMA='sewn/0.14';
+
+// Bounded patterns are canonical operations only in the 0.15 grammar.
+export const REGEX_SCHEMA='sewn/0.15';
+export const regexSignatures=Object.freeze({RegexTest:['String','String','String'],RegexMatch:['String','String','String'],RegexMatches:['String','String','String'],RegexReplace:['String','String','String','String'],RegexSplit:['String','String','String']});
+export const regexOperationSignatures=Object.freeze({...collectionSignatures,...regexSignatures});
+export const regexReservedNames=Object.freeze([...collectionReservedNames,...Object.keys(regexSignatures).map(x=>x.toUpperCase())]);

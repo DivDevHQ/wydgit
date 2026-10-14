@@ -284,7 +284,7 @@
 
   // wydgine/sewn/schema.js
   var SCHEMA2 = "sewn/0.1";
-  var MAXIMA = Object.freeze({ steps: 1e4, expressionDepth: 32, nesting: 16, iterations: 1e3, variables: 64, valueNodes: 4096, string: 16384, serviceCalls: 32, procedureCalls: 256, procedureDepth: 16, parameters: 16, drafts: 64, draftDepth: 32, draftNodes: 256, constructionOperations: 512, constructionSize: 65536, timeMs: 1e3, programNodes: 8192, programSize: 65536 });
+  var MAXIMA = Object.freeze({ steps: 1e4, expressionDepth: 32, nesting: 16, iterations: 1e3, variables: 64, valueNodes: 4096, string: 16384, serviceCalls: 32, procedureCalls: 256, procedureDepth: 16, parameters: 16, drafts: 64, draftDepth: 32, draftNodes: 256, constructionOperations: 512, constructionSize: 65536, regexPattern: 256, regexInput: 4096, regexCaptures: 8, regexMatches: 128, regexOutput: 16384, regexDepth: 16, regexRepeat: 32, regexAtoms: 128, regexInstructions: 512, regexWork: 1e6, timeMs: 1e3, programNodes: 8192, programSize: 65536 });
   var statements = Object.freeze({ declare: ["name", "value"], set: ["name", "value"], if: ["condition", "then", "else?"], forEach: ["name", "items", "body"], call: ["target", "method", "args", "into?"], service: ["library", "method", "input", "into?"], return: ["value"], stop: ["value?"] });
   var expressions = Object.freeze({ array: ["items"], object: ["fields"], literal: ["value"], variable: ["name"], context: ["name"], read: ["target", "key"], invoke: ["target", "method", "args"], binary: ["operator", "left", "right"], not: ["value"] });
   var operators = ["=", "!=", "<", "<=", ">", ">=", "AND", "OR", "+", "-", "*", "/", "concat"];
@@ -371,6 +371,10 @@
   var collectionStatements = Object.freeze({ ...selectionStatements, constant: ["name", "type", "value"], forNumeric: ["name", "start", "end", "step", "body"] });
   var collectionReservedNames = Object.freeze([...operationReservedNames, "SLICE", "JOIN", "SPLIT", "CONST", "TO", "STEP"]);
   var STATIC_SCHEMA = "sewn/0.14";
+  var REGEX_SCHEMA = "sewn/0.15";
+  var regexSignatures = Object.freeze({ RegexTest: ["String", "String", "String"], RegexMatch: ["String", "String", "String"], RegexMatches: ["String", "String", "String"], RegexReplace: ["String", "String", "String", "String"], RegexSplit: ["String", "String", "String"] });
+  var regexOperationSignatures = Object.freeze({ ...collectionSignatures, ...regexSignatures });
+  var regexReservedNames = Object.freeze([...collectionReservedNames, ...Object.keys(regexSignatures).map((x) => x.toUpperCase())]);
 
   // wydgine/sewn/validate.js
   var fail = (code) => {
@@ -427,19 +431,21 @@
       ensure(Object.keys(n).every((k) => k === "op" || fields.some((f) => f.replace("?", "") === k)));
       for (const f of fields) if (!f.endsWith("?")) ensure(Object.hasOwn(n, f));
     };
-    const staticLinked = p?.schema === STATIC_SCHEMA, collections = staticLinked || p?.schema === COLLECTION_SCHEMA, operations = collections || p?.schema === OPERATION_SCHEMA, contracts = operations || p?.schema === CONTRACT_SCHEMA, numeric = contracts || p?.schema === NUMERIC_SCHEMA, types = contracts ? contractTypes : numeric ? numericTypes : sourceTypes;
-    const selection = numeric || p?.schema === SELECTION_SCHEMA, exceptions = selection || p?.schema === EXCEPTION_SCHEMA, conversion = exceptions || p?.schema === CONVERSION_SCHEMA, control = conversion || p?.schema === CONTROL_SCHEMA, reserved = collections ? collectionReservedNames : operations ? operationReservedNames : contracts ? contractReservedNames : numeric ? numericReservedNames : selection ? selectionReservedNames : exceptions ? exceptionReservedNames : conversion ? conversionReservedNames : control ? controlReservedNames : reservedNames;
+    const regex = p?.schema === REGEX_SCHEMA, staticLinked = regex || p?.schema === STATIC_SCHEMA, collections = staticLinked || p?.schema === COLLECTION_SCHEMA, operations = collections || p?.schema === OPERATION_SCHEMA, contracts = operations || p?.schema === CONTRACT_SCHEMA, numeric = contracts || p?.schema === NUMERIC_SCHEMA, types = contracts ? contractTypes : numeric ? numericTypes : sourceTypes;
+    const selection = numeric || p?.schema === SELECTION_SCHEMA, exceptions = selection || p?.schema === EXCEPTION_SCHEMA, conversion = exceptions || p?.schema === CONVERSION_SCHEMA, control = conversion || p?.schema === CONTROL_SCHEMA, reserved = regex ? regexReservedNames : collections ? collectionReservedNames : operations ? operationReservedNames : contracts ? contractReservedNames : numeric ? numericReservedNames : selection ? selectionReservedNames : exceptions ? exceptionReservedNames : conversion ? conversionReservedNames : control ? controlReservedNames : reservedNames;
     const members = control || p?.schema === MEMBER_SCHEMA;
     const versioned = members || p?.schema === SERVICE_SCHEMA, objects = versioned || p?.schema === OBJECT_SCHEMA, modern = objects || p?.schema === PROCEDURE_SCHEMA;
     const statementGrammar = collections ? collectionStatements : selection ? selectionStatements : exceptions ? exceptionStatements : control ? controlStatements : members ? memberStatements : versioned ? serviceStatements : objects ? objectStatements : modern ? procedureStatements : statements, expressionGrammar = collections ? collectionExpressions : operations ? operationExpressions : contracts ? contractExpressions : numeric ? numericExpressions : selection ? selectionExpressions : conversion ? conversionExpressions : control ? controlExpressions : members ? memberExpressions : versioned ? serviceExpressions : objects ? objectExpressions : modern ? procedureExpressions : expressions;
-    ensure(p && [SCHEMA2, PROCEDURE_SCHEMA, OBJECT_SCHEMA, SERVICE_SCHEMA, MEMBER_SCHEMA, CONTROL_SCHEMA, CONVERSION_SCHEMA, EXCEPTION_SCHEMA, SELECTION_SCHEMA, NUMERIC_SCHEMA, CONTRACT_SCHEMA, OPERATION_SCHEMA, COLLECTION_SCHEMA, STATIC_SCHEMA].includes(p.schema) && Object.keys(p).every((k) => (modern ? ["schema", "body", "procedures", ...staticLinked ? ["libraries"] : []] : ["schema", "body"]).includes(k)));
+    ensure(p && [SCHEMA2, PROCEDURE_SCHEMA, OBJECT_SCHEMA, SERVICE_SCHEMA, MEMBER_SCHEMA, CONTROL_SCHEMA, CONVERSION_SCHEMA, EXCEPTION_SCHEMA, SELECTION_SCHEMA, NUMERIC_SCHEMA, CONTRACT_SCHEMA, OPERATION_SCHEMA, COLLECTION_SCHEMA, STATIC_SCHEMA, REGEX_SCHEMA].includes(p.schema) && Object.keys(p).every((k) => (modern ? ["schema", "body", "procedures", ...staticLinked ? ["libraries"] : []] : ["schema", "body"]).includes(k)));
     const procedures = modern ? p.procedures : {};
     ensure(procedures && typeof procedures === "object" && !Array.isArray(procedures));
     const owners = /* @__PURE__ */ new Map();
     if (staticLinked) {
-      ensure(Array.isArray(p.libraries) && p.libraries.length <= 64);
+      ensure(regex && p.libraries === void 0 || Array.isArray(p.libraries));
+      const linkedLibraries = p.libraries ?? [];
+      ensure(Array.isArray(linkedLibraries) && linkedLibraries.length <= 64);
       const ids = /* @__PURE__ */ new Set();
-      for (const lib of p.libraries) {
+      for (const lib of linkedLibraries) {
         shape2(lib, ["id", "version", "alias", "methods"]);
         ensure(!Object.hasOwn(lib, "op") && typeof lib.id === "string" && /^[a-z][a-z0-9.-]*\/[a-z][a-z0-9-]*$/.test(lib.id) && !ids.has(lib.id));
         ids.add(lib.id);
@@ -509,7 +515,7 @@
         expr(n.value, d + 1);
       }
       if (n.op === "operation") {
-        const signatures = collections ? collectionSignatures : operationSignatures;
+        const signatures = regex ? regexOperationSignatures : collections ? collectionSignatures : operationSignatures;
         ensure(Object.hasOwn(signatures, n.name) && Array.isArray(n.args) && n.args.length === signatures[n.name].length);
         n.args.forEach((x) => expr(x, d + 1));
       }
@@ -748,7 +754,7 @@
         }
         requireThat(d.methods === void 0 && d.behaviorSource === void 0, "PROTOTYPE.METHOD", "Behavior must be compiled by trusted setup");
         requireThat(new Set(d.overrides ?? []).size === (d.overrides ?? []).length, "PROTOTYPE.METHOD", "Duplicate overrides");
-        requireThat(!behavior || ["sewn/0.3", "sewn/0.4", "sewn/0.5", "sewn/0.6", "sewn/0.7", "sewn/0.8", "sewn/0.9", "sewn/0.10", "sewn/0.11", "sewn/0.12", "sewn/0.13", "sewn/0.14"].includes(behavior.schema) && behavior.body.length === 0, "PROTOTYPE.METHOD", "Expected portable prototype behavior");
+        requireThat(!behavior || ["sewn/0.3", "sewn/0.4", "sewn/0.5", "sewn/0.6", "sewn/0.7", "sewn/0.8", "sewn/0.9", "sewn/0.10", "sewn/0.11", "sewn/0.12", "sewn/0.13", "sewn/0.14", "sewn/0.15"].includes(behavior.schema) && behavior.body.length === 0, "PROTOTYPE.METHOD", "Expected portable prototype behavior");
         for (const [name2, proc] of Object.entries(behavior?.procedures ?? {})) {
           requireThat(!Object.keys(methods.handle).some((x) => x.toLowerCase() === name2.toLowerCase()), "PROTOTYPE.METHOD", "Method conflicts with kernel facade");
           const old = inheritedMethods[name2];
@@ -810,14 +816,14 @@
       for (const d of this.#definitions.values()) for (const slot of Object.values(d.slots)) for (const id of slot.accepts) this.get(id);
       for (const d of this.#definitions.values()) {
         if (d.static) {
-          requireThat(d.behavior?.schema === "sewn/0.14", "PROTOTYPE.STATIC", "Static behavior requires sewn/0.14");
+          requireThat(["sewn/0.14", "sewn/0.15"].includes(d.behavior?.schema), "PROTOTYPE.STATIC", "Static behavior requires sewn/0.14 or sewn/0.15");
           const walk2 = (v) => {
             if (!v || typeof v !== "object") return;
             requireThat(!(v.op === "context" && v.name === "ME"), "PROTOTYPE.STATIC", "Static methods have no Me");
             Object.values(v).forEach(walk2);
           };
           walk2(d.behavior);
-          for (const lib of d.behavior.libraries) requireThat(d.dependencies?.[lib.id] === lib.version && lib.id !== d.id, "PROTOTYPE.STATIC", "Linked dependency must be declared");
+          for (const lib of d.behavior.libraries ?? []) requireThat(d.dependencies?.[lib.id] === lib.version && lib.id !== d.id, "PROTOTYPE.STATIC", "Linked dependency must be declared");
           continue;
         }
         const graph = /* @__PURE__ */ new Map();

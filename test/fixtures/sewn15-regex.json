@@ -1,0 +1,1125 @@
+[
+  {
+    "name": "RegexTest",
+    "args": [
+      "ABC-1234",
+      "^[A-Z]{3}-\\d{4}$",
+      ""
+    ],
+    "value": true
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "xABC-1234",
+      "^[A-Z]{3}-\\d{4}$",
+      ""
+    ],
+    "value": false
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "xcatz",
+      "cat|dog",
+      ""
+    ],
+    "value": true
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "aaabb",
+      "a{2,3}b+",
+      ""
+    ],
+    "value": true
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "GoObEr",
+      "goober",
+      "i"
+    ],
+    "value": true
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "x\ny\nz",
+      "^y$",
+      "m"
+    ],
+    "value": true
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "a\nb",
+      "a.b",
+      ""
+    ],
+    "value": false
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "a\r\nb",
+      "a.*b",
+      "s"
+    ],
+    "value": true
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "",
+      "",
+      ""
+    ],
+    "value": true
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "",
+      "a+",
+      ""
+    ],
+    "value": false
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "abc",
+      "[a-c]+",
+      ""
+    ],
+    "value": true
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "a\u2028b",
+      "a.b",
+      ""
+    ],
+    "value": false
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "\u00a0\ufeff",
+      "^\\s+$",
+      ""
+    ],
+    "value": true
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "\u0085",
+      "\\s",
+      ""
+    ],
+    "value": false
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "\u00e9",
+      "\u00e9",
+      ""
+    ],
+    "value": true
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "\u00e9",
+      "e",
+      ""
+    ],
+    "value": false
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "e\u0301",
+      "e.",
+      ""
+    ],
+    "value": true
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "\ud83d\ude00",
+      "^.$",
+      "u"
+    ],
+    "value": true
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "\ud83d\ude00",
+      "^..$",
+      "u"
+    ],
+    "value": false
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "abc",
+      "\\babc\\b",
+      ""
+    ],
+    "value": true
+  },
+  {
+    "name": "RegexMatch",
+    "args": [
+      "x ABC-1234",
+      "([A-Z]+)-(\\d+)",
+      "g"
+    ],
+    "value": {
+      "value": "ABC-1234",
+      "index": 2,
+      "groups": [
+        "ABC",
+        "1234"
+      ]
+    }
+  },
+  {
+    "name": "RegexMatch",
+    "args": [
+      "b",
+      "(a)?(b)",
+      ""
+    ],
+    "value": {
+      "value": "b",
+      "index": 0,
+      "groups": [
+        null,
+        "b"
+      ]
+    }
+  },
+  {
+    "name": "RegexMatch",
+    "args": [
+      "x",
+      "z",
+      ""
+    ],
+    "value": null
+  },
+  {
+    "name": "RegexMatch",
+    "args": [
+      "\ud83d\ude00\u00e9",
+      "(\u00e9)",
+      "u"
+    ],
+    "value": {
+      "value": "\u00e9",
+      "index": 2,
+      "groups": [
+        "\u00e9"
+      ]
+    }
+  },
+  {
+    "name": "RegexMatch",
+    "args": [
+      "aaaa",
+      "a+?",
+      ""
+    ],
+    "value": {
+      "value": "a",
+      "index": 0,
+      "groups": []
+    }
+  },
+  {
+    "name": "RegexMatches",
+    "args": [
+      "ab",
+      "",
+      ""
+    ],
+    "value": [
+      {
+        "value": "",
+        "index": 0,
+        "groups": []
+      },
+      {
+        "value": "",
+        "index": 1,
+        "groups": []
+      },
+      {
+        "value": "",
+        "index": 2,
+        "groups": []
+      }
+    ]
+  },
+  {
+    "name": "RegexMatches",
+    "args": [
+      "ab",
+      "a*",
+      ""
+    ],
+    "value": [
+      {
+        "value": "a",
+        "index": 0,
+        "groups": []
+      },
+      {
+        "value": "",
+        "index": 1,
+        "groups": []
+      },
+      {
+        "value": "",
+        "index": 2,
+        "groups": []
+      }
+    ]
+  },
+  {
+    "name": "RegexMatches",
+    "args": [
+      "ab",
+      ".*",
+      ""
+    ],
+    "value": [
+      {
+        "value": "ab",
+        "index": 0,
+        "groups": []
+      },
+      {
+        "value": "",
+        "index": 2,
+        "groups": []
+      }
+    ]
+  },
+  {
+    "name": "RegexMatches",
+    "args": [
+      "ab",
+      "^",
+      ""
+    ],
+    "value": [
+      {
+        "value": "",
+        "index": 0,
+        "groups": []
+      }
+    ]
+  },
+  {
+    "name": "RegexMatches",
+    "args": [
+      "ab",
+      "$",
+      ""
+    ],
+    "value": [
+      {
+        "value": "",
+        "index": 2,
+        "groups": []
+      }
+    ]
+  },
+  {
+    "name": "RegexMatches",
+    "args": [
+      "ab",
+      "\\b",
+      ""
+    ],
+    "value": [
+      {
+        "value": "",
+        "index": 0,
+        "groups": []
+      },
+      {
+        "value": "",
+        "index": 2,
+        "groups": []
+      }
+    ]
+  },
+  {
+    "name": "RegexMatches",
+    "args": [
+      "",
+      "",
+      "g"
+    ],
+    "value": [
+      {
+        "value": "",
+        "index": 0,
+        "groups": []
+      }
+    ]
+  },
+  {
+    "name": "RegexMatches",
+    "args": [
+      "",
+      ".*",
+      "g"
+    ],
+    "value": [
+      {
+        "value": "",
+        "index": 0,
+        "groups": []
+      }
+    ]
+  },
+  {
+    "name": "RegexMatches",
+    "args": [
+      "",
+      "a*",
+      "g"
+    ],
+    "value": [
+      {
+        "value": "",
+        "index": 0,
+        "groups": []
+      }
+    ]
+  },
+  {
+    "name": "RegexMatches",
+    "args": [
+      "",
+      "^",
+      "g"
+    ],
+    "value": [
+      {
+        "value": "",
+        "index": 0,
+        "groups": []
+      }
+    ]
+  },
+  {
+    "name": "RegexMatches",
+    "args": [
+      "",
+      "$",
+      "g"
+    ],
+    "value": [
+      {
+        "value": "",
+        "index": 0,
+        "groups": []
+      }
+    ]
+  },
+  {
+    "name": "RegexMatches",
+    "args": [
+      "\ud83d\ude00",
+      "",
+      "u"
+    ],
+    "value": [
+      {
+        "value": "",
+        "index": 0,
+        "groups": []
+      },
+      {
+        "value": "",
+        "index": 2,
+        "groups": []
+      }
+    ]
+  },
+  {
+    "name": "RegexMatches",
+    "args": [
+      "a b",
+      "\\w+",
+      "g"
+    ],
+    "value": [
+      {
+        "value": "a",
+        "index": 0,
+        "groups": []
+      },
+      {
+        "value": "b",
+        "index": 2,
+        "groups": []
+      }
+    ]
+  },
+  {
+    "name": "RegexReplace",
+    "args": [
+      "Task   123",
+      "\\s+",
+      " ",
+      "g"
+    ],
+    "value": "Task 123"
+  },
+  {
+    "name": "RegexReplace",
+    "args": [
+      "a a",
+      "a",
+      "x",
+      ""
+    ],
+    "value": "x a"
+  },
+  {
+    "name": "RegexReplace",
+    "args": [
+      "a a",
+      "a",
+      "x",
+      "g"
+    ],
+    "value": "x x"
+  },
+  {
+    "name": "RegexReplace",
+    "args": [
+      "a",
+      "(a)",
+      "$1 $$ $&",
+      "g"
+    ],
+    "value": "$1 $$ $&"
+  },
+  {
+    "name": "RegexReplace",
+    "args": [
+      "ab",
+      "",
+      "-",
+      "g"
+    ],
+    "value": "-a-b-"
+  },
+  {
+    "name": "RegexReplace",
+    "args": [
+      "\ud83d\ude00",
+      "",
+      "-",
+      "gu"
+    ],
+    "value": "-\ud83d\ude00-"
+  },
+  {
+    "name": "RegexReplace",
+    "args": [
+      "abc",
+      "z",
+      "-",
+      "g"
+    ],
+    "value": "abc"
+  },
+  {
+    "name": "RegexSplit",
+    "args": [
+      ",a,,b,",
+      ",",
+      ""
+    ],
+    "value": [
+      "",
+      "a",
+      "",
+      "b",
+      ""
+    ]
+  },
+  {
+    "name": "RegexSplit",
+    "args": [
+      "a,b",
+      "(,)",
+      "g"
+    ],
+    "value": [
+      "a",
+      "b"
+    ]
+  },
+  {
+    "name": "RegexSplit",
+    "args": [
+      "ab",
+      "",
+      ""
+    ],
+    "value": [
+      "",
+      "a",
+      "b",
+      ""
+    ]
+  },
+  {
+    "name": "RegexSplit",
+    "args": [
+      "\ud83d\ude00",
+      "",
+      "u"
+    ],
+    "value": [
+      "",
+      "\ud83d\ude00",
+      ""
+    ]
+  },
+  {
+    "name": "RegexSplit",
+    "args": [
+      "abc",
+      "z",
+      ""
+    ],
+    "value": [
+      "abc"
+    ]
+  },
+  {
+    "name": "RegexSplit",
+    "args": [
+      "",
+      "x",
+      ""
+    ],
+    "value": [
+      ""
+    ]
+  },
+  {
+    "name": "RegexSplit",
+    "args": [
+      "",
+      "",
+      ""
+    ],
+    "value": [
+      "",
+      ""
+    ]
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "aaa!",
+      "(",
+      ""
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "aaa!",
+      "[a",
+      ""
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "aaa!",
+      "\\",
+      ""
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "aaa!",
+      "\\q",
+      ""
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "aaa!",
+      "\\x0",
+      ""
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "aaa!",
+      "\\uZZZZ",
+      ""
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "aaa!",
+      "a**",
+      ""
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "aaa!",
+      "(?=a)",
+      ""
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "aaa!",
+      "(?<=a)",
+      ""
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "aaa!",
+      "(a)\\1",
+      ""
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "aaa!",
+      "(?<x>a)",
+      ""
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "aaa!",
+      "\\p{L}",
+      ""
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "aaa!",
+      "(?i)a",
+      ""
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "aaa!",
+      "[[:digit:]]",
+      ""
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "aaa!",
+      "[\\D]",
+      ""
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "aaa!",
+      "(a+)+$",
+      ""
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "aaa!",
+      "(a|aa)+$",
+      ""
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "aaa!",
+      "(a*)*$",
+      ""
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "aaa!",
+      "(a+)+b",
+      ""
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "abc",
+      "a",
+      "gg"
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "abc",
+      "a",
+      "ii"
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "abc",
+      "a",
+      "y"
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "abc",
+      "a",
+      "d"
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "abc",
+      "a",
+      "v"
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "abc",
+      "a",
+      "j"
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "abc",
+      "a",
+      "I"
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "\u00e9",
+      "\u00e9",
+      "i"
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "\ud83d\ude00",
+      ".",
+      ""
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "\ud800",
+      ".",
+      "u"
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "\ud83d\ude00",
+      "\\uD83D",
+      "u"
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "a\r\nb",
+      "^b",
+      "m"
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "a\n",
+      "a$",
+      ""
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "a",
+      "a",
+      ""
+    ],
+    "error": "SEWN.LIMIT",
+    "limits": {
+      "sewnRegexWork": 0
+    }
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "a",
+      "a",
+      ""
+    ],
+    "error": "SEWN.LIMIT",
+    "limits": {
+      "sewnSteps": 4
+    }
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "ab",
+      "a",
+      ""
+    ],
+    "error": "SEWN.LIMIT",
+    "limits": {
+      "sewnRegexInput": 1
+    }
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "a",
+      "aa",
+      ""
+    ],
+    "error": "SEWN.LIMIT",
+    "limits": {
+      "sewnRegexPattern": 1
+    }
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "a",
+      "(a)",
+      ""
+    ],
+    "error": "SEWN.LIMIT",
+    "limits": {
+      "sewnRegexCaptures": 0
+    }
+  },
+  {
+    "name": "RegexMatches",
+    "args": [
+      "ab",
+      "",
+      ""
+    ],
+    "error": "SEWN.LIMIT",
+    "limits": {
+      "sewnRegexMatches": 2
+    }
+  },
+  {
+    "name": "RegexReplace",
+    "args": [
+      "aaa",
+      "a",
+      "xx",
+      "g"
+    ],
+    "error": "SEWN.LIMIT",
+    "limits": {
+      "sewnRegexOutput": 5
+    }
+  },
+  {
+    "name": "RegexSplit",
+    "args": [
+      "a,b",
+      ",",
+      ""
+    ],
+    "error": "SEWN.LIMIT",
+    "limits": {
+      "sewnValueNodes": 2
+    }
+  },
+  {
+    "name": "RegexMatch",
+    "args": [
+      "a",
+      "(a)",
+      ""
+    ],
+    "error": "SEWN.LIMIT",
+    "limits": {
+      "sewnValueNodes": 5
+    }
+  },
+  {
+    "name": "RegexMatch",
+    "args": [
+      "aaa",
+      "(aaa)",
+      ""
+    ],
+    "error": "SEWN.LIMIT",
+    "limits": {
+      "sewnRegexOutput": 5
+    }
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "a",
+      "a{33}",
+      ""
+    ],
+    "error": "SEWN.LIMIT"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "a",
+      "a{32}{32}",
+      ""
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "a",
+      "(?:a{32}){32}",
+      ""
+    ],
+    "error": "SEWN.LIMIT"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "a",
+      "a{01}",
+      "u"
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "a",
+      "a{1,02}",
+      "u"
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "a",
+      "[\\d-a]",
+      "u"
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "a",
+      "[\\s-\\w]",
+      "u"
+    ],
+    "error": "SEWN.REGEX"
+  },
+  {
+    "name": "RegexTest",
+    "args": [
+      "a",
+      "(?:a{32,}){32,}",
+      ""
+    ],
+    "error": "SEWN.LIMIT"
+  }
+]

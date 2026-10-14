@@ -404,3 +404,48 @@ privileges or refreshed budgets. See [the milestone](milestones/wbasic-sewn-0.14
 for exact field contracts, wrappers, installation snapshots and security evidence.
 WydClient consumes prepared wire workflows; source preparation belongs to build
 setup and is excluded from the served browser runtime dependency closure.
+
+
+## Version 0.15: bounded regular expressions
+
+`sewn/0.15` extends 0.14 with the closed `operation {name,args}` expressions
+RegexTest, RegexMatch, RegexMatches, RegexReplace and RegexSplit. The first three
+and RegexSplit require three ordered String expressions (text, pattern, flags);
+RegexReplace requires four (text, pattern, replacement, flags). Nested expressions
+are validated and evaluated once, left to right. No arbitrary host-call mechanism
+or regex handles are introduced. Earlier schemas reject these names.
+
+The envelope has schema, procedures and body, plus optional libraries provenance
+when linked. Existing 0.14 artifacts still require libraries. Third-party static
+procedures containing regex upgrade their linked callers to 0.15, retaining the
+original execution context, SEAM authority, deadline and all cumulative counters.
+
+Returns: Boolean, first `{value:String,index:Integer,groups:Array}` or Null, Array
+of those matches, String, and Array of Strings respectively. Indices count UTF-16
+units; unmatched captures are Null. RegexMatches enumerates regardless of g;
+RegexTest/Match use the first match regardless of g. Replace uses g for all versus
+first replacement and treats replacement text literally. Split uses all delimiters
+regardless of g, preserves empty fields, excludes captures, and processes empty
+matches with explicit one-unit/code-point progress, including boundary fields.
+
+The version-pinned RE2JS Thompson NFA is shared by server and browser. Supported
+flags are g/i/m/s/u; the deliberately restricted syntax and Unicode/anchor contexts
+are documented in [the language reference](wbasic-language-ref.md#16-regular-expressions)
+and [0.15 milestone](milestones/wbasic-sewn-0.15.md). Unsupported syntax fails closed;
+there is no native regex fallback or full ECMAScript compatibility claim.
+
+Hard maxima: 256 pattern units, 4,096 input units, 8 captures, 128 matches, 16,384
+aggregate output units, 16 group levels, 32 finite repetition bounds, 128 expanded
+atoms, 512 compiled instructions and 1,000,000 cumulative regex work units.
+ExecutionContext sewnRegexPattern/Input/Captures/Matches/Output/Depth/Repeat/Atoms/
+Instructions/Work can only reduce the corresponding bounds. Output also respects
+sewnString and sewnValueNodes; reservations spend ordinary shared execution steps
+before synchronous matching. Per-value/operation allocation limits remain distinct
+from the cumulative work counter. No callee can replenish these resources.
+
+SEWN.TYPE and new SEWN.REGEX errors are recoverable under 0.15 TRY/CATCH;
+SEWN.LIMIT and denials remain fatal. Malformed operations remain SEWN.INVALID.
+WydClient lazily loads a fixed local adapter and bundled engine from the approved
+runtime module routes; it requires neither the source compiler, resolver, installer,
+WASM, CDN nor privileged browser capability. Shared JSON fixtures and adversarial
+regressions verify the same accepted results, error codes and resource reductions.

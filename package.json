@@ -13,7 +13,7 @@
     "dev": "node --watch server.js",
     "test": "node --test",
     "check": "node scripts/check-content.js",
-    "build:client": "node packages/wydclient/build.js",
+    "build:client": "node scripts/build-regex.js && node packages/wydclient/build.js",
     "pretest": "npm run build:client",
     "test:client": "npm run build:client && node --test --test-isolation=none packages/wydclient/test/*.test.js"
   },
@@ -22,6 +22,7 @@
     "busboy": "1.6.0",
     "hono": "4.13.13",
     "marked": "^15.0.12",
+    "re2js": "2.8.6",
     "sanitize-html": "^2.18.0",
     "semver": "^7.8.5"
   },
