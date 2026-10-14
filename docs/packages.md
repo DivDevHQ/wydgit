@@ -282,3 +282,13 @@ in the existing prototype-package envelope and can be installed from safe local
 directories into an explicitly approved build context. See
 [the 0.14 authoring and installation contract](milestones/wbasic-sewn-0.14.md).
 No new CLI, archive, registry, signing interface or runtime service is introduced.
+
+## Source authoring checkpoint (0.20, incomplete)
+
+Trusted compileFamily builds now emit existing resources.prototypes and
+resources.template contents from WBasic classes, after atomic validation. The
+installer, approvals and receipt workflow are unchanged. Source is not another
+installed executable representation.
+
+See [the 0.20 checkpoint](milestones/sewn-0.20/README.md) for implemented grammar,
+validation, evidence and remaining completion gates.

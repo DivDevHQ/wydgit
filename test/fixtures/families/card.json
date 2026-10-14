@@ -1,0 +1,14 @@
+{
+  "id":"divdev/source-card","publisher":"divdev","public":true,"abstract":false,
+  "extends":"wydgit.core/block",
+  "properties":{
+    "content":{"type":"object","access":"public","default":{"type":"markdown","value":""}},
+    "Title":{"type":"string","access":"public","default":"Ready"},
+    "Status":{"type":"string","access":"public","default":"Pending"}
+  },
+  "slots":{},"methodRules":{"complete":{"access":"public"}},
+  "methodContracts":{"complete":{"kind":"sub","params":[],"access":"public","abstract":false,"virtual":false}},
+  "overrides":[],"implements":{},"events":{},"lifecycle":{},
+  "behavior":{"schema":"sewn/0.5","body":[],"procedures":{"complete":{"kind":"sub","params":[],"body":[{"op":"memberSet","target":{"op":"context","name":"ME"},"name":"Status","value":{"op":"literal","value":"Complete"},"exact":true}]}}},
+  "presentation":{"schema":"wydgit.presentation/0.1","template":{"tag":"section","children":[{"tag":"h2","text":{"get":"properties.Title"}},{"tag":"p","text":{"get":"properties.Status"}},{"tag":"div","each":{"in":["Source authored","Canonical JSON"],"as":"item"},"children":[{"tag":"p","text":{"get":"item"}}]}]}}
+}

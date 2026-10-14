@@ -75,7 +75,27 @@ export function parse(source,{module=false,interfaceDeclaration=false,classDecla
   }
   const modifiers=()=>{const values=[];while(['PUBLIC','PRIVATE','PROTECTED','FRIEND','MUSTINHERIT','MUSTOVERRIDE','VIRTUAL','OVERRIDE','REQUIRED','HIDDEN'].some(is)){const t=take();const v=t.value.toLowerCase();if(values.includes(v))fail('SYNTAX','Duplicate modifier.',t.location);values.push(v);}return values;};
   let className=null,classModifiers=[],parent=null;
-  const metadata=[],properties=[],contracts=[],implementations=[];
+  const metadata=[],properties=[],contracts=[],implementations=[],children=[];
+  let presentation=null;
+  function child(slot=null) {
+    const start=expect('CHILD'),name=identifier();expect('AS');const prototype=take();
+    if(prototype.kind!=='string')fail('SYNTAX','CHILD requires an exact quoted prototype ID.',prototype.location);
+    if(slot===null){expect('INTO');slot=identifier().value;}
+    endLine();const initializers=[];
+    while(!is('END')){const p=expect('PROPERTY'),key=identifier();expect('=');initializers.push(node('initializer',p,{name:key.value,value:expression()}));endLine();}
+    expect('END');expect('CHILD');endLine();return node('child',start,{name:name.value,prototype:prototype.value,slot,initializers});
+  }
+  function presentationParts(nesting=0) {
+    if(nesting>16)fail('SYNTAX','Presentation nesting exceeds 16.',token().location);
+    const parts=[];
+    while(!is('END')){
+      const start=token();
+      if(eat('CONTENT')||eat('HEADING')){const role=String(start.value).toUpperCase();parts.push(node('presentationText',start,{role,value:expression()}));endLine();}
+      else if(eat('REPEAT')){const name=identifier();expect('IN');const value=expression();expect('LIMIT');const limit=expression();endLine();const body=presentationParts(nesting+1);expect('END');expect('REPEAT');endLine();parts.push(node('presentationRepeat',start,{name:name.value,value,limit,body}));}
+      else fail('SYNTAX','Presentation supports CONTENT, HEADING and bounded REPEAT.',start.location);
+    }
+    return parts;
+  }
   if(classDeclaration){classModifiers=modifiers();expect('CLASS');className=identifier().value;
     if(eat('EXTENDS')){if(token().kind==='string')parent=take().value;else{parent='';while(!['newline','eof'].includes(token().kind))parent+=String(take().value);}}endLine();}
   let interfaceName=null;if(interfaceDeclaration){expect('INTERFACE');interfaceName=identifier().value;endLine();}
@@ -83,6 +103,9 @@ export function parse(source,{module=false,interfaceDeclaration=false,classDecla
   const procedures=[],events=[];blank();
   while(token().kind!=='eof'&&!((interfaceDeclaration||classDeclaration)&&is('END'))){
     const start=token(),mods=classDeclaration?modifiers():[];
+    if(classDeclaration&&is('CHILD')){if(mods.length)fail('SYNTAX','CHILD has no access modifiers.',start.location);children.push(child());continue;}
+    if(classDeclaration&&eat('SLOT')){if(mods.length)fail('SYNTAX','SLOT has no access modifiers.',start.location);const slot=identifier().value;endLine();while(is('CHILD'))children.push(child(slot));expect('END');expect('SLOT');endLine();continue;}
+    if(classDeclaration&&eat('PRESENTATION')){if(mods.length||presentation)fail('SYNTAX','Declare one unmodified PRESENTATION block.',start.location);expect('SERVER');endLine();const parts=presentationParts();expect('END');expect('PRESENTATION');endLine();presentation=node('presentation',start,{target:'server',parts});continue;}
     if(classDeclaration&&eat('META')){const name=identifier();expect('=');metadata.push(node('metadata',start,{name:name.value,value:expression(),modifiers:mods}));endLine();continue;}
     if(classDeclaration&&eat('IMPLEMENTS')){const id=take();if(id.kind!=='string')fail('SYNTAX','IMPLEMENTS requires an exact quoted interface ID.',id.location);implementations.push(node('implementation',start,{id:id.value,modifiers:mods}));endLine();continue;}
     if(classDeclaration&&eat('PROPERTY')){const name=identifier();expect('AS');const type=identifier();const value=eat('=')?expression():null;const enumeration=eat('ENUM')?expression():null,requires=eat('REQUIRES')?expression():null;properties.push(node('property',start,{name:name.value,type:type.value,value,enumeration,requires,modifiers:mods}));endLine();continue;}
@@ -99,7 +122,7 @@ export function parse(source,{module=false,interfaceDeclaration=false,classDecla
     }else fail('SYNTAX',classDeclaration?'Class bodies contain metadata, properties, methods and event signatures.':'Modules contain only SUB, FUNCTION and EVENT declarations.',start.location);
   }
   if(interfaceDeclaration){expect('END');expect('INTERFACE');endLine();if(token().kind!=='eof'||imports.length)fail('SYNTAX','Interfaces contain signatures only.',token().location);}
-  if(classDeclaration){expect('END');expect('CLASS');endLine();if(token().kind!=='eof')fail('SYNTAX','One class per source file; no top-level executable code.',token().location);return {kind:'class',location,name:className,modifiers:classModifiers,parent,metadata,properties,contracts,implementations,procedures,events,imports};}
+  if(classDeclaration){expect('END');expect('CLASS');endLine();if(token().kind!=='eof')fail('SYNTAX','One class per source file; no top-level executable code.',token().location);return {kind:'class',location,name:className,modifiers:classModifiers,parent,metadata,properties,contracts,implementations,procedures,events,imports,children,presentation};}
   return {kind:'module',location,procedures,events,imports,interfaceName};
 }
 

@@ -7,6 +7,7 @@ import { PrototypeRegistry } from '../object-model/prototypes.js';
 import { clean, freeze } from '../object-model/validation.js';
 import { interfaceType } from '../object-model/interfaces.js';
 import { contractTypes, safeKey } from '../sewn/schema.js';
+import { resolveMember } from '../object-model/members.js';
 const types={string:'string',number:'number',boolean:'boolean',object:'object',array:'array',null:'null'};
 const canonicalType=t=>({string:'String',number:'Number',integer:'Integer',float:'Float',boolean:'Boolean',object:'Object',array:'Array',null:'Null'})[t.toLowerCase()];
 const error=(n,code,message)=>fail(code,message,n.location);
@@ -46,6 +47,31 @@ export function parseDefinition(source,options={}) {
     d.properties[n.name]=rule;
   }
   const propertyTable={...base?.properties,...d.properties};
+  if(ast.presentation){
+    if(options.manifest?.runtime?.includes('client'))error(ast.presentation,'TARGET','PRESENTATION SERVER requires a server-only package; H2 cannot execute presentation bindings.');
+    const binding=(n,locals=new Map())=>{
+      if(n.kind==='literal'&&['string','number','boolean'].includes(typeof n.value))return {value:n.value,type:typeof n.value};
+      if(n.kind==='name'&&locals.has(n.name.toLowerCase()))return {value:{get:n.name.toLowerCase()},type:locals.get(n.name.toLowerCase())};
+      if(n.kind==='member'&&n.target.kind==='name'&&n.target.name.toLowerCase()==='me'){
+        let member;try{member=resolveMember({properties:propertyTable,propertyOwners:{}},'property',n.key,n.exact===true);}catch{error(n,'NAME','Unknown or ambiguous presentation property.');}
+        if((member.rule.access??'public')!=='public'||member.rule.hidden||member.rule.requires?.length)error(n,'ACCESS','Presentation requires a public discoverable property without capability requirements.');
+        return {value:{get:`properties.${member.name}`},type:member.rule.type};
+      }
+      if(n.kind==='array'){const values=n.items.map(v=>binding(v,locals));return {value:values.map(v=>v.value),type:'array',element:values.length&&values.every(v=>v.type===values[0].type)?values[0].type:null};}
+      error(n,'TYPE','Presentation accepts scalar literals, typed Me properties and scalar repeat items; executable expressions are unsupported.');
+    };
+    const parts=(nodes,locals=new Map(),depth=0)=>{if(depth>16)error(ast.presentation,'LIMIT','Presentation repetition nesting exceeds 16.');return nodes.map(n=>{
+      if(n.kind==='presentationText'){const b=binding(n.value,locals);if(!['string','number','boolean'].includes(b.type))error(n,'TYPE','CONTENT and HEADING require String, Number or Boolean.');return {tag:n.role==='HEADING'?'h2':'p',text:b.value};}
+      const source=binding(n.value,locals),limit=literal(n.limit),name=n.name.toLowerCase();
+      if(limit!==256)error(n,'LIMIT','Server presentation uses the canonical 256-item bound; specify LIMIT 256.');
+      if(source.type!=='array'||!source.element||!['string','number','boolean'].includes(source.element))error(n,'TYPE','REPEAT currently requires a homogeneous scalar literal array; persisted Array properties lack element contracts.');
+      if(source.value.length>limit)error(n,'LIMIT','Repeated data exceeds its declared bound.');
+      if(locals.has(name)||['properties','data','query','id','path','csrf','transfer','constructor','prototype','__proto__'].includes(name)||!/^[a-z][a-z0-9_-]{0,31}$/.test(name))error(n,'NAME','Reserved or duplicate repeat context.');
+      return {tag:'div',each:{in:source.value,as:name},children:parts(n.body,new Map([...locals,[name,source.element]]),depth+1)};
+    });};
+    d.presentation={schema:'wydgit.presentation/0.1',template:{tag:'section',children:parts(ast.presentation.parts)}};
+  }
+  const composition=ast.children.map(n=>{reserve(n);const properties=Object.create(null);for(const p of n.initializers){if(Object.hasOwn(properties,p.name))error(p,'NAME','Duplicate child initializer.');properties[p.name]=literal(p.value);}return {name:n.name,type:n.prototype,slot:n.slot,properties};});
   for(const n of ast.contracts){reserve(n);const access=modifiers(n,['public','private','protected','friend']);d.events[n.name]={access,params:n.params.map(p=>{const type=canonicalType(p.type);if(!type)error(p,'TYPE','Event payload requires a portable data type.');return {name:p.name,type};})};}
   for(const n of ast.implementations){modifiers(n,[]);const version=options.manifest?.interfaces?.[n.id];if(!version||Object.hasOwn(d.implements,n.id))error(n,'TYPE','IMPLEMENTS requires a unique exact manifest interface dependency.');d.implements[n.id]=version;}
   const resolveType=t=>{const builtin=contractTypes.find(v=>v.toLowerCase()===t.toLowerCase());if(builtin)return builtin;if(interfaceType(t)){registry.interface(t);return t;}const contract=registry.resolveInterface(t,options.manifest?.interfaces);return `interface:${contract.id}@${contract.version}`;};
@@ -73,6 +99,6 @@ export function parseDefinition(source,options={}) {
   const module=procedures=>({kind:'module',location:ast.location,procedures,events:[],imports:ast.imports});
   d.behavior=compileAst(module(methods),null,true,compileOptions);
   for(const [hook,n] of hooks)d.lifecycle[hook]=compileAst(module([n]),null,true,compileOptions);
-  return freeze(clean({schema:'wydgit.definition/0.19',definition:d,metadata,locations:{declaration:ast.location,members:Object.fromEntries([...ast.properties,...ast.procedures,...ast.contracts].map(n=>[n.name,n.location])),metadata:Object.fromEntries(ast.metadata.map(n=>[n.name,n.location]))}}));
+  return freeze(clean({schema:composition.length||ast.presentation?'wydgit.definition/0.20':'wydgit.definition/0.19',definition:d,metadata,...(composition.length?{composition}:{}),locations:{declaration:ast.location,members:Object.fromEntries([...ast.properties,...ast.procedures,...ast.contracts,...ast.children].map(n=>[n.name,n.location])),metadata:Object.fromEntries(ast.metadata.map(n=>[n.name,n.location]))}}));
 }
 export function compileClass(source,options={}) {const ir=parseDefinition(source,options);try{return lowerDefinition(ir,options);}catch(e){fail('DEFINITION',e.message,ir.locations.declaration);}}

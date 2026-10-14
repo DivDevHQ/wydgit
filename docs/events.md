@@ -326,3 +326,12 @@ POST population now discovers every descendant Field of the target Form and adap
 ## 0.2-P local packages
 
 Normal startup activates cataloged declarative Page lifecycle and semantic action bindings through existing WydBASIC/SEWN event machinery. No package JavaScript runs. One package principal per Page is enforced. See [packages](packages.md).
+
+## Source authoring checkpoint (0.20, incomplete)
+
+The 0.20 checkpoint does not change host event names, dispatch semantics, handler
+budgets or application lifecycle integration. Typed class events and the trusted
+instance-hook controller are still required implementation work.
+
+See [the 0.20 checkpoint](milestones/sewn-0.20/README.md) for implemented grammar,
+validation, evidence and remaining completion gates.

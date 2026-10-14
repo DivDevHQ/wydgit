@@ -1340,3 +1340,12 @@ Properties cannot persist Integer/Float/DateTime/reference contracts and reject
 those declarations. Lifecycle bodies compile but are not automatically dispatched;
 RAISE EVENT is type-checked and explicitly rejected pending shared-budget instance
 dispatch. H2 browser bootstrap does not accept executable class definitions.
+
+## Source authoring checkpoint (0.20, incomplete)
+
+The in-progress 0.20 checkpoint adds CHILD/INTO, inherited SLOT selection,
+PRESENTATION SERVER and trusted compileFamily builds. Dynamic typed templates,
+event delivery and automatic instance lifecycle execution remain unfinished.
+
+See [the 0.20 checkpoint](milestones/sewn-0.20/README.md) for implemented grammar,
+validation, evidence and remaining completion gates.

@@ -267,3 +267,13 @@ no migration. Automatic instance hook execution and typed event emission remain
 deferred; current class compilation rejects emission and does not grant H2 host
 construction access. See [0.19](milestones/sewn-0.19/README.md) for exact contracts,
 metadata trust, portable property type restrictions and runtime prerequisites.
+
+## Source authoring checkpoint (0.20, incomplete)
+
+Source-authored children now lower to existing canonical package templates.
+Build-only child names are not runtime references or new prototype fields. Existing
+ownership/slot/hydration/member contracts remain unchanged. Instance lifecycle and
+custom-event execution required by 0.20 are still unfinished.
+
+See [the 0.20 checkpoint](milestones/sewn-0.20/README.md) for implemented grammar,
+validation, evidence and remaining completion gates.

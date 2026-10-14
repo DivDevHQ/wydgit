@@ -1,0 +1,14 @@
+{
+  "schema":"wydgit-package/0.1",
+  "id":"divdev/source-components",
+  "publisher":"divdev",
+  "version":"0.1.0",
+  "platform":">=0.3.0-alpha.1 <0.4.0",
+  "runtime":["server"],
+  "resources":{"prototypes":"prototypes.json","template":"section.json","sources":{}},
+  "requires":{"schema":"wydgit.requirements/0.1","libraries":[]},
+  "storage":[],
+  "permissions":{"capabilities":[],"traversal":[],"visible":["source-panel","source-panel-First","source-panel-Second"],"editable":[],"scopes":{"wydstore":[]}},
+  "bindings":[],
+  "installables":[{"id":"source-panel","kind":"section-template"}]
+}

@@ -4,3 +4,4 @@ export { compile,compileModule,compilePrototype,compileInterface } from './compi
 
 export { parseClass } from './parse.js';
 export { compileClass, parseDefinition } from './class.js';
+export { compileFamily } from './family.js';

@@ -160,3 +160,12 @@ Declarative inputs may use bounded `maxlength` and semantic `autocomplete` hints
 (`username`, `nickname`, `current-password`, `new-password`, `off`). Password input
 values always render empty. These generic hints apply independently of WydGate;
 portable forms still use the existing labelled input and approved submission binding.
+
+## Source authoring checkpoint (0.20, incomplete)
+
+WBasic PRESENTATION SERVER now authors a checked subset of this existing model:
+scalar CONTENT/HEADING, public one-way property reads and bounded scalar literal
+each. Dynamic data-provider and typed child-template authoring remain unsupported.
+
+See [the 0.20 checkpoint](milestones/sewn-0.20/README.md) for implemented grammar,
+validation, evidence and remaining completion gates.

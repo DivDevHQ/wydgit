@@ -1,5 +1,16 @@
 ## Unreleased
 
+### WBasic 0.20 checkpoint — Source composition and server presentation
+
+- Add CHILD/INTO and inherited SLOT authoring, typed public literal initializers,
+  and deterministic canonical package-template expansion through a shared 0.20 IR.
+- Add SERVER presentation with scalar public-property bindings and bounded literal
+  repetition using the existing presentation model; explicitly reject client targets.
+- Add pure trusted multi-file family compilation, existing installer integration,
+  independent JSON/SEWN golden conformance and hostile source/IR coverage.
+- Preserve 0.19 APIs, executable schemas and all immutable WydClient distributions.
+  Full 0.20 event/lifecycle/dynamic-template and Taskboard acceptance work remains incomplete.
+
 ### WydClient 0.1.0-alpha.4 — Immutable distribution correction
 
 - Restore alpha.3 readable/minified distributions exactly to pre-0.19 H2 bytes;

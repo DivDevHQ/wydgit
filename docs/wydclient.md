@@ -25,3 +25,12 @@ verified H2 artifacts. All current examples pin alpha.4; protocol 0.1 and Wydgin
 0.3.0-alpha.7 remain unchanged. Repository builds now reject overwrites/deletions
 of committed versioned artifacts and require a new implementation version for
 changed bytes. See [distribution correction and verification](milestones/sewn-0.19/distribution-correction.md).
+
+## Source authoring checkpoint (0.20, incomplete)
+
+The 0.20 checkpoint changes build tooling only; alpha.4 and historical artifacts
+remain unchanged. SERVER presentation explicitly rejects client targets. Browser
+class execution and binding/lifecycle/event support still require H3.
+
+See [the 0.20 checkpoint](milestones/sewn-0.20/README.md) for implemented grammar,
+validation, evidence and remaining completion gates.

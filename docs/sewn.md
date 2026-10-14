@@ -531,3 +531,12 @@ validation, not to the SEWN executable envelope. Hook modules are not ordinary
 methods and are not dispatched automatically. Typed event emission is rejected
 until declaration-bound instance dispatch can preserve shared chain budgets.
 See [0.19](milestones/sewn-0.19/README.md) for exact supported and deferred behavior.
+
+## Source authoring checkpoint (0.20, incomplete)
+
+The 0.20 composition/presentation checkpoint adds no executable SEWN wire schema
+or runtime operation. Generated methods keep their existing minimum schema. Typed
+class emission and shared budgets across separate handler executions remain missing.
+
+See [the 0.20 checkpoint](milestones/sewn-0.20/README.md) for implemented grammar,
+validation, evidence and remaining completion gates.
