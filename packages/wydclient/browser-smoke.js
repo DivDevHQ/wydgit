@@ -10,7 +10,7 @@ import assert from 'node:assert/strict';
 import { load } from 'cheerio';
 const run = promisify(execFile), root = fileURLToPath(new URL('./', import.meta.url));
 const browser = process.env.WYDCLIENT_CHROME ?? 'google-chrome';
-const bundle = '/dist/wydgit-client-0.1.0-alpha.2.min.js';
+const bundle = '/dist/wydgit-client-0.1.0-alpha.3.min.js';
 const report = '<script src="/examples/report.js"></script>';
 const body = '<main id="host-content"><h1>Host fixture</h1><pre id="diagnostics">Initializing…</pre></main>';
 const script = `<script src="${bundle}"></script>`;
@@ -38,6 +38,12 @@ const server = createServer(async (request, response) => {
 });
 await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });
 try {
+  for (const path of ['/examples/instances.html', '/examples/instances-embedded.html']) {
+    const { stdout } = await run(browser, ['--headless', '--disable-gpu', `--user-data-dir=${tmpdir()}/wydclient-h2-${process.pid}`, '--dump-dom', '--virtual-time-budget=5000', `http://127.0.0.1:${server.address().port}${path}`], { maxBuffer: 1024*1024, timeout:20000 });
+    const $=load(stdout); assert.equal($('#h2-result').text(),'PASS',path); assert.equal($('#host-content h1').length,1); assert.ok($('[data-wydclient-object] p').toArray().some(el => $(el).text()==='Second'));
+    if(path.includes('embedded')) assert.match($('body').text(),/Surviving root/);
+    console.log(`PASS ${path}: construction, placement, removal, isolation`);
+  }
   const version = (await run(browser, ['--version'])).stdout.trim(); console.log(version);
   const cases = [
     ['/examples/index.html', true, 'acme/home-page'], ['/examples/default.html', true, 'wydgit.core/page'],
@@ -75,5 +81,5 @@ try {
     }
     console.log(`PASS ${path}: independent embedded Pages, trust and lifecycle, preserved host`);
   }
-  console.log(`${cases.length + 2}/${cases.length + 2} real-browser smoke cases passed.`);
+  console.log(`${cases.length + 4}/${cases.length + 4} real-browser smoke cases passed.`);
 } finally { await new Promise(resolve => server.close(resolve)); }

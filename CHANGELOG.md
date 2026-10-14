@@ -715,3 +715,12 @@ development milestone.
   - WydClient
   - canonical Wyd libraries
 - Licensed the project under MPL-2.0.
+
+## WydClient 0.1.0-alpha.3 — 0.3-H2
+
+- Add trusted per-environment host construction drafts, canonical property/slot
+  validation, opaque references, ordered placement and subtree disposal.
+- Render Section/Block composition and literal typed content with fixed safe
+  styling hooks; preserve host content and independent roots during cleanup.
+- Add static standalone/embedded examples, adversarial tests and H3 handoff.
+- Retain WydSUB 0.1, unchanged Wydgine version and immutable prior client bundles.

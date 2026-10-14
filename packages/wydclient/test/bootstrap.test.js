@@ -53,7 +53,7 @@ test('default bootstrap: canonical H0 Page, logical destinations, immutable API,
   assert.equal(doc.body.lastChild.getAttribute('data-wydclient-region'), 'bottom');
   assert.equal(await api.ready(), result); assert.equal(doc.body.children.length, 3);
   assert.throws(() => { result.page.properties.title = 'Changed'; });
-  assert.deepEqual(Object.keys(api), ['version', 'protocol', 'ready', 'state', 'mount']);
+  assert.deepEqual(Object.keys(api), ['host', 'version', 'protocol', 'ready', 'state', 'mount']);
   assert.doesNotMatch(JSON.stringify(result), /ownerDocument|capabilities|trustedKeys/);
 });
 test('loading document waits before bootstrap', async t => {

@@ -2,8 +2,9 @@ import { SCHEMA, resolveProperties } from '../../../wydgine/object-model/schema.
 import { clean, freeze, record, check, shape, parseJSON, LIMITS, decode64 } from './data.js';
 import { download } from './network.js';
 import { loadPackage, identityPattern, publisherPattern } from './packages.js';
+import { instances } from './instances.js';
 import { approveRegistry } from './registry.js';
-export const VERSION = '0.1.0-alpha.2';
+export const VERSION = '0.1.0-alpha.3';
 export const PROTOCOL = Object.freeze({ name: 'WydSUB', version: '0.1' });
 // Retain the approved read-only registry and canonical Page for later trusted adapters.
 // There is intentionally no host/portable accessor for this private runtime state.
@@ -55,20 +56,21 @@ export function createRuntime(host, configuration = {}) {
 function createContext(host, configuration, scope) {
   let promise, state = 'idle', result;
   const embedded = Boolean(scope.root), controller = new AbortController();
-  let snapshotError, properties, regions = null;
+  let snapshotError, properties, regions = null, objects;
   try { configuration = clean(configuration); properties = clean(scope.properties ?? {}); }
   catch (error) { snapshotError = error; }
   scope.properties = null;
   let resolveDisposal;
   const disposal = new Promise(resolve => { resolveDisposal = resolve; });
-  const api = Object.freeze(embedded ? { ready, get state() { return state; }, unmount } :
-    { version: VERSION, protocol: PROTOCOL, ready, get state() { return state; }, mount: scope.mount });
+  const api = Object.freeze(embedded ? { ready, host: hostAdapter, get state() { return state; }, unmount } :
+    { host: hostAdapter, version: VERSION, protocol: PROTOCOL, ready, get state() { return state; }, mount: scope.mount });
+  function hostAdapter() { check(state === 'ready' && objects, 'OBJECT.CONTEXT', 'Expected approved live environment'); return objects.api; }
   const active = () => check(state !== 'disposed', 'BOOTSTRAP.DISPOSED', 'Page environment disposed');
   function unmount() {
     if (state === 'disposed') return result;
-    state = 'disposed'; controller.abort();
+    state = 'disposed'; controller.abort(); objects?.dispose(); objects = null;
     if (regions) for (const region of Object.values(regions)) {
-      // H1 has no portable children. Preserve any host-added children, including moved roots.
+      // Generated children were disposed; preserve host additions and independent roots.
       while (region.firstChild && region.parentNode) region.parentNode.insertBefore(region.firstChild, region);
       region.remove();
     }
@@ -92,7 +94,7 @@ function createContext(host, configuration, scope) {
       controller.signal.addEventListener('abort', done, { once: true });
     });
     if (state === 'disposed') return result;
-    let registry, page, error = null;
+    let registry, page, error = null; const provenance = new Map();
     try {
       if (snapshotError) throw snapshotError;
       const policy = policyFrom(configuration);
@@ -127,7 +129,7 @@ function createContext(host, configuration, scope) {
         active();
         check(declarations.length + definitions.length <= LIMITS.prototypes, 'MANIFEST.LIMIT', 'Prototype limit exceeded');
         declarations.push(...definitions);
-        for (const d of definitions) verified[d.id] = ref.publisher;
+        for (const d of definitions) { verified[d.id] = ref.publisher; provenance.set(d.id, { publisher: ref.publisher, package: ref.id, packageVersion: ref.version }); }
       }
       registry = approveRegistry(declarations, verified);
       const selected = embedded ? scope.page ?? scope.root.getAttribute('data-wydgit-page') ?? 'wydgit.core/page' :
@@ -168,6 +170,7 @@ function createContext(host, configuration, scope) {
       regions = Object.freeze({ top, bottom });
     } catch { error = freeze({ code: 'BOOTSTRAP.BODY', message: messages.bootstrap }); }
     state = error ? 'failed' : 'ready';
+    if (!error) objects = instances({ registry, page, regions, provenance, active: () => check(state === 'ready', 'OBJECT.CONTEXT', 'Expected live environment'), boundary: scope.isBoundary });
     runtimes.set(api, Object.freeze({ registry, page, destinations, regions, approved: !error }));
     // Public diagnostics use the H0 generic export filter; registry remains closure-private.
     const publicProperties = Object.fromEntries(Object.entries(page.properties).filter(([key]) => {

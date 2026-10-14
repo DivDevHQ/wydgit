@@ -15,6 +15,6 @@ for (const minify of [false, true]) {
     } }] });
 }
 const bytes = await readFile(`${root}dist/wydgit-client-${pkg.version}.min.js`);
-const sizes = { version: pkg.version, protocol: pkg.wydsub, minified: bytes.length, gzip: gzipSync(bytes).length, brotli: brotliCompressSync(bytes).length };
+const sizes = { version: pkg.version, protocol: pkg.wydsub, readable: (await readFile(`${root}dist/wydgit-client-${pkg.version}.js`)).length, minified: bytes.length, gzip: gzipSync(bytes).length, brotli: brotliCompressSync(bytes).length };
 await writeFile(root + 'dist/sizes.json', JSON.stringify(sizes, null, 2) + '\n');
 console.log(JSON.stringify(sizes));

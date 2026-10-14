@@ -362,3 +362,15 @@ A single-file host (the immutable runtime remains an external script):
 <body><h1>Existing website</h1><pre id="status">Initializing…</pre></body>
 </html>
 ```
+
+## H2 trusted instance adapter (alpha.3)
+
+New integrations use `dist/wydgit-client-0.1.0-alpha.3.min.js` (or readable `.js`).
+Alpha.1 and alpha.2 distributions remain immutable compatibility artifacts.
+`ready()` retains its result shape. The global and mounted handles add `host()`
+for trusted host construction, ordered canonical placement, text rendering and
+cleanup. This adapter must never be exposed to portable application code.
+See the [H2 contract](../../docs/milestones/0.3-H2/README.md) for exact APIs,
+draft consumption, limits, rendering restrictions and H3 authority requirements.
+Static examples: `examples/instances.html` and `examples/instances-embedded.html`.
+Earlier sections describe the retained H1/H1b APIs and alpha.2 baseline.
