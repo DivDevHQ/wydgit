@@ -126,7 +126,7 @@ END IF
 Null tests have comparison precedence, tighter than AND/OR. `NOT item IS NULL`
 means `NOT (item IS NULL)`. General reference identity is supported separately in SEWN 0.9.
 
-`EXIT FOR` exits the nearest enclosing FOR EACH in the current procedure or
+`EXIT FOR` exits the nearest enclosing numeric FOR or FOR EACH in the current procedure or
 workflow. It works inside nested IF blocks, resumes after NEXT, and releases the
 loop variable. It cannot exit a caller's loop across a SUB/FUNCTION/method call,
 and is rejected outside a lexical loop. RETURN and STOP retain their existing
@@ -370,7 +370,7 @@ ShowThankYou → WydStore → request-local replacement → rendered Thank you, 
 CSRF/capability denial and subsequent/concurrent request isolation. The independent
 `test/sewn-procedures.test.js` imports no WydBASIC and proves SEWN owns execution.
 
-Deferred: REM, line numbers, semicolons, array indexing syntax, arbitrary dynamic
+Deferred: REM, line numbers, semicolons, arbitrary dynamic
 cross-file modules/imports, ByRef/Optional/ParamArray/default parameters,
 overloads, recursion, nested procedures, lambdas/closures/delegates, unrelated language classes, ASYNC/AWAIT, threads/parallelism, THROW, GOTO, DO/LOOP,
 WHILE, formatter/debugger/LSP and other source dialects.
@@ -591,3 +591,12 @@ Current SEWN 0.7 `CStr()` and `Val()` intrinsic lowering remains implemented.
 Migration to static-library wrappers is planned, not complete. Canonical package-ID
 casing and normalization remain unresolved; the `WBasic` source alias stays
 case-preserving.
+
+## WBasic / SEWN 0.13
+
+Read-only Array indexing, canonical collection operations, numeric FOR/NEXT with
+optional STEP, and initialized scalar/descriptor CONST bindings are implemented.
+Numeric loop variables are local and read-only; DIM and CONST inside loops remain
+deferred. String Length/Contains/IndexOf remain compatible, with checked Array
+dispatch only in 0.13. See [the complete contracts](milestones/wbasic-sewn-0.13.md)
+for wire grammar, equality, errors, budgets and portability evidence.

@@ -71,3 +71,14 @@ export const operationSignatures=Object.freeze({
 export const conversionTargets=Object.freeze(['String','Integer','Float','Number','Boolean','DateTime']);
 export const operationExpressions=Object.freeze({...contractExpressions,convert:['type','value','mode?'],operation:['name','args']});
 export const operationReservedNames=Object.freeze([...contractReservedNames,'CONVERT',...Object.keys(operationSignatures).map(x=>x.toUpperCase())]);
+
+// Collections, numeric iteration and immutable scalar bindings are 0.13-only.
+export const COLLECTION_SCHEMA='sewn/0.13';
+export const collectionSignatures=Object.freeze({...operationSignatures,
+ Length:['Collection'],Contains:['Collection','Value'],IndexOf:['Collection','Value'],
+ Slice:['Array','Integer','Integer'],Join:['Array','String'],Split:['String','String']
+});
+export const constantTypes=Object.freeze(['String','Number','Integer','Float','Boolean','Null','Scalar','DateTime','DataType']);
+export const collectionExpressions=Object.freeze({...operationExpressions,index:['target','index']});
+export const collectionStatements=Object.freeze({...selectionStatements,constant:['name','type','value'],forNumeric:['name','start','end','step','body']});
+export const collectionReservedNames=Object.freeze([...operationReservedNames,'SLICE','JOIN','SPLIT','CONST','TO','STEP']);

@@ -1,5 +1,11 @@
 ## Unreleased
 
+### WBasic / SEWN 0.13
+
+- Add read-only Array indexing and checked Length, Contains, IndexOf, Slice, Join and Split collection operations; preserve 0.12 String semantics.
+- Add numeric FOR/NEXT with optional STEP, local read-only loop variables, shared budgets and checked progress, plus initialized immutable scalar/descriptor CONST bindings.
+- Enforce dynamic indexed assignment contracts; preserve typed values, opaque-reference boundaries and older schemas. Add wire, compiler, browser and compatibility regressions and rebuild current client artifacts.
+
 ### WBasic / SEWN 0.12
 
 - Add portable canonical Convert, checked UTF-16 string primitives and finite math operations, including decimal half-away-from-zero Round.

@@ -384,3 +384,12 @@ The closed 0.12 grammar adds operation {name,args} and explicitly marked
 convert {type,value,mode:"canonical"}. Legacy convert remains unchanged.
 See [the operation contracts](milestones/wbasic-sewn-0.12.md) for the closed
 vocabulary, conversion matrix, rounding, Unicode, limits and runtime checks.
+
+## SEWN 0.13 collections, numeric loops and constants
+
+The closed 0.13 grammar adds index {target,index}, forNumeric
+{name,start,end,step,body}, constant {name,type,value}, and controlled Array
+dispatch/new collection names in operation {name,args}. Portable typeCheck
+contracts also enforce dynamic indexed assignments. Older schemas remain closed;
+0.12 string operation meanings remain unchanged. See [the milestone contracts](milestones/wbasic-sewn-0.13.md)
+for equality, scope, allocation, stepping, immutability and compatibility rules.

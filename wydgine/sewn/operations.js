@@ -76,3 +76,32 @@ export function operation(name,args,bounds,tick){
  if(Number.isSafeInteger(a)&&args.every(Number.isSafeInteger)&&!['Sqrt'].includes(name))numericCheck(result,'Integer');
  return result===0?0:result;
 }
+
+// Only the 0.13 executor dispatches here. Equality is its existing scalar comparator.
+export function collectionOperation(name,args,bounds,tick,compare){
+ const [a,b,c]=args;
+ const string=v=>ensure(typeof v==='string','TYPE');
+ const array=v=>ensure(Array.isArray(v),'TYPE');
+ const index=v=>{numericCheck(v,'Integer');ensure(v>=0,'TYPE');};
+ const comparable=v=>ensure(brand(v)||v===null||['string','number','boolean'].includes(typeof v),'TYPE');
+ const elements=n=>ensure(n+1<=bounds.valueNodes,'LIMIT');
+ if(['Length','Contains','IndexOf'].includes(name)){
+  if(typeof a==='string')return operation(name,args,bounds,tick);
+  array(a);
+  if(name==='Length')return a.length;
+  comparable(b);for(const item of a){tick();comparable(item);}
+  for(let i=0;i<a.length;i++){tick();if(compare(a[i],b,'='))return name==='Contains'?true:i;}
+  return name==='Contains'?false:-1;
+ }
+ if(name==='Slice'){array(a);index(b);index(c);const start=Math.min(b,a.length),length=Math.min(c,a.length-start);elements(length);return a.slice(start,start+length);}
+ if(name==='Join'){
+  array(a);string(b);let size=0;
+  for(let i=0;i<a.length;i++){tick();string(a[i]);size+=a[i].length+(i?b.length:0);ensure(size<=bounds.string,'LIMIT');}
+  return a.join(b);
+ }
+ string(a);string(b);
+ // Preflight the exact output element count before native literal splitting.
+ let count=b===''?a.length:1;
+ if(b!==''){let position=0,next;while((next=a.indexOf(b,position))!==-1){tick();count++;elements(count);position=next+b.length;}}
+ elements(count);return a.split(b);
+}

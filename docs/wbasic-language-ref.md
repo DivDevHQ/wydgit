@@ -324,7 +324,7 @@ CONST MaxPageSize AS Integer = 8
 CONST AppName AS String = "Taskboard"
 ```
 
-Constants must be initialized on declaration and cannot subsequently be reassigned.
+Constants must be initialized on declaration and cannot subsequently be reassigned. Implemented contracts are String, Number, Integer, Float, Boolean, Null, Scalar, DateTime and DataType; collections and Wydgit references are excluded. Dynamic initializers require an explicit type. See [0.13](milestones/wbasic-sewn-0.13.md#constant-bindings).
 
 ---
 
@@ -605,7 +605,7 @@ NEXT i
 
 Numeric loops are bounded by execution limits and reject invalid increments.
 
-The loop variable's scope and whether it remains accessible after NEXT must be specified consistently with existing FOR EACH scoping rules.
+The numeric loop variable is local, read-only and unavailable after NEXT. Bounds and nonzero STEP evaluate once. Finite increments must progress and preserve checked Integer constraints; fractional steps use IEEE 754 addition. See [0.13](milestones/wbasic-sewn-0.13.md#numeric-iteration).
 
 ## 9.3 EXIT FOR
 
@@ -666,11 +666,11 @@ Canonical array indexing is zero-based.
 
 Index expressions must resolve to valid nonnegative integers.
 
-Initially, array indexing will be read-only. Controlled indexed updates may be introduced after copy/mutation semantics are defined.
+Array indexing is implemented as read-only. Nonnegative safe Integer indices must be below the Array length; invalid or exhausted reads fail with SEWN.TYPE. Nested typed values retain their identities. Objects, Strings and arrays of opaque references cannot be indexed.
 
 ## 10.3 Collection operations
 
-Proposed canonical functions:
+Implemented canonical functions in SEWN 0.13:
 
 | Function | Description |
 |---|---|
@@ -681,7 +681,7 @@ Proposed canonical functions:
 | `Join(collection, separator)` | Join strings |
 | `Split(text, separator)` | Split text into an Array |
 
-Operations must define type constraints, comparison behavior, allocation limits, and whether results are copies.
+Length, Contains and IndexOf dispatch only on String or portable Array values. Membership uses existing scalar equality; nested arrays/objects are unsupported search values. Slice clamps ranges and copies values. Join requires Strings; Split uses literal UTF-16 separators. See [0.13](milestones/wbasic-sewn-0.13.md#collection-operations-and-equality) for edge cases and allocation limits.
 
 Interface-based collections will eventually expose their own declared methods.
 
