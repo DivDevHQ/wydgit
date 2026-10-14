@@ -56,7 +56,8 @@ export function parse(source,{module=false}={}) {
       if(each){expect('IN');fields={items:expression()};}
       else{expect('=');const initial=expression();expect('TO');const end=expression();const step=eat('STEP')?expression():node('literal',start,{value:1});fields={start:initial,end,step};}
       endLine();const body=block(['NEXT'],nesting+1);expect('NEXT');if(token().kind==='identifier'){const next=take();if(next.value.toLowerCase()!==name.value.toLowerCase())fail('NAME','NEXT variable does not match.',next.location);}endLine();return node(each?'forEach':'forNumeric',start,{name:name.value,...fields,body});}
-    else if(eat('EXIT')){expect('FOR');result=node('exitFor',start);}
+    else if(eat('DO')){const mode=eat('WHILE')?'while':(expect('UNTIL'),'until');const condition=expression();endLine();const body=block(['LOOP'],nesting+1);expect('LOOP');endLine();return node('do',start,{mode,condition,body});}
+    else if(eat('EXIT')){const kind=eat('DO')?'exitDo':(expect('FOR'),'exitFor');result=node(kind,start);}
     else if(eat('RETURN'))result=node('return',start,{value:['newline','eof'].includes(token().kind)?null:expression()});
     else if(eat('CALL'))result=node('procedureCall',start,{value:expression()});
     else if(eat('STOP'))result=node('stop',start,{value:['newline','eof'].includes(token().kind)?null:expression()});

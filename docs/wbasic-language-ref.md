@@ -637,9 +637,31 @@ DO UNTIL condition
 LOOP
 ```
 
-Conditional loops do not bypass SEWN iteration or execution budgets.
+Implemented in `sewn/0.16`. The condition evaluates before every potential
+iteration and must be Boolean: WHILE continues on TRUE, UNTIL on FALSE. An
+initially terminating condition executes no body. Known non-Boolean source types
+fail compilation; dynamic non-Boolean values fail with SEWN.TYPE, without coercion.
 
-Unbounded loops are never permitted merely because the source syntax allows them.
+`EXIT DO` exits the innermost lexically enclosing DO in the same procedure, even
+through nested FOR, IF, SELECT or TRY blocks. Nested DO consumes its own exit.
+`EXIT FOR` still targets the nearest FOR, including through an intervening DO.
+Unreachable exits are validated. RETURN propagates to the containing procedure;
+STOP remains workflow-only and propagates out of loops.
+
+Initialize DIM/CONST bindings before loops; declarations inside any loop remain
+deferred, following existing FOR rules. DO introduces no binding, and assignments
+to existing mutable names persist. Numeric FOR bindings remain read-only/local.
+
+Conditions, attempted continuing iterations and body statements spend the existing
+shared execution budget, including empty bodies and procedure/static-library calls.
+Iteration, step and deadline reductions remain authoritative. SEWN.LIMIT remains
+fatal: CATCH cannot restart execution, and fatal failures bypass FINALLY. Normal
+exits and RETURN run FINALLY under existing rules; recoverable condition/body
+errors use ordinary TRY/CATCH handling. Event cancellation retains existing CLIENT
+behavior and introduces no new loop cancellation API.
+
+Postcondition LOOP WHILE/UNTIL, bare DO, CONTINUE, WHILE/WEND and GOTO remain
+unsupported. See [the implemented milestone](milestones/wbasic-sewn-0.16.md).
 
 ---
 

@@ -449,3 +449,32 @@ WydClient lazily loads a fixed local adapter and bundled engine from the approve
 runtime module routes; it requires neither the source compiler, resolver, installer,
 WASM, CDN nor privileged browser capability. Shared JSON fixtures and adversarial
 regressions verify the same accepted results, error codes and resource reductions.
+
+## Version 0.16: conditional DO loops
+
+`sewn/0.16` extends 0.15 with two closed statements:
+
+```json
+{"op":"do","mode":"while","condition":{"op":"literal","value":true},"body":[{"op":"exitDo"}]}
+```
+
+`mode` is exactly `while` or `until`; condition and body are required structured
+expression/statement data. `exitDo` has no operands. Unknown fields, invalid modes,
+malformed nested nodes and exits without an enclosing DO in the same procedure
+fail SEWN.INVALID, including unreachable branches. Historical schemas reject both
+new statements and retain their previous operation and resource contracts.
+
+The executor reevaluates a strictly Boolean condition before each potential
+iteration. WHILE enters on true, UNTIL on false; both can execute zero iterations.
+Each condition expression spends normal steps; each continuing iteration spends
+an additional step and one shared iteration, even with an empty body. Statements,
+procedure calls, linked static calls and nested FOR/DO share caller counters and
+deadline. SEWN.TYPE is recoverable; SEWN.LIMIT remains nonrecoverable and bypasses
+FINALLY. Ordinary early exits/returns run FINALLY under existing semantics.
+
+DO consumes only its nearest exitDo signal. Other loop exits, RETURN and workflow
+STOP propagate unchanged. Compiler block visibility/mutation follows existing FOR
+rules; DIM/CONST inside loops remain deferred. No source interpreter ships to
+WydClient: server and client execute the same validator and executor. Linking a
+0.16 static library promotes its caller to 0.16. See the
+[0.16 milestone](milestones/wbasic-sewn-0.16.md) for verification and sizes.

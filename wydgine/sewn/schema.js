@@ -91,3 +91,8 @@ export const REGEX_SCHEMA='sewn/0.15';
 export const regexSignatures=Object.freeze({RegexTest:['String','String','String'],RegexMatch:['String','String','String'],RegexMatches:['String','String','String'],RegexReplace:['String','String','String','String'],RegexSplit:['String','String','String']});
 export const regexOperationSignatures=Object.freeze({...collectionSignatures,...regexSignatures});
 export const regexReservedNames=Object.freeze([...collectionReservedNames,...Object.keys(regexSignatures).map(x=>x.toUpperCase())]);
+
+// Precondition loops extend only the 0.16 grammar.
+export const DO_SCHEMA='sewn/0.16';
+export const doStatements=Object.freeze({...collectionStatements,do:['mode','condition','body'],exitDo:[]});
+export const doReservedNames=Object.freeze([...regexReservedNames,'UNTIL']);

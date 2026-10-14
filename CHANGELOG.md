@@ -1,5 +1,15 @@
 ## Unreleased
 
+### WBasic / SEWN 0.16
+
+- Add precondition DO WHILE / DO UNTIL and lexical EXIT DO in closed sewn/0.16.
+- Reuse shared server/client step, iteration and deadline enforcement, including
+  empty infinite loops and nested procedure/static-library calls.
+- Preserve FOR exits, RETURN/STOP, recovery/fatal FINALLY semantics and historical
+  schemas; promote linked conditional-loop libraries to the required wire version.
+- Add server/browser conformance and malformed-wire/security regressions, document
+  scope and deferred syntax, and measure bootstrap/event executor size changes.
+
 ### WBasic / SEWN 0.15
 
 - Add RegexTest, RegexMatch, RegexMatches, RegexReplace and RegexSplit as reserved

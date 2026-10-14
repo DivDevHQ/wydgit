@@ -1,3 +1,4 @@
+import {DO_SCHEMA,doStatements,doReservedNames} from './schema.js';
 import {REGEX_SCHEMA,regexReservedNames,regexOperationSignatures} from './schema.js';
 import {STATIC_SCHEMA} from './schema.js';
 import {COLLECTION_SCHEMA,collectionExpressions,collectionStatements,collectionReservedNames,collectionSignatures,constantTypes} from './schema.js';
@@ -15,12 +16,12 @@ export function validate(document) {
  let p;try{p=clean(document);}catch{fail('INVALID');}
  let nodes=0;const size=(v,d=0)=>{ensure(d<=64,'LIMIT');ensure(++nodes<=MAXIMA.programNodes,'LIMIT');if(v&&typeof v==='object')Object.values(v).forEach(x=>size(x,d+1));};size(p);ensure(JSON.stringify(p).length<=MAXIMA.programSize,'LIMIT');
  const shape=(n,fields)=>{ensure(n&&typeof n==='object'&&!Array.isArray(n));ensure(Object.keys(n).every(k=>k==='op'||fields.some(f=>f.replace('?','')===k)));for(const f of fields)if(!f.endsWith('?'))ensure(Object.hasOwn(n,f));};
- const regex=p?.schema===REGEX_SCHEMA,staticLinked=regex||p?.schema===STATIC_SCHEMA,collections=staticLinked||p?.schema===COLLECTION_SCHEMA,operations=collections||p?.schema===OPERATION_SCHEMA,contracts=operations||p?.schema===CONTRACT_SCHEMA,numeric=contracts||p?.schema===NUMERIC_SCHEMA,types=contracts?contractTypes:numeric?numericTypes:sourceTypes;
- const selection=numeric||p?.schema===SELECTION_SCHEMA,exceptions=selection||p?.schema===EXCEPTION_SCHEMA,conversion=exceptions||p?.schema===CONVERSION_SCHEMA,control=conversion||p?.schema===CONTROL_SCHEMA,reserved=regex?regexReservedNames:collections?collectionReservedNames:operations?operationReservedNames:contracts?contractReservedNames:numeric?numericReservedNames:selection?selectionReservedNames:exceptions?exceptionReservedNames:conversion?conversionReservedNames:control?controlReservedNames:reservedNames;
+ const conditional=p?.schema===DO_SCHEMA,regex=conditional||p?.schema===REGEX_SCHEMA,staticLinked=regex||p?.schema===STATIC_SCHEMA,collections=staticLinked||p?.schema===COLLECTION_SCHEMA,operations=collections||p?.schema===OPERATION_SCHEMA,contracts=operations||p?.schema===CONTRACT_SCHEMA,numeric=contracts||p?.schema===NUMERIC_SCHEMA,types=contracts?contractTypes:numeric?numericTypes:sourceTypes;
+ const selection=numeric||p?.schema===SELECTION_SCHEMA,exceptions=selection||p?.schema===EXCEPTION_SCHEMA,conversion=exceptions||p?.schema===CONVERSION_SCHEMA,control=conversion||p?.schema===CONTROL_SCHEMA,reserved=conditional?doReservedNames:regex?regexReservedNames:collections?collectionReservedNames:operations?operationReservedNames:contracts?contractReservedNames:numeric?numericReservedNames:selection?selectionReservedNames:exceptions?exceptionReservedNames:conversion?conversionReservedNames:control?controlReservedNames:reservedNames;
  const members=control||p?.schema===MEMBER_SCHEMA;
  const versioned=members||p?.schema===SERVICE_SCHEMA,objects=versioned||p?.schema===OBJECT_SCHEMA,modern=objects||p?.schema===PROCEDURE_SCHEMA;
- const statementGrammar=collections?collectionStatements:selection?selectionStatements:exceptions?exceptionStatements:control?controlStatements:members?memberStatements:versioned?serviceStatements:objects?objectStatements:modern?procedureStatements:statements,expressionGrammar=collections?collectionExpressions:operations?operationExpressions:contracts?contractExpressions:numeric?numericExpressions:selection?selectionExpressions:conversion?conversionExpressions:control?controlExpressions:members?memberExpressions:versioned?serviceExpressions:objects?objectExpressions:modern?procedureExpressions:expressions;
- ensure(p&&[SCHEMA,PROCEDURE_SCHEMA,OBJECT_SCHEMA,SERVICE_SCHEMA,MEMBER_SCHEMA,CONTROL_SCHEMA,CONVERSION_SCHEMA,EXCEPTION_SCHEMA,SELECTION_SCHEMA,NUMERIC_SCHEMA,CONTRACT_SCHEMA,OPERATION_SCHEMA,COLLECTION_SCHEMA,STATIC_SCHEMA,REGEX_SCHEMA].includes(p.schema)&&Object.keys(p).every(k=>(modern?['schema','body','procedures',...(staticLinked?['libraries']:[])]:['schema','body']).includes(k)));
+ const statementGrammar=conditional?doStatements:collections?collectionStatements:selection?selectionStatements:exceptions?exceptionStatements:control?controlStatements:members?memberStatements:versioned?serviceStatements:objects?objectStatements:modern?procedureStatements:statements,expressionGrammar=collections?collectionExpressions:operations?operationExpressions:contracts?contractExpressions:numeric?numericExpressions:selection?selectionExpressions:conversion?conversionExpressions:control?controlExpressions:members?memberExpressions:versioned?serviceExpressions:objects?objectExpressions:modern?procedureExpressions:expressions;
+ ensure(p&&[SCHEMA,PROCEDURE_SCHEMA,OBJECT_SCHEMA,SERVICE_SCHEMA,MEMBER_SCHEMA,CONTROL_SCHEMA,CONVERSION_SCHEMA,EXCEPTION_SCHEMA,SELECTION_SCHEMA,NUMERIC_SCHEMA,CONTRACT_SCHEMA,OPERATION_SCHEMA,COLLECTION_SCHEMA,STATIC_SCHEMA,REGEX_SCHEMA,DO_SCHEMA].includes(p.schema)&&Object.keys(p).every(k=>(modern?['schema','body','procedures',...(staticLinked?['libraries']:[])]:['schema','body']).includes(k)));
  const procedures=modern?p.procedures:{};
  ensure(procedures&&typeof procedures==='object'&&!Array.isArray(procedures));
  const owners=new Map();
@@ -57,21 +58,23 @@ export function validate(document) {
   if(n.op==='invoke'){ensure(safeKey(n.method));expr(n.target,d+1);ensure(Array.isArray(n.args));n.args.forEach(x=>expr(x,d+1));}
   if(n.op==='binary'){ensure(operators.includes(n.operator));expr(n.left,d+1);expr(n.right,d+1);}if(n.op==='not')expr(n.value,d+1);
  };
- const body=(b,d=0,loops=0)=>{ensure(d<=MAXIMA.nesting,'LIMIT');ensure(Array.isArray(b));for(const n of b){ensure(n&&Object.hasOwn(statementGrammar,n.op));shape(n,statementGrammar[n.op]);
+ const body=(b,d=0,loops=0,dos=0)=>{ensure(d<=MAXIMA.nesting,'LIMIT');ensure(Array.isArray(b));for(const n of b){ensure(n&&Object.hasOwn(statementGrammar,n.op));shape(n,statementGrammar[n.op]);
   if(['declare','constant','set','forEach','forNumeric'].includes(n.op))name(n.name);if(Object.hasOwn(n,'into'))name(n.into);
   if(n.op==='constant'){ensure(constantTypes.includes(n.type));expr(n.value);}
-  if(n.op==='forNumeric'){expr(n.start);expr(n.end);expr(n.step);body(n.body,d+1,loops+1);}
+  if(n.op==='forNumeric'){expr(n.start);expr(n.end);expr(n.step);body(n.body,d+1,loops+1,dos);}
   if(n.op==='memberSet'){ensure(safeKey(n.name)&&typeof n.exact==='boolean');expr(n.target);expr(n.value);}
   if(n.op==='methodCall'){if(n.exact!==undefined)ensure(typeof n.exact==='boolean');procedureName(n.name);expr(n.target);ensure(Array.isArray(n.args)&&n.args.length<=MAXIMA.parameters);n.args.forEach(x=>expr(x));}
   if(n.op==='procedureCall')procedureCall(n,'sub',0);
   if(n.op==='return'){ensure(current?procedures[current].kind==='sub'?!Object.hasOwn(n,'value'):Object.hasOwn(n,'value'):Object.hasOwn(n,'value'));}
-  if(n.op==='select'){expr(n.value);ensure(Array.isArray(n.cases)&&(n.cases.length>0||Object.hasOwn(n,'else')));for(const branch of n.cases){shape(branch,['tests','body']);ensure(!Object.hasOwn(branch,'op')&&Array.isArray(branch.tests)&&branch.tests.length>0);for(const test of branch.tests){shape(test,['operator','value']);ensure(!Object.hasOwn(test,'op')&&['=','!=','<','<=','>','>=','IS','IS NOT'].includes(test.operator));expr(test.value);}body(branch.body,d+1,loops);}if(Object.hasOwn(n,'else'))body(n.else,d+1,loops);}
-  if(n.op==='try'){ensure(Object.hasOwn(n,'catch')||Object.hasOwn(n,'finally'));body(n.body,d+1,loops);if(Object.hasOwn(n,'catch')){shape(n.catch,['name','body']);ensure(!Object.hasOwn(n.catch,'op'));name(n.catch.name);ensure(!reserved.includes(n.catch.name.toUpperCase()));body(n.catch.body,d+1,loops);}if(Object.hasOwn(n,'finally'))body(n.finally,d+1,loops);}
+  if(n.op==='select'){expr(n.value);ensure(Array.isArray(n.cases)&&(n.cases.length>0||Object.hasOwn(n,'else')));for(const branch of n.cases){shape(branch,['tests','body']);ensure(!Object.hasOwn(branch,'op')&&Array.isArray(branch.tests)&&branch.tests.length>0);for(const test of branch.tests){shape(test,['operator','value']);ensure(!Object.hasOwn(test,'op')&&['=','!=','<','<=','>','>=','IS','IS NOT'].includes(test.operator));expr(test.value);}body(branch.body,d+1,loops,dos);}if(Object.hasOwn(n,'else'))body(n.else,d+1,loops,dos);}
+  if(n.op==='try'){ensure(Object.hasOwn(n,'catch')||Object.hasOwn(n,'finally'));body(n.body,d+1,loops,dos);if(Object.hasOwn(n,'catch')){shape(n.catch,['name','body']);ensure(!Object.hasOwn(n.catch,'op'));name(n.catch.name);ensure(!reserved.includes(n.catch.name.toUpperCase()));body(n.catch.body,d+1,loops,dos);}if(Object.hasOwn(n,'finally'))body(n.finally,d+1,loops,dos);}
+  if(n.op==='do'){ensure(['while','until'].includes(n.mode));expr(n.condition);body(n.body,d+1,loops,dos+1);}
+  if(n.op==='exitDo')ensure(dos>0);
   if(n.op==='exitFor')ensure(loops>0);
   if(n.op==='stop')ensure(!current);
   if(['declare','set'].includes(n.op)||n.op==='return'&&Object.hasOwn(n,'value')||n.op==='stop'&&Object.hasOwn(n,'value'))expr(n.value);
-  if(n.op==='if'){expr(n.condition);body(n.then,d+1,loops);if(n.else!==undefined)body(n.else,d+1,loops);}
-  if(n.op==='forEach'){expr(n.items);body(n.body,d+1,loops+1);}
+  if(n.op==='if'){expr(n.condition);body(n.then,d+1,loops,dos);if(n.else!==undefined)body(n.else,d+1,loops,dos);}
+  if(n.op==='forEach'){expr(n.items);body(n.body,d+1,loops+1,dos);}
   if(n.op==='call'){expr(n.target);ensure(safeKey(n.method)&&Array.isArray(n.args));n.args.forEach(x=>expr(x));}
   if(n.op==='service'||n.op==='canonicalService'){service(n);expr(n.input);}
  }};
