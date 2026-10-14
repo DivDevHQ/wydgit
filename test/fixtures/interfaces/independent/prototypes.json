@@ -1,0 +1,13 @@
+{
+  "schema": "wydgit.prototype-package/0.1",
+  "id": "independent/interface-conformance",
+  "publisher": "independent",
+  "version": "1.0.0",
+  "prototypes": [
+    {
+      "id": "independent/counter",
+      "publisher": "independent",
+      "behaviorSource": "FUNCTION Count() AS Integer\nRETURN 7\nEND FUNCTION"
+    }
+  ]
+}

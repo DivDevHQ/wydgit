@@ -1,5 +1,18 @@
 ## Unreleased
 
+### WBasic / SEWN 0.17
+
+- Add publisher-qualified, exactly versioned interface declarations in the existing
+  verified prototype/package model, with explicit validated implementation metadata.
+- Enforce exact public instance signatures, inherited conformance and safe overrides;
+  support interface locals, parameters, returns, Implements and Cast in sewn/0.17.
+- Preserve opaque object identity and lifetime while restricting reference views to
+  contract methods; retain caller SEAM authority and shared execution budgets.
+- Pin interface artifacts during installation, support server/browser dispatch and
+  add hostile metadata/reference, conformance, cancellation and regression coverage.
+- Document the contract and size impact; defer properties, interface inheritance and
+  concrete downcasts without introducing another object or authorization system.
+
 ### WBasic / SEWN 0.16
 
 - Add precondition DO WHILE / DO UNTIL and lexical EXIT DO in closed sewn/0.16.

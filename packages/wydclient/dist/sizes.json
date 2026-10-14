@@ -1,7 +1,7 @@
 {
   "version": "0.1.0-alpha.2",
   "protocol": "0.1",
-  "minified": 45465,
-  "gzip": 15469,
-  "brotli": 13632
+  "minified": 49966,
+  "gzip": 16617,
+  "brotli": 14649
 }

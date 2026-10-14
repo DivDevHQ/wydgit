@@ -478,3 +478,32 @@ rules; DIM/CONST inside loops remain deferred. No source interpreter ships to
 WydClient: server and client execute the same validator and executor. Linking a
 0.16 static library promotes its caller to 0.16. See the
 [0.16 milestone](milestones/wbasic-sewn-0.16.md) for verification and sizes.
+
+
+## SEWN 0.17 — validated interface views
+
+0.17 extends the closed 0.16 grammar with `implements` and `cast` expressions,
+whose fields are `op`, `value` (expression), and `type` (exact canonical descriptor,
+e.g. `interface:contracts/icountable@1.0.0`). Interface descriptors may also appear
+in procedure parameter/return types and optional declare/set `type` fields. Typed
+bindings retain their contract even if a later set omits type; set cannot change it.
+Historical grammars reject these additions. No runtime short-name resolution,
+reference handles, interface definitions or executable objects can be supplied in
+workflow JSON. All interface descriptors resolve before execution, even in unused code.
+
+The existing host-verified PrototypeRegistry owns declaration-only interfaces and
+checks explicit implementation pins against exact public instance method signatures,
+including inheritance/overrides. Package manifests optionally pin `interfaces`;
+installation saves canonical definitions and compiled sources through existing
+receipt/hash validation. Runtime references use invocation-local opaque tokens with
+an exact view descriptor alongside the original handle. Cast preserves identity and
+lifetime, and does not reconstruct, convert or authorize an object. Implements returns
+FALSE only for live legitimate nonimplementers; malformed/stale/foreign/unauthorized
+references remain errors. NULL is a nullable binding, not a valid inspection operand.
+
+Views expose only contract methods; property/facade/traversal/extra-method access is
+denied. Wydgit arguments and returns preserve an existing view. Dynamic dispatch uses
+the underlying instance, validated arguments/returns, caller authority and shared
+resource counters. Wydgine and WydClient use the same implementation. Properties,
+interface inheritance, interface-valued contract signature members and concrete casts
+are deferred. See [the complete 0.17 contract and verification](milestones/wbasic-sewn-0.17.md).

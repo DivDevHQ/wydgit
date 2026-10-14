@@ -254,7 +254,7 @@ END FUNCTION
 
 The object retains its underlying identity and implementation while being accessed through the declared interface.
 
-**Status:** Planned for SEWN 0.17.
+**Status:** Implemented in SEWN 0.17; see [the interface contract](milestones/wbasic-sewn-0.17.md).
 
 ## 4.3 DataType descriptors
 
@@ -313,7 +313,7 @@ DIM current AS Wydgit
 SET current = Me
 ```
 
-Future interface references will follow the same reference-safety discipline.
+Interface references follow the same reference-safety discipline and restrict access to their declared public method contract.
 
 ## 5.4 Constants
 
@@ -944,9 +944,9 @@ Methods and properties obey the platform's canonical inheritance, visibility, ov
 
 **Introduced: SEWN 0.17**
 
-Interfaces specify public method/property contracts without exposing concrete implementation details.
+Interfaces specify public method contracts without exposing concrete implementation details. Properties and interface inheritance are deferred.
 
-Illustrative future syntax:
+Declaration syntax:
 
 ```vb
 INTERFACE ICollection
@@ -954,7 +954,9 @@ INTERFACE ICollection
 END INTERFACE
 ```
 
-The declaration grammar, installation metadata, and interface inheritance rules require a dedicated object-model specification.
+Trusted `compileInterface` / `compileDefinitions` authoring associates this declaration with a publisher-qualified ID and exact version. Concrete prototype metadata declares `implements:{"publisher/interface-id":"1.0.0"}`. Host-verified PrototypeRegistry validation checks public visibility, FUNCTION/SUB kind, arity, ordered parameter types and return contracts exactly, including inherited methods and overrides.
+
+Consumers compile against an approved PrototypeRegistry and exact `dependencies` pins. Application manifests use an `interfaces` pin map. Ambiguous aliases, unavailable versions, unverified ownership and conflicting definitions fail. See [the complete 0.17 contract](milestones/wbasic-sewn-0.17.md) for metadata and examples.
 
 Interface implementation must be explicitly validated against the declared contract.
 
@@ -967,11 +969,13 @@ DIM col AS ICollection
 SET col = Cast(myDictionary, ICollection)
 ```
 
-`Cast()` obtains a validated interface or compatible reference view of an existing object.
+`Cast()` obtains a validated interface reference view of an existing object. Concrete casts are deferred.
 
 It does not convert an object's data representation and does not create another object.
 
-Invalid casts fail.
+Live incompatible casts fail SEWN.TYPE. Malformed, stale, foreign-context, invisible and consumed draft references retain controlled failures. Cast(NULL, ...) is invalid; nullable interface variables, parameters and returns retain ordinary NULL contracts.
+
+Casts preserve IS / IS NOT identity. A view permits only declared methods and retains normal SEAM checks and budgets. Passing it through a Wydgit variable or procedure cannot recover an unrestricted view. Property access and extra concrete/facade methods are denied.
 
 A cast never enlarges the caller's effective SEAM authority.
 
@@ -983,7 +987,7 @@ IF Implements(myDictionary, ICollection) THEN
 END IF
 ```
 
-`Implements()` checks whether a reference is compatible with the specified interface.
+`Implements()` checks the live trusted node against explicit, validated implementation of the exact interface version. A live nonimplementer returns FALSE; application-controlled properties and matching method names are insufficient. Invalid or unauthorized references fail; Implements(NULL, ...) is invalid.
 
 It does not perform a cast or grant access.
 
@@ -1286,8 +1290,8 @@ The following must be resolved before their respective milestones are finalized.
 | Array mutation, copying and bounds behavior | 0.13 |
 | Standard-library name resolution and version locking | 0.14 |
 | ECMAScript regex safety implementation | 0.15 |
-| Interface declaration and implementation model | 0.17 |
-| Casting and runtime contract enforcement | 0.17 |
+| Interface declaration and implementation model | Resolved in 0.17 milestone |
+| Casting and runtime contract enforcement | Resolved in 0.17 milestone |
 | Date/time and time-zone representation | 0.18 |
 
 ---

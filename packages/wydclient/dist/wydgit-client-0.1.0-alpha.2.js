@@ -209,79 +209,6 @@
     return pkg.prototypes;
   }
 
-  // wydgine/seam/capabilities.js
-  var isCapability = (value) => typeof value === "string" && /^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*$/.test(value);
-
-  // wydgine/seam/context.js
-  var contexts = /* @__PURE__ */ new WeakSet();
-  function checkContext(context) {
-    requireThat(contexts.has(context), "SEAM.CONTEXT", "Expected host-issued execution context");
-  }
-
-  // wydgine/object-model/members.js
-  var accessOf = (rule) => rule.access ?? "public";
-  var discoverable = (rule) => rule.hidden !== true;
-  function validateMember(rule) {
-    requireThat(record(rule), "PROTOTYPE.ACCESS", "Invalid member rule");
-    requireThat(["public", "private", "protected", "friend"].includes(accessOf(rule)), "PROTOTYPE.ACCESS", "Invalid member access");
-    requireThat(rule.requires === void 0 || Array.isArray(rule.requires) && rule.requires.every(isCapability), "PROTOTYPE.ACCESS", "Invalid member capability requirements");
-    requireThat(rule.hidden === void 0 || typeof rule.hidden === "boolean", "PROTOTYPE.ACCESS", "Invalid member visibility");
-  }
-  function resolveMember(definition, kind, name2, exact = true) {
-    const table = kind === "property" ? definition.properties : definition.methods;
-    const rules = kind === "property" ? definition.properties : definition.methodRules;
-    const names = exact ? Object.keys(table).filter((k) => k === name2) : Object.keys(table).filter((k) => k.toLowerCase() === name2.toLowerCase() && discoverable(rules[k] ?? {}));
-    requireThat(names.length === 1, names.length > 1 ? "OBJECT.AMBIGUOUS_MEMBER" : kind === "property" ? "OBJECT.PROPERTY" : "PROTOTYPE.METHOD", names.length > 1 ? "Ambiguous member; use exact lookup" : "Unknown member");
-    const key = names[0], rule = rules[key] ?? {};
-    return { name: key, rule, owner: kind === "property" ? definition.propertyOwners[key] : table[key].owner };
-  }
-  function checkMemberCapabilities(rule, context) {
-    if (rule.requires?.length) {
-      checkContext(context);
-      for (const capability of rule.requires) context.require(capability);
-    }
-  }
-  function authorizeMember(registry, member, caller = null, context = null) {
-    checkMemberCapabilities(member.rule, context);
-    const access = accessOf(member.rule), owner = member.owner;
-    if (access === "public") return;
-    requireThat(caller && (caller === owner || access === "protected" && registry.isA(caller, owner) || access === "friend" && registry.verifiedPublisher(caller) === registry.get(caller).publisher && registry.verifiedPublisher(owner) === registry.get(owner).publisher && registry.get(owner).friends.some((pattern) => pattern === caller || pattern === registry.get(caller).publisher + "/*")), "OBJECT.ACCESS", "Member access denied");
-  }
-
-  // wydgine/http/policy.js
-  var HTTP_DEFAULTS = Object.freeze({ headerBytes: 8192, headerCount: 64, requestMs: 12e4 });
-  var HTTP_CEILINGS = Object.freeze({ headerBytes: 16384, headerCount: 128, requestMs: 3e5 });
-
-  // wydgine/presentation-policy.js
-  var PRESENTATION_DEFAULTS = Object.freeze({ componentRequests: 4 });
-
-  // wydgine/components.js
-  var blocked = /* @__PURE__ */ new Set(["__proto__", "prototype", "constructor"]);
-  var tags = /* @__PURE__ */ new Set(["section", "div", "p", "span", "h2", "h3", "form", "label", "input", "button", "ol", "ul", "li", "a", "nav", "strong", "audio", "video", "source", "img"]);
-  var attributes = /* @__PURE__ */ new Set(["id", "class", "role", "method", "action", "for", "name", "type", "value", "placeholder", "href", "title", "aria-label", "src", "alt", "controls", "preload", "enctype", "accept", "required", "autocomplete", "maxlength"]);
-  var ops = /* @__PURE__ */ new Set(["concat", "eq", "not", "and", "or", "if", "length", "add", "subtract", "min", "max", "lt", "gt", "query", "queryValid", "integer", "parameter", "url", "trim"]);
-  function validatePresentation(input) {
-    const spec = clean(input);
-    let nodes = 0;
-    const walk = (value, depth = 0) => {
-      requireThat(++nodes <= 1024 && depth <= 32, "COMPONENT.INVALID", "Presentation complexity exceeded");
-      if (value && typeof value === "object") {
-        if (value.op !== void 0) requireThat(ops.has(value.op), "COMPONENT.INVALID", "Unsupported expression");
-        if (value.get !== void 0) requireThat(typeof value.get === "string" && value.get.length <= 256 && value.get.split(".").length <= 16 && value.get.split(".").every((p) => !blocked.has(p)), "COMPONENT.INVALID", "Invalid value path");
-        if (value.tag !== void 0) {
-          requireThat(tags.has(value.tag), "COMPONENT.INVALID", "Unsupported element");
-          requireThat(Object.keys(value.attrs ?? {}).every((a) => attributes.has(a)), "COMPONENT.INVALID", "Unsupported attribute");
-        }
-        Object.values(value).forEach((v) => walk(v, depth + 1));
-      }
-    };
-    requireThat(spec.schema === "wydgit.presentation/0.1" && spec.template, "COMPONENT.INVALID", "Invalid presentation");
-    requireThat(Object.keys(spec).every((k) => ["schema", "template", "request", "when", "valid", "submission", "delivery"].includes(k)), "COMPONENT.INVALID", "Unknown presentation field");
-    for (const binding of [spec.request, spec.submission, spec.delivery].filter(Boolean)) requireThat(Object.keys(binding).every((k) => ["library", "apiVersion", "operation", "input"].includes(k)) && ["library", "apiVersion", "operation"].every((k) => typeof binding[k] === "string"), "COMPONENT.INVALID", "Invalid service binding");
-    walk(spec);
-    return spec;
-  }
-
   // wydgine/sewn/schema.js
   var SCHEMA2 = "sewn/0.1";
   var MAXIMA = Object.freeze({ steps: 1e4, expressionDepth: 32, nesting: 16, iterations: 1e3, variables: 64, valueNodes: 4096, string: 16384, serviceCalls: 32, procedureCalls: 256, procedureDepth: 16, parameters: 16, drafts: 64, draftDepth: 32, draftNodes: 256, constructionOperations: 512, constructionSize: 65536, regexPattern: 256, regexInput: 4096, regexCaptures: 8, regexMatches: 128, regexOutput: 16384, regexDepth: 16, regexRepeat: 32, regexAtoms: 128, regexInstructions: 512, regexWork: 1e6, timeMs: 1e3, programNodes: 8192, programSize: 65536 });
@@ -378,6 +305,117 @@
   var DO_SCHEMA = "sewn/0.16";
   var doStatements = Object.freeze({ ...collectionStatements, do: ["mode", "condition", "body"], exitDo: [] });
   var doReservedNames = Object.freeze([...regexReservedNames, "UNTIL"]);
+  var INTERFACE_SCHEMA = "sewn/0.17";
+  var interfaceExpressions = Object.freeze({ ...collectionExpressions, implements: ["value", "type"], cast: ["value", "type"] });
+  var interfaceStatements = Object.freeze({ ...doStatements, declare: ["name", "value", "type?"], set: ["name", "value", "type?"] });
+  var interfaceReservedNames = Object.freeze([...doReservedNames, "INTERFACE", "IMPLEMENTS", "CAST"]);
+
+  // wydgine/object-model/interfaces.js
+  var interfaceType = (t) => typeof t === "string" && /^interface:[a-z][a-z0-9.-]*\/[a-z][a-z0-9-]*@(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/.test(t);
+  var interfaceKey = (d) => `interface:${d.id}@${d.version}`;
+  function validateInterface(input) {
+    const d = clean(input), allowed = ["id", "publisher", "interface", "alias", "version", "signatures"];
+    requireThat(record(d) && Object.keys(d).every((k) => allowed.includes(k)) && d.interface === true, "INTERFACE.DEFINITION", "Expected a declaration-only interface");
+    requireThat(typeof d.id === "string" && /^[a-z][a-z0-9.-]*\/[a-z][a-z0-9-]*$/.test(d.id) && d.publisher === d.id.split("/")[0] && interfaceType(interfaceKey(d)), "INTERFACE.IDENTITY", "Invalid exact interface identity");
+    requireThat(typeof d.alias === "string" && /^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(d.alias) && !contractTypes.some((t) => t.toLowerCase() === d.alias.toLowerCase()) && !doReservedNames.includes(d.alias.toUpperCase()) && !["CAST", "IMPLEMENTS", "INTERFACE"].includes(d.alias.toUpperCase()), "INTERFACE.IDENTITY", "Invalid interface alias");
+    requireThat(record(d.signatures) && Object.keys(d.signatures).length > 0 && Object.keys(d.signatures).length <= 64, "INTERFACE.DEFINITION", "Expected method signatures");
+    for (const [name2, s] of Object.entries(d.signatures)) {
+      requireThat(/^[a-z][a-z0-9_]{0,63}$/.test(name2) && !doReservedNames.includes(name2.toUpperCase()) && record(s) && ["function", "sub"].includes(s.kind) && Object.keys(s).every((k) => ["kind", "params", ...s.kind === "function" ? ["returns"] : []].includes(k)), "INTERFACE.SIGNATURE", "Invalid method signature");
+      requireThat(Array.isArray(s.params) && s.params.length <= MAXIMA.parameters && s.params.every((t) => contractTypes.includes(t)) && (s.kind !== "function" || contractTypes.includes(s.returns)), "INTERFACE.SIGNATURE", "Unsupported method contract");
+    }
+    return freeze(d);
+  }
+  function sameSignature(signature, procedure) {
+    return signature.kind === procedure.kind && signature.params.length === procedure.params.length && signature.params.every((t, i) => t === procedure.params[i].type) && signature.returns === procedure.returns;
+  }
+  function interfaceTypes(program) {
+    const found = /* @__PURE__ */ new Set();
+    const walk = (n) => {
+      if (!n || typeof n !== "object") return;
+      if (["cast", "implements", "declare", "set"].includes(n.op) && interfaceType(n.type)) found.add(n.type);
+      if (["function", "sub"].includes(n.kind) && Array.isArray(n.params)) {
+        for (const p of n.params) if (interfaceType(p.type)) found.add(p.type);
+        if (interfaceType(n.returns)) found.add(n.returns);
+      }
+      if (n.op === "literal") return;
+      Object.values(n).forEach(walk);
+    };
+    walk(program);
+    return found;
+  }
+
+  // wydgine/seam/capabilities.js
+  var isCapability = (value) => typeof value === "string" && /^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*$/.test(value);
+
+  // wydgine/seam/context.js
+  var contexts = /* @__PURE__ */ new WeakSet();
+  function checkContext(context) {
+    requireThat(contexts.has(context), "SEAM.CONTEXT", "Expected host-issued execution context");
+  }
+
+  // wydgine/object-model/members.js
+  var accessOf = (rule) => rule.access ?? "public";
+  var discoverable = (rule) => rule.hidden !== true;
+  function validateMember(rule) {
+    requireThat(record(rule), "PROTOTYPE.ACCESS", "Invalid member rule");
+    requireThat(["public", "private", "protected", "friend"].includes(accessOf(rule)), "PROTOTYPE.ACCESS", "Invalid member access");
+    requireThat(rule.requires === void 0 || Array.isArray(rule.requires) && rule.requires.every(isCapability), "PROTOTYPE.ACCESS", "Invalid member capability requirements");
+    requireThat(rule.hidden === void 0 || typeof rule.hidden === "boolean", "PROTOTYPE.ACCESS", "Invalid member visibility");
+  }
+  function resolveMember(definition, kind, name2, exact = true) {
+    const table = kind === "property" ? definition.properties : definition.methods;
+    const rules = kind === "property" ? definition.properties : definition.methodRules;
+    const names = exact ? Object.keys(table).filter((k) => k === name2) : Object.keys(table).filter((k) => k.toLowerCase() === name2.toLowerCase() && discoverable(rules[k] ?? {}));
+    requireThat(names.length === 1, names.length > 1 ? "OBJECT.AMBIGUOUS_MEMBER" : kind === "property" ? "OBJECT.PROPERTY" : "PROTOTYPE.METHOD", names.length > 1 ? "Ambiguous member; use exact lookup" : "Unknown member");
+    const key = names[0], rule = rules[key] ?? {};
+    return { name: key, rule, owner: kind === "property" ? definition.propertyOwners[key] : table[key].owner };
+  }
+  function checkMemberCapabilities(rule, context) {
+    if (rule.requires?.length) {
+      checkContext(context);
+      for (const capability of rule.requires) context.require(capability);
+    }
+  }
+  function authorizeMember(registry, member, caller = null, context = null) {
+    checkMemberCapabilities(member.rule, context);
+    const access = accessOf(member.rule), owner = member.owner;
+    if (access === "public") return;
+    requireThat(caller && (caller === owner || access === "protected" && registry.isA(caller, owner) || access === "friend" && registry.verifiedPublisher(caller) === registry.get(caller).publisher && registry.verifiedPublisher(owner) === registry.get(owner).publisher && registry.get(owner).friends.some((pattern) => pattern === caller || pattern === registry.get(caller).publisher + "/*")), "OBJECT.ACCESS", "Member access denied");
+  }
+
+  // wydgine/http/policy.js
+  var HTTP_DEFAULTS = Object.freeze({ headerBytes: 8192, headerCount: 64, requestMs: 12e4 });
+  var HTTP_CEILINGS = Object.freeze({ headerBytes: 16384, headerCount: 128, requestMs: 3e5 });
+
+  // wydgine/presentation-policy.js
+  var PRESENTATION_DEFAULTS = Object.freeze({ componentRequests: 4 });
+
+  // wydgine/components.js
+  var blocked = /* @__PURE__ */ new Set(["__proto__", "prototype", "constructor"]);
+  var tags = /* @__PURE__ */ new Set(["section", "div", "p", "span", "h2", "h3", "form", "label", "input", "button", "ol", "ul", "li", "a", "nav", "strong", "audio", "video", "source", "img"]);
+  var attributes = /* @__PURE__ */ new Set(["id", "class", "role", "method", "action", "for", "name", "type", "value", "placeholder", "href", "title", "aria-label", "src", "alt", "controls", "preload", "enctype", "accept", "required", "autocomplete", "maxlength"]);
+  var ops = /* @__PURE__ */ new Set(["concat", "eq", "not", "and", "or", "if", "length", "add", "subtract", "min", "max", "lt", "gt", "query", "queryValid", "integer", "parameter", "url", "trim"]);
+  function validatePresentation(input) {
+    const spec = clean(input);
+    let nodes = 0;
+    const walk = (value, depth = 0) => {
+      requireThat(++nodes <= 1024 && depth <= 32, "COMPONENT.INVALID", "Presentation complexity exceeded");
+      if (value && typeof value === "object") {
+        if (value.op !== void 0) requireThat(ops.has(value.op), "COMPONENT.INVALID", "Unsupported expression");
+        if (value.get !== void 0) requireThat(typeof value.get === "string" && value.get.length <= 256 && value.get.split(".").length <= 16 && value.get.split(".").every((p) => !blocked.has(p)), "COMPONENT.INVALID", "Invalid value path");
+        if (value.tag !== void 0) {
+          requireThat(tags.has(value.tag), "COMPONENT.INVALID", "Unsupported element");
+          requireThat(Object.keys(value.attrs ?? {}).every((a) => attributes.has(a)), "COMPONENT.INVALID", "Unsupported attribute");
+        }
+        Object.values(value).forEach((v) => walk(v, depth + 1));
+      }
+    };
+    requireThat(spec.schema === "wydgit.presentation/0.1" && spec.template, "COMPONENT.INVALID", "Invalid presentation");
+    requireThat(Object.keys(spec).every((k) => ["schema", "template", "request", "when", "valid", "submission", "delivery"].includes(k)), "COMPONENT.INVALID", "Unknown presentation field");
+    for (const binding of [spec.request, spec.submission, spec.delivery].filter(Boolean)) requireThat(Object.keys(binding).every((k) => ["library", "apiVersion", "operation", "input"].includes(k)) && ["library", "apiVersion", "operation"].every((k) => typeof binding[k] === "string"), "COMPONENT.INVALID", "Invalid service binding");
+    walk(spec);
+    return spec;
+  }
 
   // wydgine/sewn/validate.js
   var fail = (code) => {
@@ -434,12 +472,13 @@
       ensure(Object.keys(n).every((k) => k === "op" || fields.some((f) => f.replace("?", "") === k)));
       for (const f of fields) if (!f.endsWith("?")) ensure(Object.hasOwn(n, f));
     };
-    const conditional = p?.schema === DO_SCHEMA, regex = conditional || p?.schema === REGEX_SCHEMA, staticLinked = regex || p?.schema === STATIC_SCHEMA, collections = staticLinked || p?.schema === COLLECTION_SCHEMA, operations = collections || p?.schema === OPERATION_SCHEMA, contracts = operations || p?.schema === CONTRACT_SCHEMA, numeric = contracts || p?.schema === NUMERIC_SCHEMA, types = contracts ? contractTypes : numeric ? numericTypes : sourceTypes;
-    const selection = numeric || p?.schema === SELECTION_SCHEMA, exceptions = selection || p?.schema === EXCEPTION_SCHEMA, conversion = exceptions || p?.schema === CONVERSION_SCHEMA, control = conversion || p?.schema === CONTROL_SCHEMA, reserved = conditional ? doReservedNames : regex ? regexReservedNames : collections ? collectionReservedNames : operations ? operationReservedNames : contracts ? contractReservedNames : numeric ? numericReservedNames : selection ? selectionReservedNames : exceptions ? exceptionReservedNames : conversion ? conversionReservedNames : control ? controlReservedNames : reservedNames;
+    const interfaces = p?.schema === INTERFACE_SCHEMA, conditional = interfaces || p?.schema === DO_SCHEMA, regex = conditional || p?.schema === REGEX_SCHEMA, staticLinked = regex || p?.schema === STATIC_SCHEMA, collections = staticLinked || p?.schema === COLLECTION_SCHEMA, operations = collections || p?.schema === OPERATION_SCHEMA, contracts = operations || p?.schema === CONTRACT_SCHEMA, numeric = contracts || p?.schema === NUMERIC_SCHEMA, types = contracts ? contractTypes : numeric ? numericTypes : sourceTypes;
+    const selection = numeric || p?.schema === SELECTION_SCHEMA, exceptions = selection || p?.schema === EXCEPTION_SCHEMA, conversion = exceptions || p?.schema === CONVERSION_SCHEMA, control = conversion || p?.schema === CONTROL_SCHEMA, reserved = interfaces ? interfaceReservedNames : conditional ? doReservedNames : regex ? regexReservedNames : collections ? collectionReservedNames : operations ? operationReservedNames : contracts ? contractReservedNames : numeric ? numericReservedNames : selection ? selectionReservedNames : exceptions ? exceptionReservedNames : conversion ? conversionReservedNames : control ? controlReservedNames : reservedNames;
     const members = control || p?.schema === MEMBER_SCHEMA;
     const versioned = members || p?.schema === SERVICE_SCHEMA, objects = versioned || p?.schema === OBJECT_SCHEMA, modern = objects || p?.schema === PROCEDURE_SCHEMA;
-    const statementGrammar = conditional ? doStatements : collections ? collectionStatements : selection ? selectionStatements : exceptions ? exceptionStatements : control ? controlStatements : members ? memberStatements : versioned ? serviceStatements : objects ? objectStatements : modern ? procedureStatements : statements, expressionGrammar = collections ? collectionExpressions : operations ? operationExpressions : contracts ? contractExpressions : numeric ? numericExpressions : selection ? selectionExpressions : conversion ? conversionExpressions : control ? controlExpressions : members ? memberExpressions : versioned ? serviceExpressions : objects ? objectExpressions : modern ? procedureExpressions : expressions;
-    ensure(p && [SCHEMA2, PROCEDURE_SCHEMA, OBJECT_SCHEMA, SERVICE_SCHEMA, MEMBER_SCHEMA, CONTROL_SCHEMA, CONVERSION_SCHEMA, EXCEPTION_SCHEMA, SELECTION_SCHEMA, NUMERIC_SCHEMA, CONTRACT_SCHEMA, OPERATION_SCHEMA, COLLECTION_SCHEMA, STATIC_SCHEMA, REGEX_SCHEMA, DO_SCHEMA].includes(p.schema) && Object.keys(p).every((k) => (modern ? ["schema", "body", "procedures", ...staticLinked ? ["libraries"] : []] : ["schema", "body"]).includes(k)));
+    const statementGrammar = interfaces ? interfaceStatements : conditional ? doStatements : collections ? collectionStatements : selection ? selectionStatements : exceptions ? exceptionStatements : control ? controlStatements : members ? memberStatements : versioned ? serviceStatements : objects ? objectStatements : modern ? procedureStatements : statements, expressionGrammar = interfaces ? interfaceExpressions : collections ? collectionExpressions : operations ? operationExpressions : contracts ? contractExpressions : numeric ? numericExpressions : selection ? selectionExpressions : conversion ? conversionExpressions : control ? controlExpressions : members ? memberExpressions : versioned ? serviceExpressions : objects ? objectExpressions : modern ? procedureExpressions : expressions;
+    ensure(p && [SCHEMA2, PROCEDURE_SCHEMA, OBJECT_SCHEMA, SERVICE_SCHEMA, MEMBER_SCHEMA, CONTROL_SCHEMA, CONVERSION_SCHEMA, EXCEPTION_SCHEMA, SELECTION_SCHEMA, NUMERIC_SCHEMA, CONTRACT_SCHEMA, OPERATION_SCHEMA, COLLECTION_SCHEMA, STATIC_SCHEMA, REGEX_SCHEMA, DO_SCHEMA, INTERFACE_SCHEMA].includes(p.schema) && Object.keys(p).every((k) => (modern ? ["schema", "body", "procedures", ...staticLinked ? ["libraries"] : []] : ["schema", "body"]).includes(k)));
+    const validType = (t) => types.includes(t) || interfaces && interfaceType(t);
     const procedures = modern ? p.procedures : {};
     ensure(procedures && typeof procedures === "object" && !Array.isArray(procedures));
     const owners = /* @__PURE__ */ new Map();
@@ -490,6 +529,10 @@
       ensure(d <= MAXIMA.expressionDepth, "LIMIT");
       ensure(n && Object.hasOwn(expressionGrammar, n.op));
       shape2(n, expressionGrammar[n.op]);
+      if (["implements", "cast"].includes(n.op)) {
+        ensure(interfaceType(n.type));
+        expr(n.value, d + 1);
+      }
       if (n.op === "typeLiteral") ensure(contractTypes.includes(n.type));
       if (["typeOf", "dateTime", "typeCheck"].includes(n.op)) {
         if (n.op === "typeCheck") ensure((collections ? contractTypes.filter((t) => t !== "Wydgit") : ["Scalar", "DataType", "DateTime"]).includes(n.type));
@@ -585,6 +628,7 @@
         shape2(n, statementGrammar[n.op]);
         if (["declare", "constant", "set", "forEach", "forNumeric"].includes(n.op)) name(n.name);
         if (Object.hasOwn(n, "into")) name(n.into);
+        if (["declare", "set"].includes(n.op) && n.type !== void 0) ensure(interfaces && validType(n.type));
         if (n.op === "constant") {
           ensure(constantTypes.includes(n.type));
           expr(n.value);
@@ -673,13 +717,13 @@
       ensure(!Object.hasOwn(proc, "op"));
       ensure(["function", "sub"].includes(proc.kind) && Array.isArray(proc.params));
       ensure(proc.params.length <= MAXIMA.parameters, "LIMIT");
-      if (proc.kind === "function") ensure(types.includes(proc.returns));
+      if (proc.kind === "function") ensure(validType(proc.returns));
       const names = /* @__PURE__ */ new Set();
       for (const param of proc.params) {
         shape2(param, ["name", "type"]);
         ensure(!Object.hasOwn(param, "op"));
         name(param.name);
-        ensure(!reserved.includes(param.name.toUpperCase()) && !names.has(param.name) && types.includes(param.type));
+        ensure(!reserved.includes(param.name.toUpperCase()) && !names.has(param.name) && validType(param.type));
         names.add(param.name);
       }
       graph.set(id, /* @__PURE__ */ new Set());
@@ -711,6 +755,7 @@
   var PrototypeRegistry = class {
     #definitions = /* @__PURE__ */ new Map();
     #verified = /* @__PURE__ */ new Map();
+    #interfaces = /* @__PURE__ */ new Map();
     constructor(definitions, { officialPublishers = ["wydgit.core"], verifiedPrototypes = {}, caseCollisionCompatibility = {} } = {}) {
       for (const [id, publisher] of Object.entries(verifiedPrototypes)) {
         requireThat(identity.test(id) && id.split("/")[0] === publisher, "PROTOTYPE.PUBLISHER", "Invalid trusted publisher binding");
@@ -723,6 +768,12 @@
         requireThat(!raw.has(d.id), "PROTOTYPE.DUPLICATE", "Duplicate prototype");
         raw.set(d.id, d);
       }
+      for (const [id, d] of raw) if (d.interface === true) {
+        const contract = validateInterface(d);
+        requireThat(this.#verified.get(id) === d.publisher, "INTERFACE.PUBLISHER", "Interface requires verified publisher ownership");
+        this.#interfaces.set(interfaceKey(contract), contract);
+      }
+      requireThat(this.#interfaces.size <= 64, "INTERFACE.LIMIT", "Interface catalog limit");
       const visiting = /* @__PURE__ */ new Set();
       const resolve = (id) => {
         if (this.#definitions.has(id)) return this.#definitions.get(id);
@@ -730,10 +781,18 @@
         requireThat(d, "PROTOTYPE.UNKNOWN", `Unknown prototype: ${id}`);
         requireThat(!visiting.has(id), "PROTOTYPE.CYCLE", "Inheritance cycle");
         visiting.add(id);
+        if (d.interface === true) {
+          const result2 = freeze({ ...this.#interfaces.get(interfaceKey(d)), abstract: true, properties: {}, slots: {}, methods: {}, methodRules: {}, ancestors: [] });
+          visiting.delete(id);
+          this.#definitions.set(id, result2);
+          return result2;
+        }
+        requireThat(d.interface === void 0, "INTERFACE.DEFINITION", "Invalid interface flag");
         let base;
         if (d.extends !== void 0) {
           requireThat(typeof d.extends === "string", "PROTOTYPE.INHERITANCE", "Single inheritance requires one prototype ID");
           base = resolve(d.extends);
+          requireThat(!base.interface, "INTERFACE.DEFINITION", "Concrete prototypes cannot inherit interfaces");
           requireThat(base.publisher === d.publisher || officialPublishers.includes(base.publisher) && base.public === true, "PROTOTYPE.PUBLISHER", "Cross-publisher inheritance denied");
         }
         requireThat(d.static === void 0 || typeof d.static === "boolean", "PROTOTYPE.STATIC", "Invalid static flag");
@@ -763,7 +822,7 @@
         }
         requireThat(d.methods === void 0 && d.behaviorSource === void 0, "PROTOTYPE.METHOD", "Behavior must be compiled by trusted setup");
         requireThat(new Set(d.overrides ?? []).size === (d.overrides ?? []).length, "PROTOTYPE.METHOD", "Duplicate overrides");
-        requireThat(!behavior || ["sewn/0.3", "sewn/0.4", "sewn/0.5", "sewn/0.6", "sewn/0.7", "sewn/0.8", "sewn/0.9", "sewn/0.10", "sewn/0.11", "sewn/0.12", "sewn/0.13", "sewn/0.14", "sewn/0.15", "sewn/0.16"].includes(behavior.schema) && behavior.body.length === 0, "PROTOTYPE.METHOD", "Expected portable prototype behavior");
+        requireThat(!behavior || ["sewn/0.3", "sewn/0.4", "sewn/0.5", "sewn/0.6", "sewn/0.7", "sewn/0.8", "sewn/0.9", "sewn/0.10", "sewn/0.11", "sewn/0.12", "sewn/0.13", "sewn/0.14", "sewn/0.15", "sewn/0.16", "sewn/0.17"].includes(behavior.schema) && behavior.body.length === 0, "PROTOTYPE.METHOD", "Expected portable prototype behavior");
         for (const [name2, proc] of Object.entries(behavior?.procedures ?? {})) {
           requireThat(!Object.keys(methods.handle).some((x) => x.toLowerCase() === name2.toLowerCase()), "PROTOTYPE.METHOD", "Method conflicts with kernel facade");
           const old = inheritedMethods[name2];
@@ -816,7 +875,18 @@
           actions[name2] = rule;
         }
         const presentation = d.presentation === void 0 ? base?.presentation : validatePresentation(d.presentation);
-        const result = freeze({ ...d, ...presentation ? { presentation } : {}, abstract: d.abstract ?? false, properties, propertyOwners, slots, methods: methods2, methodRules, friends, actions, ancestors: base ? [base.id, ...base.ancestors] : [] });
+        requireThat(record(d.implements ?? {}) && Object.keys(d.implements ?? {}).length <= 16 && (!d.static || d.implements === void 0), "INTERFACE.IMPLEMENTATION", "Invalid implementation metadata");
+        if (Object.keys(d.implements ?? {}).length) requireThat(this.#verified.get(id) === d.publisher, "INTERFACE.PUBLISHER", "Implementation requires verified publisher ownership");
+        const implementations = { ...base?.implements, ...d.implements };
+        if (Object.keys(implementations).length) requireThat(this.#verified.get(id) === d.publisher, "INTERFACE.PUBLISHER", "Inherited implementation requires verified publisher ownership");
+        for (const [contractId, version] of Object.entries(implementations)) {
+          const contract = this.interface(`interface:${contractId}@${version}`);
+          for (const [name2, signature] of Object.entries(contract.signatures)) {
+            const member = resolveMember({ methods: methods2, methodRules }, "method", name2, false), method = methods2[member.name];
+            requireThat(accessOf(member.rule) === "public" && !member.rule.hidden && sameSignature(signature, method.behavior.procedures[member.name]), "INTERFACE.CONFORMANCE", "Required public instance signature does not match");
+          }
+        }
+        const result = freeze({ ...d, implements: implementations, ...presentation ? { presentation } : {}, abstract: d.abstract ?? false, properties, propertyOwners, slots, methods: methods2, methodRules, friends, actions, ancestors: base ? [base.id, ...base.ancestors] : [] });
         visiting.delete(id);
         this.#definitions.set(id, result);
         return result;
@@ -824,8 +894,10 @@
       for (const id of raw.keys()) resolve(id);
       for (const d of this.#definitions.values()) for (const slot of Object.values(d.slots)) for (const id of slot.accepts) this.get(id);
       for (const d of this.#definitions.values()) {
+        if (d.interface) continue;
+        if (d.behavior) for (const type of interfaceTypes(d.behavior)) this.interface(type);
         if (d.static) {
-          requireThat(["sewn/0.14", "sewn/0.15", "sewn/0.16"].includes(d.behavior?.schema), "PROTOTYPE.STATIC", "Static behavior requires sewn/0.14, sewn/0.15 or sewn/0.16");
+          requireThat(["sewn/0.14", "sewn/0.15", "sewn/0.16", "sewn/0.17"].includes(d.behavior?.schema), "PROTOTYPE.STATIC", "Static behavior requires sewn/0.14, sewn/0.15 or sewn/0.16");
           const walk2 = (v) => {
             if (!v || typeof v !== "object") return;
             requireThat(!(v.op === "context" && v.name === "ME"), "PROTOTYPE.STATIC", "Static methods have no Me");
@@ -879,6 +951,20 @@
       } else authorizeMember(this, member, caller, context);
       return { ...definition.methods[member.name], name: member.name };
     }
+    interface(type) {
+      const d = this.#interfaces.get(type);
+      requireThat(d, "INTERFACE.UNKNOWN", "Unknown or unsupported interface version");
+      return d;
+    }
+    resolveInterface(alias, dependencies) {
+      const matches = [...this.#interfaces.values()].filter((d) => (d.alias.toLowerCase() === alias.toLowerCase() || d.id === alias) && dependencies?.[d.id] === d.version);
+      requireThat(matches.length === 1, "INTERFACE.RESOLUTION", "Missing or ambiguous approved interface");
+      return matches[0];
+    }
+    implements(id, type) {
+      const contract = this.interface(type), d = this.get(id);
+      return !d.interface && !d.static && d.implements?.[contract.id] === contract.version;
+    }
     verifiedPublisher(id) {
       return this.#verified.get(id) ?? null;
     }
@@ -898,7 +984,7 @@
     requireThat(declarations.length <= LIMITS.prototypes, "MANIFEST.LIMIT", "Prototype limit exceeded");
     for (const d of declarations) {
       requireThat(record(d) && typeof d.id === "string" && d.publisher !== "wydgit.core", "PROTOTYPE.IDENTITY", "Invalid prototype identity");
-      requireThat(Object.keys(d).every((k) => ["id", "publisher", "public", "abstract", "extends", "properties", "slots", "friends", "methodRules", "overrides", "behavior"].includes(k)), "PROTOTYPE.DEFINITION", "Unsupported client prototype field");
+      requireThat(Object.keys(d).every((k) => ["id", "publisher", "public", "abstract", "extends", "properties", "slots", "friends", "methodRules", "overrides", "behavior", "interface", "alias", "version", "signatures", "implements"].includes(k)), "PROTOTYPE.DEFINITION", "Unsupported client prototype field");
       if (d.behavior) requireThat(Array.isArray(d.behavior.body) && d.behavior.body.length === 0 && record(d.behavior.procedures) && Object.values(d.behavior.procedures).every((p) => Array.isArray(p.body) && p.body.length === 0), "PROTOTYPE.METHOD", "Executable behavior is deferred");
     }
     const registry = new PrototypeRegistry([...coreDefinitions, ...declarations], { verifiedPrototypes });

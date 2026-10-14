@@ -1,3 +1,4 @@
+import {validateInterface,interfaceKey,sameSignature,interfaceTypes} from './interfaces.js';
 import { isCapability } from '../seam/capabilities.js';
 import { accessOf, validateMember, resolveMember, authorizeMember } from './members.js';
 import { validatePresentation } from '../components.js';
@@ -8,6 +9,7 @@ const identity = /^[a-z][a-z0-9.-]*\/[a-z][a-z0-9-]*$/;
 export class PrototypeRegistry {
   #definitions = new Map();
   #verified = new Map();
+  #interfaces = new Map();
   constructor(definitions, { officialPublishers = ['wydgit.core'], verifiedPrototypes = {}, caseCollisionCompatibility = {} } = {}) {
     for(const [id,publisher] of Object.entries(verifiedPrototypes)){check(identity.test(id)&&id.split('/')[0]===publisher,'PROTOTYPE.PUBLISHER','Invalid trusted publisher binding');this.#verified.set(id,publisher);}
     const raw = new Map();
@@ -16,16 +18,21 @@ export class PrototypeRegistry {
       check(identity.test(d.id) && d.publisher === d.id.split('/')[0], 'PROTOTYPE.IDENTITY', 'Invalid prototype identity or publisher');
       check(!raw.has(d.id), 'PROTOTYPE.DUPLICATE', 'Duplicate prototype'); raw.set(d.id, d);
     }
+    for(const [id,d] of raw)if(d.interface===true){const contract=validateInterface(d);check(this.#verified.get(id)===d.publisher,'INTERFACE.PUBLISHER','Interface requires verified publisher ownership');this.#interfaces.set(interfaceKey(contract),contract);}
+    check(this.#interfaces.size<=64,'INTERFACE.LIMIT','Interface catalog limit');
     const visiting = new Set();
     const resolve = id => {
       if (this.#definitions.has(id)) return this.#definitions.get(id);
       const d = raw.get(id);
       check(d, 'PROTOTYPE.UNKNOWN', `Unknown prototype: ${id}`);
       check(!visiting.has(id), 'PROTOTYPE.CYCLE', 'Inheritance cycle'); visiting.add(id);
+      if(d.interface===true){const result=freeze({...this.#interfaces.get(interfaceKey(d)),abstract:true,properties:{},slots:{},methods:{},methodRules:{},ancestors:[]});visiting.delete(id);this.#definitions.set(id,result);return result;}
+      check(d.interface===undefined,'INTERFACE.DEFINITION','Invalid interface flag');
       let base;
       if (d.extends !== undefined) {
         check(typeof d.extends === 'string', 'PROTOTYPE.INHERITANCE', 'Single inheritance requires one prototype ID');
         base = resolve(d.extends);
+        check(!base.interface,'INTERFACE.DEFINITION','Concrete prototypes cannot inherit interfaces');
         check(base.publisher === d.publisher || (officialPublishers.includes(base.publisher) && base.public === true), 'PROTOTYPE.PUBLISHER', 'Cross-publisher inheritance denied');
       }
       check(d.static===undefined||typeof d.static==='boolean','PROTOTYPE.STATIC','Invalid static flag');
@@ -44,7 +51,7 @@ export class PrototypeRegistry {
       let behavior=null;if(d.behavior!==undefined){try{behavior=validate(d.behavior);}catch{check(false,'PROTOTYPE.METHOD','Invalid portable method behavior');}}
       check(d.methods===undefined&&d.behaviorSource===undefined,'PROTOTYPE.METHOD','Behavior must be compiled by trusted setup');
       check(new Set(d.overrides??[]).size===(d.overrides??[]).length,'PROTOTYPE.METHOD','Duplicate overrides');
-      check(!behavior||['sewn/0.3','sewn/0.4','sewn/0.5','sewn/0.6','sewn/0.7','sewn/0.8','sewn/0.9','sewn/0.10','sewn/0.11','sewn/0.12','sewn/0.13','sewn/0.14','sewn/0.15','sewn/0.16'].includes(behavior.schema)&&behavior.body.length===0,'PROTOTYPE.METHOD','Expected portable prototype behavior');
+      check(!behavior||['sewn/0.3','sewn/0.4','sewn/0.5','sewn/0.6','sewn/0.7','sewn/0.8','sewn/0.9','sewn/0.10','sewn/0.11','sewn/0.12','sewn/0.13','sewn/0.14','sewn/0.15','sewn/0.16','sewn/0.17'].includes(behavior.schema)&&behavior.body.length===0,'PROTOTYPE.METHOD','Expected portable prototype behavior');
       for(const [name,proc] of Object.entries(behavior?.procedures??{})){
         check(!Object.keys(facadeMethods.handle).some(x=>x.toLowerCase()===name.toLowerCase()),'PROTOTYPE.METHOD','Method conflicts with kernel facade');
         const old=inheritedMethods[name];
@@ -83,14 +90,27 @@ export class PrototypeRegistry {
         actions[name]=rule;
       }
       const presentation=d.presentation===undefined?base?.presentation:validatePresentation(d.presentation);
-      const result = freeze({ ...d, ...(presentation?{presentation}:{}), abstract: d.abstract ?? false, properties, propertyOwners, slots, methods, methodRules, friends, actions, ancestors: base ? [base.id, ...base.ancestors] : [] });
+      check(record(d.implements??{})&&Object.keys(d.implements??{}).length<=16&&(!d.static||d.implements===undefined),'INTERFACE.IMPLEMENTATION','Invalid implementation metadata');
+      if(Object.keys(d.implements??{}).length)check(this.#verified.get(id)===d.publisher,'INTERFACE.PUBLISHER','Implementation requires verified publisher ownership');
+      const implementations={...base?.implements,...d.implements};
+      if(Object.keys(implementations).length)check(this.#verified.get(id)===d.publisher,'INTERFACE.PUBLISHER','Inherited implementation requires verified publisher ownership');
+      for(const [contractId,version] of Object.entries(implementations)){
+        const contract=this.interface(`interface:${contractId}@${version}`);
+        for(const [name,signature] of Object.entries(contract.signatures)){
+          const member=resolveMember({methods,methodRules},'method',name,false),method=methods[member.name];
+          check(accessOf(member.rule)==='public'&&!member.rule.hidden&&sameSignature(signature,method.behavior.procedures[member.name]),'INTERFACE.CONFORMANCE','Required public instance signature does not match');
+        }
+      }
+      const result = freeze({ ...d, implements:implementations, ...(presentation?{presentation}:{}), abstract: d.abstract ?? false, properties, propertyOwners, slots, methods, methodRules, friends, actions, ancestors: base ? [base.id, ...base.ancestors] : [] });
       visiting.delete(id); this.#definitions.set(id, result); return result;
     };
     for (const id of raw.keys()) resolve(id);
     for (const d of this.#definitions.values()) for (const slot of Object.values(d.slots)) for (const id of slot.accepts) this.get(id);
     // Resolve statically known Me calls through each actual prototype, including overrides.
     for(const d of this.#definitions.values()){
-      if(d.static){check(['sewn/0.14','sewn/0.15','sewn/0.16'].includes(d.behavior?.schema),'PROTOTYPE.STATIC','Static behavior requires sewn/0.14, sewn/0.15 or sewn/0.16');const walk=v=>{if(!v||typeof v!=='object')return;check(!(v.op==='context'&&v.name==='ME'),'PROTOTYPE.STATIC','Static methods have no Me');Object.values(v).forEach(walk);};walk(d.behavior);for(const lib of d.behavior.libraries??[])check(d.dependencies?.[lib.id]===lib.version&&lib.id!==d.id,'PROTOTYPE.STATIC','Linked dependency must be declared');continue;}
+      if(d.interface)continue;
+      if(d.behavior)for(const type of interfaceTypes(d.behavior))this.interface(type);
+      if(d.static){check(['sewn/0.14','sewn/0.15','sewn/0.16','sewn/0.17'].includes(d.behavior?.schema),'PROTOTYPE.STATIC','Static behavior requires sewn/0.14, sewn/0.15 or sewn/0.16');const walk=v=>{if(!v||typeof v!=='object')return;check(!(v.op==='context'&&v.name==='ME'),'PROTOTYPE.STATIC','Static methods have no Me');Object.values(v).forEach(walk);};walk(d.behavior);for(const lib of d.behavior.libraries??[])check(d.dependencies?.[lib.id]===lib.version&&lib.id!==d.id,'PROTOTYPE.STATIC','Linked dependency must be declared');continue;}
       const graph=new Map();
       const walk=(v,edges,behavior)=>{if(!v||typeof v!=='object')return;
         if(['procedureCall','functionCall'].includes(v.op))edges.add(behavior+':'+v.name);
@@ -114,6 +134,12 @@ export class PrototypeRegistry {
     } else authorizeMember(this, member, caller, context);
     return { ...definition.methods[member.name], name: member.name };
   }
+  interface(type) { const d=this.#interfaces.get(type);check(d,'INTERFACE.UNKNOWN','Unknown or unsupported interface version');return d; }
+  resolveInterface(alias, dependencies) {
+    const matches=[...this.#interfaces.values()].filter(d=>(d.alias.toLowerCase()===alias.toLowerCase()||d.id===alias)&&dependencies?.[d.id]===d.version);
+    check(matches.length===1,'INTERFACE.RESOLUTION','Missing or ambiguous approved interface');return matches[0];
+  }
+  implements(id,type) {const contract=this.interface(type),d=this.get(id);return !d.interface&&!d.static&&d.implements?.[contract.id]===contract.version;}
   verifiedPublisher(id) { return this.#verified.get(id)??null; }
   isA(id, base) { const d = this.get(id); return id === base || d.ancestors.includes(base); }
 }

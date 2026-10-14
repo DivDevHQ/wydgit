@@ -1,0 +1,37 @@
+{
+  "schema": "wydgit.prototype-package/0.1",
+  "id": "collections/interface-conformance",
+  "publisher": "collections",
+  "version": "1.0.0",
+  "prototypes": [
+    {
+      "id": "collections/counter",
+      "publisher": "collections",
+      "implements": {
+        "contracts/icountable": "1.0.0"
+      },
+      "properties": {
+        "secret": {
+          "type": "string",
+          "access": "private",
+          "default": "hidden"
+        }
+      },
+      "behaviorSource": "FUNCTION Count() AS Integer\nRETURN 7\nEND FUNCTION\nSUB Observe(value AS String)\nRETURN\nEND SUB\nFUNCTION Detail() AS String\nRETURN \"internal\"\nEND FUNCTION"
+    },
+    {
+      "id": "collections/derived",
+      "publisher": "collections",
+      "extends": "collections/counter"
+    },
+    {
+      "id": "collections/override",
+      "publisher": "collections",
+      "extends": "collections/counter",
+      "overrides": [
+        "count"
+      ],
+      "behaviorSource": "FUNCTION Count() AS Integer\nRETURN 9\nEND FUNCTION"
+    }
+  ]
+}

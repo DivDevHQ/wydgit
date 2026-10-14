@@ -41,7 +41,7 @@ export function readInstalledState(root) {
       JSON.stringify(clean(entry.receipt.bindings))===JSON.stringify(m.bindings),'PACKAGE.CATALOG','Catalog differs from installation receipt');
     check(paths.every(file=>entry.receipt.resources?.[file]?.sha256===digest(entry.resources[file])),'PACKAGE.DRIFT','Installed resource hash differs from receipt');
     for(const key of ['additions','page','navigation','properties','libraryScopes','compiledSources'])check(Object.hasOwn(entry,key)===Object.hasOwn(entry.receipt,key)&&(!Object.hasOwn(entry,key)||JSON.stringify(clean(entry[key]))===JSON.stringify(clean(entry.receipt[key]))),'PACKAGE.CATALOG','Initial attachment differs from receipt');
-    check(!m.staticLibraries||entry.compiledSources&&Object.keys(entry.compiledSources).length===Object.keys(m.resources.sources).length&&Object.keys(m.resources.sources).every(id=>Object.hasOwn(entry.compiledSources,id)),'PACKAGE.CATALOG','Missing pinned static-library compilation');
+    check(!(m.staticLibraries||m.interfaces)||entry.compiledSources&&Object.keys(entry.compiledSources).length===Object.keys(m.resources.sources).length&&Object.keys(m.resources.sources).every(id=>Object.hasOwn(entry.compiledSources,id)),'PACKAGE.CATALOG','Missing pinned static-library compilation');
     const definitions=JSON.parse(entry.resources[m.resources.prototypes]);
     check(Array.isArray(definitions)&&definitions.length<=LIMITS.prototypes&&definitions.every(d=>d.publisher===m.publisher&&d.id?.startsWith(m.publisher+'/')),'PACKAGE.CATALOG','Invalid catalog prototypes');
   }

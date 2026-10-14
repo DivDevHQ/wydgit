@@ -1,3 +1,4 @@
+import {interfaceTypes} from '../object-model/interfaces.js';
 import {validate as validateWorkflow} from '../sewn/validate.js';
 import {StaticLibraryRegistry} from '../static-libraries/index.js';
 import fs from 'node:fs/promises';
@@ -41,7 +42,7 @@ function loadPackage(packagePath) {
 }
 export function packageBindings(entry,registry,runtime) {
   const handlers=[],actions=[],events=new EventRegistry(),m=validatePackageManifest(entry.manifest);
-  const moduleFor=(source,event)=>{const text=entry.resources[m.resources.sources[source]],module=entry.compiledSources?.[source]??compileModule(text,{registry:events});check(module.events.length===1&&module.events[0].type===events.resolve(event),'PACKAGE.BINDING','Binding source must declare exactly its event');const workflow=validateWorkflow(module.events[0].workflow);for(const lib of workflow.libraries??[])check(m.staticLibraries?.[lib.id]===lib.version,'PACKAGE.STATIC','Linked dependency differs from manifest');return workflow;};
+  const moduleFor=(source,event)=>{const text=entry.resources[m.resources.sources[source]],module=entry.compiledSources?.[source]??compileModule(text,{registry:events,prototypeRegistry:registry,dependencies:m.interfaces??{}});check(module.events.length===1&&module.events[0].type===events.resolve(event),'PACKAGE.BINDING','Binding source must declare exactly its event');const workflow=validateWorkflow(module.events[0].workflow);for(const type of interfaceTypes(workflow)){const contract=registry.interface(type);check(m.interfaces?.[contract.id]===contract.version,'PACKAGE.INTERFACE','Compiled interface differs from manifest pin');}for(const lib of workflow.libraries??[])check(m.staticLibraries?.[lib.id]===lib.version,'PACKAGE.STATIC','Linked dependency differs from manifest');return workflow;};
   for(const b of m.bindings){
     const source=moduleFor(b.source,b.event);
     if(b.delegation){
@@ -104,11 +105,16 @@ export async function planPackageInstall({root,packagePath,placement,approvals,s
   check(!(model.installed?.packages??[]).some(p=>[p.placement.page,...(p.additions??[]).map(x=>x.placement.page)].includes(placement.page)),'PACKAGE.PRINCIPALS','One authorized package principal per Page');
   const raw=JSON.parse(safeRead(root,'prototypes/objects.json'));for(const p of model.installed?.packages??[])raw.push(...JSON.parse(p.resources[p.manifest.resources.prototypes]));raw.push(...definitions);
   const trusted=Object.fromEntries(JSON.parse(safeRead(root,'prototypes/objects.json')).map(d=>[d.id,d.publisher]));for(const entry of model.installed?.packages??[])if(verifiedPackages[entry.manifest.id]===entry.manifest.publisher)for(const d of JSON.parse(entry.resources[entry.manifest.resources.prototypes]))trusted[d.id]=entry.manifest.publisher;if(verifiedPackages[manifest.id]===manifest.publisher)for(const d of definitions)trusted[d.id]=manifest.publisher;
-  const staticOptions={libraries:staticLibraries,dependencies:manifest.staticLibraries??{}};
+  const interfaceDefinitions=compileDefinitions(raw.filter(d=>d.interface===true),{verifiedPrototypes:trusted});
+  const interfaceRegistry=new PrototypeRegistry(interfaceDefinitions,{verifiedPrototypes:trusted});
+  for(const [id,version] of Object.entries(manifest.interfaces??{}))interfaceRegistry.interface(`interface:${id}@${version}`);
+  const staticOptions={libraries:staticLibraries,dependencies:{...manifest.staticLibraries,...manifest.interfaces},prototypeRegistry:interfaceRegistry,verifiedPrototypes:trusted};
   if(manifest.staticLibraries){check(staticLibraries instanceof StaticLibraryRegistry,'PACKAGE.STATIC','Host must supply an approved static-library build context');for(const [id,v] of Object.entries(manifest.staticLibraries))staticLibraries.resolve(id,v);}
+  for(const d of definitions)for(const [id,v] of Object.entries(d.dependencies??{}))check(staticOptions.dependencies[id]===v,'PACKAGE.INTERFACE','Prototype dependency differs from approved build pins');
   const compiledDefinitions=compileDefinitions(definitions,staticOptions);
-  if(manifest.staticLibraries)resources[manifest.resources.prototypes]=JSON.stringify(compiledDefinitions);
-  const registry=new PrototypeRegistry(compileDefinitions(raw.map(d=>compiledDefinitions.find(c=>c.id===d.id)??d)),{verifiedPrototypes:trusted});check(registry.isA(template.prototype,'wydgit.core/section'),'PACKAGE.TEMPLATE','Expected Section template');
+  for(const d of compiledDefinitions){for(const [id,v] of Object.entries(d.implements??{}))check(manifest.interfaces?.[id]===v,'PACKAGE.INTERFACE','Implementation must declare its exact manifest pin');if(d.behavior)for(const type of interfaceTypes(d.behavior)){const contract=interfaceRegistry.interface(type);check(manifest.interfaces?.[contract.id]===contract.version,'PACKAGE.INTERFACE','Prototype interface differs from manifest pin');}}
+  if(manifest.staticLibraries||manifest.interfaces||definitions.some(d=>d.interface))resources[manifest.resources.prototypes]=JSON.stringify(compiledDefinitions);
+  const registry=new PrototypeRegistry(compileDefinitions(raw.map(d=>compiledDefinitions.find(c=>c.id===d.id)??d),{verifiedPrototypes:trusted}),{verifiedPrototypes:trusted});check(registry.isA(template.prototype,'wydgit.core/section'),'PACKAGE.TEMPLATE','Expected Section template');
   properties=clean(properties);const configuredTemplate=copyEnvelope(template);check(properties&&typeof properties==='object'&&!Array.isArray(properties),'PACKAGE.TEMPLATE','Invalid template properties');
   const configure=node=>{if(Object.hasOwn(properties,node.id))Object.assign(node.properties,clean(properties[node.id]));Object.values(node.slots).flat().forEach(configure);};
   check(Object.keys(properties).every(id=>idsOf(template).includes(id)),'PACKAGE.TEMPLATE','Properties outside template');configure(configuredTemplate);
@@ -124,7 +130,7 @@ export async function planPackageInstall({root,packagePath,placement,approvals,s
   for(const item of [{placement,instance:configuredTemplate},...extra])check(runtime.get(item.placement.parent).slots[item.placement.slot]?.[item.placement.index]===item.instance.id,'PACKAGE.PLACEMENT','Attachments must preserve each approved position');
   if(navigation){fields(navigation,['id','label'],'PACKAGE.PLACEMENT');check(typeof navigation.label==='string'&&navigation.label.length<=128&&runtime.get(runtime.rootId).slots.navigation.includes(navigation.id),'PACKAGE.PLACEMENT','Choose existing App navigation');const node=runtime.get(navigation.id);check(registry.isA(node.prototype,'wydgit.core/navigation'),'PACKAGE.PLACEMENT','Expected navigation');const edit=runtime.edit(installationContext);edit.setProperty(navigation.id,'items',[...node.properties.items,{label:navigation.label,page:placement.page}]);runtime=edit.commit().runtime;}
   const result={runtime,revision:runtime.revision};
-  const compiledSources=manifest.staticLibraries?Object.fromEntries(Object.entries(manifest.resources.sources).map(([id,file])=>[id,compileModule(resources[file],staticOptions)])):null;
+  const compiledSources=manifest.staticLibraries||manifest.interfaces?Object.fromEntries(Object.entries(manifest.resources.sources).map(([id,file])=>[id,compileModule(resources[file],staticOptions)])):null;
   const extensions={...(compiledSources?{compiledSources}:{}),...(extra.length?{additions:extra.map(item=>({placement:item.placement,instance:JSON.stringify(item.instance)}))}:{}),...(createdPage?{page:JSON.stringify(createdPage)}:{}),...(navigation?{navigation:clean(navigation)}:{}),...(Object.keys(properties).length?{properties:clean(properties)}:{}),...(Object.keys(libraryScopes).length?{libraryScopes}: {})};
   const entry={state:'installed',manifest,resources,approved,storageMappings:storage.mappings,storageScopes:storage.scopes,libraries:resolved,instanceIds,instance:template.id,installable:manifest.installables[0].id,placement:clean(placement),...extensions};
   packageBindings(entry,registry,result.runtime);

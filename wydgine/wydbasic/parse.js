@@ -1,7 +1,7 @@
 import { tokenize } from './tokenize.js';
 import { fail } from './errors.js';
 // AST nodes retain spelling and token locations; no executor consumes this tree.
-export function parse(source,{module=false}={}) {
+export function parse(source,{module=false,interfaceDeclaration=false}={}) {
   const tokens=tokenize(source);let index=0,depth=0;
   const token=()=>tokens[index],is=v=>['identifier','symbol'].includes(token().kind)&&String(token().value).toUpperCase()===v;
   const take=()=>tokens[index++],eat=v=>is(v)?take():null;
@@ -72,21 +72,23 @@ export function parse(source,{module=false}={}) {
     if(!/^[a-z][a-z0-9.-]*\/[a-z][a-z0-9-]*$/.test(id))fail('NAME','WITH LIBRARY requires a lowercase publisher-qualified identity.',start.location);
     imports.push(node('library',start,{id}));endLine();
   }
+  let interfaceName=null;if(interfaceDeclaration){expect('INTERFACE');interfaceName=identifier().value;endLine();}
   if(!module){const body=block();return {kind:'program',location,body,imports};}
   const procedures=[],events=[];blank();
-  while(token().kind!=='eof'){
+  while(token().kind!=='eof'&&!(interfaceDeclaration&&is('END'))){
     const start=token();
     if(is('SUB')||is('FUNCTION')){
       const kind=take().value.toUpperCase(),name=identifier(),params=[];expect('(');blank();
       if(!is(')'))do{blank();const param=identifier();expect('AS');const type=identifier();params.push(node('parameter',param,{name:param.value,type:type.value}));blank();}while(eat(','));expect(')');
       let returns=null;if(kind==='FUNCTION'){expect('AS');returns=identifier().value;}endLine();
-      const body=block(['END']);expect('END');expect(kind);endLine();procedures.push(node('procedure',start,{name:name.value,procedureKind:kind.toLowerCase(),params,returns,body}));
-    }else if(eat('EVENT')){
+      const body=interfaceDeclaration?[]:block(['END']);if(!interfaceDeclaration){expect('END');expect(kind);endLine();}procedures.push(node('procedure',start,{name:name.value,procedureKind:kind.toLowerCase(),params,returns,body}));
+    }else if(!interfaceDeclaration&&eat('EVENT')){
       const name=identifier();let type=name.value;if(eat('.'))type+='.'+identifier().value;endLine();
       const body=block(['END']);expect('END');expect('EVENT');endLine();events.push(node('event',start,{type,body}));
     }else fail('SYNTAX','Modules contain only SUB, FUNCTION and EVENT declarations.',start.location);
   }
-  return {kind:'module',location,procedures,events,imports};
+  if(interfaceDeclaration){expect('END');expect('INTERFACE');endLine();if(token().kind!=='eof'||imports.length)fail('SYNTAX','Interfaces contain signatures only.',token().location);}
+  return {kind:'module',location,procedures,events,imports,interfaceName};
 }
 
 export const parseModule=source=>parse(source,{module:true});

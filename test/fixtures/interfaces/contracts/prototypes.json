@@ -1,0 +1,15 @@
+{
+  "schema": "wydgit.prototype-package/0.1",
+  "id": "contracts/interface-conformance",
+  "publisher": "contracts",
+  "version": "1.0.0",
+  "prototypes": [
+    {
+      "id": "contracts/icountable",
+      "publisher": "contracts",
+      "interface": true,
+      "version": "1.0.0",
+      "behaviorSource": "INTERFACE ICountable\nFUNCTION Count() AS Integer\nSUB Observe(value AS String)\nEND INTERFACE"
+    }
+  ]
+}

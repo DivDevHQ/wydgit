@@ -96,3 +96,9 @@ export const regexReservedNames=Object.freeze([...collectionReservedNames,...Obj
 export const DO_SCHEMA='sewn/0.16';
 export const doStatements=Object.freeze({...collectionStatements,do:['mode','condition','body'],exitDo:[]});
 export const doReservedNames=Object.freeze([...regexReservedNames,'UNTIL']);
+
+// Validated interface views belong only to 0.17.
+export const INTERFACE_SCHEMA='sewn/0.17';
+export const interfaceExpressions=Object.freeze({...collectionExpressions,implements:['value','type'],cast:['value','type']});
+export const interfaceStatements=Object.freeze({...doStatements,declare:['name','value','type?'],set:['name','value','type?']});
+export const interfaceReservedNames=Object.freeze([...doReservedNames,'INTERFACE','IMPLEMENTS','CAST']);
