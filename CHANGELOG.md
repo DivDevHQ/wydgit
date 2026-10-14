@@ -1,5 +1,16 @@
 ## Unreleased
 
+### WydClient 0.1.0-alpha.4 — Immutable distribution correction
+
+- Restore alpha.3 readable/minified distributions exactly to pre-0.19 H2 bytes;
+  preserve their original size report as a versioned snapshot.
+- Package updated canonical validation as alpha.4; update runtime/package/lock
+  metadata, current examples and all 14 Chrome smoke fixtures to the new artifact.
+- Build in memory and reject changes/deletions of committed versioned distributions
+  against Git history before writing. Add committed-mutation, rebuild and version
+  rollover regressions plus a functional alpha.3/alpha.4 validation comparison.
+- Keep protocol 0.1 and platform 0.3.0-alpha.7 unchanged; no publishing or deployment.
+
 ### WBasic / SEWN 0.19 — Class authoring foundation
 
 - Compile first-class CLASS declarations through a shared definition IR into

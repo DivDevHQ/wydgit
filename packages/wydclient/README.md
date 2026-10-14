@@ -1,6 +1,6 @@
-# WydClient 0.1 — Standalone and container bootstrap (0.3-H1/H1b)
+# WydClient 0.1 — Standalone and container bootstrap
 
-WydClient **0.1.0-alpha.2** is a standalone browser runtime bootstrap. It works on
+WydClient **0.1.0-alpha.4** is a standalone browser runtime bootstrap. It works on
 static HTTP websites without Wydgine, a database, npm, module imports or build
 tools on the consuming host. Wydgine remains **0.3.0-alpha.7**. WydSUB compatibility
 is independently declared as **0.1**, not derived from implementation SemVer.
@@ -9,7 +9,7 @@ JSON Page snapshot are the renderer-independent contract for later adapters.
 
 ## Distribution and host API
 
-Self-host `dist/wydgit-client-0.1.0-alpha.2.min.js` or upload the exact artifact to
+Self-host `dist/wydgit-client-0.1.0-alpha.4.min.js` or upload the exact artifact to
 your CDN under that immutable filename. Do not overwrite deployed version paths;
 pin upgrades explicitly. A readable `.js` artifact accompanies it. CDN hosting is
 a deployment approach, not an existing hosted CDN or published npm release. This
@@ -17,7 +17,7 @@ repository workspace is distributable with `npm pack --workspace @wydgit/client`
 publishing, tags and releases remain manual. Build tooling is repository-only.
 
 ```html
-<script defer src="/wydgit/wydgit-client-0.1.0-alpha.2.min.js"></script>
+<script defer src="/wydgit/wydgit-client-0.1.0-alpha.4.min.js"></script>
 ```
 
 The frozen global API is only `WydClient.version`, `WydClient.protocol`
@@ -38,7 +38,7 @@ it is not overwritten.
 The document runtime still initializes automatically in `document.body`, with the
 same H1 Page identity, manifest conventions and `WydClient.ready()` result. Existing
 standalone HTML requires no change. The alpha.1 artifacts are retained unchanged;
-new integrations pin alpha.2. One loaded global owns the runtime manager, and
+new integrations pin alpha.4. One loaded global owns the runtime manager, and
 loading its script twice never replaces it or adds another document context.
 
 ```html
@@ -354,7 +354,7 @@ A single-file host (the immutable runtime remains an external script):
 <script type="application/json" id="wydgit-manifest">
 {"schema":"wydgit.registry/0.1","prototypes":[{"id":"acme/home-page","publisher":"acme","extends":"wydgit.core/page"}]}
 </script>
-<script defer src="/wydgit/wydgit-client-0.1.0-alpha.2.min.js"></script>
+<script defer src="/wydgit/wydgit-client-0.1.0-alpha.4.min.js"></script>
 <script>addEventListener('DOMContentLoaded', async () => {
   const result = await WydClient.ready();
   document.getElementById('status').textContent = JSON.stringify(result, null, 2);
@@ -363,10 +363,10 @@ A single-file host (the immutable runtime remains an external script):
 </html>
 ```
 
-## H2 trusted instance adapter (alpha.3)
+## H2 trusted instance adapter (introduced in alpha.3)
 
-New integrations use `dist/wydgit-client-0.1.0-alpha.3.min.js` (or readable `.js`).
-Alpha.1 and alpha.2 distributions remain immutable compatibility artifacts.
+New integrations use `dist/wydgit-client-0.1.0-alpha.4.min.js` (or readable `.js`).
+Alpha.1, alpha.2 and restored alpha.3 distributions remain immutable compatibility artifacts.
 `ready()` retains its result shape. The global and mounted handles add `host()`
 for trusted host construction, ordered canonical placement, text rendering and
 cleanup. This adapter must never be exposed to portable application code.
@@ -374,3 +374,38 @@ See the [H2 contract](../../docs/milestones/0.3-H2/README.md) for exact APIs,
 draft consumption, limits, rendering restrictions and H3 authority requirements.
 Static examples: `examples/instances.html` and `examples/instances-embedded.html`.
 Earlier sections describe the retained H1/H1b APIs and alpha.2 baseline.
+
+
+## Alpha.4 validation and immutable builds
+
+Current integrations and every static/Chrome example pin **0.1.0-alpha.4**. This
+independent client version records functional changes pulled in through shared
+canonical prototype validation by WBasic 0.19. It adds no browser compiler,
+portable event execution or lifecycle controller; H2/H3 boundaries remain unchanged.
+No rule reserves implementation version increments for dedicated client milestones.
+Publishing, tags and deployment remain separate, manual operations.
+
+The accidentally rebuilt alpha.3 files from `bb0af8e` are restored byte-for-byte
+from pre-0.19 H2 commit `15905895489e8db54cf3620d0d1ce1c0b5570fc1`.
+`dist/sizes-0.1.0-alpha.3.json` preserves that commit's exact size metadata.
+`dist/sizes.json` describes the current build; `dist/sizes-0.1.0-alpha.4.json`
+is the corresponding versioned snapshot. Do not treat the unversioned current
+size pointer as a historical artifact.
+
+`build.js` builds both forms in memory, verifies history with `artifact-policy.js`,
+and only then writes distributions and size reports. Existing committed versioned
+artifacts must reproduce their canonical bytes; otherwise increment the package
+and runtime implementation version and update current examples/docs before building.
+The guard checks every historical artifact, including deletions, so building a
+new version does not permit edits to old files. Node tests run the same check.
+
+The approved legacy baseline is the pre-0.19 H2 commit above. After that baseline,
+every newly introduced `wydgit-client-VERSION[.min].js` and `sizes-VERSION.json`
+filename is pinned to its first committed bytes, even if later commits modify,
+delete or re-add it. The one authorized alpha.3 restoration overrides the bad
+0.19 rebuild; it does not create a general repair bypass. Full Git history must
+be available for repository builds/tests; missing history fails closed with a
+fetch-history diagnostic. Build tooling stays outside the distributed browser code.
+
+See [the correction verification](../../docs/milestones/sewn-0.19/distribution-correction.md)
+for byte hashes, functional comparison and final test/browser results.

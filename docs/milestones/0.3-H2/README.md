@@ -1,5 +1,8 @@
 # 0.3-H2 — Scoped instances and rendering
 
+Current examples use alpha.4 with the same H2 API. The original alpha.3 distribution
+is preserved byte-for-byte; see the [distribution correction](../sewn-0.19/distribution-correction.md).
+
 WydClient 0.1.0-alpha.3, WydSUB 0.1. Wydgine remains 0.3.0-alpha.7.
 H0 canonical inheritance, properties, visibility and ordered named slots remain
 authoritative. This stage adds a trusted browser host adapter, not a SEWN executor.

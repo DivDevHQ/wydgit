@@ -10,7 +10,10 @@ import assert from 'node:assert/strict';
 import { load } from 'cheerio';
 const run = promisify(execFile), root = fileURLToPath(new URL('./', import.meta.url));
 const browser = process.env.WYDCLIENT_CHROME ?? 'google-chrome';
-const bundle = '/dist/wydgit-client-0.1.0-alpha.3.min.js';
+const pkg = JSON.parse(await readFile(root + 'package.json', 'utf8'));
+const bundle = `/dist/wydgit-client-${pkg.version}.min.js`;
+const requestedArtifacts = new Set();
+const checkArtifact = () => assert.deepEqual([...requestedArtifacts], [bundle], 'Every smoke case must load the current artifact');
 const report = '<script src="/examples/report.js"></script>';
 const body = '<main id="host-content"><h1>Host fixture</h1><pre id="diagnostics">Initializing…</pre></main>';
 const script = `<script src="${bundle}"></script>`;
@@ -25,6 +28,8 @@ const fixtures = {
 };
 const server = createServer(async (request, response) => {
   const path = new URL(request.url, 'http://localhost').pathname;
+  response.setHeader('Cache-Control', 'no-store');
+  if(path.startsWith('/dist/wydgit-client-'))requestedArtifacts.add(path);
   if (path === '/redirect.json') { response.writeHead(302, { Location: 'https://example.invalid/manifest.json' }); response.end(); return; }
   if (Object.hasOwn(fixtures, path)) {
     response.setHeader('Content-Type', 'text/html');
@@ -39,7 +44,9 @@ const server = createServer(async (request, response) => {
 await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });
 try {
   for (const path of ['/examples/instances.html', '/examples/instances-embedded.html']) {
+    requestedArtifacts.clear();
     const { stdout } = await run(browser, ['--headless', '--disable-gpu', `--user-data-dir=${tmpdir()}/wydclient-h2-${process.pid}`, '--dump-dom', '--virtual-time-budget=5000', `http://127.0.0.1:${server.address().port}${path}`], { maxBuffer: 1024*1024, timeout:20000 });
+    checkArtifact();
     const $=load(stdout); assert.equal($('#h2-result').text(),'PASS',path); assert.equal($('#host-content h1').length,1); assert.ok($('[data-wydclient-object] p').toArray().some(el => $(el).text()==='Second'));
     if(path.includes('embedded')) assert.match($('body').text(),/Surviving root/);
     console.log(`PASS ${path}: construction, placement, removal, isolation`);
@@ -55,9 +62,11 @@ try {
     ['/csp.html', false, 'wydgit.core/page', 'NETWORK.FAILED']
   ];
   for (const [path, ok, prototype, code] of cases) {
+    requestedArtifacts.clear();
     const { stdout } = await run(browser, ['--headless', '--disable-gpu', `--user-data-dir=${tmpdir()}/wydclient-h1-smoke-${process.pid}`, '--dump-dom', '--virtual-time-budget=3000', `http://127.0.0.1:${server.address().port}${path}`], { maxBuffer: 1024 * 1024, timeout: 20000 });
+    checkArtifact();
     const $ = load(stdout); const result = JSON.parse($('#diagnostics').text());
-    assert.equal(result.ok, ok, path); assert.equal(result.page.prototype, prototype, path);
+    assert.equal(result.version, pkg.version, path); assert.equal(result.ok, ok, path); assert.equal(result.page.prototype, prototype, path);
     if (code) assert.equal(result.diagnostics[0].code, code, path);
     assert.equal($('[data-wydclient-region]').length, 2, path);
     assert.equal($('body').children().first().attr('data-wydclient-region'), 'top', path);
@@ -66,7 +75,9 @@ try {
     console.log(`PASS ${path}: ${result.state}, ${prototype}, two regions, preserved host`);
   }
   for (const path of ['/examples/embedded.html', '/embedded-lifecycle.html']) {
+    requestedArtifacts.clear();
     const { stdout } = await run(browser, ['--headless', '--disable-gpu', `--user-data-dir=${tmpdir()}/wydclient-h1b-smoke-${process.pid}`, '--dump-dom', '--virtual-time-budget=5000', `http://127.0.0.1:${server.address().port}${path}`], { maxBuffer: 1024 * 1024, timeout: 20000 });
+    checkArtifact();
     const $ = load(stdout); assert.equal(JSON.parse($('#diagnostics').text()).ok, true, path);
     assert.equal($('#host-content h1').length, 1, path);
     if (path === '/examples/embedded.html') {

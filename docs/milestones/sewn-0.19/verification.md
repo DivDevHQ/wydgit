@@ -1,5 +1,11 @@
 # 0.19 verification — class authoring foundation
 
+**Distribution correction:** the initial alpha.3 rebuild recorded below was a
+versioning mistake. Current WydClient is alpha.4; alpha.3 has been restored exactly
+to its H2 bytes. See [the correction record](distribution-correction.md) for the
+new artifact identity and verification. The original measurements below describe
+`bb0af8e`, not the restored immutable alpha.3 distribution.
+
 Starting commit: `15905895489e8db54cf3620d0d1ce1c0b5570fc1` on `develop/0.3`.
 The starting tree was clean; fetched origin/develop/0.3 matched HEAD. Baseline
 `npm test` passed 689/689, and `npm run check` passed. The first restricted
