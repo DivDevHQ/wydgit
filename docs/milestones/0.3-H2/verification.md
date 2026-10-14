@@ -26,14 +26,15 @@ No language/executor/server implementations or previously published bundles chan
 
 Bytes, reproducible in `packages/wydclient/dist/sizes.json`:
 
-| Form | H2 alpha.3 | Published H1b alpha.2 | Increase |
+| Form | H2 alpha.3 | Checked-in H1b alpha.2 | Increase |
 | --- | ---: | ---: | ---: |
-| Readable | 93473 | 58369 | 35104 |
-| Minified | 56947 | 36199 | 20748 |
-| Gzip | 19196 | 12649 | 6547 |
-| Brotli | 16848 | 11258 | 5590 |
+| Readable | 93473 | 81670 | 11803 |
+| Minified | 56947 | 50455 | 6492 |
+| Gzip | 19196 | 16754 | 2442 |
+| Brotli | 16848 | 14787 | 2061 |
 
-This is substantial growth over the published H1b artifact. H2 adds the trusted
+The comparison uses actual checked-in alpha.2 bytes, rather than the older
+H1b verification report (which records an earlier 36199-byte minified build). H2 adds the trusted
 instance adapter and uses the current shared H0 prototype/declaration validators;
 prior immutable artifacts remain unchanged. No compiler, package builder, server
 execution engine or runtime npm dependency is added to the distribution. Shared
