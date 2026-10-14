@@ -29,7 +29,7 @@ The language is designed around five principles:
 2. **Modern semantics:** Prefer well-defined contemporary behavior, using ECMAScript as a reference where practical.
 3. **Portability:** Equivalent operations should produce equivalent results across compliant runtimes.
 4. **Constrained execution:** Programs have explicit capabilities and bounded resource consumption.
-5. **Backward compatibility:** Previously accepted source and validated SEWN programs should retain their meaning.
+5. **Backward compatibility:** Supported historical applications should retain their observable behavior and security constraints under the compatibility policy in Section 2.1.
 
 ## 1.2 Design philosophy
 
@@ -37,19 +37,23 @@ WBasic adopts useful ideas from QBasic, Visual Basic 6, VB.NET, and VBScript wit
 
 New development should favor WBasic's canonical function vocabulary.
 
-Traditional BASIC functions may be supplied through a versioned compatibility library.
+Traditional BASIC functions are planned as public static methods of the versioned `divdev/wbasic` compatibility library. The compiler must not automatically import this library; modules must explicitly import it. See [Static Wydgits and library resolution](wydgit-static-libraries-spec.md).
 
-For example:
+Proposed examples (canonical string operations and static imports are not yet implemented):
 
 ```vb
 ' Canonical
 DIM result AS String = Substring("Goober", 1, 3)
+```
 
-' Traditional BASIC compatibility
+```vb
+' Traditional BASIC compatibility, in a separate module
+WITH LIBRARY divdev/wbasic
+
 DIM result AS String = Mid("Goober", 2, 3)
 ```
 
-Both expressions return `"oob"`.
+Both expressions are intended to return `"oob"`. With the explicit import, `WBasic.Mid("Goober", 2, 3)` is also permitted. The source alias `WBasic` remains case-preserving; canonical package-ID casing and normalization remain open design decisions.
 
 WBasic does not support unrestricted JavaScript execution, arbitrary host imports, or unbounded code execution.
 
@@ -74,7 +78,30 @@ Each milestone introduces a closed, versioned SEWN extension where necessary. Th
 | 0.9 | Selection and reference identity | Implemented |
 | 0.10 | Numeric foundations and predicates | Implemented |
 
-These earlier versions must remain valid.
+### Historical SEWN compatibility policy
+
+Wydgit is currently in alpha development. Internal SEWN milestones do not automatically constitute permanent public wire-format compatibility commitments.
+
+Compatibility policy prioritizes:
+
+1. Published Wydgit 0.2.0-alpha.18 behavior, including its Guestbook application baseline.
+2. The last known-working pre-Codex Taskboard package, version 0.4.0-alpha.14.
+3. The current supported SEWN execution contract.
+4. Preservation of relevant security and behavioral regression tests.
+
+Earlier SEWN schemas may remain supported where required by these baselines, but their historical existence alone does not require indefinite runtime support.
+
+Where possible, supported historical applications should be migrated to the current canonical SEWN representation during build or installation rather than requiring permanent duplicate execution paths.
+
+Migration must preserve observable behavior and security constraints. An older schema identifier must never be silently reinterpreted using incompatible semantics.
+
+Unsupported historical representations must be explicitly rejected or migrated through a documented transformation.
+
+Historical Git releases and tags remain unchanged.
+
+See [docs/wydgit-package-distribution.md](wydgit-package-distribution.md) for the broader compatibility architecture.
+
+This policy does not change current runtime schema acceptance or remove existing compatibility tests. The foundation table records implemented milestones, not indefinite support commitments.
 
 ## 2.2 Milestone sequence (0.9–0.11 completed)
 
@@ -85,12 +112,14 @@ These earlier versions must remain valid.
 | **0.11 — Type contracts** | `Scalar`, `DataType`, `TypeOf()`, type comparisons, type-aware `SELECT CASE`, fundamental UTC `DateTime` |
 | **0.12 — Canonical operations** | `Convert()` including DateTime conversion, string primitives, math primitives, additional comparison utilities |
 | **0.13 — Collections and loops** | Array indexing, collection utilities, numeric `FOR / NEXT`, `CONST` |
-| **0.14 — Standard-library linking** | Automatically linked `.bas` modules, WBasic compatibility library, migration of `CStr()` and `Val()` |
+| **0.14 — Static Wydgits and library resolution** | Public static methods, explicit `WITH LIBRARY` imports, qualified calls, compile-time linking, version-locked dependencies, and the `divdev/wbasic` compatibility library |
 | **0.15 — Regular expressions** | ECMAScript-compatible regex operations with bounded execution |
 | **0.16 — Advanced control flow** | Bounded `DO WHILE`, `DO UNTIL`, loop control refinements |
 | **0.17 — Interfaces and casting** | Interface declarations, implementations, interface references, `Cast()` |
 | **0.18 — Date and time** | Portable timestamps, calendar operations, date/time standard library |
 | **1.0 — Language stabilization** | Complete specification, conformance suite, documentation, compatibility guarantees |
+
+The 0.14 architecture is specified in [docs/wydgit-static-libraries-spec.md](wydgit-static-libraries-spec.md). Static libraries and imports are proposed, not implemented.
 
 These versions describe an intended dependency order. A milestone may be split or moved if implementation reveals additional dependencies.
 
@@ -766,7 +795,7 @@ The primitive conversion matrix must specify which operations are supported. `Co
 
 ## 13.2 Legacy CStr and Val
 
-Traditional aliases will be provided by the WBasic compatibility library.
+Traditional aliases are planned as public static methods of `divdev/wbasic`, available only after an explicit `WITH LIBRARY divdev/wbasic` import. Qualified calls through the case-preserving `WBasic` alias require the same import.
 
 ```vb
 FUNCTION CStr(value AS Scalar) AS String
@@ -778,13 +807,13 @@ FUNCTION Val(value AS Scalar) AS Number
 END FUNCTION
 ```
 
-These illustrate the intended library contract.
+These illustrate proposed wrapper behavior, not current implementations. The static-method export mechanism follows [the static-library specification](wydgit-static-libraries-spec.md).
 
 Existing `CStr()` and `Val()` behavior from SEWN 0.7 must be preserved, including strict numeric parsing.
 
-Migration to the compatibility library is planned for SEWN 0.14, once standard-library linking exists.
+Migration to explicitly imported static-library wrappers is planned for SEWN 0.14. It is not implemented: the current compiler still lowers `CStr()` and `Val()` directly to SEWN 0.7 `convert` expressions. These legacy intrinsics are not a permanent special library-resolution mechanism.
 
-Previously compiled SEWN 0.7 programs remain executable.
+Previously compiled SEWN 0.7 programs remain executable in the current runtime. Future support and documented migrations follow Section 2.1; this is not an indefinite commitment to each intermediate grammar.
 
 ---
 
@@ -1018,23 +1047,15 @@ FINALLY does not circumvent execution budgets.
 
 ---
 
-# 18. Standard-library modules
+# 18. Static Wydgits and library resolution
 
-**Introduced: SEWN 0.14**
+**Planned: SEWN 0.14 — not yet implemented**
 
-WBasic supports trusted, versioned standard-library source modules.
+Static Wydgits expose public functions and procedures without instantiation. They use the shared prototype, package, SEWN and SEAM architecture described in [docs/wydgit-static-libraries-spec.md](wydgit-static-libraries-spec.md), rather than a separate automatically imported `.bas` module mechanism.
 
-The initial standard library will contain compatibility wrappers mapping historical BASIC operations to canonical SEWN operations.
+The proposed `divdev/wbasic` compatibility library provides ordinary public static wrappers over canonical SEWN operations. Source files may supply library implementations at build time, but the execution runtime does not dynamically load source modules.
 
-Proposed module:
-
-```text
-stdlib/
-    wb/
-        compat.bas
-```
-
-Example:
+Illustrative wrapper bodies:
 
 ```vb
 FUNCTION Mid(value AS String, start AS Integer, count AS Integer) AS String
@@ -1050,19 +1071,28 @@ FUNCTION UCase(value AS String) AS String
 END FUNCTION
 ```
 
-Each wrapper must implement its documented BASIC semantics, including edge cases, rather than merely resemble the original function.
+These are proposed bodies, not an implemented static export syntax. Each wrapper must implement its documented BASIC semantics, including edge cases, rather than merely resemble the original function.
 
-## 18.1 Automatic linking
+## 18.1 Explicit imports and compile-time linking
 
-When source references a standard-library function, the compiler resolves and links the corresponding compiled procedure and its dependencies.
+The compiler must not automatically import `divdev/wbasic` or any other static library. Installation makes a library available for resolution; it does not import its exports into source.
 
-The runtime does not load source modules dynamically.
+Proposed usage:
 
-The compiler records or otherwise locks the compatibility-library version used to produce the compiled program.
+```vb
+WITH LIBRARY divdev/wbasic
 
-User-defined procedures cannot silently override reserved canonical operations.
+DIM result AS String = Mid("Goober", 2, 3)
+DIM qualified AS String = WBasic.Mid("Goober", 2, 3)
+```
 
-Collision rules for standard-library functions and application procedures must be explicitly documented.
+Both calls resolve to the same version-locked implementation. The source alias `WBasic` remains case-preserving. Canonical package-ID casing and normalization remain open design decisions; the lowercase spelling in these examples does not establish either policy.
+
+Resolution checks local procedures first, then public static methods exported by explicitly imported libraries. Ambiguous unqualified library calls fail compilation; qualified calls resolve against the designated imported library. Reserved canonical operations cannot be silently overridden.
+
+The compiler/linker resolves approved package dependencies and links referenced methods and their transitive dependencies at build time. Dependency versions must be locked for reproducibility; library updates must not silently change already compiled behavior. Imports do not instantiate a Wydgit, authorize arbitrary package fetching or grant SEAM capabilities. Static calls retain the caller's authority and shared execution budgets.
+
+`Mid()`, `Len()` and `InStr()` are planned library methods, not permanent special compiler cases. Current `CStr()` and `Val()` lowering remains implemented as described in Section 13.2; migration to static wrappers is future work.
 
 ## 18.2 Backward compatibility
 
@@ -1191,7 +1221,7 @@ Each compiler must target the same canonical SEWN behavior.
 
 Differences in language syntax must not result in differences in security privileges or computational semantics.
 
-Compatibility wrappers belong to the relevant source-language standard library.
+Compatibility wrappers are planned as ordinary static Wydgit library methods, explicitly imported using the source language's import syntax. Future Wython and Wuby compilers may link the same validated SEWN methods without a separate library execution mechanism.
 
 SEWN is not required to preserve historical language quirks unless they are part of a deliberately specified canonical operation.
 

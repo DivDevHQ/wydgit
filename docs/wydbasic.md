@@ -573,3 +573,21 @@ type/inference description above describes legacy Number behavior.
 Scalar, DataType, TypeOf and explicit UTC DateTime construction are implemented.
 See [the complete contract and serialization boundaries](milestones/wbasic-sewn-0.11.md).
 Uninitialized declarations of these types require an initializer. Earlier grammars remain closed.
+
+## Architecture roadmap and compatibility policy
+
+The implemented grammar and compiler behavior described above remain unchanged.
+Historical milestone records describe what shipped; they do not promise indefinite
+support for every intermediate alpha wire format. Future compatibility work follows
+[the published application baselines and migration policy](wydgit-package-distribution.md#8-sewn-versioning-and-compatibility).
+Unsupported formats must be explicitly rejected or migrated through a documented,
+behavior-preserving transformation; old schema identifiers cannot silently acquire
+incompatible semantics. Existing regression tests remain in place.
+
+[Static Wydgits and library resolution](wydgit-static-libraries-spec.md) are proposed
+for 0.14, not implemented. Libraries require explicit `WITH LIBRARY` imports,
+including `divdev/wbasic`; qualified `WBasic` calls require the same import.
+Current SEWN 0.7 `CStr()` and `Val()` intrinsic lowering remains implemented.
+Migration to static-library wrappers is planned, not complete. Canonical package-ID
+casing and normalization remain unresolved; the `WBasic` source alias stays
+case-preserving.

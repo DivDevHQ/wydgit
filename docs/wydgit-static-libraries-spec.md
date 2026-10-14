@@ -44,18 +44,21 @@ A static library is defined using the normal publisher-qualified Wydgit identity
 
 The initial standard WBasic library is proposed as:
 
-**Canonical identity:** `divdev/WBasic`  
+**Proposed identity (illustrative spelling):** `divdev/wbasic`
+
 **Source-level alias:** `WBasic`
 
-A source-level alias is convenient syntax, not a separate package identity.
+A source-level alias is convenient syntax, not a separate package identity. The source alias `WBasic` remains case-preserving. Canonical package-ID casing and normalization remain open design decisions; lowercase example IDs do not mandate a casing policy.
 
-For example:
+For example, after an explicit import:
 
 ```vb
+WITH LIBRARY divdev/wbasic
+
 DIM result AS String = WBasic.Mid("Goober", 2, 3)
 ```
 
-The compiler resolves `WBasic` to the registered static library `divdev/WBasic`.
+The compiler resolves `WBasic` to the registered static library `divdev/wbasic`.
 
 Aliases must be unique within their applicable compilation scope.
 
@@ -104,9 +107,11 @@ Public visibility does not imply authorization to access protected resources.
 
 ### 4.2 Static invocation
 
-Explicitly qualified invocation:
+Explicitly qualified invocation still requires an import:
 
 ```vb
+WITH LIBRARY divdev/wbasic
+
 DIM result = WBasic.Mid("Goober", 2, 3)
 ```
 
@@ -114,7 +119,7 @@ A static method invocation must not require:
 
 ```vb
 DIM library AS Wydgit
-SET library = NEW "divdev/WBasic"(...)
+SET library = NEW "divdev/wbasic"(...)
 ```
 
 Static methods are resolved using library metadata and compiled method definitions.
@@ -142,9 +147,9 @@ The runtime must reject attempts to invoke an instance method without a valid in
 
 The canonical WBasic utility and compatibility library is a standard static Wydgit distributed with the Wydgit platform.
 
-Its proposed canonical identity is:
+Its proposed identity uses the illustrative spelling (casing and normalization remain unresolved):
 
-`divdev/WBasic`
+`divdev/wbasic`
 
 It provides public static methods implementing familiar BASIC functions and other reusable utilities.
 
@@ -159,7 +164,7 @@ No publisher or library receives special name-resolution privileges merely becau
 A WBasic source module may declare:
 
 ```vb
-WITH LIBRARY divdev/WBasic
+WITH LIBRARY divdev/wbasic
 ```
 
 This declaration must appear at module scope before executable statements.
@@ -169,7 +174,7 @@ It makes the library's public static exports available for unqualified calls wit
 For example:
 
 ```vb
-WITH LIBRARY divdev/WBasic
+WITH LIBRARY divdev/wbasic
 
 DIM result AS String = Mid("Goober", 2, 3)
 ```
@@ -179,7 +184,7 @@ The compiler resolves `Mid()` against the imported library's public static metho
 The equivalent explicitly qualified invocation is:
 
 ```vb
-WITH LIBRARY divdev/WBasic
+WITH LIBRARY divdev/wbasic
 
 DIM result AS String = WBasic.Mid("Goober", 2, 3)
 ```
@@ -206,11 +211,11 @@ Local procedures may shadow nonreserved imported functions without changing the 
 
 ### 5.3 No implicit library imports
 
-No static library is automatically imported into WBasic source, including `divdev/WBasic`.
+No static library is automatically imported into WBasic source, including `divdev/wbasic`.
 
 Installing a library makes it available for dependency resolution; it does not automatically expose its methods to every application.
 
-A module that does not import `divdev/WBasic` may still use canonical language operations supported directly by its compiler and SEWN target.
+A module that does not import `divdev/wbasic` may still use canonical language operations supported directly by its compiler and SEWN target.
 
 For example:
 
@@ -226,7 +231,7 @@ Third-party libraries follow precisely the same rules.
 
 Library installation and source-level import are separate operations.
 
-The Wydgit distribution may install `divdev/WBasic` by default as a convenience for developers.
+The Wydgit distribution may install `divdev/wbasic` by default as a convenience for developers.
 
 However:
 
@@ -250,7 +255,7 @@ A library update must not silently change the semantics of an already compiled a
 
 ### 5.6 Language-independent library model
 
-Although `divdev/WBasic` primarily provides BASIC-compatible functions, it is an ordinary static Wydgit.
+Although `divdev/wbasic` primarily provides BASIC-compatible functions, it is an ordinary static Wydgit.
 
 Its compiled SEWN methods may also be referenced by future Wython, Wuby, or other supported compilers through their respective import syntax.
 
@@ -344,6 +349,8 @@ The build process should link only methods that the application actually referen
 For example:
 
 ```vb
+WITH LIBRARY divdev/wbasic
+
 DIM result = WBasic.Mid("Goober", 2, 3)
 ```
 
@@ -516,9 +523,9 @@ A published static library package must have appropriate:
 
 ### 11.1 Standard library deployment
 
-`divdev/WBasic` is proposed as a standard static library distributed with supported Wydgit installations and development tooling.
+`divdev/wbasic` is proposed as a standard static library distributed with supported Wydgit installations and development tooling.
 
-Its installation does not imply automatic source-level import. Modules must explicitly declare `WITH LIBRARY divdev/WBasic` before using its exported methods.
+Its installation does not imply automatic source-level import. Modules must explicitly declare `WITH LIBRARY divdev/wbasic` before using its exported methods.
 
 Its version must be pinned or otherwise deterministically resolved during compilation or packaging.
 
@@ -579,7 +586,7 @@ Generic or contract-typed parameters must obey the ordinary WBasic/SEWN type sys
 
 ### 12.2 Intrinsic dependencies
 
-Static library functions may use canonical SEWN intrinsics.
+Static library functions may use canonical SEWN intrinsics. Migration of the currently implemented SEWN 0.7 `CStr()` and `Val()` compiler intrinsics to explicitly imported wrappers is planned, not implemented; their existing conversion behavior must be preserved under the compatibility policy.
 
 For instance, `Mid()` may call `Substring()`, and `CStr()` may call `Convert()`.
 
@@ -619,10 +626,12 @@ Future compilers such as Wython and Wuby should be able to resolve and link the 
 For example, WBasic might write:
 
 ```vb
+WITH LIBRARY divdev/wbasic
+
 WBasic.Mid("Goober", 2, 3)
 ```
 
-Other language dialects may expose the same functionality through imports, qualified names, or their native standard-library syntax.
+Other language dialects may expose the same functionality through their explicit import syntax and qualified names. Source-language convenience must not make an installed library implicitly available.
 
 All equivalent calls must ultimately follow the same SEWN method contract.
 
@@ -642,7 +651,7 @@ The implementing milestone must test:
 - Rejection of unauthorized or private method access.
 
 ### Library resolution
-- Explicit `WITH LIBRARY divdev/WBasic` imports.
+- Explicit `WITH LIBRARY divdev/wbasic` imports.
 - No implicit standard-library imports.
 - Unqualified calls to imported public static functions.
 - Explicitly qualified static calls.
@@ -716,7 +725,7 @@ Implement:
 - Runtime budget and SEAM integration.
 - Rejection of ambiguous or undeclared library references.
 
-Establish `divdev/WBasic` as the first canonical static library, distributed with the platform but imported explicitly by modules that require its functionality.
+Establish `divdev/wbasic` as the first canonical static library, distributed with the platform but imported explicitly by modules that require its functionality.
 
 No special implicit standard-library linking shall be introduced.
 
@@ -747,7 +756,7 @@ The following require resolution before implementation:
 11. How the build system handles independent browser and server linking targets.
 12. How library updates affect already installed packages.
 13. Whether future immutable static constants require their own representation.
-14. Specify whether package IDs are case-sensitive or normalized. Proposed convention: lowercase canonical package IDs with case-preserving source-level aliases.
+14. Specify canonical package-ID casing and whether IDs are case-sensitive or normalized. These remain open design decisions; no casing or normalization policy is mandated here. The source alias `WBasic` remains case-preserving.
 
 None of these questions should be silently decided by incidental implementation behavior.
 
@@ -759,8 +768,8 @@ The architecture is ready for initial implementation when:
 
 1. The static prototype and method contracts are specified.
 2. The linker can resolve and validate public static methods.
-3. `divdev/WBasic` can supply ordinary reusable functions.
-4. WBasic resolves standard-library functions only when the declaring module explicitly imports `divdev/WBasic` or another library exporting the requested function.
+3. `divdev/wbasic` can supply ordinary reusable functions.
+4. WBasic resolves standard-library functions only when the declaring module explicitly imports `divdev/wbasic` or another library exporting the requested function.
 5. Third-party libraries require explicit dependencies and imports.
 6. Static methods execute without instantiation.
 7. All SEAM and SEWN protections remain enforced.
