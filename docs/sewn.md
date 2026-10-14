@@ -507,3 +507,16 @@ the underlying instance, validated arguments/returns, caller authority and share
 resource counters. Wydgine and WydClient use the same implementation. Properties,
 interface inheritance, interface-valued contract signature members and concrete casts
 are deferred. See [the complete 0.17 contract and verification](milestones/wbasic-sewn-0.17.md).
+
+## Version 0.18: portable date and time operations
+
+0.18 extends 0.17 with five closed canonical operation names: DatePart, DateAdd,
+DateDiff, ParseDate and FormatDate, using the existing `operation {name,args}` wire.
+Older schemas reject them. DateTime remains the branded absolute UTC instant type.
+UTC and explicit fixed offsets are supported; named IANA zones and Now() are deferred.
+Calendar addition clamps month/year destination days; elapsed differences truncate
+and calendar differences count boundaries. Parsing/formatting are strict and invariant.
+All work retains caller steps/deadline and bounded text/token/output limits; invalid
+values produce SEWN.TYPE and exhausted budgets produce nonrecoverable SEWN.LIMIT.
+See [the complete 0.18 contract](milestones/wbasic-sewn-0.18.md) for exact signatures,
+grammars, offset semantics, security verification and browser measurements.

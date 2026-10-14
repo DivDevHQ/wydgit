@@ -51,7 +51,7 @@ export class PrototypeRegistry {
       let behavior=null;if(d.behavior!==undefined){try{behavior=validate(d.behavior);}catch{check(false,'PROTOTYPE.METHOD','Invalid portable method behavior');}}
       check(d.methods===undefined&&d.behaviorSource===undefined,'PROTOTYPE.METHOD','Behavior must be compiled by trusted setup');
       check(new Set(d.overrides??[]).size===(d.overrides??[]).length,'PROTOTYPE.METHOD','Duplicate overrides');
-      check(!behavior||['sewn/0.3','sewn/0.4','sewn/0.5','sewn/0.6','sewn/0.7','sewn/0.8','sewn/0.9','sewn/0.10','sewn/0.11','sewn/0.12','sewn/0.13','sewn/0.14','sewn/0.15','sewn/0.16','sewn/0.17'].includes(behavior.schema)&&behavior.body.length===0,'PROTOTYPE.METHOD','Expected portable prototype behavior');
+      check(!behavior||['sewn/0.3','sewn/0.4','sewn/0.5','sewn/0.6','sewn/0.7','sewn/0.8','sewn/0.9','sewn/0.10','sewn/0.11','sewn/0.12','sewn/0.13','sewn/0.14','sewn/0.15','sewn/0.16','sewn/0.17','sewn/0.18'].includes(behavior.schema)&&behavior.body.length===0,'PROTOTYPE.METHOD','Expected portable prototype behavior');
       for(const [name,proc] of Object.entries(behavior?.procedures??{})){
         check(!Object.keys(facadeMethods.handle).some(x=>x.toLowerCase()===name.toLowerCase()),'PROTOTYPE.METHOD','Method conflicts with kernel facade');
         const old=inheritedMethods[name];
@@ -110,7 +110,7 @@ export class PrototypeRegistry {
     for(const d of this.#definitions.values()){
       if(d.interface)continue;
       if(d.behavior)for(const type of interfaceTypes(d.behavior))this.interface(type);
-      if(d.static){check(['sewn/0.14','sewn/0.15','sewn/0.16','sewn/0.17'].includes(d.behavior?.schema),'PROTOTYPE.STATIC','Static behavior requires sewn/0.14, sewn/0.15 or sewn/0.16');const walk=v=>{if(!v||typeof v!=='object')return;check(!(v.op==='context'&&v.name==='ME'),'PROTOTYPE.STATIC','Static methods have no Me');Object.values(v).forEach(walk);};walk(d.behavior);for(const lib of d.behavior.libraries??[])check(d.dependencies?.[lib.id]===lib.version&&lib.id!==d.id,'PROTOTYPE.STATIC','Linked dependency must be declared');continue;}
+      if(d.static){check(['sewn/0.14','sewn/0.15','sewn/0.16','sewn/0.17','sewn/0.18'].includes(d.behavior?.schema),'PROTOTYPE.STATIC','Static behavior requires sewn/0.14, sewn/0.15 or sewn/0.16');const walk=v=>{if(!v||typeof v!=='object')return;check(!(v.op==='context'&&v.name==='ME'),'PROTOTYPE.STATIC','Static methods have no Me');Object.values(v).forEach(walk);};walk(d.behavior);for(const lib of d.behavior.libraries??[])check(d.dependencies?.[lib.id]===lib.version&&lib.id!==d.id,'PROTOTYPE.STATIC','Linked dependency must be declared');continue;}
       const graph=new Map();
       const walk=(v,edges,behavior)=>{if(!v||typeof v!=='object')return;
         if(['procedureCall','functionCall'].includes(v.op))edges.add(behavior+':'+v.name);

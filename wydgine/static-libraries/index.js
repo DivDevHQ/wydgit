@@ -1,8 +1,9 @@
+import {DATE_SCHEMA} from '../sewn/schema.js';
 import {INTERFACE_SCHEMA} from '../sewn/schema.js';
 import { PrototypeRegistry } from '../object-model/prototypes.js';
 import { clean, requireThat as check } from '../object-model/validation.js';
 import { validate } from '../sewn/validate.js';
-import { STATIC_SCHEMA, DO_SCHEMA, REGEX_SCHEMA, regexReservedNames } from '../sewn/schema.js';
+import { STATIC_SCHEMA, DO_SCHEMA, REGEX_SCHEMA, dateReservedNames } from '../sewn/schema.js';
 
 // Host-issued verified publisher bindings are the existing prototype trust boundary.
 // Installation/availability never constitutes an import or a grant of authority.
@@ -35,7 +36,7 @@ export function libraryScope(imports, {libraries, dependencies={}}={}) {
     check(!definitions.some(d=>d.id===id),'LIBRARY.ALIAS',`Duplicate library import: ${id}`);
     check(libraries instanceof StaticLibraryRegistry,'LIBRARY.MISSING',`Missing library resolver: ${id}`);
     const d=libraries.resolve(id,dependencies[id]),alias=d.alias.toLowerCase();
-    check(!regexReservedNames.includes(d.alias.toUpperCase())&&!aliases.has(alias),'LIBRARY.ALIAS',`Ambiguous or reserved library alias: ${d.alias}`);
+    check(!dateReservedNames.includes(d.alias.toUpperCase())&&!aliases.has(alias),'LIBRARY.ALIAS',`Ambiguous or reserved library alias: ${d.alias}`);
     // Every prelinked dependency must still be explicitly approved by the build host.
     for(const [id,version] of Object.entries(d.dependencies??{}))libraries.resolve(id,dependencies[id]===version?version:undefined);
     for(const dep of d.behavior.libraries??[]){
@@ -71,7 +72,7 @@ export function libraryScope(imports, {libraries, dependencies={}}={}) {
 // Portable linked procedures have no runtime resolver. Rewriting walks only the
 // closed, validated SEWN representation and includes the referenced call closure.
 export function createLinker(reserved=[],resolve=null) {
-  let interfaces=false,conditional=false,regex=false;
+  let dates=false,interfaces=false,conditional=false,regex=false;
   const procedures=Object.create(null),libraries=new Map(),targets=new Map();
   const record=(id,version,alias)=>{
     if(libraries.has(id))check(libraries.get(id).version===version,'LIBRARY.VERSION','Conflicting linked versions');
@@ -79,6 +80,7 @@ export function createLinker(reserved=[],resolve=null) {
     return libraries.get(id);
   };
   function link(definition,name,internal=false){
+    if(definition.behavior.schema===DATE_SCHEMA)dates=true;
     if(definition.behavior.schema===INTERFACE_SCHEMA)interfaces=true;
     if(definition.behavior.schema===DO_SCHEMA)conditional=true;
     if(definition.behavior.schema===REGEX_SCHEMA)regex=true;
@@ -103,6 +105,6 @@ export function createLinker(reserved=[],resolve=null) {
   return {link,finish(program){
     const occupied=new Set(Object.keys(program.procedures??{}));
     check(Object.keys(procedures).every(n=>!occupied.has(n)),'LIBRARY.NAME','Local procedure collides with linked procedure identity');
-    return validate({...program,schema:interfaces||program.schema===INTERFACE_SCHEMA?INTERFACE_SCHEMA:conditional||program.schema===DO_SCHEMA?DO_SCHEMA:regex||program.schema===REGEX_SCHEMA?REGEX_SCHEMA:STATIC_SCHEMA,procedures:{...program.procedures,...procedures},libraries:[...libraries.values()].sort((a,b)=>a.id.localeCompare(b.id))});
+    return validate({...program,schema:dates||program.schema===DATE_SCHEMA?DATE_SCHEMA:interfaces||program.schema===INTERFACE_SCHEMA?INTERFACE_SCHEMA:conditional||program.schema===DO_SCHEMA?DO_SCHEMA:regex||program.schema===REGEX_SCHEMA?REGEX_SCHEMA:STATIC_SCHEMA,procedures:{...program.procedures,...procedures},libraries:[...libraries.values()].sort((a,b)=>a.id.localeCompare(b.id))});
   }};
 }

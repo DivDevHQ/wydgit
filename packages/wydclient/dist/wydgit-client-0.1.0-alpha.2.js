@@ -211,7 +211,7 @@
 
   // wydgine/sewn/schema.js
   var SCHEMA2 = "sewn/0.1";
-  var MAXIMA = Object.freeze({ steps: 1e4, expressionDepth: 32, nesting: 16, iterations: 1e3, variables: 64, valueNodes: 4096, string: 16384, serviceCalls: 32, procedureCalls: 256, procedureDepth: 16, parameters: 16, drafts: 64, draftDepth: 32, draftNodes: 256, constructionOperations: 512, constructionSize: 65536, regexPattern: 256, regexInput: 4096, regexCaptures: 8, regexMatches: 128, regexOutput: 16384, regexDepth: 16, regexRepeat: 32, regexAtoms: 128, regexInstructions: 512, regexWork: 1e6, timeMs: 1e3, programNodes: 8192, programSize: 65536 });
+  var MAXIMA = Object.freeze({ dateInput: 40, dateFormat: 256, dateTokens: 64, dateZone: 64, dateOutput: 1024, steps: 1e4, expressionDepth: 32, nesting: 16, iterations: 1e3, variables: 64, valueNodes: 4096, string: 16384, serviceCalls: 32, procedureCalls: 256, procedureDepth: 16, parameters: 16, drafts: 64, draftDepth: 32, draftNodes: 256, constructionOperations: 512, constructionSize: 65536, regexPattern: 256, regexInput: 4096, regexCaptures: 8, regexMatches: 128, regexOutput: 16384, regexDepth: 16, regexRepeat: 32, regexAtoms: 128, regexInstructions: 512, regexWork: 1e6, timeMs: 1e3, programNodes: 8192, programSize: 65536 });
   var statements = Object.freeze({ declare: ["name", "value"], set: ["name", "value"], if: ["condition", "then", "else?"], forEach: ["name", "items", "body"], call: ["target", "method", "args", "into?"], service: ["library", "method", "input", "into?"], return: ["value"], stop: ["value?"] });
   var expressions = Object.freeze({ array: ["items"], object: ["fields"], literal: ["value"], variable: ["name"], context: ["name"], read: ["target", "key"], invoke: ["target", "method", "args"], binary: ["operator", "left", "right"], not: ["value"] });
   var operators = ["=", "!=", "<", "<=", ">", ">=", "AND", "OR", "+", "-", "*", "/", "concat"];
@@ -309,6 +309,10 @@
   var interfaceExpressions = Object.freeze({ ...collectionExpressions, implements: ["value", "type"], cast: ["value", "type"] });
   var interfaceStatements = Object.freeze({ ...doStatements, declare: ["name", "value", "type?"], set: ["name", "value", "type?"] });
   var interfaceReservedNames = Object.freeze([...doReservedNames, "INTERFACE", "IMPLEMENTS", "CAST"]);
+  var DATE_SCHEMA = "sewn/0.18";
+  var dateSignatures = Object.freeze({ DatePart: ["DateTime", "String", "String"], DateAdd: ["DateTime", "String", "Integer", "String"], DateDiff: ["DateTime", "DateTime", "String", "String"], ParseDate: ["String", "String", "String"], FormatDate: ["DateTime", "String", "String"] });
+  var dateOperationSignatures = Object.freeze({ ...regexOperationSignatures, ...dateSignatures });
+  var dateReservedNames = Object.freeze([...interfaceReservedNames, ...Object.keys(dateSignatures).map((x) => x.toUpperCase())]);
 
   // wydgine/object-model/interfaces.js
   var interfaceType = (t) => typeof t === "string" && /^interface:[a-z][a-z0-9.-]*\/[a-z][a-z0-9-]*@(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/.test(t);
@@ -472,12 +476,12 @@
       ensure(Object.keys(n).every((k) => k === "op" || fields.some((f) => f.replace("?", "") === k)));
       for (const f of fields) if (!f.endsWith("?")) ensure(Object.hasOwn(n, f));
     };
-    const interfaces = p?.schema === INTERFACE_SCHEMA, conditional = interfaces || p?.schema === DO_SCHEMA, regex = conditional || p?.schema === REGEX_SCHEMA, staticLinked = regex || p?.schema === STATIC_SCHEMA, collections = staticLinked || p?.schema === COLLECTION_SCHEMA, operations = collections || p?.schema === OPERATION_SCHEMA, contracts = operations || p?.schema === CONTRACT_SCHEMA, numeric = contracts || p?.schema === NUMERIC_SCHEMA, types = contracts ? contractTypes : numeric ? numericTypes : sourceTypes;
-    const selection = numeric || p?.schema === SELECTION_SCHEMA, exceptions = selection || p?.schema === EXCEPTION_SCHEMA, conversion = exceptions || p?.schema === CONVERSION_SCHEMA, control = conversion || p?.schema === CONTROL_SCHEMA, reserved = interfaces ? interfaceReservedNames : conditional ? doReservedNames : regex ? regexReservedNames : collections ? collectionReservedNames : operations ? operationReservedNames : contracts ? contractReservedNames : numeric ? numericReservedNames : selection ? selectionReservedNames : exceptions ? exceptionReservedNames : conversion ? conversionReservedNames : control ? controlReservedNames : reservedNames;
+    const dates = p?.schema === DATE_SCHEMA, interfaces = dates || p?.schema === INTERFACE_SCHEMA, conditional = interfaces || p?.schema === DO_SCHEMA, regex = conditional || p?.schema === REGEX_SCHEMA, staticLinked = regex || p?.schema === STATIC_SCHEMA, collections = staticLinked || p?.schema === COLLECTION_SCHEMA, operations = collections || p?.schema === OPERATION_SCHEMA, contracts = operations || p?.schema === CONTRACT_SCHEMA, numeric = contracts || p?.schema === NUMERIC_SCHEMA, types = contracts ? contractTypes : numeric ? numericTypes : sourceTypes;
+    const selection = numeric || p?.schema === SELECTION_SCHEMA, exceptions = selection || p?.schema === EXCEPTION_SCHEMA, conversion = exceptions || p?.schema === CONVERSION_SCHEMA, control = conversion || p?.schema === CONTROL_SCHEMA, reserved = dates ? dateReservedNames : interfaces ? interfaceReservedNames : conditional ? doReservedNames : regex ? regexReservedNames : collections ? collectionReservedNames : operations ? operationReservedNames : contracts ? contractReservedNames : numeric ? numericReservedNames : selection ? selectionReservedNames : exceptions ? exceptionReservedNames : conversion ? conversionReservedNames : control ? controlReservedNames : reservedNames;
     const members = control || p?.schema === MEMBER_SCHEMA;
     const versioned = members || p?.schema === SERVICE_SCHEMA, objects = versioned || p?.schema === OBJECT_SCHEMA, modern = objects || p?.schema === PROCEDURE_SCHEMA;
     const statementGrammar = interfaces ? interfaceStatements : conditional ? doStatements : collections ? collectionStatements : selection ? selectionStatements : exceptions ? exceptionStatements : control ? controlStatements : members ? memberStatements : versioned ? serviceStatements : objects ? objectStatements : modern ? procedureStatements : statements, expressionGrammar = interfaces ? interfaceExpressions : collections ? collectionExpressions : operations ? operationExpressions : contracts ? contractExpressions : numeric ? numericExpressions : selection ? selectionExpressions : conversion ? conversionExpressions : control ? controlExpressions : members ? memberExpressions : versioned ? serviceExpressions : objects ? objectExpressions : modern ? procedureExpressions : expressions;
-    ensure(p && [SCHEMA2, PROCEDURE_SCHEMA, OBJECT_SCHEMA, SERVICE_SCHEMA, MEMBER_SCHEMA, CONTROL_SCHEMA, CONVERSION_SCHEMA, EXCEPTION_SCHEMA, SELECTION_SCHEMA, NUMERIC_SCHEMA, CONTRACT_SCHEMA, OPERATION_SCHEMA, COLLECTION_SCHEMA, STATIC_SCHEMA, REGEX_SCHEMA, DO_SCHEMA, INTERFACE_SCHEMA].includes(p.schema) && Object.keys(p).every((k) => (modern ? ["schema", "body", "procedures", ...staticLinked ? ["libraries"] : []] : ["schema", "body"]).includes(k)));
+    ensure(p && [SCHEMA2, PROCEDURE_SCHEMA, OBJECT_SCHEMA, SERVICE_SCHEMA, MEMBER_SCHEMA, CONTROL_SCHEMA, CONVERSION_SCHEMA, EXCEPTION_SCHEMA, SELECTION_SCHEMA, NUMERIC_SCHEMA, CONTRACT_SCHEMA, OPERATION_SCHEMA, COLLECTION_SCHEMA, STATIC_SCHEMA, REGEX_SCHEMA, DO_SCHEMA, INTERFACE_SCHEMA, DATE_SCHEMA].includes(p.schema) && Object.keys(p).every((k) => (modern ? ["schema", "body", "procedures", ...staticLinked ? ["libraries"] : []] : ["schema", "body"]).includes(k)));
     const validType = (t) => types.includes(t) || interfaces && interfaceType(t);
     const procedures = modern ? p.procedures : {};
     ensure(procedures && typeof procedures === "object" && !Array.isArray(procedures));
@@ -561,7 +565,7 @@
         expr(n.value, d + 1);
       }
       if (n.op === "operation") {
-        const signatures = regex ? regexOperationSignatures : collections ? collectionSignatures : operationSignatures;
+        const signatures = dates ? dateOperationSignatures : regex ? regexOperationSignatures : collections ? collectionSignatures : operationSignatures;
         ensure(Object.hasOwn(signatures, n.name) && Array.isArray(n.args) && n.args.length === signatures[n.name].length);
         n.args.forEach((x) => expr(x, d + 1));
       }
@@ -822,7 +826,7 @@
         }
         requireThat(d.methods === void 0 && d.behaviorSource === void 0, "PROTOTYPE.METHOD", "Behavior must be compiled by trusted setup");
         requireThat(new Set(d.overrides ?? []).size === (d.overrides ?? []).length, "PROTOTYPE.METHOD", "Duplicate overrides");
-        requireThat(!behavior || ["sewn/0.3", "sewn/0.4", "sewn/0.5", "sewn/0.6", "sewn/0.7", "sewn/0.8", "sewn/0.9", "sewn/0.10", "sewn/0.11", "sewn/0.12", "sewn/0.13", "sewn/0.14", "sewn/0.15", "sewn/0.16", "sewn/0.17"].includes(behavior.schema) && behavior.body.length === 0, "PROTOTYPE.METHOD", "Expected portable prototype behavior");
+        requireThat(!behavior || ["sewn/0.3", "sewn/0.4", "sewn/0.5", "sewn/0.6", "sewn/0.7", "sewn/0.8", "sewn/0.9", "sewn/0.10", "sewn/0.11", "sewn/0.12", "sewn/0.13", "sewn/0.14", "sewn/0.15", "sewn/0.16", "sewn/0.17", "sewn/0.18"].includes(behavior.schema) && behavior.body.length === 0, "PROTOTYPE.METHOD", "Expected portable prototype behavior");
         for (const [name2, proc] of Object.entries(behavior?.procedures ?? {})) {
           requireThat(!Object.keys(methods.handle).some((x) => x.toLowerCase() === name2.toLowerCase()), "PROTOTYPE.METHOD", "Method conflicts with kernel facade");
           const old = inheritedMethods[name2];
@@ -897,7 +901,7 @@
         if (d.interface) continue;
         if (d.behavior) for (const type of interfaceTypes(d.behavior)) this.interface(type);
         if (d.static) {
-          requireThat(["sewn/0.14", "sewn/0.15", "sewn/0.16", "sewn/0.17"].includes(d.behavior?.schema), "PROTOTYPE.STATIC", "Static behavior requires sewn/0.14, sewn/0.15 or sewn/0.16");
+          requireThat(["sewn/0.14", "sewn/0.15", "sewn/0.16", "sewn/0.17", "sewn/0.18"].includes(d.behavior?.schema), "PROTOTYPE.STATIC", "Static behavior requires sewn/0.14, sewn/0.15 or sewn/0.16");
           const walk2 = (v) => {
             if (!v || typeof v !== "object") return;
             requireThat(!(v.op === "context" && v.name === "ME"), "PROTOTYPE.STATIC", "Static methods have no Me");

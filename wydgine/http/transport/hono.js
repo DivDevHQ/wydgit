@@ -15,7 +15,7 @@ const clientModules = [
   'wydgine/object-model/interfaces.js', 'wydgine/object-model/members.js', 'wydgine/object-model/forms.js', 'wydgine/object-model/validation.js', 'wydgine/object-model/schema.js', 'wydgine/object-model/construction.js', 'wydgine/object-model/prototypes.js', 'wydgine/seam/context.js',
   'wydgine/seam/capabilities.js', 'wydgine/http/input.js',
   'wydgine/sewn/schema.js', 'wydgine/sewn/validate.js',
-  'wydgine/sewn/execute.js', 'wydgine/sewn/bindings.js', 'wydgine/sewn/numeric.js', 'wydgine/sewn/operations.js', 'wydgine/sewn/regex.js', 'wydgine/sewn/vendor/re2js.js', 'wydgine/sewn/types.js'
+  'wydgine/sewn/execute.js', 'wydgine/sewn/bindings.js', 'wydgine/sewn/numeric.js', 'wydgine/sewn/operations.js', 'wydgine/sewn/dates.js', 'wydgine/sewn/regex.js', 'wydgine/sewn/vendor/re2js.js', 'wydgine/sewn/types.js'
 ];
 
 // Kernel-only output port. Neither Hono nor native response objects leave this adapter.

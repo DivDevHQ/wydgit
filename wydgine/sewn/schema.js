@@ -1,6 +1,6 @@
 // Runtime-neutral closed grammar. Every operand is a structured expression.
 export const SCHEMA='sewn/0.1';
-export const MAXIMA=Object.freeze({steps:10000,expressionDepth:32,nesting:16,iterations:1000,variables:64,valueNodes:4096,string:16384,serviceCalls:32,procedureCalls:256,procedureDepth:16,parameters:16,drafts:64,draftDepth:32,draftNodes:256,constructionOperations:512,constructionSize:65536,regexPattern:256,regexInput:4096,regexCaptures:8,regexMatches:128,regexOutput:16384,regexDepth:16,regexRepeat:32,regexAtoms:128,regexInstructions:512,regexWork:1000000,timeMs:1000,programNodes:8192,programSize:65536});
+export const MAXIMA=Object.freeze({dateInput:40,dateFormat:256,dateTokens:64,dateZone:64,dateOutput:1024,steps:10000,expressionDepth:32,nesting:16,iterations:1000,variables:64,valueNodes:4096,string:16384,serviceCalls:32,procedureCalls:256,procedureDepth:16,parameters:16,drafts:64,draftDepth:32,draftNodes:256,constructionOperations:512,constructionSize:65536,regexPattern:256,regexInput:4096,regexCaptures:8,regexMatches:128,regexOutput:16384,regexDepth:16,regexRepeat:32,regexAtoms:128,regexInstructions:512,regexWork:1000000,timeMs:1000,programNodes:8192,programSize:65536});
 export const statements=Object.freeze({declare:['name','value'],set:['name','value'],if:['condition','then','else?'],forEach:['name','items','body'],call:['target','method','args','into?'],service:['library','method','input','into?'],return:['value'],stop:['value?']});
 export const expressions=Object.freeze({array:['items'],object:['fields'],literal:['value'],variable:['name'],context:['name'],read:['target','key'],invoke:['target','method','args'],binary:['operator','left','right'],not:['value']});
 export const operators=['=','!=','<','<=','>','>=','AND','OR','+','-','*','/','concat'];
@@ -102,3 +102,9 @@ export const INTERFACE_SCHEMA='sewn/0.17';
 export const interfaceExpressions=Object.freeze({...collectionExpressions,implements:['value','type'],cast:['value','type']});
 export const interfaceStatements=Object.freeze({...doStatements,declare:['name','value','type?'],set:['name','value','type?']});
 export const interfaceReservedNames=Object.freeze([...doReservedNames,'INTERFACE','IMPLEMENTS','CAST']);
+
+// Portable date operations extend the closed 0.17 grammar.
+export const DATE_SCHEMA='sewn/0.18';
+export const dateSignatures=Object.freeze({DatePart:['DateTime','String','String'],DateAdd:['DateTime','String','Integer','String'],DateDiff:['DateTime','DateTime','String','String'],ParseDate:['String','String','String'],FormatDate:['DateTime','String','String']});
+export const dateOperationSignatures=Object.freeze({...regexOperationSignatures,...dateSignatures});
+export const dateReservedNames=Object.freeze([...interfaceReservedNames,...Object.keys(dateSignatures).map(x=>x.toUpperCase())]);

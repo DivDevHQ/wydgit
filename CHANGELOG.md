@@ -1,5 +1,17 @@
 ## Unreleased
 
+## WBasic / SEWN 0.18
+
+- Add canonical DatePart, DateAdd, DateDiff, ParseDate and FormatDate intrinsics
+  through the shared branded DateTime executor, closed sewn/0.18 grammar and static linker.
+- Define checked Gregorian calendar arithmetic, month-end clamping, elapsed versus
+  calendar differences, strict ISO parsing and bounded invariant formatting.
+- Support deterministic UTC/fixed offsets; reject named zones explicitly. Keep Now()
+  deferred. Preserve caller authority, shared budgets and historical wire contracts.
+- Add shared server/browser calendar and adversarial fixtures; update client artifacts
+  and document supported temporal distinctions, bounds and deferred timezone data.
+
+
 ### WBasic / SEWN 0.17
 
 - Add publisher-qualified, exactly versioned interface declarations in the existing

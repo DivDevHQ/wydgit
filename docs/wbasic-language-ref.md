@@ -1144,29 +1144,30 @@ mixed prototypes, overloading and dynamic imports remain deferred.
 
 **Introduced: SEWN 0.18**
 
-Date/time behavior must be deterministic and independent of the host machine's incidental locale settings.
+DateTime is an absolute UTC instant, distinct from a calendar date, local clock,
+fixed offset, named timezone or duration. Five reserved intrinsics require every
+argument and no library import:
 
-The canonical API should distinguish:
+| Signature | Return |
+| --- | --- |
+| DatePart(value AS DateTime, part AS String, zone AS String) | Integer |
+| DateAdd(value AS DateTime, part AS String, amount AS Integer, zone AS String) | DateTime |
+| DateDiff(start AS DateTime, finish AS DateTime, part AS String, zone AS String) | Integer |
+| FormatDate(value AS DateTime, format AS String, zone AS String) | String |
+| ParseDate(text AS String, format AS String, zone AS String) | DateTime |
 
-- Absolute timestamps
-- Calendar dates
-- Local date/time representations
-- Time zones
-- Durations
+Zones are UTC or explicit ±HH:mm fixed offsets; named zones are rejected.
+Sub-day arithmetic is elapsed; day/week/month/year arithmetic uses the selected
+calendar, clamping month/year destination days. Elapsed differences truncate toward
+zero; calendar differences count boundaries. Fixed offsets have no DST transitions.
+ParseDate accepts only strict ISO timestamps with exactly three fractional digits
+and an explicit offset matching zone. FormatDate accepts iso or tokens yyyy, MM,
+dd, HH, mm, ss, SSS, XXX with bounded literal punctuation. No locale defaults exist.
 
-Proposed operations include:
-
-```vb
-DateAdd(...)
-DateDiff(...)
-DatePart(...)
-FormatDate(...)
-ParseDate(...)
-```
-
-A source of current time, such as `Now()`, is an environmental input rather than a pure computation and must follow the runtime's context and determinism rules.
-
-The detailed date/time specification remains open.
+Now() remains deferred as an environmental capability. See the
+[complete 0.18 contract](milestones/wbasic-sewn-0.18.md) for units, numbering,
+parsing grammar, formatting literals, range checks, exact resource limits and
+named-zone limitations.
 
 ---
 
@@ -1292,7 +1293,7 @@ The following must be resolved before their respective milestones are finalized.
 | ECMAScript regex safety implementation | 0.15 |
 | Interface declaration and implementation model | Resolved in 0.17 milestone |
 | Casting and runtime contract enforcement | Resolved in 0.17 milestone |
-| Date/time and time-zone representation | 0.18 |
+| Date/time and time-zone representation | Resolved portable baseline in 0.18; named zones deferred |
 
 ---
 
@@ -1320,7 +1321,7 @@ New numeric and string operations must be tested independently of host-specific 
 ## Implemented 0.11 boundaries
 
 DateTime is a fundamental scalar in 0.11. Explicit Convert support is implemented in 0.12;
-broader date/time utilities remain deferred. Scalar excludes Null and descriptors.
+date/time utilities are implemented in 0.18. Scalar excludes Null and descriptors.
 No flow-sensitive narrowing is implemented. Uninitialized Scalar, DataType and
 DateTime declarations require an initializer. NULL retains its literal meaning;
 TypeOf(NULL) obtains the Null descriptor. Future examples elsewhere in this reference
