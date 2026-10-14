@@ -1,3 +1,4 @@
+import {prepareHandlers as prepareClientHandlers} from '../wydgine/events/index.js';
 import { load } from 'cheerio';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -80,7 +81,7 @@ test('portable WydBASIC prototype API → host POST → validation → Submit �
 });
 test('WydClient hosts same semantic Form prototype methods and typed checkbox adaptation without server or Node dependencies',async()=>{
  const f=fixture(),nodes=[];const walk=(id,parent)=>{const n=f.runtime.get(id);nodes.push({id,parent,prototype:n.prototype,properties:n.properties,kind:f.base.registry.isA(n.prototype,'wydgit.core/form')?'form':f.base.registry.isA(n.prototype,'wydgit.core/field')?'field':'content',controlKind:fieldKind(n.prototype,f.base.registry),element:Object.assign(new EventTarget(),{value:n.properties.value??'',checked:false})});Object.values(n.slots).flat().forEach(child=>walk(child,id));};walk('profile');
- let collected;const client=mountClient({nodes,context:f.context,prototypeRegistry:f.base.registry,handlers:[{owner:'profile',type:'Client.Ready',wydBasic:'CALL Me.Bind({"name":"Amy", "password":"secret", "subscribe":TRUE})\nDIM ok = Me.Validate()\nIF ok THEN\n CALL Me.Clear()\nEND IF'},{owner:'profile',type:'Client.Ready',run:function(){collected=this.ME.FormState('values');}}]});await client.ready;assert.equal(collected.name,'');assert.equal(collected.subscribe,false);assert.equal(nodes.find(n=>n.id==='name').properties.placeholder,'Enter name');assert.equal(collected.password,undefined);
+ let collected;const client=mountClient({nodes,context:f.context,prototypeRegistry:f.base.registry,handlers:prepareClientHandlers([{owner:'profile',type:'Client.Ready',wydBasic:'CALL Me.Bind({"name":"Amy", "password":"secret", "subscribe":TRUE})\nDIM ok = Me.Validate()\nIF ok THEN\n CALL Me.Clear()\nEND IF'},{owner:'profile',type:'Client.Ready',run:function(){collected=this.ME.FormState('values');}}])});await client.ready;assert.equal(collected.name,'');assert.equal(collected.subscribe,false);assert.equal(nodes.find(n=>n.id==='name').properties.placeholder,'Enter name');assert.equal(collected.password,undefined);
  const checkbox=nodes.find(n=>n.id==='subscribe');checkbox.element.checked=true;checkbox.element.dispatchEvent(new Event('change'));await client.idle();assert.equal(client.error(),null);await client.unmount();
 });
 

@@ -270,3 +270,15 @@ is no package JavaScript, custom route or raw-HTML escape hatch.
 ## Delegated dynamic Submit actions
 
 Wildcard owners are supported only with explicit prototype action delegation and a bounded read-only resolver. See [dynamic actions](dynamic-actions.md) for the declaration, reconstruction flow, authority checks and rendering limits. Exact bindings remain supported unchanged.
+
+## Static-library build dependencies (0.14)
+
+Application manifests optionally declare `staticLibraries`, mapping lowercase
+publisher-qualified library IDs to exact versions. The existing installer accepts
+an approved host StaticLibraryRegistry, compiles sources during installation and
+persists linked workflows in the catalog/receipt. Reload validates the accepted
+snapshot without relinking. Static libraries themselves use dedicated prototypes
+in the existing prototype-package envelope and can be installed from safe local
+directories into an explicitly approved build context. See
+[the 0.14 authoring and installation contract](milestones/wbasic-sewn-0.14.md).
+No new CLI, archive, registry, signing interface or runtime service is introduced.

@@ -55,11 +55,11 @@ test('Hono TCP host preserves routes, HEAD, security, asset cache and approved r
   assert.equal((await fetch(url + '/css/site.css', { headers: { 'if-modified-since': css.headers.get('last-modified') } })).status, 304);
   const partial = await fetch(url + '/css/site.css', { headers: { range: 'bytes=0-9' } }); assert.equal(partial.status, 206); assert.equal(await partial.text(), text.slice(0, 10));
   assert.equal((await fetch(url + '/css/site.css', { headers: { range: 'bytes=99999999-' } })).status, 416);
-  for (const module of ['wydclient/index.js', 'wydgine/events/index.js', 'wydgine/object-model/validation.js', 'wydgine/seam/context.js', 'wydgine/seam/capabilities.js', 'wydgine/http/input.js']) {
+  for (const module of ['wydclient/index.js', 'wydgine/events/runtime.js', 'wydgine/object-model/validation.js', 'wydgine/seam/context.js', 'wydgine/seam/capabilities.js', 'wydgine/http/input.js']) {
     const response = await fetch(url + '/runtime/' + module); assert.equal(response.status, 200); assert.match(response.headers.get('content-type'), /javascript/); security(response); assert.equal(await response.text(), await fs.readFile(path.join(projectRoot, module), 'utf8'));
   }
   // Follow actual imports: the browser must be able to load the entire portable
-  // compiler/executor graph, while host-only implementation routes remain private.
+  // executor graph, while host-only implementation routes remain private.
   const pending = [url + '/runtime/wydclient/index.js'], visited = new Set();
   while (pending.length) {
     const moduleUrl = pending.shift(); if (visited.has(moduleUrl)) continue; visited.add(moduleUrl);
@@ -72,7 +72,8 @@ test('Hono TCP host preserves routes, HEAD, security, asset cache and approved r
     }
   }
   assert.ok(visited.has(url + '/runtime/wydgine/events/registry.js'));
-  assert.ok(visited.has(url + '/runtime/wydgine/wydbasic/compile.js'));
+  assert.ok(![...visited].some(file=>/wydbasic|static-libraries/.test(file)));
+  for(const file of ['wydgine/wydbasic/compile.js','wydgine/static-libraries/index.js','wydgine/static-libraries/package.js'])assert.equal((await fetch(url+'/runtime/'+file)).status,404);
   assert.ok(visited.has(url + '/runtime/wydgine/sewn/execute.js'));
   for (const module of ['wydgine/execution/page.js', 'wydgine/http/transport/hono.js', 'packages/wydstore/src/core.js']) assert.equal((await fetch(url + '/runtime/' + module)).status, 404);
 });

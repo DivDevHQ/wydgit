@@ -1,7 +1,7 @@
 import { matchesObjectGrant } from '../wydgine/seam/context.js';
 import { formOperation,publicProperties,fieldKind,sensitive,formTree } from '../wydgine/object-model/forms.js';
 import { resolveProperties } from '../wydgine/object-model/schema.js';
-import { createDispatcher } from '../wydgine/events/index.js';
+import { createDispatcher } from '../wydgine/events/runtime.js';
 import { clean,freeze,requireThat as check } from '../wydgine/object-model/validation.js';
 import { cookieReader,parseCookies } from '../wydgine/http/input.js';
 // Browser primitives are accepted only at this trusted renderer-adapter boundary.

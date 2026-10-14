@@ -10,8 +10,8 @@ import { webModel } from './web-model.js';
 const read = file => JSON.parse(readFileSync(file, 'utf8'));
 
 // Trusted project directory only. URL paths never become filesystem paths.
-export function compileDefinitions(definitions) {
-  return definitions.map(({behaviorSource,...definition})=>{check(behaviorSource===undefined||definition.behavior===undefined,'PROTOTYPE.METHOD','Choose source or canonical behavior');return {...definition,...(behaviorSource===undefined?{}:{behavior:compilePrototype(behaviorSource)})};});
+export function compileDefinitions(definitions,options={}) {
+  return definitions.map(({behaviorSource,...definition})=>{check(behaviorSource===undefined||definition.behavior===undefined,'PROTOTYPE.METHOD','Choose source or canonical behavior');return {...definition,...(behaviorSource===undefined?{}:{behavior:compilePrototype(behaviorSource,{...options,static:definition.static===true})})};});
 }
 export function loadRepository(root, { verifiedPackages = {} } = {}) {
   const prototypes = new Map();

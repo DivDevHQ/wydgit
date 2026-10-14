@@ -28,6 +28,9 @@ export class PrototypeRegistry {
         base = resolve(d.extends);
         check(base.publisher === d.publisher || (officialPublishers.includes(base.publisher) && base.public === true), 'PROTOTYPE.PUBLISHER', 'Cross-publisher inheritance denied');
       }
+      check(d.static===undefined||typeof d.static==='boolean','PROTOTYPE.STATIC','Invalid static flag');
+      if(d.static){check(Object.keys(d).every(k=>['id','publisher','public','abstract','static','alias','version','dependencies','properties','slots','methodRules','behavior'].includes(k)),'PROTOTYPE.STATIC','Unsupported static prototype metadata');check(record(d.dependencies??{})&&Object.entries(d.dependencies??{}).every(([id,v])=>identity.test(id)&&typeof v==='string'),'PROTOTYPE.STATIC','Invalid static dependencies');check(d.extends===undefined&&!d.abstract&&!d.friends?.length&&!d.overrides?.length&&!d.presentation&&!d.actions&&Object.keys(d.properties??{}).length===0&&Object.keys(d.slots??{}).length===0,'PROTOTYPE.STATIC','Dedicated static prototypes cannot contain instance state or inheritance');check(typeof d.alias==='string'&&/^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(d.alias)&&typeof d.version==='string'&&/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/.test(d.version),'PROTOTYPE.STATIC','Static prototypes need an alias and exact version');}
+      else check(!base?.static&&d.alias===undefined&&d.version===undefined,'PROTOTYPE.STATIC','Static metadata requires a dedicated static prototype');
       check(d.abstract === undefined || typeof d.abstract === 'boolean', 'PROTOTYPE.DEFINITION', 'Invalid abstract flag');
       check(d.public === undefined || typeof d.public === 'boolean', 'PROTOTYPE.DEFINITION', 'Invalid public flag');
       check(record(d.properties ?? {}) && record(d.slots ?? {}), 'PROTOTYPE.DEFINITION', 'Invalid definitions');
@@ -41,13 +44,13 @@ export class PrototypeRegistry {
       let behavior=null;if(d.behavior!==undefined){try{behavior=validate(d.behavior);}catch{check(false,'PROTOTYPE.METHOD','Invalid portable method behavior');}}
       check(d.methods===undefined&&d.behaviorSource===undefined,'PROTOTYPE.METHOD','Behavior must be compiled by trusted setup');
       check(new Set(d.overrides??[]).size===(d.overrides??[]).length,'PROTOTYPE.METHOD','Duplicate overrides');
-      check(!behavior||['sewn/0.3','sewn/0.4','sewn/0.5','sewn/0.6','sewn/0.7','sewn/0.8','sewn/0.9','sewn/0.10','sewn/0.11','sewn/0.12','sewn/0.13'].includes(behavior.schema)&&behavior.body.length===0,'PROTOTYPE.METHOD','Expected portable prototype behavior');
+      check(!behavior||['sewn/0.3','sewn/0.4','sewn/0.5','sewn/0.6','sewn/0.7','sewn/0.8','sewn/0.9','sewn/0.10','sewn/0.11','sewn/0.12','sewn/0.13','sewn/0.14'].includes(behavior.schema)&&behavior.body.length===0,'PROTOTYPE.METHOD','Expected portable prototype behavior');
       for(const [name,proc] of Object.entries(behavior?.procedures??{})){
         check(!Object.keys(facadeMethods.handle).some(x=>x.toLowerCase()===name.toLowerCase()),'PROTOTYPE.METHOD','Method conflicts with kernel facade');
         const old=inheritedMethods[name];
         check(Boolean(old)===(d.overrides??[]).includes(name),'PROTOTYPE.METHOD','Inherited methods require explicit overrides');
         if(old){check(accessOf(base.methodRules[name])!=='private','PROTOTYPE.ACCESS','Private methods cannot be overridden');const previous=old.behavior.procedures[name];check(previous.kind===proc.kind&&previous.params.length===proc.params.length&&previous.params.every((x,i)=>x.type===proc.params[i].type)&&previous.returns===proc.returns,'PROTOTYPE.METHOD','Incompatible override signature');}
-        const rule=d.methodRules?.[name]??{};validateMember(rule);
+        const rule=d.methodRules?.[name]??{};validateMember(rule);if(d.static)check(['public','private'].includes(accessOf(rule))&&!rule.hidden,'PROTOTYPE.STATIC','Static methods support public/private visibility');
         if(old)check(accessOf(rule)===accessOf(base.methodRules[name])&&(base.methodRules[name].requires??[]).every(cap=>(rule.requires??[]).includes(cap))&&(!base.methodRules[name].hidden||rule.hidden===true),'PROTOTYPE.ACCESS','Override cannot change inherited access or expose hidden members');
         methodRules[name]=rule;methods[name]={owner:id,behavior};
       }
@@ -87,6 +90,7 @@ export class PrototypeRegistry {
     for (const d of this.#definitions.values()) for (const slot of Object.values(d.slots)) for (const id of slot.accepts) this.get(id);
     // Resolve statically known Me calls through each actual prototype, including overrides.
     for(const d of this.#definitions.values()){
+      if(d.static){check(d.behavior?.schema==='sewn/0.14','PROTOTYPE.STATIC','Static behavior requires sewn/0.14');const walk=v=>{if(!v||typeof v!=='object')return;check(!(v.op==='context'&&v.name==='ME'),'PROTOTYPE.STATIC','Static methods have no Me');Object.values(v).forEach(walk);};walk(d.behavior);for(const lib of d.behavior.libraries)check(d.dependencies?.[lib.id]===lib.version&&lib.id!==d.id,'PROTOTYPE.STATIC','Linked dependency must be declared');continue;}
       const graph=new Map();
       const walk=(v,edges,behavior)=>{if(!v||typeof v!=='object')return;
         if(['procedureCall','functionCall'].includes(v.op))edges.add(behavior+':'+v.name);
@@ -100,6 +104,7 @@ export class PrototypeRegistry {
   get(id) { const d = this.#definitions.get(id); check(d, 'PROTOTYPE.UNKNOWN', `Unknown prototype: ${id}`); return d; }
   method(id, name, caller = null, exact = true, context = null) {
     const definition = this.get(id);
+    check(!definition.static,'PROTOTYPE.STATIC','Static methods require compile-time linking');
     check(Object.hasOwn(definition.methods, name) || !exact, 'PROTOTYPE.METHOD', 'Unknown prototype method');
     const member = resolveMember(definition, 'method', name, exact);
     // A protected virtual slot remains callable from its ancestor declaration.

@@ -64,7 +64,14 @@ export function parse(source,{module=false}={}) {
     endLine();return result;
   }
   const location={line:1,column:1,offset:0};
-  if(!module){const body=block();return {kind:'program',location,body};}
+  const imports=[];blank();
+  while(eat('WITH')) {
+    const start=tokens[index-1];expect('LIBRARY');let id='';
+    while(!['newline','eof'].includes(token().kind))id+=String(take().value);
+    if(!/^[a-z][a-z0-9.-]*\/[a-z][a-z0-9-]*$/.test(id))fail('NAME','WITH LIBRARY requires a lowercase publisher-qualified identity.',start.location);
+    imports.push(node('library',start,{id}));endLine();
+  }
+  if(!module){const body=block();return {kind:'program',location,body,imports};}
   const procedures=[],events=[];blank();
   while(token().kind!=='eof'){
     const start=token();
@@ -78,7 +85,7 @@ export function parse(source,{module=false}={}) {
       const body=block(['END']);expect('END');expect('EVENT');endLine();events.push(node('event',start,{type,body}));
     }else fail('SYNTAX','Modules contain only SUB, FUNCTION and EVENT declarations.',start.location);
   }
-  return {kind:'module',location,procedures,events};
+  return {kind:'module',location,procedures,events,imports};
 }
 
 export const parseModule=source=>parse(source,{module:true});

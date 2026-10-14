@@ -1,3 +1,4 @@
+import {prepareHandlers as prepareClientHandlers} from '../wydgine/events/index.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {compile,compileModule,compilePrototype} from '../wydgine/wydbasic/index.js';
@@ -83,8 +84,8 @@ test('vertical Page Submit → NEW draft → override/inherited methods → vali
 
 test('WydClient executes inherited read-only methods through the same portable dispatch, with no tree mutation facade',async()=>{
  const element={addEventListener(){},removeEventListener(){}};
- const mounted=mountClient({prototypeRegistry:registry(),context:context(),nodes:[{id:'home',prototype:'acme/important-message-panel',properties:{content:{type:'markdown',value:'Client'}},element}],handlers:[{owner:'home',wydBasicModule:'EVENT Client.Ready\nIF NOT Me.HasMessage() THEN\n Me.Missing()\nEND IF\nEND EVENT'}]});await mounted.ready;await mounted.unmount();assert.equal(mounted.error(),null);
- const denied=mountClient({prototypeRegistry:registry(),context:context(),nodes:[{id:'home',prototype:'acme/message-panel',properties:{content:{type:'markdown',value:''}},element}],handlers:[{owner:'home',wydBasic:'Me.SetMessage("Denied")',type:'Client.Ready'}]});await assert.rejects(denied.ready,error('SEWN.DENIED'));
+ const mounted=mountClient({prototypeRegistry:registry(),context:context(),nodes:[{id:'home',prototype:'acme/important-message-panel',properties:{content:{type:'markdown',value:'Client'}},element}],handlers:prepareClientHandlers([{owner:'home',wydBasicModule:'EVENT Client.Ready\nIF NOT Me.HasMessage() THEN\n Me.Missing()\nEND IF\nEND EVENT'}])});await mounted.ready;await mounted.unmount();assert.equal(mounted.error(),null);
+ const denied=mountClient({prototypeRegistry:registry(),context:context(),nodes:[{id:'home',prototype:'acme/message-panel',properties:{content:{type:'markdown',value:''}},element}],handlers:prepareClientHandlers([{owner:'home',wydBasic:'Me.SetMessage("Denied")',type:'Client.Ready'}])});await assert.rejects(denied.ready,error('SEWN.DENIED'));
 });
 
 test('prototype methods retain caller context through real WydStore dispatch and cannot use core publisher authority',async t=>{

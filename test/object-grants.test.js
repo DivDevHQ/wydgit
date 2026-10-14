@@ -1,3 +1,4 @@
+import {prepareHandlers as prepareClientHandlers} from '../wydgine/events/index.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -85,10 +86,10 @@ test('client visibility and Form edits share object matching; client action reso
   const prototypeRegistry=loadRepository(process.cwd()).registry;
   const nodes=()=>[{id:'guestbook-form',kind:'form',prototype:'wydgit.core/form',element:new Control(),properties:{}},{id:dynamicIds[1],parent:'guestbook-form',kind:'field',prototype:'wydgit.core/text-input',element:new Control(),properties:{name:'name',label:'Name'}}];
   const ctx=context({self:'guestbook-form',visible:['guestbook-form',grant],editable:['guestbook-form',grant],capabilities:['object.instances.edit','client.actions.submit'],scopes:{actions:['guestbook-*']}});
-  const controls=nodes(),client=mountClient({nodes:controls,prototypeRegistry,context:ctx,handlers:[{owner:'guestbook-form',type:'Client.Ready',wydBasic:'CALL Me.Bind({"name":"Client Ada"})'}]});
+  const controls=nodes(),client=mountClient({nodes:controls,prototypeRegistry,context:ctx,handlers:prepareClientHandlers([{owner:'guestbook-form',type:'Client.Ready',wydBasic:'CALL Me.Bind({"name":"Client Ada"})'}])});
   await client.ready;assert.equal(controls[1].element.value,'Client Ada');
   controls[0].element.dispatchEvent(new Event('submit',{cancelable:true}));await client.idle();assert.equal(client.error(),'EVENT.DENIED');await client.unmount();
-  for(const [extra,code] of [[{editable:['guestbook-form']},'SEAM.DENIED'],[{traversal:[]},'SEAM.TRAVERSAL']]){const denied=mountClient({nodes:nodes(),prototypeRegistry,context:new ExecutionContext({...ctx,...extra}),handlers:[{owner:'guestbook-form',type:'Client.Ready',wydBasic:'CALL Me.Bind({"name":"Denied"})'}]});await assert.rejects(denied.ready,{code});}
+  for(const [extra,code] of [[{editable:['guestbook-form']},'SEAM.DENIED'],[{traversal:[]},'SEAM.TRAVERSAL']]){const denied=mountClient({nodes:nodes(),prototypeRegistry,context:new ExecutionContext({...ctx,...extra}),handlers:prepareClientHandlers([{owner:'guestbook-form',type:'Client.Ready',wydBasic:'CALL Me.Bind({"name":"Denied"})'}])});await assert.rejects(denied.ready,{code});}
 });
 
 test('wildcard visibility/editability cannot authorize prototype construction or library resource scopes',async t=>{

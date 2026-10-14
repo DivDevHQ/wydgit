@@ -584,13 +584,11 @@ Unsupported formats must be explicitly rejected or migrated through a documented
 behavior-preserving transformation; old schema identifiers cannot silently acquire
 incompatible semantics. Existing regression tests remain in place.
 
-[Static Wydgits and library resolution](wydgit-static-libraries-spec.md) are proposed
-for 0.14, not implemented. Libraries require explicit `WITH LIBRARY` imports,
-including `divdev/wbasic`; qualified `WBasic` calls require the same import.
-Current SEWN 0.7 `CStr()` and `Val()` intrinsic lowering remains implemented.
-Migration to static-library wrappers is planned, not complete. Canonical package-ID
-casing and normalization remain unresolved; the `WBasic` source alias stays
-case-preserving.
+[Static Wydgits and library resolution](milestones/wbasic-sewn-0.14.md) are
+implemented in 0.14 through dedicated static prototypes, explicit WITH LIBRARY,
+exact approved dependency pins and procedure linking. No library is implicitly
+imported. Imported CStr/Val use ordinary wrappers; the narrow legacy unimported
+conversion path and historical compiled conversions remain supported.
 
 ## WBasic / SEWN 0.13
 
@@ -600,3 +598,16 @@ Numeric loop variables are local and read-only; DIM and CONST inside loops remai
 deferred. String Length/Contains/IndexOf remain compatible, with checked Array
 dispatch only in 0.13. See [the complete contracts](milestones/wbasic-sewn-0.13.md)
 for wire grammar, equality, errors, budgets and portability evidence.
+
+## WBasic / SEWN 0.14 static libraries
+
+The closed envelope is `{schema:"sewn/0.14",procedures,body,libraries}`. Static
+calls reuse functionCall/procedureCall; libraries records exact identities,
+versions, aliases, linked method names, public/private access and requires gates.
+Private calls require the same declaring library; linked Me is rejected. Recursive
+procedures use shared depth/count limits; older schemas remain closed and retain
+their cycle policy. Calls cannot inherit instance private access, publisher
+privileges or refreshed budgets. See [the milestone](milestones/wbasic-sewn-0.14.md)
+for exact field contracts, wrappers, installation snapshots and security evidence.
+WydClient consumes prepared wire workflows; source preparation belongs to build
+setup and is excluded from the served browser runtime dependency closure.

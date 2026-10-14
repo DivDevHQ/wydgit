@@ -1,3 +1,5 @@
+import {validate as validateWorkflow} from '../sewn/validate.js';
+import {StaticLibraryRegistry} from '../static-libraries/index.js';
 import fs from 'node:fs/promises';
 import { lstatSync } from 'node:fs';
 import path from 'node:path';
@@ -39,20 +41,20 @@ function loadPackage(packagePath) {
 }
 export function packageBindings(entry,registry,runtime) {
   const handlers=[],actions=[],events=new EventRegistry(),m=validatePackageManifest(entry.manifest);
-  const moduleFor=(source,event)=>{const text=entry.resources[m.resources.sources[source]],module=compileModule(text,{registry:events});check(module.events.length===1&&module.events[0].type===events.resolve(event),'PACKAGE.BINDING','Binding source must declare exactly its event');return text;};
+  const moduleFor=(source,event)=>{const text=entry.resources[m.resources.sources[source]],module=entry.compiledSources?.[source]??compileModule(text,{registry:events});check(module.events.length===1&&module.events[0].type===events.resolve(event),'PACKAGE.BINDING','Binding source must declare exactly its event');const workflow=validateWorkflow(module.events[0].workflow);for(const lib of workflow.libraries??[])check(m.staticLibraries?.[lib.id]===lib.version,'PACKAGE.STATIC','Linked dependency differs from manifest');return workflow;};
   for(const b of m.bindings){
     const source=moduleFor(b.source,b.event);
     if(b.delegation){
       const d=b.delegation,declared=JSON.parse(entry.resources[m.resources.prototypes]).some(p=>p.id===d.type);
       check(declared&&entry.instanceIds.includes(d.root),'PACKAGE.BINDING','Delegation must belong to installed package');runtime.get(d.root);
       check(registry.isA(d.type,'wydgit.core/form')&&registry.get(d.type).actions?.[b.event]?.capability===b.capability,'PACKAGE.BINDING','Prototype does not delegate this action');
-      const resolver=prepareHandlers([{owner:d.root,wydBasicModule:moduleFor(d.resolver,'Page.Resolve')}],events)[0];
-      actions.push(prepareAction({page:entry.placement.page,target:b.owner,type:b.event,method:b.method,capability:b.capability,wydBasicModule:source,delegation:{type:d.type,root:d.root,resolver:resolver.workflow,package:m.id,installation:entry.receipt?.id??null}},events));
+      const resolver=prepareHandlers([{owner:d.root,type:'Page.Resolve',workflow:moduleFor(d.resolver,'Page.Resolve')}],events)[0];
+      actions.push(prepareAction({page:entry.placement.page,target:b.owner,type:b.event,method:b.method,capability:b.capability,workflow:source,delegation:{type:d.type,root:d.root,resolver:resolver.workflow,package:m.id,installation:entry.receipt?.id??null}},events));
       continue;
     }
     check(entry.instanceIds.includes(b.owner),'PACKAGE.BINDING','Owner outside installed template');runtime.get(b.owner);
-    if(b.kind==='handler'){check(events.get(b.event).family==='Page'&&b.event!=='Page.Resolve','PACKAGE.BINDING','Only ordinary Page lifecycle handlers supported');handlers.push(...prepareHandlers([{owner:b.owner,wydBasicModule:source}],events));}
-    else {check(events.get(b.event).family==='Semantic','PACKAGE.BINDING','Expected semantic action');check(b.event!=='Submit'||registry.isA(runtime.get(b.owner).prototype,'wydgit.core/form'),'PACKAGE.BINDING','Submit requires Form');actions.push(prepareAction({page:entry.placement.page,target:b.owner,type:b.event,method:b.method,capability:b.capability,wydBasicModule:source},events));}
+    if(b.kind==='handler'){check(events.get(b.event).family==='Page'&&b.event!=='Page.Resolve','PACKAGE.BINDING','Only ordinary Page lifecycle handlers supported');handlers.push(...prepareHandlers([{owner:b.owner,type:b.event,workflow:source}],events));}
+    else {check(events.get(b.event).family==='Semantic','PACKAGE.BINDING','Expected semantic action');check(b.event!=='Submit'||registry.isA(runtime.get(b.owner).prototype,'wydgit.core/form'),'PACKAGE.BINDING','Submit requires Form');actions.push(prepareAction({page:entry.placement.page,target:b.owner,type:b.event,method:b.method,capability:b.capability,workflow:source},events));}
   }
   for(const id of entry.instanceIds){const presentation=registry.get(runtime.get(id).prototype).presentation;for(const binding of [presentation?.request,presentation?.submission,presentation?.delivery].filter(Boolean))check(m.requires.libraries.some(r=>r.library===binding.library),'PACKAGE.LIBRARY','Component service provider must be declared');}
   return {handlers,actions};
@@ -83,7 +85,7 @@ function mapStorage(manifest,config,mappings,app) {
   }
   return {mappings:clean(mappings),scopes};
 }
-export async function planPackageInstall({root,packagePath,placement,approvals,storageMappings={},installationContext,hostConfig,verifiedPackages={},additions=[],page,properties={},navigation}) {
+export async function planPackageInstall({root,packagePath,placement,approvals,storageMappings={},installationContext,hostConfig,verifiedPackages={},additions=[],page,properties={},navigation,staticLibraries}) {
   root=path.resolve(root);
   check((readInstalledState(root)?.packages.length??0)<LIMITS.packages,'PACKAGE.LIMIT','Installed package safety ceiling reached');
   const base=baseFingerprint(root),head=stateFingerprint(root);const model=loadRepository(root,{verifiedPackages}),candidate=loadPackage(packagePath),{manifest,resources,definitions,template}=candidate;
@@ -102,7 +104,11 @@ export async function planPackageInstall({root,packagePath,placement,approvals,s
   check(!(model.installed?.packages??[]).some(p=>[p.placement.page,...(p.additions??[]).map(x=>x.placement.page)].includes(placement.page)),'PACKAGE.PRINCIPALS','One authorized package principal per Page');
   const raw=JSON.parse(safeRead(root,'prototypes/objects.json'));for(const p of model.installed?.packages??[])raw.push(...JSON.parse(p.resources[p.manifest.resources.prototypes]));raw.push(...definitions);
   const trusted=Object.fromEntries(JSON.parse(safeRead(root,'prototypes/objects.json')).map(d=>[d.id,d.publisher]));for(const entry of model.installed?.packages??[])if(verifiedPackages[entry.manifest.id]===entry.manifest.publisher)for(const d of JSON.parse(entry.resources[entry.manifest.resources.prototypes]))trusted[d.id]=entry.manifest.publisher;if(verifiedPackages[manifest.id]===manifest.publisher)for(const d of definitions)trusted[d.id]=manifest.publisher;
-  const registry=new PrototypeRegistry(compileDefinitions(raw),{verifiedPrototypes:trusted});check(registry.isA(template.prototype,'wydgit.core/section'),'PACKAGE.TEMPLATE','Expected Section template');
+  const staticOptions={libraries:staticLibraries,dependencies:manifest.staticLibraries??{}};
+  if(manifest.staticLibraries){check(staticLibraries instanceof StaticLibraryRegistry,'PACKAGE.STATIC','Host must supply an approved static-library build context');for(const [id,v] of Object.entries(manifest.staticLibraries))staticLibraries.resolve(id,v);}
+  const compiledDefinitions=compileDefinitions(definitions,staticOptions);
+  if(manifest.staticLibraries)resources[manifest.resources.prototypes]=JSON.stringify(compiledDefinitions);
+  const registry=new PrototypeRegistry(compileDefinitions(raw.map(d=>compiledDefinitions.find(c=>c.id===d.id)??d)),{verifiedPrototypes:trusted});check(registry.isA(template.prototype,'wydgit.core/section'),'PACKAGE.TEMPLATE','Expected Section template');
   properties=clean(properties);const configuredTemplate=copyEnvelope(template);check(properties&&typeof properties==='object'&&!Array.isArray(properties),'PACKAGE.TEMPLATE','Invalid template properties');
   const configure=node=>{if(Object.hasOwn(properties,node.id))Object.assign(node.properties,clean(properties[node.id]));Object.values(node.slots).flat().forEach(configure);};
   check(Object.keys(properties).every(id=>idsOf(template).includes(id)),'PACKAGE.TEMPLATE','Properties outside template');configure(configuredTemplate);
@@ -118,7 +124,8 @@ export async function planPackageInstall({root,packagePath,placement,approvals,s
   for(const item of [{placement,instance:configuredTemplate},...extra])check(runtime.get(item.placement.parent).slots[item.placement.slot]?.[item.placement.index]===item.instance.id,'PACKAGE.PLACEMENT','Attachments must preserve each approved position');
   if(navigation){fields(navigation,['id','label'],'PACKAGE.PLACEMENT');check(typeof navigation.label==='string'&&navigation.label.length<=128&&runtime.get(runtime.rootId).slots.navigation.includes(navigation.id),'PACKAGE.PLACEMENT','Choose existing App navigation');const node=runtime.get(navigation.id);check(registry.isA(node.prototype,'wydgit.core/navigation'),'PACKAGE.PLACEMENT','Expected navigation');const edit=runtime.edit(installationContext);edit.setProperty(navigation.id,'items',[...node.properties.items,{label:navigation.label,page:placement.page}]);runtime=edit.commit().runtime;}
   const result={runtime,revision:runtime.revision};
-  const extensions={...(extra.length?{additions:extra.map(item=>({placement:item.placement,instance:JSON.stringify(item.instance)}))}:{}),...(createdPage?{page:JSON.stringify(createdPage)}:{}),...(navigation?{navigation:clean(navigation)}:{}),...(Object.keys(properties).length?{properties:clean(properties)}:{}),...(Object.keys(libraryScopes).length?{libraryScopes}: {})};
+  const compiledSources=manifest.staticLibraries?Object.fromEntries(Object.entries(manifest.resources.sources).map(([id,file])=>[id,compileModule(resources[file],staticOptions)])):null;
+  const extensions={...(compiledSources?{compiledSources}:{}),...(extra.length?{additions:extra.map(item=>({placement:item.placement,instance:JSON.stringify(item.instance)}))}:{}),...(createdPage?{page:JSON.stringify(createdPage)}:{}),...(navigation?{navigation:clean(navigation)}:{}),...(Object.keys(properties).length?{properties:clean(properties)}:{}),...(Object.keys(libraryScopes).length?{libraryScopes}: {})};
   const entry={state:'installed',manifest,resources,approved,storageMappings:storage.mappings,storageScopes:storage.scopes,libraries:resolved,instanceIds,instance:template.id,installable:manifest.installables[0].id,placement:clean(placement),...extensions};
   packageBindings(entry,registry,result.runtime);
   const plan=freeze({schema:'wydgit-install-plan/0.1',package:manifest.id,version:manifest.version,publisher:manifest.publisher,placement:clean(placement),instance:template.id,instanceIds,installable:entry.installable,prototypes:definitions.map(d=>d.id),resources:Object.fromEntries(Object.entries(resources).map(([file,text])=>[file,{bytes:Buffer.byteLength(text),sha256:digest(text)}])),libraries:resolved,requested:manifest.permissions,approved,storageMappings:storage.mappings,bindings:manifest.bindings,baseFingerprint:base,catalogFingerprint:head,...extensions});
@@ -134,7 +141,7 @@ export async function applyPackageInstall(plan,{beforeReplace,prepareInfrastruct
   try {handle=await fs.open(lock,'wx',0o600);
     const current=()=>check(baseFingerprint(root)===plan.baseFingerprint&&stateFingerprint(root)===plan.catalogFingerprint,'PACKAGE.STALE','App/catalog/config changed; plan again');current();
     const acceptedBase=data.hostConfig?baseFingerprint(root,data.hostConfig):plan.baseFingerprint;
-    const receipt=freeze({schema:'wydgit-install-receipt/0.1',id:randomUUID(),package:plan.package,version:plan.version,publisher:plan.publisher,installedAt:new Date().toISOString(),revision:data.revision,instance:plan.instance,instanceIds:plan.instanceIds,installable:plan.installable,placement:plan.placement,resources:plan.resources,libraries:plan.libraries,approved:plan.approved,storageMappings:plan.storageMappings,bindings:plan.bindings,previousCatalog:plan.catalogFingerprint,baseFingerprint:acceptedBase,...Object.fromEntries(['additions','page','navigation','properties','libraryScopes'].filter(key=>Object.hasOwn(plan,key)).map(key=>[key,plan[key]]))});
+    const receipt=freeze({schema:'wydgit-install-receipt/0.1',id:randomUUID(),package:plan.package,version:plan.version,publisher:plan.publisher,installedAt:new Date().toISOString(),revision:data.revision,instance:plan.instance,instanceIds:plan.instanceIds,installable:plan.installable,placement:plan.placement,resources:plan.resources,libraries:plan.libraries,approved:plan.approved,storageMappings:plan.storageMappings,bindings:plan.bindings,previousCatalog:plan.catalogFingerprint,baseFingerprint:acceptedBase,...Object.fromEntries(['additions','page','navigation','properties','libraryScopes','compiledSources'].filter(key=>Object.hasOwn(plan,key)).map(key=>[key,plan[key]]))});
     const state={schema:'wydgit-installed/0.1',revision:data.revision,baseFingerprint:acceptedBase,app:data.app,packages:[...data.previous,{...data.entry,receipt}]};const text=JSON.stringify(state,null,2)+'\n';check(Buffer.byteLength(text)<=LIMITS.state,'PACKAGE.LIMIT','Installed state too large');
     temp=path.join(root,'content',`.package-${randomUUID()}.tmp`);const file=await fs.open(temp,'wx',0o600);try{await file.writeFile(text);await file.sync();}finally{await file.close();}
     if(beforeReplace)await beforeReplace();current();

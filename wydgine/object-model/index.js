@@ -22,7 +22,7 @@ export function hydrate(input, registry, { revision = 0 } = {}) {
     validateEnvelope(raw);
     check(!nodes.has(raw.id), 'OBJECT.DUPLICATE_ID', `Duplicate instance ID: ${raw.id}`);
     const definition = registry.get(raw.prototype);
-    check(!definition.abstract, 'OBJECT.ABSTRACT', 'Cannot instantiate abstract prototype');
+    check(!definition.abstract&&!definition.static, 'OBJECT.ABSTRACT', 'Cannot instantiate abstract prototype');
     check(parent ? !registry.isA(definition.id, 'wydgit.core/app') : registry.isA(definition.id, 'wydgit.core/app'), 'OBJECT.ROOT', 'Exactly one App must be the root');
     jsonKeys(raw.slots);
     const properties = resolveProperties(raw.properties, definition), provenance = clean(raw.provenance);

@@ -1,5 +1,22 @@
 ## Unreleased
 
+### WBasic / SEWN 0.14
+
+- Add dedicated static Wydgit prototypes, metadata public/private procedures,
+  explicit WITH LIBRARY imports, case-insensitive source aliases and exact approved
+  version resolution through the existing publisher verification boundary.
+- Link referenced procedures and private/transitive helpers into closed sewn/0.14,
+  retaining caller authority, instance isolation and shared execution budgets;
+  support bounded procedure recursion without broadening older schemas.
+- Ship ordinary divdev/wbasic 1.0.0 wrappers for Mid, Len, InStr, UCase, LCase,
+  CStr and Val; preserve historical unimported CStr/Val and compiled conversions.
+- Add development-directory static installation and application staticLibraries
+  pins with persisted compilation snapshots; no automatic acquisition or relinking.
+- Separate build-time event preparation from browser execution, excluding source
+  compilers and library resolution from WydClient's served dependency closure.
+- Add third-party/static linking, security, installation, compatibility and client
+  conformance coverage and document the implemented contract and deferred scope.
+
 ### WBasic / SEWN 0.13
 
 - Add read-only Array indexing and checked Length, Contains, IndexOf, Slice, Join and Split collection operations; preserve 0.12 String semantics.

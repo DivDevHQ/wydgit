@@ -1,3 +1,4 @@
+import {prepareHandlers as prepareClientHandlers} from '../wydgine/events/index.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {compile,compileModule,parseModule} from '../wydgine/wydbasic/index.js';
@@ -116,7 +117,7 @@ test('module registration is exclusive, setup-only and preserves explicit action
 });
 
 test('WydClient event modules share procedures and preserve semantic cancellation/default behavior',async()=>{
- const element=new EventTarget(),client=mountClient({nodes:[{id:'home',element,kind:'field',value:'old'}],context,handlers:[{owner:'home',wydBasicModule:`
+ const element=new EventTarget(),client=mountClient({nodes:[{id:'home',element,kind:'field',value:'old'}],context,handlers:prepareClientHandlers([{owner:'home',wydBasicModule:`
 FUNCTION IsOwner(value AS String) AS Boolean
  RETURN value="home"
 END FUNCTION
@@ -132,7 +133,7 @@ EVENT change
  IF IsOwner(Me.id) THEN
   CALL CancelChange()
  END IF
-END EVENT`} ]});
+END EVENT`} ])});
  await client.ready;assert.equal(client.error(),null);element.value='bad';element.dispatchEvent(new Event('change'));await client.idle();assert.equal(element.value,'old');assert.equal(client.error(),null);await client.unmount();
 });
 

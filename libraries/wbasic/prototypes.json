@@ -1,0 +1,376 @@
+{
+  "schema": "wydgit.prototype-package/0.1",
+  "id": "divdev/wbasic",
+  "publisher": "divdev",
+  "version": "1.0.0",
+  "prototypes": [
+    {
+      "id": "divdev/wbasic",
+      "publisher": "divdev",
+      "static": true,
+      "alias": "WBasic",
+      "version": "1.0.0",
+      "dependencies": {},
+      "properties": {},
+      "slots": {},
+      "methodRules": {},
+      "behavior": {
+        "body": [],
+        "libraries": [],
+        "procedures": {
+          "cstr": {
+            "body": [
+              {
+                "op": "return",
+                "value": {
+                  "mode": "canonical",
+                  "op": "convert",
+                  "type": "String",
+                  "value": {
+                    "name": "value",
+                    "op": "variable"
+                  }
+                }
+              }
+            ],
+            "kind": "function",
+            "params": [
+              {
+                "name": "value",
+                "type": "Scalar"
+              }
+            ],
+            "returns": "String"
+          },
+          "instr": {
+            "body": [
+              {
+                "op": "return",
+                "value": {
+                  "op": "numericCheck",
+                  "type": "Integer",
+                  "value": {
+                    "left": {
+                      "args": [
+                        {
+                          "name": "value",
+                          "op": "variable"
+                        },
+                        {
+                          "name": "search",
+                          "op": "variable"
+                        }
+                      ],
+                      "name": "IndexOf",
+                      "op": "operation"
+                    },
+                    "op": "numeric",
+                    "operator": "+",
+                    "right": {
+                      "op": "literal",
+                      "value": 1
+                    },
+                    "type": "Integer"
+                  }
+                }
+              }
+            ],
+            "kind": "function",
+            "params": [
+              {
+                "name": "value",
+                "type": "String"
+              },
+              {
+                "name": "search",
+                "type": "String"
+              }
+            ],
+            "returns": "Integer"
+          },
+          "lcase": {
+            "body": [
+              {
+                "op": "return",
+                "value": {
+                  "args": [
+                    {
+                      "name": "value",
+                      "op": "variable"
+                    }
+                  ],
+                  "name": "ToLower",
+                  "op": "operation"
+                }
+              }
+            ],
+            "kind": "function",
+            "params": [
+              {
+                "name": "value",
+                "type": "String"
+              }
+            ],
+            "returns": "String"
+          },
+          "len": {
+            "body": [
+              {
+                "op": "return",
+                "value": {
+                  "op": "numericCheck",
+                  "type": "Integer",
+                  "value": {
+                    "args": [
+                      {
+                        "name": "value",
+                        "op": "variable"
+                      }
+                    ],
+                    "name": "Length",
+                    "op": "operation"
+                  }
+                }
+              }
+            ],
+            "kind": "function",
+            "params": [
+              {
+                "name": "value",
+                "type": "String"
+              }
+            ],
+            "returns": "Integer"
+          },
+          "mid": {
+            "body": [
+              {
+                "condition": {
+                  "left": {
+                    "left": {
+                      "name": "start",
+                      "op": "variable"
+                    },
+                    "op": "binary",
+                    "operator": "<",
+                    "right": {
+                      "op": "literal",
+                      "value": 1
+                    }
+                  },
+                  "op": "binary",
+                  "operator": "OR",
+                  "right": {
+                    "left": {
+                      "name": "count",
+                      "op": "variable"
+                    },
+                    "op": "binary",
+                    "operator": "<",
+                    "right": {
+                      "op": "literal",
+                      "value": 0
+                    }
+                  }
+                },
+                "op": "if",
+                "then": [
+                  {
+                    "op": "return",
+                    "value": {
+                      "args": [
+                        {
+                          "name": "value",
+                          "op": "variable"
+                        },
+                        {
+                          "left": {
+                            "name": "start",
+                            "op": "variable"
+                          },
+                          "op": "numeric",
+                          "operator": "-",
+                          "right": {
+                            "op": "literal",
+                            "value": 1
+                          },
+                          "type": "Integer"
+                        },
+                        {
+                          "name": "count",
+                          "op": "variable"
+                        }
+                      ],
+                      "name": "Substring",
+                      "op": "operation"
+                    }
+                  }
+                ]
+              },
+              {
+                "condition": {
+                  "left": {
+                    "name": "start",
+                    "op": "variable"
+                  },
+                  "op": "binary",
+                  "operator": ">",
+                  "right": {
+                    "args": [
+                      {
+                        "name": "value",
+                        "op": "variable"
+                      }
+                    ],
+                    "name": "Length",
+                    "op": "operation"
+                  }
+                },
+                "op": "if",
+                "then": [
+                  {
+                    "op": "return",
+                    "value": {
+                      "op": "literal",
+                      "value": ""
+                    }
+                  }
+                ]
+              },
+              {
+                "op": "return",
+                "value": {
+                  "args": [
+                    {
+                      "name": "value",
+                      "op": "variable"
+                    },
+                    {
+                      "left": {
+                        "name": "start",
+                        "op": "variable"
+                      },
+                      "op": "numeric",
+                      "operator": "-",
+                      "right": {
+                        "op": "literal",
+                        "value": 1
+                      },
+                      "type": "Integer"
+                    },
+                    {
+                      "args": [
+                        {
+                          "name": "count",
+                          "op": "variable"
+                        },
+                        {
+                          "left": {
+                            "left": {
+                              "args": [
+                                {
+                                  "name": "value",
+                                  "op": "variable"
+                                }
+                              ],
+                              "name": "Length",
+                              "op": "operation"
+                            },
+                            "op": "numeric",
+                            "operator": "-",
+                            "right": {
+                              "name": "start",
+                              "op": "variable"
+                            },
+                            "type": "Integer"
+                          },
+                          "op": "numeric",
+                          "operator": "+",
+                          "right": {
+                            "op": "literal",
+                            "value": 1
+                          },
+                          "type": "Integer"
+                        }
+                      ],
+                      "name": "Min",
+                      "op": "operation"
+                    }
+                  ],
+                  "name": "Substring",
+                  "op": "operation"
+                }
+              }
+            ],
+            "kind": "function",
+            "params": [
+              {
+                "name": "value",
+                "type": "String"
+              },
+              {
+                "name": "start",
+                "type": "Integer"
+              },
+              {
+                "name": "count",
+                "type": "Integer"
+              }
+            ],
+            "returns": "String"
+          },
+          "ucase": {
+            "body": [
+              {
+                "op": "return",
+                "value": {
+                  "args": [
+                    {
+                      "name": "value",
+                      "op": "variable"
+                    }
+                  ],
+                  "name": "ToUpper",
+                  "op": "operation"
+                }
+              }
+            ],
+            "kind": "function",
+            "params": [
+              {
+                "name": "value",
+                "type": "String"
+              }
+            ],
+            "returns": "String"
+          },
+          "val": {
+            "body": [
+              {
+                "op": "return",
+                "value": {
+                  "mode": "canonical",
+                  "op": "convert",
+                  "type": "Number",
+                  "value": {
+                    "name": "value",
+                    "op": "variable"
+                  }
+                }
+              }
+            ],
+            "kind": "function",
+            "params": [
+              {
+                "name": "value",
+                "type": "Scalar"
+              }
+            ],
+            "returns": "Number"
+          }
+        },
+        "schema": "sewn/0.14"
+      }
+    }
+  ]
+}

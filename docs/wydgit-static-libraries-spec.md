@@ -1,6 +1,6 @@
 # Wydgit Static Libraries Specification
 
-**Status:** Proposed Architecture — Not Yet Implemented  
+**Status:** Architecture implemented for the initial scope in SEWN 0.14; later extensions remain proposed
 **Repository path:** `docs/wydgit-static-libraries-spec.md`  
 **Applies to:** Wydgit Object Model, SEWN, SEAM, WBasic, Wydgine, WydClient, Package Toolchain, DivDev Studio
 
@@ -586,7 +586,7 @@ Generic or contract-typed parameters must obey the ordinary WBasic/SEWN type sys
 
 ### 12.2 Intrinsic dependencies
 
-Static library functions may use canonical SEWN intrinsics. Migration of the currently implemented SEWN 0.7 `CStr()` and `Val()` compiler intrinsics to explicitly imported wrappers is planned, not implemented; their existing conversion behavior must be preserved under the compatibility policy.
+Static library functions may use canonical SEWN intrinsics. SEWN 0.14 resolves explicitly imported CStr/Val through ordinary library wrappers while preserving legacy unimported conversion lowering and historical wire semantics. See the milestone for the documented parsing and DateTime differences.
 
 For instance, `Mid()` may call `Substring()`, and `CStr()` may call `Convert()`.
 
@@ -739,7 +739,14 @@ These milestones are proposed planning targets, not claims of implementation.
 
 ---
 
-## 17. Open design decisions
+## 17. Design decisions and deferred questions
+
+The initial decisions are implemented and documented in
+[WBasic / SEWN 0.14](milestones/wbasic-sewn-0.14.md): dedicated static metadata,
+ordinary typed source declarations, metadata visibility, explicit imports, existing
+lowercase identities, exact approved build pins, embedded procedure closures,
+caller authority and application installation snapshots. The design discussion
+below is retained as planning context; deferred enhancements are not implemented.
 
 The following require resolution before implementation:
 

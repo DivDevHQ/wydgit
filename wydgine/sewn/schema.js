@@ -82,3 +82,6 @@ export const constantTypes=Object.freeze(['String','Number','Integer','Float','B
 export const collectionExpressions=Object.freeze({...operationExpressions,index:['target','index']});
 export const collectionStatements=Object.freeze({...selectionStatements,constant:['name','type','value'],forNumeric:['name','start','end','step','body']});
 export const collectionReservedNames=Object.freeze([...operationReservedNames,'SLICE','JOIN','SPLIT','CONST','TO','STEP']);
+
+// Static linking is a build-time feature; calls reuse ordinary procedure operations.
+export const STATIC_SCHEMA='sewn/0.14';

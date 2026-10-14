@@ -1,3 +1,4 @@
+import {prepareHandlers as prepareClientHandlers} from '../wydgine/events/index.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {compile,compileModule} from '../wydgine/wydbasic/index.js';
@@ -46,7 +47,7 @@ test('WydClient executes the same datetime and inspection operations',async()=>{
  const {mountClient}=await import('../wydclient/index.js');
  class Element extends EventTarget {}
  const element=new Element();
- const client=mountClient({nodes:[{id:'home',kind:'field',element,value:'old'}],context,handlers:[{owner:'home',type:'Change',wydBasic:'DIM d AS DateTime=DateTime("1970-01-01T00:00:00.000Z")\nIF TypeOf(d)=DateTime THEN\nEVENT.Cancel()\nEND IF'}]});
+ const client=mountClient({nodes:[{id:'home',kind:'field',element,value:'old'}],context,handlers:prepareClientHandlers([{owner:'home',type:'Change',wydBasic:'DIM d AS DateTime=DateTime("1970-01-01T00:00:00.000Z")\nIF TypeOf(d)=DateTime THEN\nEVENT.Cancel()\nEND IF'}])});
  await client.ready;element.value='new';element.dispatchEvent(new Event('change'));await client.idle();assert.equal(element.value,'old');assert.equal(client.error(),null);await client.unmount();
 });
 

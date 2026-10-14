@@ -370,6 +370,7 @@
   var collectionExpressions = Object.freeze({ ...operationExpressions, index: ["target", "index"] });
   var collectionStatements = Object.freeze({ ...selectionStatements, constant: ["name", "type", "value"], forNumeric: ["name", "start", "end", "step", "body"] });
   var collectionReservedNames = Object.freeze([...operationReservedNames, "SLICE", "JOIN", "SPLIT", "CONST", "TO", "STEP"]);
+  var STATIC_SCHEMA = "sewn/0.14";
 
   // wydgine/sewn/validate.js
   var fail = (code) => {
@@ -426,23 +427,47 @@
       ensure(Object.keys(n).every((k) => k === "op" || fields.some((f) => f.replace("?", "") === k)));
       for (const f of fields) if (!f.endsWith("?")) ensure(Object.hasOwn(n, f));
     };
-    const collections = p?.schema === COLLECTION_SCHEMA, operations = collections || p?.schema === OPERATION_SCHEMA, contracts = operations || p?.schema === CONTRACT_SCHEMA, numeric = contracts || p?.schema === NUMERIC_SCHEMA, types = contracts ? contractTypes : numeric ? numericTypes : sourceTypes;
+    const staticLinked = p?.schema === STATIC_SCHEMA, collections = staticLinked || p?.schema === COLLECTION_SCHEMA, operations = collections || p?.schema === OPERATION_SCHEMA, contracts = operations || p?.schema === CONTRACT_SCHEMA, numeric = contracts || p?.schema === NUMERIC_SCHEMA, types = contracts ? contractTypes : numeric ? numericTypes : sourceTypes;
     const selection = numeric || p?.schema === SELECTION_SCHEMA, exceptions = selection || p?.schema === EXCEPTION_SCHEMA, conversion = exceptions || p?.schema === CONVERSION_SCHEMA, control = conversion || p?.schema === CONTROL_SCHEMA, reserved = collections ? collectionReservedNames : operations ? operationReservedNames : contracts ? contractReservedNames : numeric ? numericReservedNames : selection ? selectionReservedNames : exceptions ? exceptionReservedNames : conversion ? conversionReservedNames : control ? controlReservedNames : reservedNames;
     const members = control || p?.schema === MEMBER_SCHEMA;
     const versioned = members || p?.schema === SERVICE_SCHEMA, objects = versioned || p?.schema === OBJECT_SCHEMA, modern = objects || p?.schema === PROCEDURE_SCHEMA;
     const statementGrammar = collections ? collectionStatements : selection ? selectionStatements : exceptions ? exceptionStatements : control ? controlStatements : members ? memberStatements : versioned ? serviceStatements : objects ? objectStatements : modern ? procedureStatements : statements, expressionGrammar = collections ? collectionExpressions : operations ? operationExpressions : contracts ? contractExpressions : numeric ? numericExpressions : selection ? selectionExpressions : conversion ? conversionExpressions : control ? controlExpressions : members ? memberExpressions : versioned ? serviceExpressions : objects ? objectExpressions : modern ? procedureExpressions : expressions;
-    ensure(p && [SCHEMA2, PROCEDURE_SCHEMA, OBJECT_SCHEMA, SERVICE_SCHEMA, MEMBER_SCHEMA, CONTROL_SCHEMA, CONVERSION_SCHEMA, EXCEPTION_SCHEMA, SELECTION_SCHEMA, NUMERIC_SCHEMA, CONTRACT_SCHEMA, OPERATION_SCHEMA, COLLECTION_SCHEMA].includes(p.schema) && Object.keys(p).every((k) => (modern ? ["schema", "body", "procedures"] : ["schema", "body"]).includes(k)));
+    ensure(p && [SCHEMA2, PROCEDURE_SCHEMA, OBJECT_SCHEMA, SERVICE_SCHEMA, MEMBER_SCHEMA, CONTROL_SCHEMA, CONVERSION_SCHEMA, EXCEPTION_SCHEMA, SELECTION_SCHEMA, NUMERIC_SCHEMA, CONTRACT_SCHEMA, OPERATION_SCHEMA, COLLECTION_SCHEMA, STATIC_SCHEMA].includes(p.schema) && Object.keys(p).every((k) => (modern ? ["schema", "body", "procedures", ...staticLinked ? ["libraries"] : []] : ["schema", "body"]).includes(k)));
     const procedures = modern ? p.procedures : {};
     ensure(procedures && typeof procedures === "object" && !Array.isArray(procedures));
+    const owners = /* @__PURE__ */ new Map();
+    if (staticLinked) {
+      ensure(Array.isArray(p.libraries) && p.libraries.length <= 64);
+      const ids = /* @__PURE__ */ new Set();
+      for (const lib of p.libraries) {
+        shape2(lib, ["id", "version", "alias", "methods"]);
+        ensure(!Object.hasOwn(lib, "op") && typeof lib.id === "string" && /^[a-z][a-z0-9.-]*\/[a-z][a-z0-9-]*$/.test(lib.id) && !ids.has(lib.id));
+        ids.add(lib.id);
+        ensure(typeof lib.version === "string" && /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/.test(lib.version));
+        name(lib.alias);
+        ensure(lib.methods && typeof lib.methods === "object" && !Array.isArray(lib.methods));
+        for (const [id, m] of Object.entries(lib.methods)) {
+          name(id);
+          shape2(m, ["name", "access", "requires"]);
+          ensure(!Object.hasOwn(m, "op"));
+          name(m.name);
+          ensure(["public", "private"].includes(m.access) && Array.isArray(m.requires) && new Set(m.requires).size === m.requires.length && m.requires.every((x) => typeof x === "string" && /^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*$/.test(x)));
+          ensure(Object.hasOwn(procedures, id) && !owners.has(id));
+          owners.set(id, { library: lib.id, ...m });
+        }
+      }
+    }
     const graph = /* @__PURE__ */ new Map();
     let current = null;
     const procedureName = (n) => {
       name(n);
-      ensure((members || n === n.toLowerCase()) && !reserved.includes(n.toUpperCase()));
+      ensure((members || n === n.toLowerCase()) && (!reserved.includes(n.toUpperCase()) || staticLinked && ["CSTR", "VAL"].includes(n.toUpperCase())));
     };
     const procedureCall = (n, kind, d) => {
       procedureName(n.name);
       ensure(Object.hasOwn(procedures, n.name));
+      const owner = owners.get(n.name);
+      ensure(!owner || owner.access === "public" || owners.get(current)?.library === owner.library);
       const proc = procedures[n.name];
       ensure(proc.kind === kind && Array.isArray(n.args) && n.args.length === proc.params.length);
       if (current) graph.get(current).add(n.name);
@@ -525,7 +550,7 @@
         expr(n.input, d + 1);
       }
       if (n.op === "variable") name(n.name);
-      if (n.op === "context") ensure(contextNames.includes(n.name));
+      if (n.op === "context") ensure(contextNames.includes(n.name) && !(owners.has(current) && n.name === "ME"));
       if (n.op === "read") {
         ensure(safeKey(n.key) || Number.isSafeInteger(n.key) && n.key >= 0);
         expr(n.target, d + 1);
@@ -659,7 +684,7 @@
       active.delete(id);
       visited.add(id);
     };
-    for (const id of graph.keys()) visit(id);
+    if (!staticLinked) for (const id of graph.keys()) visit(id);
     return freeze(p);
   }
 
@@ -696,6 +721,13 @@
           base = resolve(d.extends);
           requireThat(base.publisher === d.publisher || officialPublishers.includes(base.publisher) && base.public === true, "PROTOTYPE.PUBLISHER", "Cross-publisher inheritance denied");
         }
+        requireThat(d.static === void 0 || typeof d.static === "boolean", "PROTOTYPE.STATIC", "Invalid static flag");
+        if (d.static) {
+          requireThat(Object.keys(d).every((k) => ["id", "publisher", "public", "abstract", "static", "alias", "version", "dependencies", "properties", "slots", "methodRules", "behavior"].includes(k)), "PROTOTYPE.STATIC", "Unsupported static prototype metadata");
+          requireThat(record(d.dependencies ?? {}) && Object.entries(d.dependencies ?? {}).every(([id2, v]) => identity.test(id2) && typeof v === "string"), "PROTOTYPE.STATIC", "Invalid static dependencies");
+          requireThat(d.extends === void 0 && !d.abstract && !d.friends?.length && !d.overrides?.length && !d.presentation && !d.actions && Object.keys(d.properties ?? {}).length === 0 && Object.keys(d.slots ?? {}).length === 0, "PROTOTYPE.STATIC", "Dedicated static prototypes cannot contain instance state or inheritance");
+          requireThat(typeof d.alias === "string" && /^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(d.alias) && typeof d.version === "string" && /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/.test(d.version), "PROTOTYPE.STATIC", "Static prototypes need an alias and exact version");
+        } else requireThat(!base?.static && d.alias === void 0 && d.version === void 0, "PROTOTYPE.STATIC", "Static metadata requires a dedicated static prototype");
         requireThat(d.abstract === void 0 || typeof d.abstract === "boolean", "PROTOTYPE.DEFINITION", "Invalid abstract flag");
         requireThat(d.public === void 0 || typeof d.public === "boolean", "PROTOTYPE.DEFINITION", "Invalid public flag");
         requireThat(record(d.properties ?? {}) && record(d.slots ?? {}), "PROTOTYPE.DEFINITION", "Invalid definitions");
@@ -716,7 +748,7 @@
         }
         requireThat(d.methods === void 0 && d.behaviorSource === void 0, "PROTOTYPE.METHOD", "Behavior must be compiled by trusted setup");
         requireThat(new Set(d.overrides ?? []).size === (d.overrides ?? []).length, "PROTOTYPE.METHOD", "Duplicate overrides");
-        requireThat(!behavior || ["sewn/0.3", "sewn/0.4", "sewn/0.5", "sewn/0.6", "sewn/0.7", "sewn/0.8", "sewn/0.9", "sewn/0.10", "sewn/0.11", "sewn/0.12", "sewn/0.13"].includes(behavior.schema) && behavior.body.length === 0, "PROTOTYPE.METHOD", "Expected portable prototype behavior");
+        requireThat(!behavior || ["sewn/0.3", "sewn/0.4", "sewn/0.5", "sewn/0.6", "sewn/0.7", "sewn/0.8", "sewn/0.9", "sewn/0.10", "sewn/0.11", "sewn/0.12", "sewn/0.13", "sewn/0.14"].includes(behavior.schema) && behavior.body.length === 0, "PROTOTYPE.METHOD", "Expected portable prototype behavior");
         for (const [name2, proc] of Object.entries(behavior?.procedures ?? {})) {
           requireThat(!Object.keys(methods.handle).some((x) => x.toLowerCase() === name2.toLowerCase()), "PROTOTYPE.METHOD", "Method conflicts with kernel facade");
           const old = inheritedMethods[name2];
@@ -728,6 +760,7 @@
           }
           const rule = d.methodRules?.[name2] ?? {};
           validateMember(rule);
+          if (d.static) requireThat(["public", "private"].includes(accessOf(rule)) && !rule.hidden, "PROTOTYPE.STATIC", "Static methods support public/private visibility");
           if (old) requireThat(accessOf(rule) === accessOf(base.methodRules[name2]) && (base.methodRules[name2].requires ?? []).every((cap) => (rule.requires ?? []).includes(cap)) && (!base.methodRules[name2].hidden || rule.hidden === true), "PROTOTYPE.ACCESS", "Override cannot change inherited access or expose hidden members");
           methodRules[name2] = rule;
           methods2[name2] = { owner: id, behavior };
@@ -776,6 +809,17 @@
       for (const id of raw.keys()) resolve(id);
       for (const d of this.#definitions.values()) for (const slot of Object.values(d.slots)) for (const id of slot.accepts) this.get(id);
       for (const d of this.#definitions.values()) {
+        if (d.static) {
+          requireThat(d.behavior?.schema === "sewn/0.14", "PROTOTYPE.STATIC", "Static behavior requires sewn/0.14");
+          const walk2 = (v) => {
+            if (!v || typeof v !== "object") return;
+            requireThat(!(v.op === "context" && v.name === "ME"), "PROTOTYPE.STATIC", "Static methods have no Me");
+            Object.values(v).forEach(walk2);
+          };
+          walk2(d.behavior);
+          for (const lib of d.behavior.libraries) requireThat(d.dependencies?.[lib.id] === lib.version && lib.id !== d.id, "PROTOTYPE.STATIC", "Linked dependency must be declared");
+          continue;
+        }
         const graph = /* @__PURE__ */ new Map();
         const walk = (v, edges, behavior) => {
           if (!v || typeof v !== "object") return;
@@ -812,6 +856,7 @@
     }
     method(id, name2, caller = null, exact = true, context = null) {
       const definition = this.get(id);
+      requireThat(!definition.static, "PROTOTYPE.STATIC", "Static methods require compile-time linking");
       requireThat(Object.hasOwn(definition.methods, name2) || !exact, "PROTOTYPE.METHOD", "Unknown prototype method");
       const member = resolveMember(definition, "method", name2, exact);
       if (accessOf(member.rule) === "protected" && caller && this.isA(member.owner, caller) && Object.hasOwn(this.get(caller).methods, member.name)) {

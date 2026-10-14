@@ -1,0 +1,7 @@
+{
+  "id": "divdev/wbasic",
+  "version": "1.0.0",
+  "license": "MPL-2.0",
+  "description": "Ordinary static Wydgit BASIC compatibility library",
+  "artifact": "prototypes.json"
+}

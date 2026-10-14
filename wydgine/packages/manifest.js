@@ -25,7 +25,7 @@ export function permissions(input) {
 }
 export function validatePackageManifest(input) {
   const text=typeof input==='string'?input:JSON.stringify(clean(input));check(Buffer.byteLength(text)<=LIMITS.manifest,code,'Manifest too large');
-  const m=clean(parse(text));fields(m,['schema','id','publisher','version','platform','runtime','resources','requires','storage','permissions','bindings','installables'],code);
+  const m=clean(parse(text));fields(m,['schema','id','publisher','version','platform','runtime','resources','requires','storage','permissions','bindings','installables',...(Object.hasOwn(m,'staticLibraries')?['staticLibraries']:[])],code);
   check(m.schema==='wydgit-package/0.1',code,'Unsupported package schema');
   check(qualified(m.id)&&m.publisher===m.id.split('/')[0]&&m.publisher!=='wydgit.core',code,'Invalid package/publisher identity');
   check(version(m.version)&&range(m.platform),code,'Invalid version');check(satisfies(platform.version,m.platform),'PACKAGE.VERSION','Incompatible platform');
@@ -34,6 +34,7 @@ export function validatePackageManifest(input) {
   fields(m.resources,['prototypes','template','sources'],code);check(resourcePath(m.resources.prototypes)&&resourcePath(m.resources.template)&&record(m.resources.sources),code,'Invalid resource path');
   check(Object.keys(m.resources.sources).every(localName),code,'Invalid source identity');
   const paths=[m.resources.prototypes,m.resources.template,...Object.values(m.resources.sources)];list(paths,LIMITS.resources,resourcePath);check(paths.every(p=>!p.endsWith('.js')&&!p.endsWith('.mjs')&&!p.endsWith('.cjs')),code,'Package JavaScript is forbidden');
+  if(m.staticLibraries!==undefined)check(record(m.staticLibraries)&&Object.keys(m.staticLibraries).length<=16&&Object.entries(m.staticLibraries).every(([id,v])=>qualified(id)&&version(v)),'PACKAGE.STATIC','Static dependencies require exact publisher-qualified version pins');
   m.requires=validateRequirements(m.requires);check(m.requires.libraries.length<=16,code,'Too many libraries');
   check(Array.isArray(m.storage)&&m.storage.length<=LIMITS.storage,code,'Invalid storage');
   const names=new Set();for(const s of m.storage){fields(s,['name','fields'],code);check(localName(s.name)&&!names.has(s.name)&&record(s.fields)&&Object.keys(s.fields).length<=64,code,'Invalid storage schema');names.add(s.name);

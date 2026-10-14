@@ -11,13 +11,11 @@ import { errorDocument } from '../../index.js';
 const policy = "default-src 'none'; style-src 'self'; img-src 'self'; media-src 'self'; script-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'";
 // Explicit browser-safe dependency closure; no server/provider modules are exposed.
 const clientModules = [
-  'wydclient/uploads.js', 'wydclient/index.js', 'wydgine/events/index.js', 'wydgine/events/registry.js',
+  'wydclient/uploads.js', 'wydclient/index.js', 'wydgine/events/runtime.js', 'wydgine/events/registry.js',
   'wydgine/object-model/members.js', 'wydgine/object-model/forms.js', 'wydgine/object-model/validation.js', 'wydgine/object-model/schema.js', 'wydgine/object-model/construction.js', 'wydgine/object-model/prototypes.js', 'wydgine/seam/context.js',
   'wydgine/seam/capabilities.js', 'wydgine/http/input.js',
   'wydgine/sewn/schema.js', 'wydgine/sewn/validate.js',
-  'wydgine/sewn/execute.js', 'wydgine/sewn/bindings.js', 'wydgine/sewn/numeric.js', 'wydgine/sewn/operations.js', 'wydgine/sewn/types.js',
-  'wydgine/wydbasic/index.js', 'wydgine/wydbasic/tokenize.js',
-  'wydgine/wydbasic/parse.js', 'wydgine/wydbasic/compile.js', 'wydgine/wydbasic/errors.js'
+  'wydgine/sewn/execute.js', 'wydgine/sewn/bindings.js', 'wydgine/sewn/numeric.js', 'wydgine/sewn/operations.js', 'wydgine/sewn/types.js'
 ];
 
 // Kernel-only output port. Neither Hono nor native response objects leave this adapter.
