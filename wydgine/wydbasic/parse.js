@@ -1,7 +1,7 @@
 import { tokenize } from './tokenize.js';
 import { fail } from './errors.js';
 // AST nodes retain spelling and token locations; no executor consumes this tree.
-export function parse(source,{module=false,interfaceDeclaration=false}={}) {
+export function parse(source,{module=false,interfaceDeclaration=false,classDeclaration=false}={}) {
   const tokens=tokenize(source);let index=0,depth=0;
   const token=()=>tokens[index],is=v=>['identifier','symbol'].includes(token().kind)&&String(token().value).toUpperCase()===v;
   const take=()=>tokens[index++],eat=v=>is(v)?take():null;
@@ -59,6 +59,7 @@ export function parse(source,{module=false,interfaceDeclaration=false}={}) {
     else if(eat('DO')){const mode=eat('WHILE')?'while':(expect('UNTIL'),'until');const condition=expression();endLine();const body=block(['LOOP'],nesting+1);expect('LOOP');endLine();return node('do',start,{mode,condition,body});}
     else if(eat('EXIT')){const kind=eat('DO')?'exitDo':(expect('FOR'),'exitFor');result=node(kind,start);}
     else if(eat('RETURN'))result=node('return',start,{value:['newline','eof'].includes(token().kind)?null:expression()});
+    else if(eat('RAISE')){expect('EVENT');const value=expression();result=node('raiseEvent',start,{value});}
     else if(eat('CALL'))result=node('procedureCall',start,{value:expression()});
     else if(eat('STOP'))result=node('stop',start,{value:['newline','eof'].includes(token().kind)?null:expression()});
     else {const reference=!!eat('SET');if(token().kind==='identifier'&&tokens[index+1].value==='='){const name=take();take();result=node('set',start,{name:name.value,reference,value:expression()});}else{if(reference)fail('SYNTAX','SET requires a variable assignment.',start.location);if(['SUB','FUNCTION','MODULE','EVENT','ASYNC','AWAIT','GOTO','REM','DO','WHILE','SELECT','IMPORT','NEW','TRY','THROW','ON'].some(is)&&tokens[index+1].value!=='.')fail('UNSUPPORTED',`Unsupported statement '${token().value}'.`,start.location);const cursor=index,target=expression(4);if(target.kind==='index'&&is('='))fail('UNSUPPORTED','Indexed assignment is read-only.',start.location);if(target.kind==='member'&&eat('='))result=node('memberSet',start,{target,value:expression()});else{index=cursor;result=node('call',start,{value:expression()});}}}
@@ -72,23 +73,36 @@ export function parse(source,{module=false,interfaceDeclaration=false}={}) {
     if(!/^[a-z][a-z0-9.-]*\/[a-z][a-z0-9-]*$/.test(id))fail('NAME','WITH LIBRARY requires a lowercase publisher-qualified identity.',start.location);
     imports.push(node('library',start,{id}));endLine();
   }
+  const modifiers=()=>{const values=[];while(['PUBLIC','PRIVATE','PROTECTED','FRIEND','MUSTINHERIT','MUSTOVERRIDE','VIRTUAL','OVERRIDE','REQUIRED','HIDDEN'].some(is)){const t=take();const v=t.value.toLowerCase();if(values.includes(v))fail('SYNTAX','Duplicate modifier.',t.location);values.push(v);}return values;};
+  let className=null,classModifiers=[],parent=null;
+  const metadata=[],properties=[],contracts=[],implementations=[];
+  if(classDeclaration){classModifiers=modifiers();expect('CLASS');className=identifier().value;
+    if(eat('EXTENDS')){if(token().kind==='string')parent=take().value;else{parent='';while(!['newline','eof'].includes(token().kind))parent+=String(take().value);}}endLine();}
   let interfaceName=null;if(interfaceDeclaration){expect('INTERFACE');interfaceName=identifier().value;endLine();}
   if(!module){const body=block();return {kind:'program',location,body,imports};}
   const procedures=[],events=[];blank();
-  while(token().kind!=='eof'&&!(interfaceDeclaration&&is('END'))){
-    const start=token();
+  while(token().kind!=='eof'&&!((interfaceDeclaration||classDeclaration)&&is('END'))){
+    const start=token(),mods=classDeclaration?modifiers():[];
+    if(classDeclaration&&eat('META')){const name=identifier();expect('=');metadata.push(node('metadata',start,{name:name.value,value:expression(),modifiers:mods}));endLine();continue;}
+    if(classDeclaration&&eat('IMPLEMENTS')){const id=take();if(id.kind!=='string')fail('SYNTAX','IMPLEMENTS requires an exact quoted interface ID.',id.location);implementations.push(node('implementation',start,{id:id.value,modifiers:mods}));endLine();continue;}
+    if(classDeclaration&&eat('PROPERTY')){const name=identifier();expect('AS');const type=identifier();const value=eat('=')?expression():null;const enumeration=eat('ENUM')?expression():null,requires=eat('REQUIRES')?expression():null;properties.push(node('property',start,{name:name.value,type:type.value,value,enumeration,requires,modifiers:mods}));endLine();continue;}
     if(is('SUB')||is('FUNCTION')){
       const kind=take().value.toUpperCase(),name=identifier(),params=[];expect('(');blank();
       if(!is(')'))do{blank();const param=identifier();expect('AS');const type=identifier();params.push(node('parameter',param,{name:param.value,type:type.value}));blank();}while(eat(','));expect(')');
-      let returns=null;if(kind==='FUNCTION'){expect('AS');returns=identifier().value;}endLine();
-      const body=interfaceDeclaration?[]:block(['END']);if(!interfaceDeclaration){expect('END');expect(kind);endLine();}procedures.push(node('procedure',start,{name:name.value,procedureKind:kind.toLowerCase(),params,returns,body}));
+      let returns=null;if(kind==='FUNCTION'){expect('AS');returns=identifier().value;}const requires=classDeclaration&&eat('REQUIRES')?expression():null;endLine();
+      const body=interfaceDeclaration||mods.includes('mustoverride')?[]:block(['END']);if(!interfaceDeclaration&&!mods.includes('mustoverride')){expect('END');expect(kind);endLine();}procedures.push(node('procedure',start,{name:name.value,procedureKind:kind.toLowerCase(),params,returns,body,requires,modifiers:mods}));
+    }else if(classDeclaration&&eat('EVENT')){
+      const name=identifier(),params=[];expect('(');blank();if(!is(')'))do{blank();const param=identifier();expect('AS');const type=identifier();params.push(node('parameter',param,{name:param.value,type:type.value}));blank();}while(eat(','));expect(')');endLine();contracts.push(node('eventContract',start,{name:name.value,params,modifiers:mods}));
     }else if(!interfaceDeclaration&&eat('EVENT')){
       const name=identifier();let type=name.value;if(eat('.'))type+='.'+identifier().value;endLine();
       const body=block(['END']);expect('END');expect('EVENT');endLine();events.push(node('event',start,{type,body}));
-    }else fail('SYNTAX','Modules contain only SUB, FUNCTION and EVENT declarations.',start.location);
+    }else fail('SYNTAX',classDeclaration?'Class bodies contain metadata, properties, methods and event signatures.':'Modules contain only SUB, FUNCTION and EVENT declarations.',start.location);
   }
   if(interfaceDeclaration){expect('END');expect('INTERFACE');endLine();if(token().kind!=='eof'||imports.length)fail('SYNTAX','Interfaces contain signatures only.',token().location);}
+  if(classDeclaration){expect('END');expect('CLASS');endLine();if(token().kind!=='eof')fail('SYNTAX','One class per source file; no top-level executable code.',token().location);return {kind:'class',location,name:className,modifiers:classModifiers,parent,metadata,properties,contracts,implementations,procedures,events,imports};}
   return {kind:'module',location,procedures,events,imports,interfaceName};
 }
 
 export const parseModule=source=>parse(source,{module:true});
+
+export const parseClass=source=>parse(source,{module:true,classDeclaration:true});

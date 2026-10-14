@@ -1326,3 +1326,17 @@ No flow-sensitive narrowing is implemented. Uninitialized Scalar, DataType and
 DateTime declarations require an initializer. NULL retains its literal meaning;
 TypeOf(NULL) obtains the Null descriptor. Future examples elsewhere in this reference
 do not extend the [implemented milestone contract](milestones/wbasic-sewn-0.11.md).
+
+
+## WBasic 0.19 class authoring
+
+`compileClass(source, buildOptions)` now produces a validated canonical definition
+and existing package manifest through a shared language-neutral definition IR.
+One `.bas` file may declare metadata, inheritance, portable typed properties,
+methods, abstract/virtual overrides, implemented interfaces, typed custom events
+and isolated lifecycle hook modules. Existing standalone and static APIs remain.
+Read the [implemented 0.19 grammar, build API and target boundaries](milestones/sewn-0.19/README.md).
+Properties cannot persist Integer/Float/DateTime/reference contracts and reject
+those declarations. Lifecycle bodies compile but are not automatically dispatched;
+RAISE EVENT is type-checked and explicitly rejected pending shared-budget instance
+dispatch. H2 browser bootstrap does not accept executable class definitions.

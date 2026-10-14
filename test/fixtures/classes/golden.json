@@ -1,0 +1,8 @@
+{
+  "id":"divdev/card","publisher":"divdev","public":true,"abstract":false,
+  "properties":{"Ready":{"type":"boolean","access":"public","default":false}},"slots":{},
+  "methodRules":{"isready":{"access":"public"}},
+  "methodContracts":{"isready":{"kind":"function","params":[],"returns":"Boolean","access":"public","abstract":false,"virtual":false}},
+  "overrides":[],"implements":{},"events":{},"lifecycle":{},
+  "behavior":{"schema":"sewn/0.5","body":[],"procedures":{"isready":{"kind":"function","params":[],"returns":"Boolean","body":[{"op":"return","value":{"op":"memberRead","target":{"op":"context","name":"ME"},"name":"Ready","exact":true}}]}}}
+}

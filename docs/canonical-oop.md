@@ -241,3 +241,29 @@ inheritance, interfaces/mixins, overloads, static members, arbitrary reflection,
 package upgrades and cross-App identity. No platform version bump or release is
 performed for this corrective stage; the platform stays `0.3.0-alpha.7`, and the
 new executable wire contract is explicitly versioned `sewn/0.5`.
+
+
+## 0.19 language-neutral class declarations
+
+Ordinary prototypes may now carry closed `methodContracts`, `events` and `lifecycle`
+metadata. `methodContracts` maps exact method names to kind, ordered parameter type
+names, optional function returns, access, abstract and virtual flags, plus optional hidden and capability requirements. Abstract
+signatures have no executable body; concrete prototypes must implement them.
+Explicit contracts constrain overriding to virtual slots; existing JSON methods
+without this metadata keep their established override behavior. Canonical signature,
+visibility and capability checks still apply. Linked static helper procedures are
+excluded from instance method tables.
+
+`events` maps event names to access and ordered `{name,type}` data parameters.
+The registry derives declaring owners; declarations cannot supply host event families
+or callbacks. `lifecycle` maps Init/Preload/Render/Unload/Dispose to validated SEWN
+modules with empty workflow bodies and parameterless hook SUBs. These modules
+remain separate from ordinary callable methods. Omitted hooks mean no application
+hook work, not an automatically implemented state controller.
+
+The universal abstract Wydgit authoring contract is implicit and has no installable
+root prototype or privilege. Existing semantic ancestry and JSON definitions need
+no migration. Automatic instance hook execution and typed event emission remain
+deferred; current class compilation rejects emission and does not grant H2 host
+construction access. See [0.19](milestones/sewn-0.19/README.md) for exact contracts,
+metadata trust, portable property type restrictions and runtime prerequisites.

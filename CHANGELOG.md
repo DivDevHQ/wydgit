@@ -1,5 +1,20 @@
 ## Unreleased
 
+### WBasic / SEWN 0.19 — Class authoring foundation
+
+- Compile first-class CLASS declarations through a shared definition IR into
+  validated canonical prototypes and existing SEWN; verify metadata against the
+  existing package manifest and independent host publisher approval.
+- Add typed portable properties, access modifiers, abstract/virtual method
+  contracts, canonical overrides, interface implementation and explicit static imports.
+- Validate typed event declarations and isolated lifecycle hook modules. Reject
+  typed emission until declaration-bound dispatch and shared event-chain budgets
+  exist; automatic lifecycle execution remains deferred to the instance controller.
+- Check live member adapters before method dispatch; keep linked static procedures
+  out of instance method tables. Preserve standalone source and existing JSON APIs.
+- Add canonical golden/component fixtures, adversarial tests and a concrete 0.20
+  handoff. Rebuild current client validation artifacts without adding a browser compiler.
+
 ## WBasic / SEWN 0.18
 
 - Add canonical DatePart, DateAdd, DateDiff, ParseDate and FormatDate intrinsics

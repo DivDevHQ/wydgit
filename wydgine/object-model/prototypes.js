@@ -1,3 +1,4 @@
+import { classContracts } from './class-contracts.js';
 import {validateInterface,interfaceKey,sameSignature,interfaceTypes} from './interfaces.js';
 import { isCapability } from '../seam/capabilities.js';
 import { accessOf, validateMember, resolveMember, authorizeMember } from './members.js';
@@ -52,10 +53,12 @@ export class PrototypeRegistry {
       check(d.methods===undefined&&d.behaviorSource===undefined,'PROTOTYPE.METHOD','Behavior must be compiled by trusted setup');
       check(new Set(d.overrides??[]).size===(d.overrides??[]).length,'PROTOTYPE.METHOD','Duplicate overrides');
       check(!behavior||['sewn/0.3','sewn/0.4','sewn/0.5','sewn/0.6','sewn/0.7','sewn/0.8','sewn/0.9','sewn/0.10','sewn/0.11','sewn/0.12','sewn/0.13','sewn/0.14','sewn/0.15','sewn/0.16','sewn/0.17','sewn/0.18'].includes(behavior.schema)&&behavior.body.length===0,'PROTOTYPE.METHOD','Expected portable prototype behavior');
+      const linkedNames=new Set(behavior?.libraries?.flatMap(lib=>Object.keys(lib.methods))??[]);
       for(const [name,proc] of Object.entries(behavior?.procedures??{})){
+        if(linkedNames.has(name)){check(!d.methodRules?.[name]&&!(d.overrides??[]).includes(name),'PROTOTYPE.STATIC','Linked procedures are not instance methods');continue;}
         check(!Object.keys(facadeMethods.handle).some(x=>x.toLowerCase()===name.toLowerCase()),'PROTOTYPE.METHOD','Method conflicts with kernel facade');
         const old=inheritedMethods[name];
-        check(Boolean(old)===(d.overrides??[]).includes(name),'PROTOTYPE.METHOD','Inherited methods require explicit overrides');
+        check(Boolean(old||base?.methodContracts?.[name])===(d.overrides??[]).includes(name),'PROTOTYPE.METHOD','Inherited methods require explicit overrides');
         if(old){check(accessOf(base.methodRules[name])!=='private','PROTOTYPE.ACCESS','Private methods cannot be overridden');const previous=old.behavior.procedures[name];check(previous.kind===proc.kind&&previous.params.length===proc.params.length&&previous.params.every((x,i)=>x.type===proc.params[i].type)&&previous.returns===proc.returns,'PROTOTYPE.METHOD','Incompatible override signature');}
         const rule=d.methodRules?.[name]??{};validateMember(rule);if(d.static)check(['public','private'].includes(accessOf(rule))&&!rule.hidden,'PROTOTYPE.STATIC','Static methods support public/private visibility');
         if(old)check(accessOf(rule)===accessOf(base.methodRules[name])&&(base.methodRules[name].requires??[]).every(cap=>(rule.requires??[]).includes(cap))&&(!base.methodRules[name].hidden||rule.hidden===true),'PROTOTYPE.ACCESS','Override cannot change inherited access or expose hidden members');
@@ -101,7 +104,8 @@ export class PrototypeRegistry {
           check(accessOf(member.rule)==='public'&&!member.rule.hidden&&sameSignature(signature,method.behavior.procedures[member.name]),'INTERFACE.CONFORMANCE','Required public instance signature does not match');
         }
       }
-      const result = freeze({ ...d, implements:implementations, ...(presentation?{presentation}:{}), abstract: d.abstract ?? false, properties, propertyOwners, slots, methods, methodRules, friends, actions, ancestors: base ? [base.id, ...base.ancestors] : [] });
+      const declarations=classContracts(d,base,methods,properties);
+      const result = freeze({ ...d, ...declarations, implements:implementations, ...(presentation?{presentation}:{}), abstract: d.abstract ?? false, properties, propertyOwners, slots, methods, methodRules, friends, actions, ancestors: base ? [base.id, ...base.ancestors] : [] });
       visiting.delete(id); this.#definitions.set(id, result); return result;
     };
     for (const id of raw.keys()) resolve(id);
@@ -109,12 +113,13 @@ export class PrototypeRegistry {
     // Resolve statically known Me calls through each actual prototype, including overrides.
     for(const d of this.#definitions.values()){
       if(d.interface)continue;
+      for(const s of Object.values(d.methodContracts??{}))for(const type of [...s.params,s.returns])if(typeof type==='string'&&type.startsWith('interface:'))this.interface(type);
       if(d.behavior)for(const type of interfaceTypes(d.behavior))this.interface(type);
       if(d.static){check(['sewn/0.14','sewn/0.15','sewn/0.16','sewn/0.17','sewn/0.18'].includes(d.behavior?.schema),'PROTOTYPE.STATIC','Static behavior requires sewn/0.14, sewn/0.15 or sewn/0.16');const walk=v=>{if(!v||typeof v!=='object')return;check(!(v.op==='context'&&v.name==='ME'),'PROTOTYPE.STATIC','Static methods have no Me');Object.values(v).forEach(walk);};walk(d.behavior);for(const lib of d.behavior.libraries??[])check(d.dependencies?.[lib.id]===lib.version&&lib.id!==d.id,'PROTOTYPE.STATIC','Linked dependency must be declared');continue;}
       const graph=new Map();
       const walk=(v,edges,behavior)=>{if(!v||typeof v!=='object')return;
         if(['procedureCall','functionCall'].includes(v.op))edges.add(behavior+':'+v.name);
-        if(['methodCall','methodValue'].includes(v.op)&&v.target.op==='context'&&v.target.name==='ME'){const lookup=resolveMember(d,'method',v.name,v.exact??false),m=d.methods[lookup.name];check(m,'PROTOTYPE.METHOD','Unknown receiver method');edges.add(m.owner+':'+lookup.name);}
+        if(['methodCall','methodValue'].includes(v.op)&&v.target.op==='context'&&v.target.name==='ME'){const abstractName=Object.keys(d.methodContracts??{}).find(n=>(v.exact?n===v.name:n.toLowerCase()===v.name.toLowerCase())&&d.methodContracts[n].abstract);if(d.abstract&&abstractName)return;const lookup=resolveMember(d,'method',v.name,v.exact??false),m=d.methods[lookup.name];check(m,'PROTOTYPE.METHOD','Unknown receiver method');edges.add(m.owner+':'+lookup.name);}
         Object.values(v).forEach(x=>walk(x,edges,behavior));};
       for(const m of Object.values(d.methods))for(const [name,proc] of Object.entries(m.behavior.procedures)){const edges=new Set();walk(proc.body,edges,m.owner);graph.set(m.owner+':'+name,edges);}
       const active=new Set(),done=new Set();const visit=key=>{check(!active.has(key),'PROTOTYPE.METHOD','Recursive method cycle');if(done.has(key))return;active.add(key);for(const next of graph.get(key)??[])visit(next);active.delete(key);done.add(key);};for(const key of graph.keys())visit(key);

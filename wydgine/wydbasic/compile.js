@@ -26,7 +26,7 @@ export function compile(source,options={}) { return compileAst(parse(source),nul
 export function compilePrototype(source,options={}) { return compileAst(parseModule(source),null,true,options); }
 export function compileModule(source,{registry=new EventRegistry(),...options}={}) { return compileAst(parseModule(source),registry,false,options); }
 // Public compilation starts from source; AST lowering remains an internal stage.
-function compileAst(ast,registry,prototype=false,options={}) {
+export function compileAst(ast,registry,prototype=false,options={}) {
   const imported=libraryScope(ast.imports??[],options),linker=createLinker((ast.procedures??[]).map(p=>p.name.toLowerCase()),imported.resolve),staticMode=options.static===true;
   const referenceType=t=>t==='Wydgit'||interfaceType(t);
   const resolveType=t=>{const builtin=canonical(types,t);if(builtin)return builtin;if(interfaceType(t)){options.prototypeRegistry?.interface(t);interfaces=true;return t;}if(!options.prototypeRegistry)return undefined;const d=options.prototypeRegistry.resolveInterface(t,options.dependencies);interfaces=true;return interfaceKey(d);};
@@ -35,6 +35,20 @@ function compileAst(ast,registry,prototype=false,options={}) {
   let symbols=new Map();let declared=new Set();const procedures=Object.create(null),declarations=new Map(),graph=new Map();let current=null;const modern=ast.kind==='module';let objects=prototype,versioned=false,members=false,control=false,conversion=false,exceptions=false,selection=false,numeric=false,contracts=false,operations=false,collections=false,regex=false,conditional=false,interfaces=false,dates=false;
   const error=(n,code,message)=>fail(code,message,n.location);
   const checkType=(n,actual,expected)=>{if(expected!=='Unknown'&&actual!=='Unknown'&&actual!==expected&&!(referenceType(expected)&&actual==='Null')&&!(interfaceType(expected)&&actual==='Wydgit')&&!(expected==='Wydgit'&&interfaceType(actual))&&!(expected==='Scalar'&&['String','Number','Integer','Float','Boolean','DateTime'].includes(actual))&&!(numericTypes.includes(actual)&&numericTypes.includes(expected)))error(n,'TYPE',`Expected ${expected}, received ${actual}.`);};
+  const classMember=(n,kind,name,exact=false)=>{
+    const d=options.classDefinition;if(!d)return null;
+    const table=kind==='property'?d.properties:d.methods;
+    const names=Object.keys(table).filter(k=>exact?k===name:k.toLowerCase()===name.toLowerCase()&&!(kind==='property'?table[k]:d.methodRules[k])?.hidden);
+    if(names.length!==1)error(n,'NAME','Unknown or ambiguous class member.');
+    const key=names[0],rule=kind==='property'?table[key]:d.methodRules[key]??{},owner=kind==='property'?d.propertyOwners[key]:table[key].owner;
+    if(owner!==d.id&&rule.access==='private')error(n,'TYPE','Inherited private member is inaccessible.');
+    if(owner!==d.id&&rule.access==='friend'){
+      const grant=options.prototypeRegistry.get(owner);
+      if(!d.verifiedPublisher||options.prototypeRegistry.verifiedPublisher(owner)!==grant.publisher||!grant.friends.some(pattern=>pattern===d.id||pattern===d.publisher+'/*'))error(n,'TYPE','Inherited friend member is inaccessible.');
+    }
+    return {name:key,rule,signature:kind==='method'?(table[key].signature??table[key].behavior.procedures[key]):null,type:({string:'String',number:'Number',boolean:'Boolean',object:'Object',array:'Array',null:'Null'})[rule.type]??'Unknown'};
+  };
+  const isMe=n=>n?.kind==='name'&&n.name.toUpperCase()==='ME';
   const key=(n,k)=>{if(!safeKey(k.toLowerCase()))error(n,'UNSUPPORTED',`Reserved member '${k}'.`);return k;};
   const reserve=(n,name,type)=>{const id=name.toLowerCase();if(!/^[a-z_][a-z0-9_]{0,63}$/.test(id))error(n,'NAME','Variable names must contain at most 64 ASCII letters, digits or underscores.');if((dateReservedNames.includes(name.toUpperCase())&&!(staticMode&&['CSTR','VAL'].includes(name.toUpperCase())))||['ISINTEGER','ISSAFEINTEGER','TYPEOF','SCALAR','DATATYPE','DATETIME'].includes(name.toUpperCase())||(reservedNames.includes(name.toUpperCase())&&!(staticMode&&['CSTR','VAL'].includes(name.toUpperCase())))||contextNames.includes(name.toUpperCase())||id==='services'||!safeKey(id))error(n,'NAME',`Reserved name '${name}'.`);if(['CAST','IMPLEMENTS','INTERFACE'].includes(name.toUpperCase()))error(n,'NAME','Reserved interface operation name.');if(imported.aliases.has(id))error(n,'NAME','Library alias conflicts with a local declaration.');if(declared.has(id))error(n,'NAME',`Duplicate declaration '${name}'.`);declared.add(id);symbols.set(id,{type,kind:referenceType(type)?'handle':null});return id;};
   const constrain=(n,v,type)=>{if(interfaceType(type)){interfaces=true;return v;}if(collections&&sourceTypes.includes(type)&&type!=='Wydgit')return {op:'typeCheck',type,value:v};if(['Scalar','DataType','DateTime'].includes(type)){contracts=true;return {op:'typeCheck',type,value:v};}if(!['Integer','Float'].includes(type))return v;numeric=true;if(v.op==='literal'&&!(type==='Integer'?Number.isSafeInteger(v.value):typeof v.value==='number'&&Number.isFinite(v.value)))error(n,'TYPE',`Invalid ${type} value.`);return {op:'numericCheck',type,value:v};};
@@ -56,7 +70,7 @@ function compileAst(ast,registry,prototype=false,options={}) {
       case 'object':{const fields=Object.create(null);for(const f of n.fields){key(f,f.key);if(Object.hasOwn(fields,f.key))error(f,'NAME',`Duplicate object key '${f.key}'.`);const v=expression(f.value);if(v.kind)error(f,'TYPE','Objects require JSON values.');fields[f.key]=v.sewn;}return value({op:'object',fields},'Object');}
       case 'index':{collections=true;const target=expression(n.target),position=constrainedExpression(n.index,'Integer');checkType(n,target.type,'Array');checkType(n,position.type,'Integer');if(target.kind||target.element==='Wydgit')error(n,'TYPE','Indexed reads require portable data arrays.');if(position.sewn.op==='literal'&&(!Number.isSafeInteger(position.sewn.value)||position.sewn.value<0))error(n,'TYPE','Index must be a nonnegative safe Integer.');return value({op:'index',target:target.sewn,index:position.sewn});}
       case 'member':{const target=expression(n.target);if(interfaceType(target.type))error(n,'TYPE','Interface properties are deferred.');key(n,n.key);let name=n.key,type='Unknown',kind=null;
-        if(target.kind==='handle'&&(n.exact||!canonical(reads.handle,n.key))){members=true;return value({op:'memberRead',target:target.sewn,name:n.key,exact:n.exact===true});}
+        if(target.kind==='handle'&&(n.exact||!canonical(reads.handle,n.key))){members=true;const member=isMe(n.target)?classMember(n,'property',n.key,n.exact):null;return value({op:'memberRead',target:target.sewn,name:member?.name??n.key,exact:member?true:n.exact===true},member?.type??'Unknown');}
         if(target.kind){name=canonical(reads[target.kind]??[],name);if(!name)error(n,'UNSUPPORTED',`Unsupported ${target.kind} member '${n.key}'.`);
           if(['Query','Form'].includes(name)){kind='map';type='Facade';}else if(name==='Cookies'){kind=target.kind==='RESPONSE'?'cookieWrite':'cookieRead';type='Facade';}else if(name==='Headers'){kind='headers';type='Facade';}else if(['Source','Target'].includes(name)){kind='handle';type='Wydgit';}else if(['IsPost','Cancelable','Cancelled','Handled'].includes(name))type='Boolean';else if(['properties','Payload','Route'].includes(name))type='Object';else if(name==='Status')type='Number';else if(name!=='Value'&&!['OldValue','NewValue'].includes(name))type='String';
         }else if(!['Object','Unknown'].includes(target.type))error(n,'TYPE','Member reads require an Object or facade.');
@@ -112,6 +126,12 @@ function compileAst(ast,registry,prototype=false,options={}) {
         if(modern){const svc=service(n);if(svc)return value({...svc,op:svc.op==='canonicalService'?'canonicalServiceCall':'serviceCall'},'Object');}
         if(n.target.kind!=='member')error(n,'UNSUPPORTED','Only safe facade methods can be called.');const target=expression(n.target.target);key(n,n.target.key);
         if(interfaceType(target.type)){const contract=options.prototypeRegistry.interface(target.type),name=n.target.exact?n.target.key:n.target.key.toLowerCase(),signature=contract.signatures[name];if(!signature)error(n,'TYPE','Member is absent from the interface contract.');if(n.args.length!==signature.params.length)error(n,'TYPE','Interface arity mismatch.');const args=n.args.map((a,i)=>constrainedExpression(a,signature.params[i]));args.forEach((a,i)=>checkType(n,a.type,signature.params[i]));return value({op:'methodValue',target:target.sewn,name,args:args.map(a=>a.sewn)},signature.returns??'Null',signature.returns==='Wydgit'?'handle':null);}
+        if(isMe(n.target.target)&&options.classDefinition&&!canonical(Object.keys(methods.handle),n.target.key)){
+          const member=classMember(n,'method',n.target.key,n.target.exact),s=member.signature,expected=n.callKind??'function';
+          if(s.kind!==expected||n.args.length!==s.params.length)error(n,'TYPE','Class method kind or arity mismatch.');
+          const types=s.params.map(p=>typeof p==='string'?p:p.type),args=n.args.map((a,i)=>constrainedExpression(a,types[i]));args.forEach((a,i)=>checkType(n,a.type,types[i]));objects=true;members=true;
+          return value({op:expected==='sub'?'methodCall':'methodValue',target:target.sewn,name:member.name,exact:true,args:args.map((a,i)=>constrain(n.args[i],a.sewn,types[i]))},s.returns??'Null',referenceType(s.returns)?'handle':null);
+        }
         const method=n.target.exact?null:canonical(Object.keys(methods[target.kind]??{}),n.target.key);if(!method){if(target.kind!=='handle')error(n,'UNSUPPORTED',`Unsupported method '${n.target.key}'.`);objects=true;if(n.target.exact)members=true;return value({op:'methodValue',target:target.sewn,name:n.target.exact?n.target.key:n.target.key.toLowerCase(),...(n.target.exact?{exact:true}:{}),args:n.args.map(x=>expression(x).sewn)});}const args=n.args.map(expression),arity=methods[target.kind][method];if(args.length<arity[0]||args.length>arity[1])error(n,'TYPE',`Invalid argument count for ${method}.`);args.forEach((v,i)=>{if(v.kind&&!(method==='Move'&&i===0||method==='Raise'&&i===1||method==='Insert'&&i===2||method==='Replace'&&i===0))error(n,'TYPE','This argument requires JSON data.');});
         let type='Unknown',kind=null;if(method==='related'){const relation=n.args[0];if(relation.kind!=='literal'||typeof relation.value!=='string')error(n,'TYPE','related requires a literal relationship.');if(relation.value==='children')type='Array';else{type='Wydgit';kind='handle';}}else if(['Set','Insert','Remove','Replace','Move','Cancel','Raise','WriteMarkdown','Delete'].includes(method))type='Null';else if(method==='GetAll')type='Array';
         return {...value({op:'invoke',target:target.sewn,method,args:args.map(x=>x.sewn)},type,kind),...(method==='related'&&type==='Array'?{element:'Wydgit'}:{})};}
@@ -167,6 +187,15 @@ function compileAst(ast,registry,prototype=false,options={}) {
   function body(nodes,inLoop=false,inDo=false) {
     const out=[];
     for(const n of nodes) {
+      if(n.kind==='raiseEvent'){
+        const call=n.value,events=options.classDefinition?.events;
+        if(!events)error(n,'UNSUPPORTED','Typed events require a class declaration.');
+        if(call.kind!=='invoke'||call.target.kind!=='name')error(n,'TYPE','RAISE EVENT requires a statically named event invocation.');
+        const names=Object.keys(events).filter(k=>k.toLowerCase()===call.target.name.toLowerCase());if(names.length!==1)error(n,'NAME','Unknown or ambiguous declared event.');
+        const params=events[names[0]].params;if(call.args.length!==params.length)error(n,'TYPE','Event arity mismatch.');
+        call.args.forEach((arg,i)=>{const v=constrainedExpression(arg,params[i].type);checkType(arg,v.type,params[i].type);constrain(arg,v.sewn,params[i].type);if(v.kind)error(arg,'TYPE','Event payloads require portable data.');});
+        error(n,'UNSUPPORTED','Typed event emission requires deferred host-bound instance dispatch with shared budgets.');
+      }
       if(n.kind==='declare'||n.kind==='constant') {
         const immutable=n.kind==='constant';if(immutable)collections=true;
         if(inLoop||inDo)error(n,'UNSUPPORTED','Declarations inside loops are deferred; SEWN declarations live for the invocation.');
@@ -182,13 +211,13 @@ function compileAst(ast,registry,prototype=false,options={}) {
       }else if(n.kind==='do'){conditional=true;collections=true;const condition=expression(n.condition);checkType(n,condition.type,'Boolean');if(condition.kind)error(n,'TYPE','DO requires Boolean data.');const before=new Map(symbols);const children=body(n.body,inLoop,true);symbols=before;out.push({op:'do',mode:n.mode,condition:condition.sewn,body:children});
       }else if(n.kind==='exitDo'){if(!inDo)error(n,'TYPE','EXIT DO requires an enclosing DO in this procedure.');conditional=true;out.push({op:'exitDo'});
       }else if(n.kind==='exitFor'){if(!inLoop)error(n,'TYPE','EXIT FOR requires an enclosing FOR in this procedure.');control=true;out.push({op:'exitFor'});
-      }else if(n.kind==='memberSet'){const target=expression(n.target.target);if(interfaceType(target.type))error(n,'TYPE','Interface properties are deferred.');if(target.kind!=='handle')error(n,'TYPE','Member assignment requires a Wydgit reference.');key(n,n.target.key);const v=expression(n.value);if(v.kind)error(n,'TYPE','Property values require JSON data.');members=true;out.push({op:'memberSet',target:target.sewn,name:n.target.key,exact:n.target.exact===true,value:v.sewn});
+      }else if(n.kind==='memberSet'){const target=expression(n.target.target);if(interfaceType(target.type))error(n,'TYPE','Interface properties are deferred.');if(target.kind!=='handle')error(n,'TYPE','Member assignment requires a Wydgit reference.');key(n,n.target.key);const member=isMe(n.target.target)?classMember(n,'property',n.target.key,n.target.exact):null;const v=expression(n.value);if(member)checkType(n,v.type,member.type);if(v.kind)error(n,'TYPE','Property values require JSON data.');members=true;out.push({op:'memberSet',target:target.sewn,name:member?.name??n.target.key,exact:member?true:n.target.exact===true,value:v.sewn});
       }else if(n.kind==='set') {
         const s=symbols.get(n.name.toLowerCase());if(!s)error(n,'NAME',`Unknown variable '${n.name}'.`);if(s.immutable)error(n,'TYPE','Cannot rebind an immutable name.');if(n.reference!==(referenceType(s.type)))error(n,'TYPE',referenceType(s.type)?'Wydgit assignment requires SET.':'SET requires a Wydgit variable.');
         const v=constrainedExpression(n.value,s.type);if(referenceType(s.type)&&v.type==='Unknown')error(n,'TYPE','SET requires a known handle or NULL.');if(!(referenceType(s.type)&&v.type==='Null'))checkType(n,v.type,s.type);if(!referenceType(s.type)&&v.kind)error(n,'TYPE','Reference requires a Wydgit variable.');out.push({op:'set',name:n.name.toLowerCase(),...(interfaceType(s.type)?{type:s.type}:{}),value:constrain(n,v.sewn,s.type)});
       }else if(n.kind==='procedureCall'&&n.value.target?.kind==='member'&&imported.lookup(n.value.target)){out.push(staticCall(n.value,'sub',imported.lookup(n.value.target)).sewn);}
       else if(n.kind==='procedureCall'&&n.value.target?.kind==='name'){out.push(procedureCall(n.value,'sub').sewn);}
-      else if(n.kind==='call'||n.kind==='procedureCall') {const svc=service(n.value);if(svc)out.push(svc);else{const v=expression(n.value);if(v.sewn.op==='methodValue'){out.push({...v.sewn,op:'methodCall'});continue;}if(v.sewn.op!=='invoke')error(n,'UNSUPPORTED','Expected method call.');out.push({op:'call',target:v.sewn.target,method:v.sewn.method,args:v.sewn.args});}}
+      else if(n.kind==='call'||n.kind==='procedureCall') {const svc=service(n.value);if(svc)out.push(svc);else{n.value.callKind='sub';const v=expression(n.value);if(v.sewn.op==='methodCall'){out.push(v.sewn);continue;}if(v.sewn.op==='methodValue'){out.push({...v.sewn,op:'methodCall'});continue;}if(v.sewn.op!=='invoke')error(n,'UNSUPPORTED','Expected method call.');out.push({op:'call',target:v.sewn.target,method:v.sewn.method,args:v.sewn.args});}}
       else if(n.kind==='if') {const condition=expression(n.condition);checkType(n,condition.type,'Boolean');const before=new Map(symbols);const then=body(n.then,inLoop,inDo);symbols=new Map(before);const otherwise=body(n.else,inLoop,inDo);symbols=before;out.push({op:'if',condition:condition.sewn,then,...(otherwise.length?{else:otherwise}:{})});}
       else if(n.kind==='forNumeric') {collections=true;
         const args=[n.start,n.end,n.step].map(x=>constrainedExpression(x,'Integer'));args.forEach(arg=>{checkType(n,arg.type,'Number');if(arg.kind)error(n,'TYPE','Numeric loop requires numbers.');});

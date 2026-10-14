@@ -431,6 +431,45 @@
     } };
   }
 
+  // wydgine/seam/capabilities.js
+  var isCapability = (value) => typeof value === "string" && /^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*$/.test(value);
+
+  // wydgine/seam/context.js
+  var contexts = /* @__PURE__ */ new WeakSet();
+  function checkContext(context) {
+    requireThat(contexts.has(context), "SEAM.CONTEXT", "Expected host-issued execution context");
+  }
+
+  // wydgine/object-model/members.js
+  var accessOf = (rule) => rule.access ?? "public";
+  var discoverable = (rule) => rule.hidden !== true;
+  function validateMember(rule) {
+    requireThat(record(rule), "PROTOTYPE.ACCESS", "Invalid member rule");
+    requireThat(["public", "private", "protected", "friend"].includes(accessOf(rule)), "PROTOTYPE.ACCESS", "Invalid member access");
+    requireThat(rule.requires === void 0 || Array.isArray(rule.requires) && rule.requires.every(isCapability), "PROTOTYPE.ACCESS", "Invalid member capability requirements");
+    requireThat(rule.hidden === void 0 || typeof rule.hidden === "boolean", "PROTOTYPE.ACCESS", "Invalid member visibility");
+  }
+  function resolveMember(definition, kind, name2, exact = true) {
+    const table = kind === "property" ? definition.properties : definition.methods;
+    const rules = kind === "property" ? definition.properties : definition.methodRules;
+    const names = exact ? Object.keys(table).filter((k) => k === name2) : Object.keys(table).filter((k) => k.toLowerCase() === name2.toLowerCase() && discoverable(rules[k] ?? {}));
+    requireThat(names.length === 1, names.length > 1 ? "OBJECT.AMBIGUOUS_MEMBER" : kind === "property" ? "OBJECT.PROPERTY" : "PROTOTYPE.METHOD", names.length > 1 ? "Ambiguous member; use exact lookup" : "Unknown member");
+    const key = names[0], rule = rules[key] ?? {};
+    return { name: key, rule, owner: kind === "property" ? definition.propertyOwners[key] : table[key].owner };
+  }
+  function checkMemberCapabilities(rule, context) {
+    if (rule.requires?.length) {
+      checkContext(context);
+      for (const capability of rule.requires) context.require(capability);
+    }
+  }
+  function authorizeMember(registry, member, caller = null, context = null) {
+    checkMemberCapabilities(member.rule, context);
+    const access = accessOf(member.rule), owner = member.owner;
+    if (access === "public") return;
+    requireThat(caller && (caller === owner || access === "protected" && registry.isA(caller, owner) || access === "friend" && registry.verifiedPublisher(caller) === registry.get(caller).publisher && registry.verifiedPublisher(owner) === registry.get(owner).publisher && registry.get(owner).friends.some((pattern) => pattern === caller || pattern === registry.get(caller).publisher + "/*")), "OBJECT.ACCESS", "Member access denied");
+  }
+
   // wydgine/sewn/schema.js
   var SCHEMA2 = "sewn/0.1";
   var MAXIMA = Object.freeze({ dateInput: 40, dateFormat: 256, dateTokens: 64, dateZone: 64, dateOutput: 1024, steps: 1e4, expressionDepth: 32, nesting: 16, iterations: 1e3, variables: 64, valueNodes: 4096, string: 16384, serviceCalls: 32, procedureCalls: 256, procedureDepth: 16, parameters: 16, drafts: 64, draftDepth: 32, draftNodes: 256, constructionOperations: 512, constructionSize: 65536, regexPattern: 256, regexInput: 4096, regexCaptures: 8, regexMatches: 128, regexOutput: 16384, regexDepth: 16, regexRepeat: 32, regexAtoms: 128, regexInstructions: 512, regexWork: 1e6, timeMs: 1e3, programNodes: 8192, programSize: 65536 });
@@ -570,79 +609,6 @@
     return found;
   }
 
-  // wydgine/seam/capabilities.js
-  var isCapability = (value) => typeof value === "string" && /^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*$/.test(value);
-
-  // wydgine/seam/context.js
-  var contexts = /* @__PURE__ */ new WeakSet();
-  function checkContext(context) {
-    requireThat(contexts.has(context), "SEAM.CONTEXT", "Expected host-issued execution context");
-  }
-
-  // wydgine/object-model/members.js
-  var accessOf = (rule) => rule.access ?? "public";
-  var discoverable = (rule) => rule.hidden !== true;
-  function validateMember(rule) {
-    requireThat(record(rule), "PROTOTYPE.ACCESS", "Invalid member rule");
-    requireThat(["public", "private", "protected", "friend"].includes(accessOf(rule)), "PROTOTYPE.ACCESS", "Invalid member access");
-    requireThat(rule.requires === void 0 || Array.isArray(rule.requires) && rule.requires.every(isCapability), "PROTOTYPE.ACCESS", "Invalid member capability requirements");
-    requireThat(rule.hidden === void 0 || typeof rule.hidden === "boolean", "PROTOTYPE.ACCESS", "Invalid member visibility");
-  }
-  function resolveMember(definition, kind, name2, exact = true) {
-    const table = kind === "property" ? definition.properties : definition.methods;
-    const rules = kind === "property" ? definition.properties : definition.methodRules;
-    const names = exact ? Object.keys(table).filter((k) => k === name2) : Object.keys(table).filter((k) => k.toLowerCase() === name2.toLowerCase() && discoverable(rules[k] ?? {}));
-    requireThat(names.length === 1, names.length > 1 ? "OBJECT.AMBIGUOUS_MEMBER" : kind === "property" ? "OBJECT.PROPERTY" : "PROTOTYPE.METHOD", names.length > 1 ? "Ambiguous member; use exact lookup" : "Unknown member");
-    const key = names[0], rule = rules[key] ?? {};
-    return { name: key, rule, owner: kind === "property" ? definition.propertyOwners[key] : table[key].owner };
-  }
-  function checkMemberCapabilities(rule, context) {
-    if (rule.requires?.length) {
-      checkContext(context);
-      for (const capability of rule.requires) context.require(capability);
-    }
-  }
-  function authorizeMember(registry, member, caller = null, context = null) {
-    checkMemberCapabilities(member.rule, context);
-    const access = accessOf(member.rule), owner = member.owner;
-    if (access === "public") return;
-    requireThat(caller && (caller === owner || access === "protected" && registry.isA(caller, owner) || access === "friend" && registry.verifiedPublisher(caller) === registry.get(caller).publisher && registry.verifiedPublisher(owner) === registry.get(owner).publisher && registry.get(owner).friends.some((pattern) => pattern === caller || pattern === registry.get(caller).publisher + "/*")), "OBJECT.ACCESS", "Member access denied");
-  }
-
-  // wydgine/http/policy.js
-  var HTTP_DEFAULTS = Object.freeze({ headerBytes: 8192, headerCount: 64, requestMs: 12e4 });
-  var HTTP_CEILINGS = Object.freeze({ headerBytes: 16384, headerCount: 128, requestMs: 3e5 });
-
-  // wydgine/presentation-policy.js
-  var PRESENTATION_DEFAULTS = Object.freeze({ componentRequests: 4 });
-
-  // wydgine/components.js
-  var blocked = /* @__PURE__ */ new Set(["__proto__", "prototype", "constructor"]);
-  var tags = /* @__PURE__ */ new Set(["section", "div", "p", "span", "h2", "h3", "form", "label", "input", "button", "ol", "ul", "li", "a", "nav", "strong", "audio", "video", "source", "img"]);
-  var attributes = /* @__PURE__ */ new Set(["id", "class", "role", "method", "action", "for", "name", "type", "value", "placeholder", "href", "title", "aria-label", "src", "alt", "controls", "preload", "enctype", "accept", "required", "autocomplete", "maxlength"]);
-  var ops = /* @__PURE__ */ new Set(["concat", "eq", "not", "and", "or", "if", "length", "add", "subtract", "min", "max", "lt", "gt", "query", "queryValid", "integer", "parameter", "url", "trim"]);
-  function validatePresentation(input) {
-    const spec = clean(input);
-    let nodes = 0;
-    const walk = (value, depth = 0) => {
-      requireThat(++nodes <= 1024 && depth <= 32, "COMPONENT.INVALID", "Presentation complexity exceeded");
-      if (value && typeof value === "object") {
-        if (value.op !== void 0) requireThat(ops.has(value.op), "COMPONENT.INVALID", "Unsupported expression");
-        if (value.get !== void 0) requireThat(typeof value.get === "string" && value.get.length <= 256 && value.get.split(".").length <= 16 && value.get.split(".").every((p) => !blocked.has(p)), "COMPONENT.INVALID", "Invalid value path");
-        if (value.tag !== void 0) {
-          requireThat(tags.has(value.tag), "COMPONENT.INVALID", "Unsupported element");
-          requireThat(Object.keys(value.attrs ?? {}).every((a) => attributes.has(a)), "COMPONENT.INVALID", "Unsupported attribute");
-        }
-        Object.values(value).forEach((v) => walk(v, depth + 1));
-      }
-    };
-    requireThat(spec.schema === "wydgit.presentation/0.1" && spec.template, "COMPONENT.INVALID", "Invalid presentation");
-    requireThat(Object.keys(spec).every((k) => ["schema", "template", "request", "when", "valid", "submission", "delivery"].includes(k)), "COMPONENT.INVALID", "Unknown presentation field");
-    for (const binding of [spec.request, spec.submission, spec.delivery].filter(Boolean)) requireThat(Object.keys(binding).every((k) => ["library", "apiVersion", "operation", "input"].includes(k)) && ["library", "apiVersion", "operation"].every((k) => typeof binding[k] === "string"), "COMPONENT.INVALID", "Invalid service binding");
-    walk(spec);
-    return spec;
-  }
-
   // wydgine/sewn/validate.js
   var fail = (code) => {
     throw new WydgitError(`SEWN.${code}`, "SEWN execution failed");
@@ -693,10 +659,10 @@
     };
     size(p);
     ensure(JSON.stringify(p).length <= MAXIMA.programSize, "LIMIT");
-    const shape2 = (n, fields) => {
+    const shape2 = (n, fields2) => {
       ensure(n && typeof n === "object" && !Array.isArray(n));
-      ensure(Object.keys(n).every((k) => k === "op" || fields.some((f) => f.replace("?", "") === k)));
-      for (const f of fields) if (!f.endsWith("?")) ensure(Object.hasOwn(n, f));
+      ensure(Object.keys(n).every((k) => k === "op" || fields2.some((f) => f.replace("?", "") === k)));
+      for (const f of fields2) if (!f.endsWith("?")) ensure(Object.hasOwn(n, f));
     };
     const dates = p?.schema === DATE_SCHEMA, interfaces = dates || p?.schema === INTERFACE_SCHEMA, conditional = interfaces || p?.schema === DO_SCHEMA, regex = conditional || p?.schema === REGEX_SCHEMA, staticLinked = regex || p?.schema === STATIC_SCHEMA, collections = staticLinked || p?.schema === COLLECTION_SCHEMA, operations = collections || p?.schema === OPERATION_SCHEMA, contracts = operations || p?.schema === CONTRACT_SCHEMA, numeric = contracts || p?.schema === NUMERIC_SCHEMA, types = contracts ? contractTypes : numeric ? numericTypes : sourceTypes;
     const selection = numeric || p?.schema === SELECTION_SCHEMA, exceptions = selection || p?.schema === EXCEPTION_SCHEMA, conversion = exceptions || p?.schema === CONVERSION_SCHEMA, control = conversion || p?.schema === CONTROL_SCHEMA, reserved = dates ? dateReservedNames : interfaces ? interfaceReservedNames : conditional ? doReservedNames : regex ? regexReservedNames : collections ? collectionReservedNames : operations ? operationReservedNames : contracts ? contractReservedNames : numeric ? numericReservedNames : selection ? selectionReservedNames : exceptions ? exceptionReservedNames : conversion ? conversionReservedNames : control ? controlReservedNames : reservedNames;
@@ -973,6 +939,107 @@
     return freeze(p);
   }
 
+  // wydgine/object-model/class-contracts.js
+  var lifecycleHooks = Object.freeze(["Init", "Preload", "Render", "Unload", "Dispose"]);
+  var nameOK = (n) => /^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(n) && safeKey(n.toLowerCase());
+  var methodType = (t) => contractTypes.includes(t) || interfaceType(t);
+  var fields = (v, names) => record(v) && Object.keys(v).every((k) => names.includes(k));
+  function classContracts(d, base, methods2, properties) {
+    if (d.methodContracts !== void 0) for (const [name2, p] of Object.entries(d.properties ?? {})) {
+      requireThat(!["id", "publisher", "version", ...lifecycleHooks.map((h) => h.toLowerCase())].includes(name2.toLowerCase()), "PROTOTYPE.CONTRACT", "Reserved platform property");
+      requireThat(p.required === void 0 || typeof p.required === "boolean", "PROTOTYPE.CONTRACT", "Invalid required property flag");
+      if (Object.hasOwn(p, "default")) {
+        const type = p.default === null ? "null" : Array.isArray(p.default) ? "array" : typeof p.default;
+        requireThat((Array.isArray(p.type) ? p.type : [p.type]).includes(type) && (!p.enum || p.enum.includes(p.default)), "PROTOTYPE.CONTRACT", "Invalid property default");
+      }
+    }
+    const declared = d.methodContracts ?? {};
+    requireThat(record(declared), "PROTOTYPE.CONTRACT", "Invalid method contracts");
+    const contracts = { ...base?.methodContracts };
+    for (const [name2, s] of Object.entries(declared)) {
+      requireThat(nameOK(name2) && fields(s, ["kind", "params", "returns", "access", "abstract", "virtual", "requires", "hidden"]) && ["sub", "function"].includes(s.kind) && Array.isArray(s.params) && s.params.length <= 16 && s.params.every(methodType) && (s.kind === "function" ? methodType(s.returns) : s.returns === void 0) && ["public", "private", "protected", "friend"].includes(s.access) && typeof s.abstract === "boolean" && typeof s.virtual === "boolean" && (!s.abstract || s.virtual && s.access !== "private"), "PROTOTYPE.CONTRACT", "Invalid method contract");
+      validateMember(s);
+      const old = contracts[name2], proc = d.behavior?.procedures?.[name2];
+      if (old) requireThat(old.virtual && (old.requires ?? []).every((c) => (s.requires ?? []).includes(c)) && (!old.hidden || s.hidden === true) && s.access === old.access && sameSignature(old, { kind: s.kind, params: s.params.map((type) => ({ type })), returns: s.returns }), "PROTOTYPE.CONTRACT", "Nonvirtual or incompatible override");
+      requireThat(s.abstract ? !proc && d.abstract === true : proc && sameSignature(s, proc), "PROTOTYPE.CONTRACT", "Method contract does not match implementation");
+      if (proc) requireThat((d.methodRules?.[name2]?.access ?? "public") === s.access && (s.requires ?? []).every((c) => (d.methodRules?.[name2]?.requires ?? []).includes(c)) && (!s.hidden || d.methodRules?.[name2]?.hidden === true), "PROTOTYPE.CONTRACT", "Method visibility disagrees with contract");
+      contracts[name2] = s;
+    }
+    for (const [name2, proc] of Object.entries(d.behavior?.procedures ?? {})) {
+      const old = base?.methodContracts?.[name2];
+      if (old) requireThat(old.virtual && (old.requires ?? []).every((c) => (d.methodRules?.[name2]?.requires ?? []).includes(c)) && (!old.hidden || d.methodRules?.[name2]?.hidden === true) && sameSignature(old, proc) && (d.methodRules?.[name2]?.access ?? "public") === old.access, "PROTOTYPE.CONTRACT", "Invalid inherited method contract");
+      if (old && !declared[name2]) contracts[name2] = { ...old, abstract: false };
+    }
+    for (const [name2, s] of Object.entries(contracts)) {
+      requireThat(!Object.hasOwn(properties, name2), "PROTOTYPE.CONTRACT", "Property collides with a method contract");
+      if (!d.abstract) requireThat(!s.abstract && methods2[name2], "PROTOTYPE.ABSTRACT", "Concrete prototype has unimplemented abstract members");
+    }
+    const events = { ...base?.events }, eventOwners = { ...base?.eventOwners };
+    requireThat(record(d.events ?? {}), "PROTOTYPE.EVENT", "Invalid event contracts");
+    for (const [name2, e] of Object.entries(d.events ?? {})) {
+      requireThat(nameOK(name2) && !lifecycleHooks.some((h) => h.toLowerCase() === name2.toLowerCase()) && fields(e, ["access", "params"]) && ["public", "private", "protected", "friend"].includes(e.access) && Array.isArray(e.params) && e.params.length <= 16, "PROTOTYPE.EVENT", "Invalid event contract");
+      const names = /* @__PURE__ */ new Set();
+      for (const p of e.params) {
+        requireThat(fields(p, ["name", "type"]) && Object.keys(p).length === 2 && nameOK(p.name) && !names.has(p.name.toLowerCase()) && ["String", "Number", "Integer", "Float", "Boolean", "Null", "Object", "Array"].includes(p.type), "PROTOTYPE.EVENT", "Invalid event parameter");
+        names.add(p.name.toLowerCase());
+      }
+      requireThat(!Object.keys(events).some((n) => n.toLowerCase() === name2.toLowerCase()), "PROTOTYPE.EVENT", "Inherited events cannot be redeclared");
+      events[name2] = e;
+      eventOwners[name2] = d.id;
+    }
+    const groups = /* @__PURE__ */ new Set();
+    if (Object.keys(contracts).length || Object.keys(events).length) for (const n of /* @__PURE__ */ new Set([...Object.keys(properties), ...Object.keys(methods2), ...Object.keys(contracts), ...Object.keys(events)])) {
+      const lower = n.toLowerCase();
+      requireThat(!groups.has(lower), "PROTOTYPE.CASE_COLLISION", "Case-equivalent declarations denied");
+      groups.add(lower);
+      requireThat(!(events[n] && (properties[n] || methods2[n] || contracts[n])), "PROTOTYPE.EVENT", "Event collides with member");
+    }
+    const lifecycle = { ...base?.lifecycle };
+    requireThat(record(d.lifecycle ?? {}), "PROTOTYPE.LIFECYCLE", "Invalid lifecycle hooks");
+    for (const [hook, program] of Object.entries(d.lifecycle ?? {})) {
+      requireThat(lifecycleHooks.includes(hook), "PROTOTYPE.LIFECYCLE", "Unknown lifecycle hook");
+      const behavior = validate(program), entry = behavior.procedures?.[hook.toLowerCase()];
+      requireThat(behavior.body.length === 0 && entry?.kind === "sub" && entry.params.length === 0, "PROTOTYPE.LIFECYCLE", "Lifecycle requires a compiled parameterless SUB");
+      lifecycle[hook] = behavior;
+    }
+    if (d.static) requireThat(!d.methodContracts && !d.events && !d.lifecycle, "PROTOTYPE.STATIC", "Static prototypes have no instance class contracts");
+    return freeze(clean({ methodContracts: contracts, events, eventOwners, lifecycle }));
+  }
+
+  // wydgine/http/policy.js
+  var HTTP_DEFAULTS = Object.freeze({ headerBytes: 8192, headerCount: 64, requestMs: 12e4 });
+  var HTTP_CEILINGS = Object.freeze({ headerBytes: 16384, headerCount: 128, requestMs: 3e5 });
+
+  // wydgine/presentation-policy.js
+  var PRESENTATION_DEFAULTS = Object.freeze({ componentRequests: 4 });
+
+  // wydgine/components.js
+  var blocked = /* @__PURE__ */ new Set(["__proto__", "prototype", "constructor"]);
+  var tags = /* @__PURE__ */ new Set(["section", "div", "p", "span", "h2", "h3", "form", "label", "input", "button", "ol", "ul", "li", "a", "nav", "strong", "audio", "video", "source", "img"]);
+  var attributes = /* @__PURE__ */ new Set(["id", "class", "role", "method", "action", "for", "name", "type", "value", "placeholder", "href", "title", "aria-label", "src", "alt", "controls", "preload", "enctype", "accept", "required", "autocomplete", "maxlength"]);
+  var ops = /* @__PURE__ */ new Set(["concat", "eq", "not", "and", "or", "if", "length", "add", "subtract", "min", "max", "lt", "gt", "query", "queryValid", "integer", "parameter", "url", "trim"]);
+  function validatePresentation(input) {
+    const spec = clean(input);
+    let nodes = 0;
+    const walk = (value, depth = 0) => {
+      requireThat(++nodes <= 1024 && depth <= 32, "COMPONENT.INVALID", "Presentation complexity exceeded");
+      if (value && typeof value === "object") {
+        if (value.op !== void 0) requireThat(ops.has(value.op), "COMPONENT.INVALID", "Unsupported expression");
+        if (value.get !== void 0) requireThat(typeof value.get === "string" && value.get.length <= 256 && value.get.split(".").length <= 16 && value.get.split(".").every((p) => !blocked.has(p)), "COMPONENT.INVALID", "Invalid value path");
+        if (value.tag !== void 0) {
+          requireThat(tags.has(value.tag), "COMPONENT.INVALID", "Unsupported element");
+          requireThat(Object.keys(value.attrs ?? {}).every((a) => attributes.has(a)), "COMPONENT.INVALID", "Unsupported attribute");
+        }
+        Object.values(value).forEach((v) => walk(v, depth + 1));
+      }
+    };
+    requireThat(spec.schema === "wydgit.presentation/0.1" && spec.template, "COMPONENT.INVALID", "Invalid presentation");
+    requireThat(Object.keys(spec).every((k) => ["schema", "template", "request", "when", "valid", "submission", "delivery"].includes(k)), "COMPONENT.INVALID", "Unknown presentation field");
+    for (const binding of [spec.request, spec.submission, spec.delivery].filter(Boolean)) requireThat(Object.keys(binding).every((k) => ["library", "apiVersion", "operation", "input"].includes(k)) && ["library", "apiVersion", "operation"].every((k) => typeof binding[k] === "string"), "COMPONENT.INVALID", "Invalid service binding");
+    walk(spec);
+    return spec;
+  }
+
   // wydgine/sewn/bindings.js
   var methods = { handle: { FormState: [1, 2], related: [1, 2], Set: [2, 2], Insert: [3, 3], Remove: [0, 0], Replace: [1, 1], Move: [3, 3] }, EVENT: { Cancel: [0, 0], Raise: [2, 3] }, map: { Get: [1, 1], GetAll: [1, 1] }, cookieRead: { Get: [1, 1] }, RESPONSE: { WriteMarkdown: [1, 1] }, headers: { Set: [2, 2], Remove: [1, 1] }, cookieWrite: { Set: [2, 3], Delete: [1, 1] } };
 
@@ -1049,10 +1116,15 @@
         requireThat(d.methods === void 0 && d.behaviorSource === void 0, "PROTOTYPE.METHOD", "Behavior must be compiled by trusted setup");
         requireThat(new Set(d.overrides ?? []).size === (d.overrides ?? []).length, "PROTOTYPE.METHOD", "Duplicate overrides");
         requireThat(!behavior || ["sewn/0.3", "sewn/0.4", "sewn/0.5", "sewn/0.6", "sewn/0.7", "sewn/0.8", "sewn/0.9", "sewn/0.10", "sewn/0.11", "sewn/0.12", "sewn/0.13", "sewn/0.14", "sewn/0.15", "sewn/0.16", "sewn/0.17", "sewn/0.18"].includes(behavior.schema) && behavior.body.length === 0, "PROTOTYPE.METHOD", "Expected portable prototype behavior");
+        const linkedNames = new Set(behavior?.libraries?.flatMap((lib) => Object.keys(lib.methods)) ?? []);
         for (const [name2, proc] of Object.entries(behavior?.procedures ?? {})) {
+          if (linkedNames.has(name2)) {
+            requireThat(!d.methodRules?.[name2] && !(d.overrides ?? []).includes(name2), "PROTOTYPE.STATIC", "Linked procedures are not instance methods");
+            continue;
+          }
           requireThat(!Object.keys(methods.handle).some((x) => x.toLowerCase() === name2.toLowerCase()), "PROTOTYPE.METHOD", "Method conflicts with kernel facade");
           const old = inheritedMethods[name2];
-          requireThat(Boolean(old) === (d.overrides ?? []).includes(name2), "PROTOTYPE.METHOD", "Inherited methods require explicit overrides");
+          requireThat(Boolean(old || base?.methodContracts?.[name2]) === (d.overrides ?? []).includes(name2), "PROTOTYPE.METHOD", "Inherited methods require explicit overrides");
           if (old) {
             requireThat(accessOf(base.methodRules[name2]) !== "private", "PROTOTYPE.ACCESS", "Private methods cannot be overridden");
             const previous = old.behavior.procedures[name2];
@@ -1112,7 +1184,8 @@
             requireThat(accessOf(member.rule) === "public" && !member.rule.hidden && sameSignature(signature, method.behavior.procedures[member.name]), "INTERFACE.CONFORMANCE", "Required public instance signature does not match");
           }
         }
-        const result = freeze({ ...d, implements: implementations, ...presentation ? { presentation } : {}, abstract: d.abstract ?? false, properties, propertyOwners, slots, methods: methods2, methodRules, friends, actions, ancestors: base ? [base.id, ...base.ancestors] : [] });
+        const declarations = classContracts(d, base, methods2, properties);
+        const result = freeze({ ...d, ...declarations, implements: implementations, ...presentation ? { presentation } : {}, abstract: d.abstract ?? false, properties, propertyOwners, slots, methods: methods2, methodRules, friends, actions, ancestors: base ? [base.id, ...base.ancestors] : [] });
         visiting.delete(id);
         this.#definitions.set(id, result);
         return result;
@@ -1121,6 +1194,7 @@
       for (const d of this.#definitions.values()) for (const slot of Object.values(d.slots)) for (const id of slot.accepts) this.get(id);
       for (const d of this.#definitions.values()) {
         if (d.interface) continue;
+        for (const s of Object.values(d.methodContracts ?? {})) for (const type of [...s.params, s.returns]) if (typeof type === "string" && type.startsWith("interface:")) this.interface(type);
         if (d.behavior) for (const type of interfaceTypes(d.behavior)) this.interface(type);
         if (d.static) {
           requireThat(["sewn/0.14", "sewn/0.15", "sewn/0.16", "sewn/0.17", "sewn/0.18"].includes(d.behavior?.schema), "PROTOTYPE.STATIC", "Static behavior requires sewn/0.14, sewn/0.15 or sewn/0.16");
@@ -1138,6 +1212,8 @@
           if (!v || typeof v !== "object") return;
           if (["procedureCall", "functionCall"].includes(v.op)) edges.add(behavior + ":" + v.name);
           if (["methodCall", "methodValue"].includes(v.op) && v.target.op === "context" && v.target.name === "ME") {
+            const abstractName = Object.keys(d.methodContracts ?? {}).find((n) => (v.exact ? n === v.name : n.toLowerCase() === v.name.toLowerCase()) && d.methodContracts[n].abstract);
+            if (d.abstract && abstractName) return;
             const lookup = resolveMember(d, "method", v.name, v.exact ?? false), m = d.methods[lookup.name];
             requireThat(m, "PROTOTYPE.METHOD", "Unknown receiver method");
             edges.add(m.owner + ":" + lookup.name);

@@ -611,3 +611,17 @@ privileges or refreshed budgets. See [the milestone](milestones/wbasic-sewn-0.14
 for exact field contracts, wrappers, installation snapshots and security evidence.
 WydClient consumes prepared wire workflows; source preparation belongs to build
 setup and is excluded from the served browser runtime dependency closure.
+
+
+## WBasic 0.19 class authoring
+
+`compileClass(source, buildOptions)` now produces a validated canonical definition
+and existing package manifest through a shared language-neutral definition IR.
+One `.bas` file may declare metadata, inheritance, portable typed properties,
+methods, abstract/virtual overrides, implemented interfaces, typed custom events
+and isolated lifecycle hook modules. Existing standalone and static APIs remain.
+Read the [implemented 0.19 grammar, build API and target boundaries](milestones/sewn-0.19/README.md).
+Properties cannot persist Integer/Float/DateTime/reference contracts and reject
+those declarations. Lifecycle bodies compile but are not automatically dispatched;
+RAISE EVENT is type-checked and explicitly rejected pending shared-budget instance
+dispatch. H2 browser bootstrap does not accept executable class definitions.

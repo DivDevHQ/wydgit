@@ -64,7 +64,7 @@ export async function execute(document,{scope,context,prototypeRegistry}) {
   }finally{liveVariables-=vars.size;vars=caller;variableTypes=callerTypes;immutable=callerImmutable;procedureDepth--;frameProgram=previousProgram;receiver=previousReceiver;declaring=previousDeclaring;activeCalls.delete(proc);}
  };
  const method=async(n,kind,evaluate=expr)=>{
-  const target=await evaluate(n.target),r=refs.get(target);ensure(r?.kind==='handle'&&prototypeRegistry,'DENIED');if(builders.has(r.value))builders.check(r.value);memberAdapter(r.value,context);
+  const target=await evaluate(n.target),r=refs.get(target);ensure(r?.kind==='handle'&&prototypeRegistry,'DENIED');if(builders.has(r.value))builders.check(r.value);const adapter=memberAdapter(r.value,context);if(adapter)adapter.node();
   if(r.view){const contract=prototypeRegistry.interface(r.view);const name=n.exact?n.name:n.name.toLowerCase();ensure(Object.hasOwn(contract.signatures,name)&&contract.signatures[name].kind===kind,'DENIED');}
   const resolved=prototypeRegistry.method(r.value.prototype,n.name,declaring,n.exact??false,context);
   // The shared frame routine evaluates arguments under the caller's Me/table.

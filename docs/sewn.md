@@ -520,3 +520,14 @@ All work retains caller steps/deadline and bounded text/token/output limits; inv
 values produce SEWN.TYPE and exhausted budgets produce nonrecoverable SEWN.LIMIT.
 See [the complete 0.18 contract](milestones/wbasic-sewn-0.18.md) for exact signatures,
 grammars, offset semantics, security verification and browser measurements.
+
+
+## WBasic 0.19 definition metadata
+
+Class authoring introduces no `sewn/0.19` executable schema. Instance methods and
+isolated lifecycle hook modules use the existing minimum validated grammar required
+by their bodies. New method/event/lifecycle metadata belongs to canonical prototype
+validation, not to the SEWN executable envelope. Hook modules are not ordinary
+methods and are not dispatched automatically. Typed event emission is rejected
+until declaration-bound instance dispatch can preserve shared chain budgets.
+See [0.19](milestones/sewn-0.19/README.md) for exact supported and deferred behavior.
