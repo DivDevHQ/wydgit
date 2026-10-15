@@ -16,7 +16,7 @@ import { parseCookies,parseMap } from './input.js';
 import { ExecutionContext } from '../seam/context.js';
 import { createGate } from '@wydgit/gate/client';
 import { errorDocument,pagePath,escapeHtml } from '../index.js';
-export function createPipeline({root,libraries,execution={},lifecycle}) {
+export function createPipeline({root,libraries,execution={},lifecycle,guard=()=>{},contextPolicy=context=>context}) {
   execution={...execution,handlers:prepareHandlers(execution.handlers??[],execution.events),actions:(execution.actions??[]).map(record=>prepareAction(record,execution.events))};
   let runtimeSettings;
   try{runtimeSettings=presentationPolicy(validateConfig(readFileSync(path.join(root,'wydgit.config.json'),'utf8')).runtime);}catch(error){if(error.code!=='ENOENT')throw error;runtimeSettings=presentationPolicy();} // Legacy createApp may render without a library host config; createHostApp still requires it.
@@ -26,12 +26,14 @@ export function createPipeline({root,libraries,execution={},lifecycle}) {
   const packages=model.installed?activatePackages(model,libraries,root):null;
   if(packages){check(!execution.context&&!execution.handlers.length&&!execution.actions.length,'PACKAGE.PRINCIPALS','Package Page authority cannot be combined with independently authorized host execution');execution={...execution,context:packages.context,handlers:packages.handlers,actions:packages.actions};}
   lifecycle??=createLifecycle({app,handlers:execution.lifecycleHandlers,context:execution.lifecycleContext,instances:execution.lifecycleInstances});
-  const ready=lifecycle.start();
   const gate=libraries?.list().some(item=>item.id==='wydgate')&&execution.gateContext?createGate(libraries.bind(execution.gateContext)):null;
-  const sessions=createSessionResolver({app,gate,lifecycle});
+  const sessions=createSessionResolver({app,gate,lifecycle});let closed=false;
+  const alive=()=>{check(!closed,'EVENT.DENIED','Application stopped');guard();};
+  const ready=lifecycle.start();
+  const ownedLifecycle={...lifecycle,async stop(){closed=true;sessions.close();await lifecycle.stop();}};
   // Plain transport input and kernel output port only; no host request/context.
-  return {lifecycle,ready,httpPolicy:runtimeSettings.http,async request(req,res){
-    await ready;
+  return {lifecycle:ownedLifecycle,ready,httpPolicy:runtimeSettings.http,async request(req,res){
+    alive();await ready;alive();
     let result,transferOutput;
     try {
       res.setHeader('Cache-Control','no-store');
@@ -41,10 +43,12 @@ export function createPipeline({root,libraries,execution={},lifecycle}) {
       if(!page){res.statusCode=404;res.setHeader('Content-Type','text/html; charset=utf-8');res.end(errorDocument(404));return;}
       if(!transfer&&(!['GET','HEAD','POST'].includes(req.method)||req.method==='POST'&&!(execution.actions??[]).some(a=>a.page===page.id))){res.statusCode=405;res.setHeader('Content-Type','text/html; charset=utf-8');res.setHeader('Allow','GET, HEAD');res.end('Method not allowed');return;}
       const cookies=parseCookies(req.cookie??''),session=await sessions.resolve(cookies);
+      const wasActive=session.active,authorize=session.authorize;session.active=()=>{try{alive();return wasActive();}catch{return false;}};session.authorize=async()=>{alive();await authorize();alive();};
       if(execution.authenticatedPages?.includes(page.id))check(session.identity?.authenticated===true,'SEAM.DENIED','Authentication required');
       if(session.cookie)res.setHeader('Set-Cookie',[session.cookie]);
       const ids=[];const walk=id=>{ids.push(id);Object.values(model.runtime.get(id).slots).flat().forEach(walk);};walk(page.id);
-      const context=execution.context?await execution.context({session:session.view,pageId:page.id,ids}):new ExecutionContext({publisher:'wydgit.core',app,self:page.id,visible:ids,identity:session.identity});
+      const selectedContext=execution.context?await execution.context({session:session.view,pageId:page.id,ids}):new ExecutionContext({publisher:'wydgit.core',app,self:page.id,visible:ids,identity:session.identity});
+      const context=contextPolicy(selectedContext);
       if(transfer){
         res.setHeader('Cache-Control','no-store');
         const [,library,operation,,target]=transfer;

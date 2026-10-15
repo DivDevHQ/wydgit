@@ -1,5 +1,9 @@
 # HTTP transport — 0.2-I
 
+> I0 adds trusted per-App selection and independent listeners before authentication,
+> assets or Page execution. Ordinary single-App transport remains supported. There is
+> no public hostname routing or default-App fallback; see the [I0 host contract](milestones/0.3-I0/README.md).
+
 Hono is Wydgine’s default HTTP host adapter, not part of the Wydgit application
 programming model. No Hono Context, Request implementation detail, middleware
 object, or runtime-specific primitive is exposed to ordinary Wydgit code.

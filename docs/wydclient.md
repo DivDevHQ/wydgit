@@ -1,7 +1,7 @@
 # WydClient
 
 The current runtime is **WydClient 0.1.0-alpha.8**, WydSUB **0.1**, with
-Wydgine/platform reference **0.3.0-alpha.8**. The [H4 contract](milestones/0.3-H4/README.md) adds semantic native controls, typed
+current Wydgine/platform **0.3.0-alpha.9** (the historical H4 reference is alpha.8). The [H4 contract](milestones/0.3-H4/README.md) adds semantic native controls, typed
 form drafts/submission, explicit CLIENT family/package authoring and signing.
 The [H3 contract](milestones/0.3-H3/README.md)
 defines authenticated executable components, independent host SEAM approval,

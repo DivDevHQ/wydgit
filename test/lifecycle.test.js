@@ -48,3 +48,8 @@ test('authenticated transition retires a companion anonymous cookie without endi
  const replacement=await resolver.resolve({'__Host-wydgit-session':token});
  assert.notEqual(replacement.view.id,anonymous.view.id);assert.notEqual(replacement.csrf,anonymous.csrf);
 });
+
+test('stopped App lifecycle cannot restart or accept a late Session transition',async()=>{
+ const lifecycle=createLifecycle({app:'app-alpha'});await lifecycle.start();await lifecycle.stop();await lifecycle.stop();await assert.rejects(lifecycle.start(),{code:'EVENT.DENIED'});await assert.rejects(lifecycle.session({app:'app-alpha',type:'Start',session:{id:'same'}}),{code:'EVENT.DENIED'});
+ let release;const pause=new Promise(r=>release=r),resolver=createSessionResolver({app:'app-alpha',lifecycle,gate:{async resolveSession(){await pause;return {app:'app-alpha',sessionId:'same',expiresAt:Date.now()+1000};}}}),pending=resolver.resolve({'__Host-wydgit-auth':'token'});resolver.close();release();await assert.rejects(pending,{code:'EVENT.DENIED'});
+});

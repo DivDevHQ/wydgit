@@ -99,10 +99,13 @@ async function asset(root, relative, type, res, request) {
   } finally { await file?.close(); }
 }
 
-export function createTransport({ root, projectRoot, renderer, pipeline, logger }) {
+export function createTransport({ root, projectRoot, renderer, pipeline, logger, admit = () => () => {}, onStop = async()=>{} }) {
   const host = new Hono();
   host.all('*', async c => {
+    let release;
     const request = c.req.raw, res = outputPort(c.env.outgoing, request.method === 'HEAD');
+    try{release=admit();}catch{res.statusCode=503;res.end('Application unavailable');return RESPONSE_ALREADY_SENT;}
+    try {
     res.setHeader('Content-Security-Policy', policy);
     res.setHeader('X-Content-Type-Options', 'nosniff');res.setHeader('Referrer-Policy','no-referrer');
     try {
@@ -134,12 +137,13 @@ export function createTransport({ root, projectRoot, renderer, pipeline, logger 
       else { res.statusCode = 500; res.setHeader('Content-Type', 'text/html; charset=utf-8'); res.end(errorDocument()); }
     }
     return RESPONSE_ALREADY_SENT;
+    }finally{release();}
   });
   const locals = { lifecycle: pipeline.lifecycle };
   let stopping;
-  const stop = () => stopping ??= pipeline.lifecycle.stop();
+  const stop = () => stopping ??= (async()=>{try{await pipeline.lifecycle.stop();}finally{await onStop();}})();
   return {
-    locals,
+    locals,ready:pipeline.ready,stop,
     listen(...args) {
       const server = createAdaptorServer({ fetch: host.fetch, overrideGlobalObjects: false,serverOptions:{maxHeaderSize:pipeline.httpPolicy.headerBytes} });
       server.requestTimeout=pipeline.httpPolicy.requestMs;server.headersTimeout=Math.min(15000,pipeline.httpPolicy.requestMs);server.maxHeadersCount=pipeline.httpPolicy.headerCount;

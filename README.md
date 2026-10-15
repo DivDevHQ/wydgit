@@ -98,7 +98,7 @@ WBasic source → shared definition IR → canonical prototypes + SEWN
 
 ## Current capabilities and boundaries
 
-Current versions are **Wydgine/platform 0.3.0-alpha.8**, **WydClient 0.1.0-alpha.8**
+Current versions are **Wydgine/platform 0.3.0-alpha.9**, **WydClient 0.1.0-alpha.8**
 and **WydSUB 0.1**. WBasic/component contracts are implemented through 0.20;
 the language reference also contains clearly marked future proposals. These are
 separate version axes. Historical browser artifacts remain immutable.
@@ -122,7 +122,12 @@ to each implemented subsystem, not a general backup service. Canonical libraries
 workspace packages, not a public registry or automatically installed npm extensions.
 
 The local server installer supports staged installation and failure recovery.
-General upgrade/uninstall/migration, multi-App hosting, platform administration,
+The [I0 host foundation](docs/milestones/0.3-I0/README.md) now composes independently
+configured Apps with exact ownership and separate service/session lifetimes in one
+trusted process. Try `node examples/multi-app/run.js`. It uses explicit listeners,
+not public domain routing or hard tenant resource isolation.
+
+General upgrade/uninstall/migration, public multi-site routing, platform administration,
 an installable CMS, remote embedding, other source languages and native runtimes
 remain future work. The browser signed envelope and the proposed general `.wydpkg`
 ZIP format are distinct; the latter is not the current installer.
@@ -172,7 +177,8 @@ search, media/files and identity/membership. H0–H4 added canonical OOP, indepe
 WydSUB roots, browser execution, controls and CLIENT authoring. H5 consolidates
 contracts, tests and documentation. See the [review](docs/milestones/0.3-H5/review.md).
 
-Next are I: Multi-App Hosting; J: Platform/App Administration; K: Installable CMS;
+I0 establishes the trusted multi-App foundation; I1 will address routing/origins.
+The broader roadmap continues with I: Multi-App Hosting; J: Platform/App Administration; K: Installable CMS;
 and L: integration, independent security audit, hardening and prerelease. These are
 planned milestones, not existing features or a Wydgit 0.3 final release.
 

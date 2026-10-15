@@ -1,5 +1,9 @@
 # Events, lifecycle and HTTP execution — 0.2-H
 
+> I0 gives each hosted App its own Server/Session owner, Page pipeline and event queues.
+> Stop is terminal: a stopped lifecycle cannot restart or accept late Session events.
+> See [I0 lifecycle and drain policy](milestones/0.3-I0/README.md).
+
 **Dispatch carries authority. It never manufactures it.**
 
 This implements the runtime contract in `docs/milestones/0.2-H`. Wydgine owns

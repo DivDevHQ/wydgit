@@ -9,7 +9,12 @@ const emptyRequirements = () => ({ schema: 'wydgit.requirements/0.1', libraries:
 
 // The registry is published only after every enabled library and requirement
 // succeeds. Package functions and registry mutation never cross into Wydgits.
-export async function loadLibraries({ config: input, requirements: requested = emptyRequirements(), platformVersion, root, lifecycle = async () => {}, adapters = {} }) {
+export async function loadLibraries({ config: input, requirements: requested = emptyRequirements(), platformVersion, root, lifecycle = async () => {}, adapters = {}, app = null, guard = () => {} }) {
+  let live=true,closing;const stops=[];
+  const assertLive=context=>{ensure(live,'SEAM.DENIED','Application binding retired');guard();if(context){checkContext(context);ensure(app===null||context.app===app,'SEAM.DENIED','Wrong application binding');}};
+  const guarded=(record,context)=>record&&{...record,authorize:async(...args)=>{assertLive(context);const result=await record.authorize?.(...args);assertLive(context);return result;},handler:async(...args)=>{assertLive(context);const result=await record.handler(...args);assertLive(context);return result;}};
+  const bind=(context,lookup)=>{assertLive(context);const dispatch=bindServices(context,(id,name)=>guarded(lookup(id,name),context),id=>staged.get(id)?.manifest);return Object.freeze(Object.fromEntries(['call','invoke'].map(name=>[name,async(...args)=>{assertLive(context);const result=await dispatch[name](...args);assertLive(context);return result;}])));};
+  const close=()=>closing??=(async()=>{live=false;let failed=false;const results=await Promise.allSettled(stops.toReversed().map(stop=>Promise.resolve().then(stop)));failed=results.some(r=>r.status==='rejected');if(failed)throw new WydgitError('LIBRARY.CLEANUP_FAILED','Library cleanup failed');})();
   const config = validateConfig(input), requirements = validateRequirements(requested);
   ensure(version(platformVersion), 'LIBRARY.VERSION_MISMATCH', 'Invalid host platform version');
   ensure(typeof root === 'string' && root.length > 0, 'LIBRARY.INVALID_CONFIG', 'Host resolution root is required');
@@ -89,11 +94,15 @@ export async function loadLibraries({ config: input, requirements: requested = e
     })));
   }
   const services = new Map(),transports=new Map(),starts=[];
+  try {
   for (const id of order) {
+    assertLive();
     const {manifest,register,limits,initialize} = staged.get(id);
     let host;try{host=initialize?await initialize(Object.freeze({root,options:configured.get(id).options??{},adapter:adapters[id]})):undefined;}catch{throw new WydgitError('LIBRARY.INITIALIZATION_FAILED','Approved library initialization failed');}
-    ensure(!host||typeof host==='object'&&Object.keys(host).every(k=>['context','start'].includes(k))&&(!host.start||typeof host.start==='function'),'LIBRARY.INITIALIZATION_FAILED','Invalid initialization result');
+    ensure(!host||typeof host==='object'&&Object.keys(host).every(k=>['context','start','stop'].includes(k))&&(!host.start||typeof host.start==='function')&&(!host.stop||typeof host.stop==='function'),'LIBRARY.INITIALIZATION_FAILED','Invalid initialization result');
+    if(host?.stop)stops.push(host.stop);
     if(host?.start)starts.push(host.start);
+    assertLive();
     const handlers = new Map();
     let active = true, invalid = false;
     const api = Object.freeze({ options: configured.get(id).options ?? Object.freeze({}), failure, checkJson:checkJsonBudget,
@@ -102,15 +111,15 @@ export async function loadLibraries({ config: input, requirements: requested = e
         if(!(active && manifest.services.some(s=>s.name===name) && typeof handler==='function' && !transports.has(id+':'+name))){invalid=true;throw new WydgitError('LIBRARY.REGISTRATION_FAILED','Invalid transport registration');}
         transports.set(id+':'+name,handler);
       },
-      async lifecycle(event) { return lifecycle(id, freeze(validateLifecycle(event))); },
+      async lifecycle(event) { assertLive();const data=freeze(validateLifecycle(event));ensure(app===null||data.app===app,'SEAM.DENIED','Wrong lifecycle App');const result=await lifecycle(id,data);assertLive();return result; },
       dependency(library) {
         ensure(approved.get(id).has(library), 'LIBRARY.DEPENDENCY_DENIED', 'Dependency binding is not approved');
         const context = approved.get(id).get(library);
-        const dispatch = bindServices(context, (target,name) => services.get(target)?.get(name), target => staged.get(target)?.manifest);
+        const dispatch = bind(context, (target,name) => services.get(target)?.get(name));
         return Object.freeze({identity:Object.freeze({app:context.app,publisher:context.publisher,library:id}),
           transfer(name,input,port,limits={}) { return registry.transfer(new ExecutionContext({...context,limits}),library,name,input,port); },
           call(name,input) { return dispatch.call(library,name,input); },
-          invoke(apiVersion,name,input,limits) { const selected=limits?bindServices(new ExecutionContext({...context,limits}),(target,operation)=>services.get(target)?.get(operation),target=>staged.get(target)?.manifest):dispatch;return selected.invoke(library,apiVersion,name,input); }});
+          invoke(apiVersion,name,input,limits) { const selected=limits?bind(new ExecutionContext({...context,limits}),(target,operation)=>services.get(target)?.get(operation)):dispatch;return selected.invoke(library,apiVersion,name,input); }});
       }, service(name, handler, policy = {}) {
       const valid = active && manifest.services.some(s => s.name === name) && !handlers.has(name) && typeof handler === 'function' && policy && Object.keys(policy).every(key => ['authorize','validate','presentation'].includes(key)) && (policy.presentation === undefined || typeof policy.presentation === 'boolean') && (policy.authorize === undefined || typeof policy.authorize === 'function') && (policy.validate === undefined || typeof policy.validate === 'function') && (!manifest.apiVersion || typeof policy.authorize === 'function' && typeof policy.validate === 'function');
       if (!valid) { invalid = true; throw new WydgitError('LIBRARY.REGISTRATION_FAILED', 'Invalid service registration'); }
@@ -126,18 +135,19 @@ export async function loadLibraries({ config: input, requirements: requested = e
     services.set(id, handlers);
   }
   const registry=Object.freeze({
+    close,
     async transfer(context,id,name,input,port) {
-      checkContext(context);ensure(context.app!==null,'SEAM.DENIED','Transport requires authoritative App identity');
+      assertLive(context);ensure(context.app!==null,'SEAM.DENIED','Transport requires authoritative App identity');
       const record=services.get(id)?.get(name),handler=transports.get(id+':'+name);
       ensure(record&&handler&&context.allows(record.capability)&&record.authorize,'SEAM.DENIED','Transport denied');
       const policy=effectiveLimits(record.limits,context);checkJsonBudget(input,policy.request);
       const request=freeze(validateLifecycle(input));
       ensure(await record.authorize(request,context,policy)===true,'SEAM.DENIED','Transport denied');
       ensure(!record.validate||await record.validate(request,context,policy)===true,'SERVICE.INVALID_REQUEST','Invalid transfer request');
-      return handler(request,context,port,policy);
+      assertLive(context);const result=await handler(request,context,port,policy);assertLive(context);return result;
     },
-    bind(context) { return bindServices(context, (id, name) => services.get(id)?.get(name), id => staged.get(id)?.manifest); },
-    bindPresentation(context){return bindServices(context,(id,name)=>{const record=services.get(id)?.get(name);return record?.presentation?record:undefined;},id=>staged.get(id)?.manifest);},
+    bind(context) { return bind(context, (id, name) => services.get(id)?.get(name)); },
+    bindPresentation(context){return bind(context,(id,name)=>{const record=services.get(id)?.get(name);return record?.presentation?record:undefined;});},
     list() { return Object.freeze([...staged.values()].map(record => record.manifest)); },
     get(id) { ensure(staged.has(id), 'LIBRARY.UNKNOWN', 'Unknown loaded library'); return staged.get(id).manifest; },
     capabilities() { return freeze([...capabilityOwners].sort(([a],[b]) => a < b ? -1 : a > b ? 1 : 0).map(([capability, library]) => ({ capability, library }))); },
@@ -150,6 +160,7 @@ export async function loadLibraries({ config: input, requirements: requested = e
       return services.get(id).get(name).handler;
     }
   });
-  for(const start of starts)try{await start(registry);}catch{throw new WydgitError('LIBRARY.INITIALIZATION_FAILED','Approved library startup failed');}
+  for(const start of starts)try{assertLive();await start(registry);assertLive();}catch{throw new WydgitError('LIBRARY.INITIALIZATION_FAILED','Approved library startup failed');}
   return registry;
+  }catch(error){try{await close();}catch{}throw error;}
 }

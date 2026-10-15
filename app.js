@@ -8,10 +8,10 @@ import { loadRepository } from './wydgine/repository.js';
 import { initializeHost } from './wydgine/host.js';
 
 export const projectRoot = path.dirname(fileURLToPath(import.meta.url));
-export function createApp({ root = projectRoot, logger = console, libraries, execution = {}, lifecycle } = {}) {
+export function createApp({ root = projectRoot, logger = console, libraries, execution = {}, lifecycle, admit, guard, contextPolicy, onStop } = {}) {
   const renderer = createRenderer({ root, verifiedPackages:execution.verifiedPackages });
-  const pipeline = createPipeline({ root, libraries, execution, lifecycle });
-  const app = createTransport({ root, projectRoot, renderer, pipeline, logger });
+  const pipeline = createPipeline({ root, libraries, execution, lifecycle, guard, contextPolicy });
+  const app = createTransport({ root, projectRoot, renderer, pipeline, logger, admit, onStop });
   return app;
 }
 
@@ -19,10 +19,16 @@ export function createApp({ root = projectRoot, logger = console, libraries, exe
 // execution but does not bootstrap libraries; createHostApp validates those first.
 export async function createHostApp(options = {}) {
   const root=options.root??projectRoot;
-  let lifecycle;
-  const libraries = await initializeHost({ root, adapters:options.libraryAdapters, lifecycle:async(id,event)=>{if(id==='wydgate'&&lifecycle)await lifecycle.session(event);} });
-  lifecycle=createLifecycle({app:loadRepository(root,{verifiedPackages:options.execution?.verifiedPackages}).runtime.rootId,handlers:options.execution?.lifecycleHandlers,context:options.execution?.lifecycleContext,instances:options.execution?.lifecycleInstances});
-  const app = createApp({...options,libraries,lifecycle});
-  app.locals.libraries = libraries; // Trusted host access only; never serialized.
-  return app;
+  let lifecycle,libraries,app;
+  try {
+    libraries=await initializeHost({root,app:options.appId,guard:options.guard,adapters:options.libraryAdapters,lifecycle:async(id,event)=>{if(id==='wydgate'&&lifecycle)await lifecycle.session(event);}});
+    const appId=loadRepository(root,{verifiedPackages:options.execution?.verifiedPackages}).runtime.rootId;
+    if(options.appId!==undefined&&options.appId!==appId)throw new Error('App binding mismatch');
+    lifecycle=createLifecycle({app:appId,handlers:options.execution?.lifecycleHandlers,context:options.execution?.lifecycleContext,instances:options.execution?.lifecycleInstances});
+    app=createApp({...options,libraries,lifecycle,onStop:()=>libraries.close()});
+    await app.ready;
+    if(options.strictStartup&&lifecycle.errors().length)throw new Error('App lifecycle startup failed');
+    app.locals.libraries=libraries;
+    return {...app,async stop(){try{await app.stop();}finally{await libraries.close();}},async shutdown(server){try{await app.shutdown(server);}finally{await libraries.close();}}};
+  }catch(error){try{if(app)await app.stop();else await lifecycle?.stop();}catch{}try{await libraries?.close();}catch{}throw error;}
 }

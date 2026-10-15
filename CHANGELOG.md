@@ -1,5 +1,19 @@
 ## Unreleased
 
+### Wydgit 0.3-I0 — Multi-App host foundation
+
+- Add a closed trusted App inventory and private controller with exact canonical
+  App identities, opaque selection/lifetime tokens, staged activation, confined
+  roots/resources, independent listeners and sanitized status.
+- Reuse the existing App/Page/SEWN kernel with per-App contexts, libraries, packages,
+  Gate sessions and resource limits. Reject foreign/stale bindings and mutable
+  provider aliases; preserve single-App entry points and package authority rules.
+- Add bounded admission/start/drain/cleanup, terminal lifecycle/Session ownership,
+  library close hooks and failure cleanup. Document shared-process limitations.
+- Verify two-App real HTTP, WBasic Taskboard execution, canonical services, cookies,
+  concurrent handles/events, budgets and startup/shutdown failures; add a disposable
+  local example. Platform alpha.9; WydClient alpha.8 and WydSUB 0.1 unchanged.
+
 ### Wydgit 0.3-H5 — Platform consolidation
 
 - Reviewed implemented subsystems, authority/resource boundaries, portable profiles,

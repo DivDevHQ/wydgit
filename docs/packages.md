@@ -1,5 +1,10 @@
 # Native local packages — 0.2-P
 
+> I0 permits the same package to be installed independently in separate Apps, each
+> with its own catalog, receipts, approval and resource bindings. The one-package-
+> principal-per-Page rule remains. Installation/recovery changes require an App restart.
+> See [I0](milestones/0.3-I0/README.md).
+
 Packages declare intent. Wydgine validates and applies it under host-approved
 authority. Publisher identity is metadata; it does not approve a package or grant
 SEAM permissions. No package JavaScript executes during installation or startup.

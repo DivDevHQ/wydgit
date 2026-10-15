@@ -1,5 +1,9 @@
 # WydGate identity and membership — 0.3-G
 
+> I0 hosts independent Gate directories and Session resolvers per App. Membership and
+> valid cookies from one App do not authenticate another. No SSO is added; domain and
+> cookie-origin routing remain I1. See [I0](milestones/0.3-I0/README.md).
+
 WydGate `@wydgit/gate@0.1.0-alpha.4` provides canonical API `1.0.0`.
 Accounts establish authentication identity; membership describes an account's
 relationship with the configured App; SEAM independently grants execution authority.

@@ -1,5 +1,9 @@
 # SEAM foundation — 0.2-H
 
+> I0 binds host-selected Apps to opaque lifetime tokens and separate library registries.
+> App identity remains the exact canonical root ID; publisher/package/signature/Session
+> identity never selects another App. See [I0 isolation and limits](milestones/0.3-I0/README.md).
+
 Authority belongs to an execution context, not to the target object.
 
 The trusted host creates `ExecutionContext` with `publisher`, optional `package`,

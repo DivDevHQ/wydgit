@@ -247,3 +247,15 @@ test('approved library initialization and scope extensions are generic and priva
  const result=await registry.bindPresentation(caller).call('wydtest','echo',{text:'query'});assert.equal(result.value.value,'host-only');assert.equal(registry.hostContext,undefined);
  await rejects(()=>loadLibraries({config:config(entry()),root,platformVersion:platform.version}), 'LIBRARY.INITIALIZATION_FAILED');
 });
+
+test('library close revokes retained bindings and attempts every cleanup once even when one fails',async t=>{
+ const root=temp(t),cleaned=[];
+ const source=`export const manifest=${JSON.stringify(fixtureManifest)};export function initialize({adapter}) {return {stop:adapter.stop};}export function register({service}){service('echo',v=>v,{authorize:()=>true});}`;
+ install(root,{source});const second={...fixtureManifest,id:'wydsecond',capabilities:['test.second.read'],services:[{name:'echo',capability:'test.second.read'}]};install(root,{name:'@fixture/second',source:source.replace(JSON.stringify(fixtureManifest),JSON.stringify(second))});const registry=await loadLibraries({config:config(entry(),entry({id:'wydsecond',package:'@fixture/second'})),root,platformVersion:platform.version,app:'app-alpha',adapters:{wydsecond:{stop(){cleaned.push('second');}},wydtest:{stop(){cleaned.push('stop');throw Error('private path');}}}});
+ const a=new ExecutionContext({app:'app-alpha',publisher:'same',self:'home',capabilities:['test.echo.read']}),b=new ExecutionContext({app:'app-beta',publisher:'same',self:'home',capabilities:['test.echo.read']});assert.throws(()=>registry.bind(b));const bound=registry.bind(a);assert.equal((await bound.call('wydtest','echo','hello')).value,'hello');await assert.rejects(registry.close(),{code:'LIBRARY.CLEANUP_FAILED'});await assert.rejects(registry.close());assert.deepEqual(new Set(cleaned),new Set(['stop','second']));await assert.rejects(bound.call('wydtest','echo','late'));
+});
+test('a failed library start still runs its initialization cleanup and preserves a sanitized failure',async t=>{
+ const root=temp(t);let stopped=0;
+ install(root,{source:`export const manifest=${JSON.stringify(fixtureManifest)};export function initialize({adapter}){return {start(){throw Error('secret');},stop:adapter.stop};}export function register({service}){service('echo',v=>v);}`});
+ await assert.rejects(loadLibraries({config:config(entry()),root,platformVersion:platform.version,adapters:{wydtest:{stop(){stopped++;}}}}),e=>e.code==='LIBRARY.INITIALIZATION_FAILED'&&!JSON.stringify(e).includes('secret'));assert.equal(stopped,1);
+});

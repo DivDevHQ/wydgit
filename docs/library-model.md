@@ -1,5 +1,9 @@
 # Canonical libraries — 0.2-H
 
+> I0 instantiates the canonical library registry per App. Service/dependency bindings
+> check exact App ownership and are revoked on close; trusted initialization may supply
+> an optional stop hook. See [I0 service ownership](milestones/0.3-I0/README.md).
+
 **Libraries provide capabilities. SEAM grants authority.**
 
 A Wyd runtime library is an independently versioned implementation package with a
@@ -17,8 +21,8 @@ The root private `wydgit` package is the npm workspace host (`packages/*`). Exis
 Wydgine and demo code deliberately remain in place. The fixture workspace is
 `packages/test-library`, an independent `@wydgit/test-library@1.0.0` package with its
 own metadata and exports. It is explicitly a non-production fixture and marked
-private to prevent accidental publication. `packages/wydstore` adds the independently versioned `@wydgit/store@0.1.0-alpha.2`.
-`packages/wydgate` adds `@wydgit/gate@0.1.0-alpha.3`.
+private to prevent accidental publication. `packages/wydstore` adds the independently versioned `@wydgit/store@0.1.0-alpha.3`.
+`packages/wydgate` adds `@wydgit/gate@0.1.0-alpha.4`.
 Canonical package versions need not match the platform version or remain in this
 repository.
 

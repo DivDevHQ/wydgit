@@ -1,5 +1,9 @@
 # WydStore — 0.2-E
 
+> I0 uses a separate registry/resource configuration per App and retains service-level
+> App/publisher/package/scope checks even for equal logical store names. Local resource
+> roots are confined per App. See [I0](milestones/0.3-I0/README.md).
+
 **Libraries provide capabilities. SEAM grants authority.**
 
 WydStore is the first implemented canonical library: identity `wydstore`, Node
