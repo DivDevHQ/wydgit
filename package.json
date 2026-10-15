@@ -10,6 +10,7 @@
   },
   "scripts": {
     "wydgine": "node packages/wydgine/bin/wydgine.js",
+    "wydhosting": "node packages/wydhosting/bin/wydhosting.js",
     "start": "node server.js",
     "dev": "node --watch server.js",
     "test": "node --test",

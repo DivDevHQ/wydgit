@@ -1,5 +1,18 @@
 ## Unreleased
 
+### Wydgit 0.3-I5.3 — WydHosting registry and safe setup plans
+
+- Add a private WydHosting development workspace with closed provider identity,
+  pinned entitlement, intended Linux account, placement and domain records.
+- Validate provider-wide ownership, roots, namespaces and the sixteen-App ceiling;
+  compile approved staged pools through the authoritative Wydgine inventory validator.
+- Add deterministic plans, exact trusted authorization, atomic embedded registry/journal
+  persistence, replay/recovery handling and local fixture management commands.
+- Test tier policy, real canonical Apps, hostile inputs, process interruption and CLI
+  approval. No provisioning, runtime cutover, public administration or isolation claim.
+- Keep platform alpha.12 and all WydClient artifacts unchanged; independent packaging
+  and dependency closure remain I5.4 work.
+
 ### Wydgit 0.3-I5.2 — Standalone App selection and setup
 
 - Add private development Wydgine bin with strict setup/start/validate commands,
