@@ -1,0 +1,52 @@
+{
+  "target": "client",
+  "manifest": {
+    "schema": "wydgit-package/0.1",
+    "id": "example/hello-client",
+    "publisher": "example",
+    "version": "0.1.0",
+    "platform": ">=0.3.0-alpha.8 <0.4.0",
+    "runtime": [
+      "client"
+    ],
+    "resources": {
+      "prototypes": "prototypes.json",
+      "template": "section.json",
+      "sources": {}
+    },
+    "requires": {
+      "schema": "wydgit.requirements/0.1",
+      "libraries": []
+    },
+    "storage": [],
+    "permissions": {
+      "capabilities": [
+        "object.instances.edit"
+      ],
+      "traversal": [],
+      "visible": [
+        "hello"
+      ],
+      "editable": [
+        "hello"
+      ],
+      "scopes": {
+        "wydstore": []
+      }
+    },
+    "bindings": [],
+    "installables": [
+      {
+        "id": "hello",
+        "kind": "section-template"
+      }
+    ]
+  },
+  "entry": {
+    "id": "hello",
+    "type": "example/hello"
+  },
+  "sources": [
+    "hello.bas"
+  ]
+}

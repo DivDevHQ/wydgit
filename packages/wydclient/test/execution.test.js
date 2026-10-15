@@ -7,10 +7,10 @@ const manifest=JSON.parse(await readFile(new URL('../examples/taskboard-manifest
 const golden=JSON.parse(await readFile(new URL('../../../test/fixtures/taskboard/golden.json',import.meta.url)));
 const approval={publisher:'divdev',package:'divdev/wbasic-taskboard',installation:'reviewed-taskboard',actions:['SelectPage'],capabilities:['object.instances.edit','object.instances.construct','event.custom.raise'],traversal:['children'],visible:['taskboard','taskboard-*'],editable:['taskboard','taskboard-*'],scopes:{prototypes:['divdev/task-card'],events:['pagechanged']}};
 const policy={verifiedPrototypes:Object.fromEntries(manifest.prototypes.map(d=>[d.id,d.publisher])),execution:approval};
-function setup(t,change=()=>{},config=policy){
+function setup(t,change=()=>{},config=policy,code=null){
  const w=new Window({url:'https://example.test/'});t.after(()=>w.happyDOM.close());Object.defineProperty(w.document,'readyState',{value:'complete'});
  const m=structuredClone(manifest);change(m);const script=w.document.createElement('script');script.id='wydgit-manifest';script.type='application/json';script.textContent=JSON.stringify(m);w.document.head.append(script);
- const runtime=createRuntime({document:w.document,location:w.location},config);return {runtime,w};
+ let runtime;if(code){w.eval('globalThis.WydClientConfig='+JSON.stringify(config));w.eval(code);runtime=w.WydClient;}else runtime=createRuntime({document:w.document,location:w.location},config);return {runtime,w};
 }
 test('browser canonical fixture independently matches WBasic family; typed navigation executes hooks, events and presentation',async t=>{
  assert.deepEqual(manifest.prototypes,golden);
@@ -119,4 +119,19 @@ test('executable bootstrap stays staged and unmount during activation cannot pub
  const w=new Window({url:'https://example.test/'});t.after(()=>w.happyDOM.close());Object.defineProperty(w.document,'readyState',{value:'complete'});
  const root=w.document.createElement('section');root.setAttribute('data-wydgit-root','');const s=w.document.createElement('script');s.type='application/json';s.setAttribute('data-wydgit-manifest','');s.textContent=JSON.stringify(manifest);root.append(s);w.document.body.append(root);
  const runtime=createRuntime({document:w.document,location:w.location}),h=runtime.mount({root,policy});assert.equal(h.state,'initializing');assert.throws(()=>h.execution());h.unmount();assert.equal((await h.ready()).state,'disposed');await new Promise(resolve=>setTimeout(resolve,0));assert.equal(root.querySelectorAll('[data-wydclient-object]').length,0);assert.throws(()=>h.execution());
+});
+
+test('portable profile distinguishes inert literal records from executable operations',async t=>{
+ const payload={op:'service',name:'SERVER',nested:{op:'context',name:'SESSION'}};
+ const change=m=>{const d=m.prototypes.find(d=>d.id==='divdev/taskboard');d.behavior.procedures.selectpage.body.unshift({op:'declare',name:'metadata',value:{op:'literal',value:payload}});};
+ const pkg=JSON.parse(await readFile(new URL('../package.json',import.meta.url)));
+ for(const code of [null,...await Promise.all(['','.min'].map(suffix=>readFile(new URL(`../dist/wydgit-client-${pkg.version}${suffix}.js`,import.meta.url),'utf8')))]){
+  const {runtime:r,w}=setup(t,change,policy,code);const ready=await r.ready();assert.equal(ready.ok,true,JSON.stringify(ready));
+  await r.execution().invoke(r.execution().entry(),'SelectPage',code?w.eval('[2]'):[2]);assert.equal(r.execution().snapshot(r.execution().entry()).properties.CurrentPage,2);
+ }
+ // Real operations remain rejected even inside otherwise ordinary expressions.
+ for(const expression of [{op:'context',name:'SERVER'},{op:'canonicalServiceCall',library:'wydstore',apiVersion:'1.0.0',method:'get',input:{op:'literal',value:{}}}]){
+  const {runtime:bad}=setup(t,m=>{const d=m.prototypes.find(d=>d.id==='divdev/taskboard');d.behavior.procedures.selectpage.body.unshift({op:'declare',name:'metadata',value:expression});});
+  assert.equal((await bad.ready()).ok,false);
+ }
 });

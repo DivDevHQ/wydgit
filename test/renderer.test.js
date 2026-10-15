@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { once } from 'node:events';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -105,8 +106,8 @@ test('JSON edits are picked up on the next render; corrupt JSON fails gracefully
 
 test('HTTP host serves HTML and CSS, returns HTTP errors and does not expose source files', async t => {
  const server=createApp({logger:{error(){}}}).listen(0,'127.0.0.1');
- await new Promise(resolve => server.once('listening',resolve));
  t.after(() => new Promise(resolve => {server.close(resolve);server.closeAllConnections();}));
+ await once(server,'listening'); // Reject bind errors instead of waiting forever.
  const base=`http://127.0.0.1:${server.address().port}`;
  for (const route of ['/','/about','/about/','/contact/','/?x=1']) {
   const res=await fetch(base+route); assert.equal(res.status,200,route); assert.match(res.headers.get('content-type'),/text\/html/); assert.match(await res.text(),/<!doctype html>/);

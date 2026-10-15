@@ -4,6 +4,11 @@
 **Proposed repository path:** `docs/wydgit-package-distribution.md`  
 **Applies to:** Wydgine, WydClient, DivDev Studio, Wydgit Package Registry, and third-party publishers
 
+> Current implementation: [local server installation](packages.md) and
+> [signed browser envelopes / CLIENT builds](milestones/0.3-H4/README.md).
+> The ZIP container, registry and broader distribution architecture below are
+> proposals; they do not replace either implemented package contract.
+
 ## 1. Purpose
 
 This document establishes Wydgit's intended approach to application packaging, publisher authentication, cryptographic integrity, software licensing, compatibility, and distribution.

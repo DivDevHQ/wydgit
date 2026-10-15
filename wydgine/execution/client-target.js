@@ -34,7 +34,8 @@ export function portableComponent(d, registry) {
   for(const r of d.component?.repeaters??[])portablePlacement(d.id,r.slot,d.component.templates.find(t=>t.name===r.template).type,registry);
   const programs=[d.behavior,...Object.values(d.lifecycle??{})].filter(Boolean);
   const scan=value=>{
-    if(!value||typeof value!=='object')return;
+    // Literal payloads are data, including records with operation-like keys.
+    if(!value||typeof value!=='object'||value.op==='literal')return;
     check(!['service','serviceCall','canonicalService','canonicalServiceCall'].includes(value.op)&&!(value.op==='context'&&!['ME','EVENT'].includes(value.name)),'COMPONENT.TARGET','Server or service operation unavailable');
     for(const item of Object.values(value))scan(item);
   };for(const program of programs)scan(program);

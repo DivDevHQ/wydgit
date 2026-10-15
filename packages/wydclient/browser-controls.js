@@ -1,7 +1,7 @@
 // Real Chrome acceptance through native CDP mouse/keyboard input. Never distributed.
 import {createServer} from 'node:http';
 import {spawn,execFileSync} from 'node:child_process';
-import {readFile,mkdtemp,rm} from 'node:fs/promises';
+import {readFile,mkdtemp,rm,copyFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {resolve,extname,sep,join} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -13,9 +13,23 @@ const policyText=await readFile(root+'examples/interactive-host.js','utf8'),loca
 const signed=signClientPackage({payload:JSON.parse(packageText),registry:localRegistry,integrity:'sha256-'+createHash('sha256').update(packageText).digest('base64')},{privateKey:generateKeyPairSync('ed25519').privateKey,keyId:'ephemeral-chrome',url:'/examples/interactive/package.json'});
 const signedHost=`globalThis.WydClientConfig={trustedKeys:${JSON.stringify([signed.key])},execution:{publisher:'divdev',package:'divdev/taskboard-client',packageVersion:'0.1.0',installation:'chrome-signed',actions:['nextpage','submittask','cleartasks'],capabilities:['object.instances.edit','object.instances.construct','event.custom.raise'],traversal:['children'],visible:['taskboard','taskboard-*'],editable:['taskboard','taskboard-*'],scopes:{prototypes:['divdev/task-card'],events:['pagechanged']}}};`;
 const signedHTML=`<!doctype html><html><head><meta charset="utf-8"><title>Signed native Taskboard</title><link rel="wydgit-manifest" href="/signed-registry.json"><script src="/signed-host.js"></script><script defer src="${bundle}"></script></head><body><main id="host-content">Signed package host</main></body></html>`;
+// Exercise the documented CLI from a fresh author directory, without internal build APIs.
+const helloSource=fileURLToPath(new URL('../../examples/hello-client/',import.meta.url));
+const {helloHTML,helloHost,helloRegistry}=await (async()=>{
+ const directory=await mkdtemp(join(tmpdir(),'wydgit-quick-start-'));
+ try{
+  for(const file of ['hello.bas','build.json'])await copyFile(helloSource+file,join(directory,file));
+  execFileSync(process.execPath,[fileURLToPath(new URL('../../scripts/build-client-package.js',import.meta.url)),join(directory,'build.json'),join(directory,'generated'),'example']);
+  return {
+   helloHTML:(await readFile(helloSource+'index.html','utf8')).replace('generated/registry.json','/hello-registry.json').replace('src="host.js"','src="/hello-host.js"').replace('../../packages/wydclient/dist/','/dist/'),
+   helloHost:await readFile(helloSource+'host.js','utf8'),
+   helloRegistry:await readFile(join(directory,'generated/registry.json'),'utf8')
+  };
+ }finally{await rm(directory,{recursive:true,force:true});}
+})();
 const artifacts=new Set(),server=createServer(async(req,res)=>{
  const path=new URL(req.url,'http://localhost').pathname;res.setHeader('Cache-Control','no-store');
- const dynamic={'/signed.html':['text/html',signedHTML],'/signed-host.js':['text/javascript',signedHost],'/signed-registry.json':['application/json',JSON.stringify(signed.registry)]};
+ const dynamic={'/hello.html':['text/html',helloHTML],'/hello-host.js':['text/javascript',helloHost],'/hello-registry.json':['application/json',helloRegistry],'/signed.html':['text/html',signedHTML],'/signed-host.js':['text/javascript',signedHost],'/signed-registry.json':['application/json',JSON.stringify(signed.registry)]};
  if(dynamic[path]){res.setHeader('Content-Type',dynamic[path][0]);res.end(dynamic[path][1]);return;}
  if(path.startsWith('/dist/'))artifacts.add(path);
  const file=resolve(root,'.'+decodeURIComponent(path));if(!file.startsWith(root.endsWith(sep)?root:root+sep)){res.writeHead(404);res.end();return;}
@@ -53,7 +67,9 @@ try{
  await type('#first '+field('Title'),'First draft');await type('#second '+field('Title'),'Second draft');await click('#first '+control('Next'));await until("document.querySelector('#first').textContent.includes('Verify lifecycle cleanup')");assert.ok(await evaluate("document.querySelector('#second').textContent.includes('Write WBasic')"));assert.equal(await evaluate("document.querySelector('#second [name=Title]').value"),'Second draft');
  await evaluate("globalThis.oldButton=document.querySelector('#first [data-wydclient-control=Next]');taskboards[0].unmount()");await click('#second '+control('Save'));await until("document.querySelector('#second').textContent.includes('Added: Second draft')");
  await evaluate("taskboards[0]=WydClient.mount({root:document.querySelector('#first'),policy:interactivePolicy});taskboards[0].ready()");await until("taskboards[0].state==='ready'");await evaluate('oldButton.click()');assert.ok(await evaluate("document.querySelector('#first').textContent.includes('Write WBasic')"));assert.equal(await evaluate("document.querySelector('#first [name=Title]').value"),'');await evaluate('taskboards.forEach(h=>h.unmount())');assert.equal(await evaluate("document.querySelectorAll('form').length"),0);
- console.log('PASS embedded: independent drafts/actions, survivor, remount and stale controls');console.log(execFileSync(browser,['--version'],{encoding:'utf8'}).trim());console.log(JSON.stringify({fixtures:3,timings}));
+ console.log('PASS embedded: independent drafts/actions, survivor, remount and stale controls');
+ artifacts.clear();await cdp('Page.navigate',{url:origin+'/hello.html'});await until("globalThis.WydClient?.state==='ready'&&document.querySelector('[data-wydclient-control=Greet]')");assert.deepEqual([...artifacts],[bundle]);await click(control('Greet'));await until("document.body.textContent.includes('Hello from SEWN!')");console.log('PASS quick-start: fresh public CLI package, native button, compiled SEWN state update');
+ console.log(execFileSync(browser,['--version'],{encoding:'utf8'}).trim());console.log(JSON.stringify({fixtures:4,timings}));
 }finally{
  ws?.close();for(const c of calls.values()){clearTimeout(c.timer);c.reject(Error('Closed'));}if(chromeProcess){chromeProcess.kill('SIGTERM');await new Promise(r=>{if(chromeProcess.exitCode!==null)r();else{chromeProcess.once('exit',r);setTimeout(()=>{chromeProcess.kill('SIGKILL');r();},3000).unref();}});}await new Promise(r=>server.close(r));await rm(profile,{recursive:true,force:true,maxRetries:8,retryDelay:100});
 }

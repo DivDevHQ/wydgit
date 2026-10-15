@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFile,mkdtemp} from 'node:fs/promises';
+import {readFile,mkdtemp,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {generateKeyPairSync} from 'node:crypto';
@@ -13,9 +13,9 @@ import {webcrypto} from 'node:crypto';
 import {Window} from 'happy-dom';
 const directory=new URL('../examples/wbasic-taskboard/client/',import.meta.url),config=JSON.parse(await readFile(new URL('build.json',directory))),sources=Object.fromEntries(await Promise.all(config.sources.map(async file=>[file,await readFile(new URL(file,directory),'utf8')]))),definitions=compileDefinitions(JSON.parse(await readFile(new URL('../prototypes/objects.json',import.meta.url))));
 const options={target:'client',manifest:config.manifest,entry:config.entry,definitions,verifiedPackages:{[config.manifest.id]:'divdev'}};
-test('explicit CLIENT uses normal family IR/lowering and emits deterministic existing browser envelopes',async()=>{
- const a=buildClientPackage(sources,options),b=buildClientPackage(Object.fromEntries(Object.entries(sources).reverse()),options);assert.equal(a.packageText,b.packageText);assert.equal(a.registryText,b.registryText);assert.equal(a.integrity,b.integrity);assert.equal(a.payload.schema,'wydgit.prototype-package/0.1');assert.equal(a.clientVersion,'0.1.0-alpha.7');assert.ok(a.definitions.some(d=>d.presentation?.schema==='wydgit.presentation/0.2'));
- const out=await mkdtemp(join(tmpdir(),'h4-client-'));await buildClientFromConfig(new URL('build.json',directory).pathname,out,{verifiedPackages:options.verifiedPackages});assert.equal(await readFile(join(out,'package.json'),'utf8'),a.packageText);assert.equal(await readFile(join(out,'registry.json'),'utf8'),a.registryText);assert.equal(await readFile(new URL('../packages/wydclient/examples/interactive/package.json',import.meta.url),'utf8'),a.packageText);
+test('explicit CLIENT uses normal family IR/lowering and emits deterministic existing browser envelopes',async t=>{
+ const a=buildClientPackage(sources,options),b=buildClientPackage(Object.fromEntries(Object.entries(sources).reverse()),options);assert.equal(a.packageText,b.packageText);assert.equal(a.registryText,b.registryText);assert.equal(a.integrity,b.integrity);assert.equal(a.payload.schema,'wydgit.prototype-package/0.1');assert.equal(a.clientVersion,'0.1.0-alpha.8');assert.ok(a.definitions.some(d=>d.presentation?.schema==='wydgit.presentation/0.2'));
+ const out=await mkdtemp(join(tmpdir(),'h4-client-'));t.after(()=>rm(out,{recursive:true,force:true}));await buildClientFromConfig(new URL('build.json',directory).pathname,out,{verifiedPackages:options.verifiedPackages});assert.equal(await readFile(join(out,'package.json'),'utf8'),a.packageText);assert.equal(await readFile(join(out,'registry.json'),'utf8'),a.registryText);assert.equal(await readFile(new URL('../packages/wydclient/examples/interactive/package.json',import.meta.url),'utf8'),a.packageText);
 });
 test('CLIENT rejects unavailable contexts/renderer structures and malformed action signatures with source diagnostics',()=>{
  for(const replace of [s=>s.replace('PRESENTATION CLIENT','PRESENTATION SERVER'),s=>s.replace('CALL NextPage','CALL ApplyPage'),s=>s.replace('SUB SubmitTask(data AS Object)','SUB SubmitTask(data AS String)'),s=>s.replace('Me.Message = "Local tasks cleared."','Me.Message = SESSION.id')]){

@@ -1,0 +1,8 @@
+{
+  "version": "0.1.0-alpha.8",
+  "protocol": "0.1",
+  "readable": 505495,
+  "minified": 312395,
+  "gzip": 100332,
+  "brotli": 86775
+}

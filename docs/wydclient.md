@@ -1,6 +1,6 @@
 # WydClient
 
-The current runtime is **WydClient 0.1.0-alpha.7**, WydSUB **0.1**, with
+The current runtime is **WydClient 0.1.0-alpha.8**, WydSUB **0.1**, with
 Wydgine/platform reference **0.3.0-alpha.8**. The [H4 contract](milestones/0.3-H4/README.md) adds semantic native controls, typed
 form drafts/submission, explicit CLIENT family/package authoring and signing.
 The [H3 contract](milestones/0.3-H3/README.md)
@@ -9,8 +9,10 @@ lifecycle, typed events, shared budgets, public scalar presentation and keyed
 repetition. The [verification](milestones/0.3-H3/verification.md) records static
 Taskboard/Chrome acceptance, conformance, bundle growth and unsupported capabilities.
 
+Alpha.8 corrects inert literal-data validation; see the [H5 findings](milestones/0.3-H5/review.md).
+
 Earlier H1/H2 descriptions below are historical baselines. Their execution deferrals
-are superseded only by the explicit closed H3 profile; signatures still grant no
+are superseded only by the explicit closed H3/H4 profiles; signatures still grant no
 execution authority and same-realm host JavaScript remains trusted.
 
 See the [package documentation](../packages/wydclient/README.md) for lifecycle,
@@ -21,8 +23,8 @@ static examples, deployment, measured sizes and limitations. The
 H2 introduced WydClient **0.1.0-alpha.3**, retaining WydSUB **0.1** and Wydgine
 **0.3.0-alpha.7**. A trusted `host()` adapter adds scoped canonical drafts, ordered
 placement, safe literal rendering, updates and subtree cleanup. See the
-[implemented H2 contract](milestones/0.3-H2/README.md). Execution under SEWN/SEAM
-remains H3 work; publisher signatures and object possession grant no authority.
+[implemented H2 contract](milestones/0.3-H2/README.md). At the H2 baseline, execution under SEWN/SEAM
+remained future H3 work; publisher signatures and object possession grant no authority.
 
 
 Alpha.4 packages the updated shared canonical validation from WBasic 0.19 under a

@@ -133,8 +133,10 @@ It is verified before reading bytes; a component receives only its own token,
 never the session secret. POST form actions must use their approved endpoint. The host sends Referrer-Policy:no-referrer.
 The no-JavaScript form works, with accessible success feedback and a return link.
 Programmatic submissions receive bounded JSON. Upload progress and richer client
-interaction remain deferred to 0.3-F; login/admin UI remains deferred to 0.3-E.
-No new authentication system is introduced.
+interaction are not implemented by this server upload profile. Current file-backed
+media integration is documented in [WydMedia](wydmedia.md), and implemented
+server login/membership forms in [WydGate](wydgate-membership.md); platform/App
+administration remains future 0.3-J work. No new authentication system is introduced.
 
 ## Delivery
 

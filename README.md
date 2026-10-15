@@ -1,325 +1,182 @@
 # Wydgit
 
-**A portable, capability-safe application platform for the open web.**
-
-Wydgit is an experimental application platform built around small, composable objects called **Wydgits**.
-
-It began as a server-rendered web application system, but its architecture is being designed around a broader goal: a portable application model that can eventually support web, desktop, mobile, embedded, and decentralized network environments without tying applications to HTML, the DOM, a specific database, or a specific runtime.
-
-> **Wydgit is a proposed shape for Web 4.0: a portable, capability-safe application layer for the open web.**
-
----
-
-## Philosophy
-
-Wydgit follows two related design principles:
-
-### KISS
-
-**Keep It Simple, Stupid.**
-
-Application authors and site owners should work with the simplest useful abstraction possible.
-
-### KICK
-
-**Keep It Clean, King.**
-
-Public APIs, object models, configuration, and development workflows should remain clean and understandable.
-
-Architecturally, KICK also has a useful backronym:
-
-**Keep It Complicated in the Kernel.**
-
-When complexity is necessary for security, portability, resilience, or compatibility, push that complexity into the platform instead of making every developer reproduce it.
-
-The result should be:
-
-> **High-level simplicity with low-level discipline.**
-
----
-
-## Current Status
-
-Wydgit is currently in **early alpha development**.
-
-The 0.2 alpha implements an App object model, SEAM authority, bounded WydBASIC/SEWN behavior, semantic Forms, local declarative package installation, JSON/SQLite storage, WydGate identity, Hono transport and CSS-native system/light/dark presentation:
-
-- validated bounded portable [SEWN workflows](docs/sewn.md) with procedures, safe contexts and service calls
-- WydBASIC SUB/FUNCTION and source-declared EVENT modules compiled to canonical SEWN
-- replaceable Hono HTTP transport adapter on Node.js
-- canonical App-rooted JSON and immutable hydrated Wydgit instances
-- single prototype inheritance with publisher boundaries and abstract bases
-- validated named slots and deny-by-default scoped traversal
-- authorized edit sessions, immutable commits, change sets and revision hooks
-- npm workspaces, explicit host-approved library loading, portable requirements
-- scoped storage services, typed records, optimistic concurrency and record history
-- local users, Argon2id passwords, revocable sessions, roles/groups and explicit permissions
-- Session-owned request-local Page lifecycles and bounded contextual events
-- safe request/response, Markdown/file delivery and scoped headers/cookies
-- WydClient lifecycle and semantic browser-event adapter (trusted host integration)
-- server-side rendering
-- Markdown content
-- sanitized output
-- navigation and page routing
-- skins and scoped presentation rules
-- nested App → Page → Section → Block composition
-- renderer and HTTP tests
-
-Implementation details: [object model](docs/object-model.md), [SEAM](docs/seam.md), [mutation model](docs/mutation-model.md), [library model](docs/library-model.md), [WydStore](docs/wydstore.md), [WydGate](docs/wydgate.md), [WydStream](docs/wydstream.md), [events/HTTP execution](docs/events.md), [HTTP transport](docs/http-transport.md), [SEWN](docs/sewn.md), and [WydBASIC](docs/wydbasic.md). Local declarative packages execute validated WydBASIC/SEWN through those boundaries; arbitrary package JavaScript remains forbidden.
-
-The architectural contract is:
-
-[`docs/FOUNDING-ARCHITECTURE.md`](docs/FOUNDING-ARCHITECTURE.md)
-
-Current development version: **0.3.0-alpha.8**. Completed platform milestones
-update `package.json`, matching root metadata in `package-lock.json`, and
-`content/app.json` → `properties.revision` together. Version updates do not create
-Git tags or publish releases. Completed milestones also update [CHANGELOG.md](CHANGELOG.md).
-
-Expect significant changes before 1.0.
-
----
-
-## Core Architecture
-
-The emerging Wydgit platform is built around several major components.
-
-### Wydgits
-
-Wydgits are first-class application objects.
-
-Each Wydgit is:
-
-- an instance of a prototype
-- uniquely identified
-- composable into a parent/child object tree
-- capability-limited
-- renderer-independent
-
-### Wydgine
-
-**Wydgine** is the server-side runtime.
-
-It handles server execution, rendering, storage access, application services, and other backend responsibilities.
-
-### WydClient
-
-**WydClient** is the independent client runtime.
-
-It can eventually support Wydgits inside:
-
-- Wydgine applications
-- static HTML pages
-- WordPress or Drupal integrations
-- CDN-hosted pages
-- WydGo member surfaces
-- future browser-based hosts
-
-WydClient provides controlled access to browser capabilities without exposing unrestricted DOM or JavaScript access to ordinary Wydgit packages.
-
-### SEAM
-
-**SEAM** is the **Secure Extension Architecture Model**.
-
-SEAM provides deny-by-default capability security.
-
-Its core principle is:
-
-> **Authority belongs to the execution context, not the object being called.**
-
-Inheritance, containment, visibility, and dependency relationships do not automatically grant authority.
-
-### SEWN
-
-**SEWN** is the **SEAM Execution Workflow Notation**.
-
-SEWN is the canonical structured behavior format used by Wydgit runtimes.
-
-It is intended to be:
-
-- JSON-native
-- deterministic
-- schema-validatable
-- bounded
-- portable
-- capability-controlled
-
-A future human-friendly authoring language may be called **WydStitch**.
-
----
-
-## Modular Capability Libraries
-
-Vanilla Wydgine and WydClient are intended to remain small.
-
-**Libraries provide capabilities. SEAM grants authority.**
-
-The library contract and explicit loader are implemented. `@wydgit/store` is the
-first real workspace library, with JSON and SQLite adapters. `@wydgit/gate` adds
-local identity/authentication through host-approved WydStore services; a separate
-non-production fixture exercises loading. All three are disabled in
-`wydgit.config.json` by default. Federation and login UI/auth-cookie issuance remain deferred. Gate permissions
-never automatically grant SEAM capabilities.
-`content/requirements.json` holds portable library requirements; it never names
-Node implementation packages. Repository location is a development concern, not
-part of library identity.
-
-Optional capabilities will be supplied through canonical Wyd libraries such as:
-
-- **WydStore** — storage abstraction
-- **WydGate** — identity and membership
-- **WydStream** — media hosting and streaming
-- **WydGaming** — WebSockets, realtime applications, and game-oriented services
-- **WydFiles** — virtualized file storage
-- **WydMail** — mail services
-- **WydNotify** — notifications
-- **WydSearch** — indexing and search
-- **WydQueue** — background work and scheduled tasks
-- **WydCache** — caching
-- **WydAPI** — controlled external API access
-- **WydCommerce** — commerce infrastructure
-- **WydSocial** — social-network primitives
-
-Ordinary third-party Wydgit packages may request approved Wyd libraries, but may not inject arbitrary Node.js dependencies into the runtime.
-
----
-
-## Security Model
-
-Wydgit is being designed around the assumption that third-party application code should not automatically be trusted.
-
-Ordinary Wydgit packages should not receive unrestricted access to:
-
-- raw JavaScript execution
-- Node.js internals
-- the host filesystem
-- arbitrary npm dependencies
-- shell execution
-- unrestricted network access
-- raw SQL
-- unrestricted DOM mutation
-- arbitrary HTML injection
-
-Instead, packages operate through explicitly granted capabilities.
-
-The long-term goal is simple:
-
-> **Make third-party code useful without requiring it to be trusted.**
-
-Or, less formally:
-
-> We assume third-party code may be poison.  
-> The platform should keep it from becoming dangerous.
-
----
-
-## Renderer Independence
-
-The canonical Wydgit object model is not a DOM model.
-
-Portable Wydgits describe semantic concepts such as:
-
-- text
-- images
-- forms
-- fields
-- buttons
-- lists
-- containers
-- navigation
-- media
-- collections
-
-Renderers decide how those concepts become:
-
-- HTML
-- native mobile controls
-- desktop UI
-- future interfaces
-
-This distinction is central to Wydgit's portability goals.
-
----
-
-## WydGo
-
-**WydGo** is a decentralized network that organizes independent websites and Wydgit-enabled pages into something more connected than a traditional web ring, but less centralized than a social media platform.
-
-Each member site remains independently owned, hosted, and governed, while WydGo provides shared discovery, navigation, identity-aware interaction, and compatible Wydgit application surfaces.
-
-In KICK terms, users should experience a coherent network without needing to know whether a destination runs Wydgine, WydClient, a legacy-site bridge, or some future renderer.
-
----
+Wydgit is an experimental application platform built around reusable, independently
+packaged components called **Wydgits**. Components share a canonical object model:
+typed properties, inheritance, interfaces, owned children, methods and events.
+
+Authors can write WBasic and compile it to **SEWN**, the language-neutral execution
+representation. **SEAM** checks the authority supplied by the host: being installed,
+having a valid publisher signature or calling another component does not grant
+capabilities. Portable application code receives controlled facades rather than
+JavaScript, DOM objects, SQL or native filesystem access.
+
+**Wydgine** executes server applications. **WydClient** executes a supported portable
+subset on ordinary static websites, without Wydgine, a database or Node at runtime.
+Both use the same SEWN executor and canonical object kernel. Their presentation and
+service profiles differ explicitly.
+
+## Why use it?
+
+- Compose reusable objects with explicit ownership and package boundaries.
+- Author classes, typed methods, lifecycle hooks and events in WBasic.
+- Use declarative presentation, including native browser controls and bounded keyed lists.
+- Keep service implementations behind canonical APIs and separately approved capabilities.
+- Build deterministic CLIENT packages and verify signed browser distributions under host policy.
+
+This is alpha software, not a production-readiness or independent security-audit
+claim. KISS/KICK means simple authoring surfaces with enforcement in the kernel.
+
+## Quick start: a WBasic component on a static page
+
+Use **Node.js 24.21 or newer** and npm for the complete workspace development
+workflow. Some individual packages support Node 22.12; WydFiles requires 24.21.
+Native Argon2/SQLite modules need a supported prebuilt binary or a native build toolchain.
+Python 3 below is just a convenient static HTTP server.
+
+```sh
+git clone --branch develop/0.3 https://github.com/DivDevHQ/wydgit.git
+cd wydgit
+npm ci
+npm run build:client
+node scripts/build-client-package.js examples/hello-client/build.json examples/hello-client/generated example
+python3 -m http.server 8080 --bind 127.0.0.1
+```
+
+Open [http://127.0.0.1:8080/examples/hello-client/](http://127.0.0.1:8080/examples/hello-client/)
+and activate **Say hello** with the mouse or keyboard. The displayed state changes
+to “Hello from SEWN!” through a compiled method, with no application JavaScript.
+The complete [source](examples/hello-client/hello.bas) is:
+
+```basic
+PUBLIC CLASS Hello EXTENDS wydgit.core/section
+    META Id = "example/hello"
+    PUBLIC PROPERTY Message AS String = "Ready."
+    PUBLIC SUB Greet()
+        Me.Message = "Hello from SEWN!"
+    END SUB
+    PRESENTATION CLIENT
+        HEADING "Hello Wydgit"
+        BUTTON Greet LABEL "Say hello" CALL Greet
+        STATUS Message VALUE Me.Message
+    END PRESENTATION
+END CLASS
+```
+
+The explicit [build inventory](examples/hello-client/build.json) declares CLIENT,
+package identity, source files and entry. The final CLI argument is an independent
+local publisher approval. The generated registry uses the existing browser package
+contract. [host.js](examples/hello-client/host.js) is trusted local-development
+configuration: it separately approves the publisher, exact action and edit scope.
+It implements no application behavior. Do not adopt sample trust as a production default.
+Third-party deployment requires reviewed origins, trusted publisher keys, integrity,
+signatures and exact package/version execution approval; see [client authoring](docs/milestones/0.3-H4/README.md).
+
+Stop the static server with Ctrl+C. Generated output is ignored and can be rebuilt.
+Only static files and a modern browser are needed after the developer build.
+For a larger example, build and serve the [interactive Taskboard](examples/wbasic-taskboard/README.md).
+
+## Architecture
+
+```text
+WBasic source → shared definition IR → canonical prototypes + SEWN
+                                      ↓ host approval / SEAM
+                         Wydgine                 WydClient
+                         server                  browser / WydSUB roots
+                         services + HTTP         native controls + static hosting
+```
+
+| Component | Implemented role |
+| --- | --- |
+| Wydgit | Canonical prototype and instance model, typed members, composition and lifetime |
+| WBasic | Compiler frontend; SERVER default and explicit CLIENT family builds |
+| SEWN | Validated bounded execution, methods, static helpers and typed events |
+| SEAM | Host-issued contexts, visibility, capability, resource and scope enforcement |
+| Wydgine | Node server execution, Hono HTTP adaptation, server presentation and service dispatch |
+| WydClient / WydSUB | Standalone classic browser script; isolated document/embedded roots; protocol 0.1 |
+| WydGate | Local identity, sessions, App membership, recovery and server browser-auth flows; identity is not SEAM authority |
+| Canonical services | WydStore, WydSearch, WydFiles and WydStream through approved server library bindings |
+
+## Current capabilities and boundaries
+
+Current versions are **Wydgine/platform 0.3.0-alpha.8**, **WydClient 0.1.0-alpha.8**
+and **WydSUB 0.1**. WBasic/component contracts are implemented through 0.20;
+the language reference also contains clearly marked future proposals. These are
+separate version axes. Historical browser artifacts remain immutable.
+
+SERVER supports service-backed applications, HTTP forms, routing, sanitized Markdown,
+file/media delivery and installed declarative packages. CLIENT supports authenticated
+SEWN components, all five lifecycle hooks, typed events/subscriptions, scalar bindings,
+bounded keyed repetition and native labels, buttons, text/textarea, checkbox, select,
+forms and accessible feedback. Inputs are drafts; validated submission invokes an
+explicitly approved public action. No raw browser event enters SEWN.
+
+Client code has no general network, storage, DOM or Server/Session facade. Browser
+Markdown stays literal. CLIENT controls are not server HTTP forms. Same-realm host
+JavaScript is trusted; cross-origin iframe isolation is not implemented. There is no
+browser compiler. Packages cannot self-approve authority.
+
+WydStore has JSON/SQLite providers; WydFiles has local/S3-compatible providers;
+WydSearch uses WydStore; WydStream uses bounded media metadata and binary storage.
+These are server capabilities, not implicit WydClient services. Recovery is specific
+to each implemented subsystem, not a general backup service. Canonical libraries are
+workspace packages, not a public registry or automatically installed npm extensions.
+
+The local server installer supports staged installation and failure recovery.
+General upgrade/uninstall/migration, multi-App hosting, platform administration,
+an installable CMS, remote embedding, other source languages and native runtimes
+remain future work. The browser signed envelope and the proposed general `.wydpkg`
+ZIP format are distinct; the latter is not the current installer.
+
+## Documentation and examples
+
+- [Development rules](docs/DEVELOPMENT.md) and [founding architecture](docs/FOUNDING-ARCHITECTURE.md)
+- [Canonical objects](docs/canonical-oop.md), [object model](docs/object-model.md), [mutation](docs/mutation-model.md)
+- [WBasic implemented guide](docs/wydbasic.md) and [language reference](docs/wbasic-language-ref.md)
+- [SEWN](docs/sewn.md), [SEAM](docs/seam.md), [components](docs/components.md), [events](docs/events.md)
+- [WydClient](packages/wydclient/README.md), [H4 controls and CLIENT authoring](docs/milestones/0.3-H4/README.md)
+- [Local server packages](docs/packages.md), [browser packages](docs/wydclient.md), [distribution architecture](docs/wydgit-package-distribution.md)
+- [WydStore](docs/wydstore.md), [WydSearch](docs/wydsearch.md), [WydFiles](docs/wydfiles.md), [WydStream](docs/wydstream.md), [WydGate](docs/wydgate-membership.md)
+- [Guestbook](examples/guestbook/README.md), [Taskboard](examples/wbasic-taskboard/README.md), [search](examples/search/README.md), [media](examples/media/README.md)
+- [H5 inventory and findings](docs/milestones/0.3-H5/review.md), [verification](docs/milestones/0.3-H5/verification.md), [changelog](CHANGELOG.md)
+
+To run the tracked server sample (Home, About, Contact), use `npm start` and open
+http://127.0.0.1:3000/. Services are disabled until explicitly configured. See the
+Guestbook walkthrough before installing anything; use a disposable copy because
+uninstall is not implemented.
+
+## Testing and contributing
+
+```sh
+npm test
+npm run test:client
+npm run check
+node packages/wydclient/browser-smoke.js
+node packages/wydclient/browser-controls.js
+```
+
+Chrome fixtures require local sockets and Google Chrome (`WYDCLIENT_CHROME` can
+select the control runner's executable). `npm test` uses ordinary process isolation;
+H3/H4 serial verification history is preserved in their reports. Content checks cover
+the rendered sample site, not every Markdown link. See [H5 verification](docs/milestones/0.3-H5/verification.md)
+for exact commands, requirements and evidence.
+
+Follow [development rules](docs/DEVELOPMENT.md), preserve canonical authority
+boundaries, add focused regressions for defects and update the relevant contracts.
+There is no separate contribution agreement or dedicated CONTRIBUTING guide in this
+repository. Discuss changes through the repository's normal issue/pull-request process.
+
+## Project status and roadmap
+
+Wydgit 0.3 is under development. A–G established canonical services, storage,
+search, media/files and identity/membership. H0–H4 added canonical OOP, independent
+WydSUB roots, browser execution, controls and CLIENT authoring. H5 consolidates
+contracts, tests and documentation. See the [review](docs/milestones/0.3-H5/review.md).
+
+Next are I: Multi-App Hosting; J: Platform/App Administration; K: Installable CMS;
+and L: integration, independent security audit, hardening and prerelease. These are
+planned milestones, not existing features or a Wydgit 0.3 final release.
 
 ## License
 
-Wydgit is licensed under the **Mozilla Public License 2.0 (MPL-2.0)**.
-
-Modifications to MPL-covered source files remain under the MPL, while Wydgit may be combined with separately licensed code in larger works.
-
-See [`LICENSE`](LICENSE) for the full terms.
-
----
-
-## Run the Current Alpha
-
-Requires:
-
-- Node.js 22.12 or newer
-- npm
-
-Try the tracked sample site (Home, About and Contact):
-
-```sh
-git clone https://github.com/DivDevHQ/wydgit.git
-cd wydgit
-npm ci
-npm test
-npm run check
-npm start
-```
-
-Open http://127.0.0.1:3000/. Native Argon2 and SQLite dependencies use prebuilt
-binaries where available; unsupported platforms need their native build toolchain.
-
-Validate with `npm test` and `npm run check`. Inspect workspace linking with
-`npm ls --workspaces --depth=0`. Startup validates enabled libraries and portable
-requirements before opening the HTTP listener.
-
-
-Guestbook is a tracked example package, **not installed by default**. Stop the host
-and run the experimental alpha installer:
-
-```sh
-node scripts/install-package.js examples/guestbook
-npm start
-```
-
-Review and explicitly approve authority, WydStore enablement and storage provisioning.
-Choose JSON or SQLite, then a Page/parent/slot, and confirm the final plan. The
-installer can provision host-owned `.wydgit-data`; no manual WydStore setup is
-needed. Packages cannot approve their own grants. See [package contracts and recovery](docs/packages.md)
-and the [Guestbook walkthrough](examples/guestbook/README.md). Use a disposable copy
-for experiments: there is no uninstall operation.
-
-## 0.3-C site search
-
-The [0.3-C WydSearch contract](docs/wydsearch.md) documents portable bounded site
-search and package-defined Search Bar/Results Wydgits. Install the
-[reusable declarative package](examples/search/README.md) in an existing site. Run `node examples/testsearch/run.js`
-for a disposable acceptance site on port 3001; set `WYDSEARCH_ADAPTER=sqlite`
-to use the same application with SQLite. Search Bar placement uses Page header
-Sections, and content refresh requires an explicit trusted indexing call.
-
-## 0.2 limitations
-
-This is alpha-quality software, with no beta-level security or ecosystem promise.
-There is no uninstall, upgrade, storage migration, remote package registry, package
-signature verification or automatic package dependency installation. Only one
-installed package principal per Page and one installation of each fixed-ID package
-template are supported. WydClient has no automatic bootstrap/transport. There is no
-admin console or CMS. Canonical libraries currently live in this monorepo/workspace;
-they are not independently published for general external consumption.
-
-The [0.2-R audit record](docs/hardening-0.2-R.md) distinguishes automated verification
-from remaining browser acceptance.
+[Mozilla Public License 2.0](LICENSE) (MPL-2.0). See the license text for obligations
+on modifications to covered files and combining them with separately licensed code.

@@ -159,9 +159,12 @@ IDs are suitable for their explicit-ID inputs; attachment still requires a separ
 approved exact or prefix object grant for the generated ID. It is not a credential or idempotency token.
 
 Guestbook is server-authoritative and browser-POST-driven in the default web host.
-Automatic WydClient bootstrap/transport remains deferred. Remote packages, signatures,
-marketplace/discovery, uninstall, upgrade, migrations, remote provider provisioning,
-automatic ID rewriting and multiple instances/principals are outside 0.2-P.
+Automatic conversion of this server Guestbook into a client application is not
+implemented. The independent [WydClient loader](wydclient.md) now supports bootstrap
+and signed browser packages; those contracts do not add signatures or remote
+installation to this local server installer. Marketplace/discovery, uninstall,
+upgrade, migrations, remote provider provisioning, automatic ID rewriting and
+multiple instances/principals remain outside the local installer profile.
 
 
 Only `permissions.visible` / `editable` and the operator installation context's

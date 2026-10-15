@@ -1,5 +1,18 @@
 ## Unreleased
 
+### Wydgit 0.3-H5 — Platform consolidation
+
+- Reviewed implemented subsystems, authority/resource boundaries, portable profiles,
+  test quality and remaining limitations; recorded findings and verification evidence.
+- Fixed client-profile rejection of operation-like keys inside inert SEWN literals,
+  retaining rejection of executable server/service operations. New immutable
+  WydClient alpha.8 preserves alpha.1–alpha.7 and WydSUB 0.1.
+- Added source/readable/minified regression coverage, temporary build cleanup,
+  fail-fast socket-fixture errors and real Chrome acceptance for a fresh public-CLI WBasic quick start.
+- Replaced the stale root overview with current architecture, working static-client
+  instructions, target restrictions, authoritative links and the I–L roadmap.
+  Reconciled current package/service/version documentation without rewriting history.
+
 ### Wydgit 0.3-H4 — Native controls and CLIENT authoring
 
 - Add closed client-target semantic label/status, button, text/textarea, checkbox,
