@@ -83,7 +83,7 @@ replaceable and is not an architectural permanence requirement. No alternate
 adapter, Bun/Deno/Cloudflare host, WebSocket or HTTP/2 support is implemented here.
 Workspace package contracts and versions remain unchanged. Their platform
 compatibility ranges now also accept the 0.3 prerelease series; the host platform
-is `0.3.0-alpha.10`.
+is `0.3.0-alpha.11`.
 
 Verification includes the full `npm test` suite and `npm run check`. Focused real
 TCP tests exercise asset/cache policy, malformed/oversized/chunked/compressed
@@ -125,3 +125,18 @@ reserved unprefixed local HTTP names. Parking is a read-only ordinary App withou
 credential consumption, session persistence or services. Asset ETags contain an
 opaque root discriminator. External caches must include the public origin in keys
 and honor no-store/private. See I1 for exact configuration and deployment limits.
+
+## Per-App governance (I2)
+
+The trusted [I2 controller policy](milestones/0.3-I2/README.md) reduces the existing
+combined admission pool with independent HTTP/direct class caps. Registry calls
+nested inside admitted work do not reacquire admission. Frozen host-only `usage()`
+snapshots report fixed counters without contexts, secrets or user labels.
+The shared response port enforces a cumulative controller/App-lifetime allowance
+on native-accepted body bytes, incrementally for streams. This is pre-proxy payload,
+not delivered network bandwidth or a restart-surviving quota. HEAD/304 charge zero;
+quota failure is empty503 before headers or disconnect after partial output.
+Unknown/foreign-origin routing rejection is not accepted tenant work. Existing
+SEAM, exact App ownership, CSRF, host cookies and service quotas remain authoritative.
+Single-App entry points retain compatibility. No billing/admin API or hard process
+isolation is introduced.

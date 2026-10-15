@@ -225,3 +225,13 @@ Run `node examples/wydfiles/index.js` for a disposable standalone mount demo.
 `test/wydfiles.test.js` shares local/simulated-S3 conformance checks and exercises
 the real canonical loader, isolation, mounts, quotas, streaming and failures.
 Simulated S3 verifies signed requests and common behavior, not live AWS/R2/B2.
+
+## Host operational accounting (I2)
+
+The [I2 resource inventory](milestones/0.3-I2/README.md) distinguishes existing
+provider quotas from new host admission and outbound-payload accounting. Canonical
+registry dispatch outcomes are measured without input/record/file contents; nested
+implementation dependencies retain their own library counts. No second storage
+quota ledger or durable cross-provider allocation guarantee is added. Temporary
+files, journals, external writers and peak physical allocation remain subject to
+the provider's documented boundary. Host snapshots do not grant service authority.

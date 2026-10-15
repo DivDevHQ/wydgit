@@ -8,10 +8,10 @@ import { loadRepository } from './wydgine/repository.js';
 import { initializeHost } from './wydgine/host.js';
 
 export const projectRoot = path.dirname(fileURLToPath(import.meta.url));
-export function createApp({ root = projectRoot, logger = console, libraries, execution = {}, lifecycle, admit, guard, contextPolicy, onStop, parking } = {}) {
+export function createApp({ root = projectRoot, logger = console, libraries, execution = {}, lifecycle, admit, guard, contextPolicy, onStop, parking, governance } = {}) {
   const renderer = createRenderer({ root, verifiedPackages:execution.verifiedPackages });
-  const pipeline = createPipeline({ root, libraries, execution, lifecycle, guard, contextPolicy, parking });
-  const app = createTransport({ root, projectRoot, renderer, pipeline, logger, admit, onStop });
+  const pipeline = createPipeline({ root, libraries, execution, lifecycle, guard, contextPolicy, parking, governance });
+  const app = createTransport({ root, projectRoot, renderer, pipeline, logger, admit, onStop, governance });
   return app;
 }
 
@@ -21,7 +21,7 @@ export async function createHostApp(options = {}) {
   const root=options.root??projectRoot;
   let lifecycle,libraries,app;
   try {
-    libraries=await initializeHost({root,app:options.appId,guard:options.guard,adapters:options.libraryAdapters,lifecycle:async(id,event)=>{if(id==='wydgate'&&lifecycle)await lifecycle.session(event);}});
+    libraries=await initializeHost({root,app:options.appId,guard:options.guard,adapters:options.libraryAdapters,observe:options.governance? id=>options.governance.service(id):undefined,lifecycle:async(id,event)=>{if(id==='wydgate'&&lifecycle)await lifecycle.session(event);}});
     const appId=loadRepository(root,{verifiedPackages:options.execution?.verifiedPackages}).runtime.rootId;
     if(options.appId!==undefined&&options.appId!==appId)throw new Error('App binding mismatch');
     lifecycle=createLifecycle({app:appId,handlers:options.execution?.lifecycleHandlers,context:options.execution?.lifecycleContext,instances:options.execution?.lifecycleInstances});

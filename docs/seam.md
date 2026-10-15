@@ -234,3 +234,18 @@ wydgit-* for explicit local HTTP. Deletion uses matching attributes. Cross-App G
 replay is denied; SameSite does not replace exact Origin and session CSRF checks.
 Parking routes use an ordinary service-free App and consume/issue no credentials.
 There is no cross-App SSO, tenant routing API or automatic domain verification.
+
+## Per-App governance (I2)
+
+The trusted [I2 controller policy](milestones/0.3-I2/README.md) reduces the existing
+combined admission pool with independent HTTP/direct class caps. Registry calls
+nested inside admitted work do not reacquire admission. Frozen host-only `usage()`
+snapshots report fixed counters without contexts, secrets or user labels.
+The shared response port enforces a cumulative controller/App-lifetime allowance
+on native-accepted body bytes, incrementally for streams. This is pre-proxy payload,
+not delivered network bandwidth or a restart-surviving quota. HEAD/304 charge zero;
+quota failure is empty503 before headers or disconnect after partial output.
+Unknown/foreign-origin routing rejection is not accepted tenant work. Existing
+SEAM, exact App ownership, CSRF, host cookies and service quotas remain authoritative.
+Single-App entry points retain compatibility. No billing/admin API or hard process
+isolation is introduced.

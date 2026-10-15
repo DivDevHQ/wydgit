@@ -33,3 +33,17 @@ validation exception. TLS traffic and Secure-cookie behavior are real; public CA
 trust, DNS ownership and production certificate management are not tested.
 See the [I1 contract](../../docs/milestones/0.3-I1/README.md) for proxy sanitation,
 exact peer trust, host-only credentials, CSRF and public deployment responsibilities.
+
+## Resource-governance demonstration
+
+```sh
+node examples/hostname-host/governance.js
+```
+
+This disposable scenario assigns limited and standard technical resource profiles
+to the same installed WBasic Taskboard family. It holds a real canonical Files call,
+verifies overload and sibling survival, releases capacity, exhausts an exact outbound
+payload allowance, prints sanitized host snapshots, then stops and cleans up.
+It exits automatically and requires no external services. It is not a pricing plan,
+durable usage ledger or CPU/bandwidth benchmark. See the
+[I2 contract](../../docs/milestones/0.3-I2/README.md) for exact accounting semantics.

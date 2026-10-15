@@ -1,0 +1,89 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import http from 'node:http';
+import {provisionHostnameExample} from '../examples/hostname-host/setup.js';
+import {installTaskboards} from '../examples/hostname-host/taskboards.js';
+import {createMultiAppHost} from '../wydgine/multi-app.js';
+import {keyFor} from '../packages/wydfiles/src/contract.js';
+import {localProvider} from '../packages/wydfiles/src/local.js';
+const request=(server,hostname,url='/',options={})=>new Promise((resolve,reject)=>{
+ const req=http.request({hostname:'127.0.0.1',port:server.address().port,path:url,...options,headers:{Host:hostname,...options.headers}},res=>{let bytes=0;const chunks=[];res.on('data',c=>{bytes+=c.length;chunks.push(c);if(options.disconnect)res.destroy();});let done=false;const finish=aborted=>{if(done)return;done=true;resolve({status:res.statusCode,headers:res.headers,bytes,body:Buffer.concat(chunks).toString(),aborted});};res.on('end',()=>finish(false));res.on('aborted',()=>finish(true));res.on('error',()=>finish(true));});req.on('error',reject);req.end(options.body);
+});
+async function fixture(t){const root=await fs.mkdtemp(path.join(os.tmpdir(),'wyd-governance-'));let host;const config=await provisionHostnameExample(root);t.after(async()=>{try{await host?.dispose();}catch(error){if(error.code!=='HOST.CLEANUP')throw error;}await fs.rm(root,{recursive:true,force:true});});return {root,config,async start(options={}){host=await createMultiAppHost(config,{root,...options});const tokens=await Promise.all(config.apps.map(a=>host.activate(a.id))),server=await host.listenShared(0,'127.0.0.1');return {host,tokens,server};}};}
+const stats=(h,id)=>h.usage().find(e=>e.id===id).usage;
+const files=(h,t)=>h.bind(t,h.context(t,{publisher:'acme',package:'acme/demo',installation:'same-installation',self:'home',capabilities:['files.storage.read'],scopes:{wydfiles:[{path:'/'}]}}));
+test('actual Page/assets/ranges/HEAD/304/errors/parking are charged by accepted UTF-8 payload, not Content-Length',async t=>{
+ const f=await fixture(t),{host,server}=await f.start();let expected=0;
+ for(const [url,options] of [['/',{}],['/css/site.css',{}],['/css/site.css',{method:'HEAD'}],['/css/site.css',{headers:{Range:'bytes=0-9'}}],['/missing',{}]]){const r=await request(server,'alpha.localhost',url,options);expected+=r.bytes;}
+ const css=await request(server,'alpha.localhost','/css/site.css');expected+=css.bytes;const cached=await request(server,'alpha.localhost','/css/site.css',{headers:{'If-None-Match':css.headers.etag}});assert.equal(cached.status,304);assert.equal(cached.bytes,0);
+ for(let i=0;i<200&&stats(host,'app-alpha').work.current;i++)await new Promise(r=>setTimeout(r,5));const a=stats(host,'app-alpha');assert.equal(a.traffic.acceptedBytes,expected);assert.equal(a.quota.consumed,expected);assert.equal(a.classes.http.admitted,7);assert.equal(a.traffic.completed,7);assert.equal(a.traffic.failed,1);assert.equal(a.work.current,0);
+ const before=host.usage().map(e=>e.usage.classes.http.admitted);assert.equal((await request(server,'unknown.localhost')).status,421);assert.equal((await request(server,'alpha.localhost','/',{method:'POST',headers:{Origin:'http://beta.localhost'}})).status,400);assert.deepEqual(host.usage().map(e=>e.usage.classes.http.admitted),before);
+ const parked=await request(server,'soon.localhost');assert.equal(parked.status,200);assert.equal(stats(host,'platform-parking').traffic.acceptedBytes,parked.bytes);assert.equal(stats(host,'app-beta').traffic.acceptedBytes,0);assert.equal(parked.headers['set-cookie'],undefined);
+});
+test('real streaming and concurrent whole-write quotas never oversubscribe or charge siblings',async t=>{
+ const f=await fixture(t);f.config.apps[0].resources={payloadBytes:100000};await fs.writeFile(path.join(f.root,'app-alpha/public/css/large.bin'),Buffer.alloc(300000,1));const {host,server}=await f.start();
+ const streamed=await request(server,'alpha.localhost','/css/large.bin');assert.equal(streamed.aborted,true);assert.ok(streamed.bytes>0&&streamed.bytes<=100000);for(let n=0;n<200&&stats(host,'app-alpha').work.current;n++)await new Promise(r=>setTimeout(r,5));const after=stats(host,'app-alpha');assert.ok(after.quota.consumed>=streamed.bytes&&after.quota.consumed<=100000);assert.equal(after.quota.consumed,after.traffic.acceptedBytes);assert.equal(after.traffic.quotaRejectedWrites,1);assert.equal(after.traffic.reservedBytes,0);assert.equal(after.work.current,0);
+ const results=await Promise.all(Array.from({length:12},()=>request(server,'alpha.localhost','/css/large.bin')));assert.ok(results.every(r=>r.status===503&&r.bytes===0));assert.equal(stats(host,'app-alpha').quota.consumed,after.quota.consumed);
+ assert.equal((await request(server,'beta.localhost')).status,200);assert.equal((await request(server,'soon.localhost')).status,200);
+});
+test('exact exhaustion denies new work before Session creation and remains terminal for the App lifetime',async t=>{
+ const f=await fixture(t);f.config.apps[0].resources={payloadBytes:10};const {host,tokens,server}=await f.start();const r=await request(server,'alpha.localhost','/css/site.css',{headers:{Range:'bytes=0-9'}});assert.equal(r.bytes,10);
+ const denied=await request(server,'alpha.localhost');assert.equal(denied.status,503);assert.equal(denied.bytes,0);assert.equal(denied.headers['set-cookie'],undefined);assert.equal(stats(host,'app-alpha').classes.http.admitted,1);assert.equal(stats(host,'app-alpha').classes.http.quotaRejected,1);
+ const separate=await host.listen(tokens[0],0,'127.0.0.1');assert.equal((await request(separate,'alpha.localhost')).status,503);assert.equal(stats(host,'app-alpha').quota.consumed,10);
+ for(const token of [{},JSON.parse('{}'),tokens[1]]){if(token===tokens[1])assert.equal(host.usage(token)[0].id,'app-beta');else assert.throws(()=>host.usage(token));}assert.throws(()=>host.usage('app-alpha'));assert.throws(()=>host.usage(tokens[0],'unknownMetric'));
+ await host.stop(tokens[0]);assert.throws(()=>host.usage(tokens[0]));assert.equal(stats(host,'app-alpha').quota.consumed,10);await host.dispose();assert.equal(stats(host,'app-alpha').quota.consumed,10);const fresh=await f.start();assert.equal(stats(fresh.host,'app-alpha').quota.consumed,0);assert.throws(()=>fresh.host.usage(tokens[0]));
+});
+test('service dispatch failures/dependencies and shared Page limit failures have bounded sanitized metrics',async t=>{
+ const f=await fixture(t);f.config.apps[0].limits={sewnSteps:1};const {host,tokens,server}=await f.start({execution:{'app-alpha':{handlers:[{type:'Page.Load',owner:'home',workflow:{schema:'sewn/0.1',body:[{op:'declare',name:'a',value:{op:'literal',value:1}},{op:'declare',name:'b',value:{op:'literal',value:2}}]}}]}}});const caller=files(host,tokens[0]);const before=stats(host,'app-alpha').services.wydfiles;
+ const missing=await caller.invoke('wydfiles','1.0.0','stat',{path:'/no-private-file'});assert.equal(missing.ok,false);const denied=await caller.invoke('wydfiles','1.0.0','stat',{path:'/no-private-file',secret:'not-a-metric'});assert.equal(denied.ok,false);
+ const after=stats(host,'app-alpha');assert.equal(after.services.wydfiles.attempted,before.attempted+2);assert.equal(after.services.wydfiles.failed,before.failed+2);assert.equal(after.classes.direct.completed,2);assert.equal(after.classes.direct.failed,2);assert.equal(after.work.current,0);
+ assert.equal((await request(server,'alpha.localhost')).status,500);assert.ok(stats(host,'app-alpha').execution.pageLimitFailures>=1);assert.ok(stats(host,'app-alpha').execution.pageStepCharges>0);
+ const serialized=JSON.stringify(host.usage());assert.doesNotMatch(serialized,/no-private-file|not-a-metric|node_modules|password|sessionId|capabilities|\/tmp\//);assert.ok(Object.isFrozen(host.usage()[0].usage.services.wydfiles));
+});
+test('saturating one tenant with real held Files dispatch preserves sibling compiled SEWN, Gate and storage',async t=>{
+ const {createGate}=await import('@wydgit/gate/client'),{manifest}=await import('@wydgit/gate'),{ExecutionContext}=await import('../wydgine/seam/context.js');
+ const f=await fixture(t);f.config.apps[0].resources={maxPending:1,payloadBytes:100000};f.config.apps[1].resources={maxPending:8,payloadBytes:1000000};const execution=await installTaskboards(f.root);
+ for(const id of ['app-alpha','app-beta'])execution[id].gateContext=new ExecutionContext({publisher:'host',package:'host:gate',app:id,self:'home',capabilities:manifest.capabilities,scopes:{wydgate:[id]}});
+ await fs.writeFile(path.join(f.root,'app-alpha/files',keyFor('/held')),'held bytes');let enter,release;const entered=new Promise(r=>enter=r),pause=new Promise(r=>release=r);
+ const {host,tokens,server}=await f.start({execution,libraryAdapters:{'app-alpha':{wydfiles:{provider:async config=>{const real=await localProvider(config.root);return {...real,async stat(...args){enter();await pause;return real.stat(...args);}};}}}}});
+ const gate=createGate(host.bind(tokens[1],host.context(tokens[1],{publisher:'host',package:'host:gate',self:'home',capabilities:manifest.capabilities,scopes:{wydgate:['app-beta']}})));await gate.register({username:'beta-user',password:'sufficiently long isolated password'});const login=await gate.login('beta-user','sufficiently long isolated password');
+ const store=host.bind(tokens[1],host.context(tokens[1],{publisher:'acme',package:'acme/demo',self:'home',capabilities:['store.records.create','store.records.read'],scopes:{wydstore:[{store:'main',collection:'records'}]}}));assert.equal((await store.invoke('wydstore','1.0.0','create',{store:'main',collection:'records',id:'own',data:{name:'Beta private'}})).ok,true);
+ const pending=files(host,tokens[0]).invoke('wydfiles','1.0.0','stat',{path:'/held'});await entered;const beforeB=stats(host,'app-beta');const overloaded=await request(server,'alpha.localhost');assert.equal(overloaded.status,503);assert.equal(overloaded.headers['set-cookie'],undefined);assert.equal(stats(host,'app-alpha').classes.http.admitted,0);await assert.rejects(files(host,tokens[0]).invoke('wydfiles','1.0.0','stat',{path:'/held'}),{code:'HOST.OVERLOAD'});
+ assert.equal(stats(host,'app-beta').classes.http.admitted,beforeB.classes.http.admitted);const b=await request(server,'beta.localhost','/',{headers:{Cookie:'wydgit-auth='+login.token}});assert.equal(b.status,200);assert.match(b.body,/Write WBasic/);assert.equal((await store.invoke('wydstore','1.0.0','get',{store:'main',collection:'records',id:'own'})).value.data.name,'Beta private');assert.equal((await gate.resolveSession(login.token)).app,'app-beta');
+ release();assert.equal((await pending).ok,true);assert.equal((await request(server,'alpha.localhost')).status,200);assert.equal(stats(host,'app-alpha').work.current,0);assert.equal(stats(host,'app-alpha').classes.direct.overloadRejected,1);assert.equal(stats(host,'app-alpha').classes.http.overloadRejected,1);await host.stop(tokens[0]);assert.equal((await request(server,'beta.localhost')).status,200);assert.equal((await request(server,'soon.localhost')).status,200);
+});
+test('foreign controller tokens and publisher-supplied resource/query fields cannot change accounting ownership',async t=>{
+ const f=await fixture(t),g=await fixture(t);f.config.apps[0].resources={payloadBytes:20};const a=await f.start(),b=await g.start();assert.throws(()=>a.host.usage(b.tokens[0]));assert.throws(()=>b.host.usage(a.tokens[0]));
+ const before=stats(a.host,'app-beta');const r=await request(a.server,'alpha.localhost','/css/site.css?app=app-beta&payloadBytes=999999',{headers:{Range:'bytes=0-9'}});assert.equal(r.bytes,10);assert.equal(stats(a.host,'app-alpha').quota.consumed,10);assert.equal(stats(a.host,'app-beta').quota.consumed,before.quota.consumed);
+ assert.throws(()=>a.host.usage()[0].usage.policy.payloadBytes=999999);assert.equal(stats(a.host,'app-alpha').policy.payloadBytes,20);
+});
+test('client cancellation during a real asset stream retains accepted bytes, refunds no committed payload and releases work',async t=>{
+ const f=await fixture(t);await fs.writeFile(path.join(f.root,'app-alpha/public/css/large.bin'),Buffer.alloc(8*1024*1024));const {host,server}=await f.start();const partial=await request(server,'alpha.localhost','/css/large.bin',{disconnect:true});assert.ok(partial.bytes>0);
+ for(let i=0;i<200&&stats(host,'app-alpha').work.current;i++)await new Promise(r=>setTimeout(r,5));const s=stats(host,'app-alpha');assert.equal(s.work.current,0);assert.equal(s.traffic.aborted,1);assert.ok(s.traffic.acceptedBytes>=partial.bytes);assert.ok(s.traffic.acceptedBytes<8*1024*1024);assert.equal(s.quota.consumed,s.traffic.acceptedBytes);assert.equal(s.traffic.reservedBytes,0);assert.equal((await request(server,'beta.localhost')).status,200);
+});
+test('cancellation before output and bounded shutdown preserve meters and prevent late work from resurrecting permits',async t=>{
+ let enter,release;const entered=new Promise(r=>enter=r),pause=new Promise(r=>release=r);const f=await fixture(t);f.config.shutdownMs=100;
+ const {host,tokens,server}=await f.start({execution:{'app-alpha':{handlers:[{type:'Page.Load',owner:'home',run:async function(){enter();await pause;}}]}}});
+ const req=http.get({hostname:'127.0.0.1',port:server.address().port,headers:{Host:'alpha.localhost'}});req.on('error',()=>{});await entered;req.destroy();
+ for(let i=0;i<200&&!stats(host,'app-alpha').traffic.aborted;i++)await new Promise(r=>setTimeout(r,5));assert.equal(stats(host,'app-alpha').traffic.acceptedBytes,0);assert.equal(stats(host,'app-alpha').work.current,1);await assert.rejects(host.stop(tokens[0]),{code:'HOST.CLEANUP'});assert.throws(()=>host.usage(tokens[0]));release();
+ for(let i=0;i<200&&stats(host,'app-alpha').work.current;i++)await new Promise(r=>setTimeout(r,5));assert.equal(stats(host,'app-alpha').work.current,0);assert.equal(stats(host,'app-alpha').classes.http.completed,1);assert.equal(stats(host,'app-alpha').traffic.reservedBytes,0);assert.equal(stats(host,'app-alpha').traffic.acceptedBytes,0);assert.equal((await request(server,'beta.localhost')).status,200);
+});
+test('canonical Files binary transfer shares the same App payload quota and dispatch meter as Page/assets',async t=>{
+ const {ExecutionContext}=await import('../wydgine/seam/context.js');const f=await fixture(t);f.config.apps[0].resources={payloadBytes:100000};
+ const definitionsFile=path.join(f.root,'app-alpha/prototypes/objects.json'),definitions=JSON.parse(await fs.readFile(definitionsFile));definitions.push({id:'acme/download',publisher:'acme',extends:'wydgit.core/block',properties:{},slots:{},presentation:{schema:'wydgit.presentation/0.1',delivery:{library:'wydfiles',apiVersion:'1.0.0',operation:'read',input:{path:'/bytes'}},template:{tag:'p',text:'Approved download'}}});await fs.writeFile(definitionsFile,JSON.stringify(definitions));
+ const homeFile=path.join(f.root,'app-alpha/content/pages/home.json'),home=JSON.parse(await fs.readFile(homeFile));home.slots.sections[0].slots.blocks.push({schema:'wydgit/0.2',id:'download',prototype:'acme/download',properties:{content:{type:'markdown',value:''}},slots:{},provenance:{}});await fs.writeFile(homeFile,JSON.stringify(home));await fs.writeFile(path.join(f.root,'app-alpha/files',keyFor('/bytes')),Buffer.alloc(200000,9));
+ const {loadRepository}=await import('../wydgine/repository.js');loadRepository(path.join(f.root,'app-alpha'));
+ const {host,server}=await f.start({execution:{'app-alpha':{context:({ids})=>new ExecutionContext({app:'app-alpha',publisher:'acme',package:'acme/demo',installation:'same-installation',self:'home',visible:ids,capabilities:['files.storage.read'],scopes:{wydfiles:[{path:'/'}]}})}}});
+ const transfer='/_transfer/wydfiles/read/home/download';const head=await request(server,'alpha.localhost',transfer,{method:'HEAD'});assert.equal(head.status,200,head.body);assert.equal(head.bytes,0);assert.equal(stats(host,'app-alpha').quota.consumed,0);
+ const binary=await request(server,'alpha.localhost',transfer);assert.equal(binary.status,200);assert.equal(binary.aborted,true);assert.ok(binary.bytes>0&&binary.bytes<=100000);
+ for(let i=0;i<200&&stats(host,'app-alpha').work.current;i++)await new Promise(r=>setTimeout(r,5));const s=stats(host,'app-alpha');assert.ok(s.quota.consumed>=binary.bytes&&s.quota.consumed<=100000);assert.equal(s.quota.consumed,s.traffic.acceptedBytes);assert.equal(s.services.wydfiles.attempted,2);assert.equal(s.services.wydfiles.succeeded,2);assert.equal(s.services.wydfiles.current,0);assert.equal(s.traffic.quotaRejectedWrites,1);assert.equal(s.work.current,0);
+ assert.equal((await request(server,'beta.localhost')).status,200);
+});
+test('simultaneous individually affordable responses cannot oversubscribe the App cumulative balance',async t=>{
+ const f=await fixture(t);f.config.apps[0].resources={payloadBytes:30000};await fs.writeFile(path.join(f.root,'app-alpha/public/css/chunk.bin'),Buffer.alloc(20000));const {host,server}=await f.start();
+ const responses=await Promise.all(Array.from({length:8},()=>request(server,'alpha.localhost','/css/chunk.bin')));assert.equal(responses.filter(r=>r.status===200).length,1);assert.equal(responses.filter(r=>r.status===503&&r.bytes===0).length,7);assert.equal(responses.reduce((n,r)=>n+r.bytes,0),20000);
+ for(let i=0;i<200&&stats(host,'app-alpha').work.current;i++)await new Promise(r=>setTimeout(r,5));const a=stats(host,'app-alpha');assert.equal(a.quota.consumed,20000);assert.equal(a.quota.remaining,10000);assert.equal(a.traffic.quotaRejectedWrites,7);assert.equal(a.traffic.reservedBytes,0);assert.equal(a.work.current,0);assert.equal(stats(host,'app-beta').quota.consumed,0);assert.equal((await request(server,'beta.localhost')).status,200);
+});

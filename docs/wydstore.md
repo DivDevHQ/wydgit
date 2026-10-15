@@ -649,3 +649,13 @@ There is no process-wide memory quota, bounded global waiting queue, streaming
 response transport or distributed concurrency framework. Operators must provision
 memory and bound host request concurrency accordingly. No new WydSearch or media
 storage implementation is implied by raising these budgets.
+
+## Host operational accounting (I2)
+
+The [I2 resource inventory](milestones/0.3-I2/README.md) distinguishes existing
+provider quotas from new host admission and outbound-payload accounting. Canonical
+registry dispatch outcomes are measured without input/record/file contents; nested
+implementation dependencies retain their own library counts. No second storage
+quota ledger or durable cross-provider allocation guarantee is added. Temporary
+files, journals, external writers and peak physical allocation remain subject to
+the provider's documented boundary. Host snapshots do not grant service authority.

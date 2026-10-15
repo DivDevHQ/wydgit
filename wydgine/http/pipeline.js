@@ -17,7 +17,7 @@ import { parseCookies,parseMap } from './input.js';
 import { ExecutionContext } from '../seam/context.js';
 import { createGate } from '@wydgit/gate/client';
 import { errorDocument,pagePath,escapeHtml } from '../index.js';
-export function createPipeline({root,libraries,execution={},lifecycle,guard=()=>{},contextPolicy=context=>context,parking=false}) {
+export function createPipeline({root,libraries,execution={},lifecycle,guard=()=>{},contextPolicy=context=>context,parking=false,governance}) {
   execution={...execution,handlers:prepareHandlers(execution.handlers??[],execution.events),actions:(execution.actions??[]).map(record=>prepareAction(record,execution.events))};
   let runtimeSettings;
   try{runtimeSettings=presentationPolicy(validateConfig(readFileSync(path.join(root,'wydgit.config.json'),'utf8')).runtime);}catch(error){if(error.code!=='ENOENT')throw error;runtimeSettings=presentationPolicy();} // Legacy createApp may render without a library host config; createHostApp still requires it.
@@ -78,7 +78,7 @@ export function createPipeline({root,libraries,execution={},lifecycle,guard=()=>
         input.action={target:single('_target'),type:single('_action'),csrf:single('_csrf'),payload:{}};
         if(input.action.type==='Change')input.action.payload={OldValue:model.runtime.get(input.action.target).properties.value,NewValue:single('value')};
       }
-      result=await executePage({model,pageId:page.id,session,input,context,runtimeSettings,handlers:execution.handlers,actions:execution.actions,events:execution.events,files:execution.files,libraries,serviceMappings:packages?.pages.get(page.id)?.storageMappings,csrf:session.csrf});
+      result=await executePage({model,pageId:page.id,session,input,context,runtimeSettings,handlers:execution.handlers,actions:execution.actions,events:execution.events,files:execution.files,libraries,serviceMappings:packages?.pages.get(page.id)?.storageMappings,observe:governance?data=>governance.page(data):undefined,csrf:session.csrf});
       await result.response.send(res,req.method==='HEAD');
     }catch(error){if(!res.headersSent){if(error.code==='GATE.SESSION_INVALID')res.setHeader('Set-Cookie',[cookiePolicy.serialize('auth','',0)]);res.statusCode=req.path.startsWith('/_transfer/')?(/DENIED|FORGERY|GATE\.SESSION_INVALID/.test(error.code??'')?403:/LIMIT|QUOTA/.test(error.code??'')?413:/UNSUPPORTED_MEDIA|INVALID_MEDIA/.test(error.code??'')?415:/CONFLICT|STATE/.test(error.code??'')?409:/NOT_FOUND/.test(error.code??'')?404:400):(/DENIED|FORGERY|GATE\.SESSION_INVALID/.test(error.code??'')?403:400);res.setHeader('Content-Type','text/html; charset=utf-8');res.end(errorDocument());}else res.destroy();}
     finally{transferOutput?.stream?.destroy();await transferOutput?.close?.();await result?.response.close();}

@@ -18,9 +18,10 @@ try{
  let upstream;
  // Test reverse proxy strips all visitor proxy metadata; derives scheme from its own TLS socket.
  proxy=https.createServer({key:await fs.readFile(path.join(root,'key.pem')),cert:await fs.readFile(path.join(root,'cert.pem'))},(req,res)=>{
+  const address=upstream?.address();if(!address){res.writeHead(503);res.end();return;}
   const headers={};for(const name of ['cookie','origin','content-type','content-length','accept','range','if-none-match'])if(req.headers[name])headers[name]=req.headers[name];
   headers['x-forwarded-host']=req.headers.host;headers['x-forwarded-proto']='https';
-  const output=http.request({hostname:'127.0.0.1',port:upstream.address().port,path:req.url,method:req.method,headers},response=>{res.writeHead(response.statusCode,response.headers);response.pipe(res);});
+  const output=http.request({hostname:'127.0.0.1',port:address.port,path:req.url,method:req.method,headers},response=>{res.writeHead(response.statusCode,response.headers);response.pipe(res);});
   output.on('error',()=>{res.writeHead(502);res.end();});req.pipe(output);res.on('close',()=>output.destroy());
  });
  await new Promise(r=>proxy.listen(0,'127.0.0.1',r));const tlsPort=proxy.address().port;

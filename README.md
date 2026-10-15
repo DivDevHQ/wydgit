@@ -98,7 +98,7 @@ WBasic source → shared definition IR → canonical prototypes + SEWN
 
 ## Current capabilities and boundaries
 
-Current versions are **Wydgine/platform 0.3.0-alpha.10**, **WydClient 0.1.0-alpha.8**
+Current versions are **Wydgine/platform 0.3.0-alpha.11**, **WydClient 0.1.0-alpha.8**
 and **WydSUB 0.1**. WBasic/component contracts are implemented through 0.20;
 the language reference also contains clearly marked future proposals. These are
 separate version axes. Historical browser artifacts remain immutable.
@@ -130,6 +130,11 @@ cookies and an ordinary anonymous parking App. Try `node examples/hostname-host/
 for two installed Taskboards and Coming Soon pages on local hostnames. Operator
 domain approval is required; automatic domain provisioning and hard tenant resource
 isolation are not implemented.
+The [I2 governance layer](docs/milestones/0.3-I2/README.md) adds independent admission
+profiles, trusted operational snapshots and a finite cumulative response-payload
+allowance. Run `node examples/hostname-host/governance.js` for a disposable
+limited/standard capacity demonstration. These meters are process-local, not billing
+or hard resource isolation.
 
 General upgrade/uninstall/migration, self-service domain provisioning, platform administration,
 an installable CMS, remote embedding, other source languages and native runtimes
@@ -182,7 +187,8 @@ WydSUB roots, browser execution, controls and CLIENT authoring. H5 consolidates
 contracts, tests and documentation. See the [review](docs/milestones/0.3-H5/review.md).
 
 I0 establishes the trusted multi-App foundation; I1 adds explicit hostname/origin
-and parking boundaries. Later I phases address the remaining hosting product.
+and parking boundaries. I2 adds App admission/resource profiles and operational
+accounting. Later I phases address the remaining hosting product.
 The broader roadmap continues with I: Multi-App Hosting; J: Platform/App Administration; K: Installable CMS;
 and L: integration, independent security audit, hardening and prerelease. These are
 planned milestones, not existing features or a Wydgit 0.3 final release.

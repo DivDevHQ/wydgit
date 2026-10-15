@@ -1,3 +1,4 @@
+import {meteredOutput} from '../metered-output.js';
 import {createHash} from 'node:crypto';
 import { requestRoute } from '../routing.js';
 import { Hono } from 'hono';
@@ -21,13 +22,14 @@ const clientModules = [
 ];
 
 // Kernel-only output port. Neither Hono nor native response objects leave this adapter.
-function outputPort(res, head) {
+function outputPort(res, head, meter) {
+  const output=meter?meteredOutput(res,head,meter):res;
   return {
     get statusCode() { return res.statusCode; }, set statusCode(value) { res.statusCode = value; },
     get headersSent() { return res.headersSent; }, get destroyed() { return res.destroyed; },
     setHeader(name, value) { res.setHeader(name, value); }, getHeader(name) { return res.getHeader(name); },
-    end(body) { res.end(head ? undefined : body); }, write(chunk) { return res.write(chunk); },
-    destroy() { res.destroy(); },
+    end(body) { output.end(head ? undefined : body); }, write(chunk) { return output.write(chunk); },
+    destroy() { output.destroy(); },
     once(event, handler) { res.once(event, handler); }, off(event, handler) { res.off(event, handler); }
   };
 }
@@ -101,13 +103,14 @@ async function asset(root, relative, type, res, request) {
   } finally { await file?.close(); }
 }
 
-export function createTransport({ root, projectRoot, renderer, pipeline, logger, admit = () => () => {}, onStop = async()=>{} }) {
+export function createTransport({ root, projectRoot, renderer, pipeline, logger, admit = () => () => {}, onStop = async()=>{}, governance }) {
   const host = new Hono();
   host.all('*', async c => {
     let release;
     const route=requestRoute(c.env.incoming);
-    const request = c.req.raw, res = outputPort(c.env.outgoing, request.method === 'HEAD');
-    try{release=admit();}catch{res.statusCode=503;res.setHeader('Cache-Control','no-store');res.end('Application unavailable');return RESPONSE_ALREADY_SENT;}
+    const request = c.req.raw, res = outputPort(c.env.outgoing, request.method === 'HEAD',governance);
+    try{release=admit();}catch(error){res.statusCode=503;res.setHeader('Cache-Control','no-store');try{res.end(error.code==='HOST.QUOTA'?undefined:'Application unavailable');}catch(failure){if(failure.code!=='HOST.QUOTA')throw failure;}return RESPONSE_ALREADY_SENT;}
+    if(governance){let recorded=false;const outcome=aborted=>{if(recorded)return;recorded=true;governance.httpOutcome(aborted||res.statusCode>=400,aborted);};c.env.outgoing.once('finish',()=>outcome(false));c.env.outgoing.once('close',()=>outcome(!c.env.outgoing.writableFinished));}
     try {
     res.setHeader('Content-Security-Policy', policy);
     res.setHeader('X-Content-Type-Options', 'nosniff');res.setHeader('Referrer-Policy',route?'same-origin':'no-referrer');
@@ -136,12 +139,13 @@ export function createTransport({ root, projectRoot, renderer, pipeline, logger,
       catch (error) { logger.error(error.message); res.statusCode = 500; res.setHeader('Content-Type', 'text/html; charset=utf-8'); res.end(errorDocument()); return RESPONSE_ALREADY_SENT; }
       await pipeline.request({ method: request.method, path: route?.parking?(route.state==='parked'?'/':'/'+route.state):pathname, query: route?.parking?'':url.search.slice(1), form, transport:route, cookie: route?.parking?'':request.headers.get('cookie') ?? '' }, res);
     } catch (error) {
+      if(error.code==='HOST.QUOTA'||res.destroyed)return RESPONSE_ALREADY_SENT;
       logger.error(error.message);
       if (res.headersSent) res.destroy();
       else { res.statusCode = 500; res.setHeader('Content-Type', 'text/html; charset=utf-8'); res.end(errorDocument()); }
     }
     return RESPONSE_ALREADY_SENT;
-    }finally{release();}
+    }finally{release(res.statusCode>=400||res.destroyed);}
   });
   const locals = { lifecycle: pipeline.lifecycle };
   let stopping;

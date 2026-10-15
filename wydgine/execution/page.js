@@ -14,7 +14,7 @@ import { webModel } from '../web-model.js';
 import { renderSite,errorDocument } from '../index.js';
 import { prepareComponents,createPresentationLedger } from '../components.js';
 
-export async function executePage({model,pageId,session,input,context,runtimeSettings={},handlers=[],actions=[],events=new EventRegistry(),files,libraries,serviceMappings,csrf,render=renderSite}) {
+export async function executePage({model,pageId,session,input,context,runtimeSettings={},handlers=[],actions=[],events=new EventRegistry(),files,libraries,serviceMappings,csrf,render=renderSite,observe}) {
   handlers=prepareHandlers(handlers,events);actions=actions.map(record=>prepareAction(record,events));
   check(context.app===session.view.app&&session.active(),'EVENT.DENIED','Invalid owning Session');
   check((context.identity?.sessionId??null)===(session.identity?.sessionId??null),'EVENT.DENIED','Wrong Session identity');
@@ -162,7 +162,7 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
     writable=false;unloading=true;response.beginCleanup();dispatcher.close();
     const cleanup=createDispatcher({budget:executionLedger,executor,dynamicHandlers:options=>componentsRuntime.handlers(options),prototypeRegistry:model.registry,registry:events,handlers,context,handle,contexts,canRaise:()=>false,exists:id=>exists(id)||archive.has(id)});
     for(const id of [...ledger].reverse())try{await cleanup.dispatch({type:'Page.Unload',source:pageId,target:id,payload:{}});}catch(error){errors.push(safeError(error).toJSON());}
-    cleanup.close();await componentsRuntime.dispose();errors.push(...componentsRuntime.errors());executionBudget(executionLedger,context).close();alive=false;
+    cleanup.close();await componentsRuntime.dispose();errors.push(...componentsRuntime.errors());const charges=executionBudget(executionLedger,context).snapshot();executionBudget(executionLedger,context).close();alive=false;observe?.({steps:charges.steps??0,limited:[failure,...errors].some(error=>['SEWN.LIMIT','EVENT.LIMIT'].includes(error?.code))});
   }
   if(failure&&response.state==='Open')response.tree(errorDocument(),failure.code==='EVENT.DENIED'||failure.code==='SEAM.DENIED'||failure.code==='REQUEST.FORGERY'?403:500);
   return {response,error:failure?.toJSON()??null,cleanupErrors:errors};

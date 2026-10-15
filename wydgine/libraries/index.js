@@ -9,11 +9,11 @@ const emptyRequirements = () => ({ schema: 'wydgit.requirements/0.1', libraries:
 
 // The registry is published only after every enabled library and requirement
 // succeeds. Package functions and registry mutation never cross into Wydgits.
-export async function loadLibraries({ config: input, requirements: requested = emptyRequirements(), platformVersion, root, lifecycle = async () => {}, adapters = {}, app = null, guard = () => {} }) {
+export async function loadLibraries({ config: input, requirements: requested = emptyRequirements(), platformVersion, root, lifecycle = async () => {}, adapters = {}, app = null, guard = () => {}, observe }) {
   let live=true,closing;const stops=[];
   const assertLive=context=>{ensure(live,'SEAM.DENIED','Application binding retired');guard();if(context){checkContext(context);ensure(app===null||context.app===app,'SEAM.DENIED','Wrong application binding');}};
   const guarded=(record,context)=>record&&{...record,authorize:async(...args)=>{assertLive(context);const result=await record.authorize?.(...args);assertLive(context);return result;},handler:async(...args)=>{assertLive(context);const result=await record.handler(...args);assertLive(context);return result;}};
-  const bind=(context,lookup)=>{assertLive(context);const dispatch=bindServices(context,(id,name)=>guarded(lookup(id,name),context),id=>staged.get(id)?.manifest);return Object.freeze(Object.fromEntries(['call','invoke'].map(name=>[name,async(...args)=>{assertLive(context);const result=await dispatch[name](...args);assertLive(context);return result;}])));};
+  const bind=(context,lookup)=>{assertLive(context);const dispatch=bindServices(context,(id,name)=>guarded(lookup(id,name),context),id=>staged.get(id)?.manifest);return Object.freeze(Object.fromEntries(['call','invoke'].map(name=>[name,async(...args)=>{assertLive(context);const finish=staged.has(args[0])?observe?.(args[0]):undefined;let failed=true;try{const result=await dispatch[name](...args);assertLive(context);failed=result?.ok!==true;return result;}finally{finish?.(failed);}}])));};
   const close=()=>closing??=(async()=>{live=false;let failed=false;const results=await Promise.allSettled(stops.toReversed().map(stop=>Promise.resolve().then(stop)));failed=results.some(r=>r.status==='rejected');if(failed)throw new WydgitError('LIBRARY.CLEANUP_FAILED','Library cleanup failed');})();
   const config = validateConfig(input), requirements = validateRequirements(requested);
   ensure(version(platformVersion), 'LIBRARY.VERSION_MISMATCH', 'Invalid host platform version');
@@ -137,14 +137,14 @@ export async function loadLibraries({ config: input, requirements: requested = e
   const registry=Object.freeze({
     close,
     async transfer(context,id,name,input,port) {
-      assertLive(context);ensure(context.app!==null,'SEAM.DENIED','Transport requires authoritative App identity');
+      assertLive(context);const finish=staged.has(id)?observe?.(id):undefined;let failed=true;try{ensure(context.app!==null,'SEAM.DENIED','Transport requires authoritative App identity');
       const record=services.get(id)?.get(name),handler=transports.get(id+':'+name);
       ensure(record&&handler&&context.allows(record.capability)&&record.authorize,'SEAM.DENIED','Transport denied');
       const policy=effectiveLimits(record.limits,context);checkJsonBudget(input,policy.request);
       const request=freeze(validateLifecycle(input));
       ensure(await record.authorize(request,context,policy)===true,'SEAM.DENIED','Transport denied');
       ensure(!record.validate||await record.validate(request,context,policy)===true,'SERVICE.INVALID_REQUEST','Invalid transfer request');
-      assertLive(context);const result=await handler(request,context,port,policy);assertLive(context);return result;
+      assertLive(context);const result=await handler(request,context,port,policy);assertLive(context);failed=false;return result;}finally{finish?.(failed);}
     },
     bind(context) { return bind(context, (id, name) => services.get(id)?.get(name)); },
     bindPresentation(context){return bind(context,(id,name)=>{const record=services.get(id)?.get(name);return record?.presentation?record:undefined;});},

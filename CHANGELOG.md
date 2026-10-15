@@ -1,5 +1,19 @@
 ## Unreleased
 
+### Wydgit 0.3-I2 — App resource governance and metering
+
+- Extend the trusted App inventory with finite combined/HTTP/direct admission
+  reductions and an atomic controller-lifetime accepted-payload allowance.
+- Add bounded frozen usage snapshots, fixed canonical service-dispatch outcomes,
+  closed Page-ledger charges/limit signals and lifecycle/traffic accounting.
+- Preserve streaming/backpressure, count native-accepted body bytes without a wire
+  delivery claim, handle partial quota exhaustion and retire cancelled work safely.
+- Prove sibling survival with real installed Taskboards, Gate/storage, Files calls,
+  streamed quota/disconnect tests and a runnable technical-profile example. Preserve
+  canonical service quotas and document shared-process/durable-accounting limits.
+- Platform alpha.11; WydClient alpha.8 and WydSUB 0.1 unchanged. Fix a local Chrome
+  proxy-fixture shutdown race without changing production routing/proxy trust.
+
 ### Wydgit 0.3-I1 — Trusted hostname routing and parking
 
 - Extend the I0 controller with a closed immutable hostname registry and one shared

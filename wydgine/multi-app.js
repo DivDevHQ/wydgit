@@ -1,3 +1,4 @@
+import {resourcePolicy,createGovernance} from './governance.js';
 import {presentationPolicy} from './presentation-policy.js';
 import {createServer} from 'node:http';
 import {validateRouting,resolveRoute,bindRequestRoute} from './http/routing.js';
@@ -56,7 +57,7 @@ export async function validateAppInventory(input,{root,execution={}}={}){
   const base=path.resolve(root);check(await fs.realpath(base)===base,'HOST.ROOT','Host base must be canonical');
   const ids=new Set(),roots=[],remote=[],httpPolicies=[];const apps=[];
   for(const entry of config.apps){
-   shape(entry,['id','root'],['limits']);
+   shape(entry,['id','root'],['limits','resources']);
    check(!execution[entry.id]?.lifecycleInstances&&!execution[entry.id]?.files,'HOST.OWNER','I0 requires owned Page instances and canonical file services');
    check(validId(entry.id)&&entry.id.length<=128&&!ids.has(entry.id.toLowerCase()),'HOST.IDENTITY','Invalid or duplicate App identity');ids.add(entry.id.toLowerCase());
    check(typeof entry.root==='string'&&!path.isAbsolute(entry.root)&&entry.root.split(/[\\/]/).every(p=>p&&p!=='.'&&p!=='..'),'HOST.ROOT','Invalid App root');
@@ -81,7 +82,7 @@ export async function validateAppInventory(input,{root,execution={}}={}){
      }
     }
    }
-   apps.push({id:entry.id,root:selected,limits:limits(entry.limits),snapshot:snapshot(selected)});
+   apps.push({id:entry.id,root:selected,limits:limits(entry.limits),resources:resourcePolicy(entry.resources,maxPending),snapshot:snapshot(selected)});
   }
   const routing=Object.hasOwn(config,'routing')?validateRouting(config.routing,apps.map(a=>a.id)):null;
   if(routing)for(const id of routing.parking){const entry=apps.find(a=>a.id===id),settings=validateConfig(await fs.readFile(path.join(entry.root,'wydgit.config.json'),'utf8'));check(!settings.libraries.some(l=>l.enabled)&&!Object.keys(execution[id]??{}).length,'HOST.ROUTING','Parking App must be anonymous and service-free');}
@@ -91,11 +92,12 @@ export async function validateAppInventory(input,{root,execution={}}={}){
 }
 export async function createMultiAppHost(input,options={}){
  const declaration=typeof input==='string'?input:freeze(clean(input));
- const inventory=await validateAppInventory(declaration,options),entries=new Map(inventory.apps.map(a=>[a.id,{...a,state:'configured',pending:new Set(),servers:new Set(),responses:new Set()}])),tokens=new WeakMap(),contexts=new WeakMap(),providerOwners=new WeakMap();const sharedServers=new Set();let disposed=false,disposing;
+ const inventory=await validateAppInventory(declaration,options),entries=new Map(inventory.apps.map(a=>[a.id,{...a,meter:createGovernance(a.resources),state:'configured',pending:new Set(),servers:new Set(),responses:new Set()}])),tokens=new WeakMap(),contexts=new WeakMap(),providerOwners=new WeakMap();const sharedServers=new Set();let disposed=false,disposing;
  const get=id=>{check(!disposed&&entries.has(id),'HOST.UNKNOWN','Unknown App selection');return entries.get(id);};
  const active=token=>{const e=tokens.get(token);check(!disposed&&e?.state==='active'&&!e.stopRequested,'HOST.RETIRED','Invalid or retired App binding');return e;};
  const status=e=>Object.freeze({id:e.id,state:e.state,pending:e.pending.size});
- const admit=e=>{guard(e);check(e.state==='active'&&!e.stopRequested&&e.pending.size<inventory.maxPending,'HOST.RETIRED','App unavailable');let done;const pending=new Promise(r=>done=r);e.pending.add(pending);let finished=false;return ()=>{if(!finished){finished=true;e.pending.delete(pending);done();}};};
+ const setState=(e,state)=>{e.state=state;e.meter.transition(state);};
+ const admit=(e,kind='http')=>{guard(e);check(e.state==='active'&&!e.stopRequested,'HOST.RETIRED','App unavailable');const release=e.meter.admit(kind);let done;const pending=new Promise(r=>done=r);e.pending.add(pending);let finished=false;return failed=>{if(!finished){finished=true;e.pending.delete(pending);release(failed);done();}};};
  const guard=e=>{
   check(['initializing','active','stopping'].includes(e.state)&&!e.retired,'HOST.RETIRED','App unavailable');
   let matches=false;try{matches=snapshot(e.root)===e.snapshot;}catch{}
@@ -112,23 +114,24 @@ export async function createMultiAppHost(input,options={}){
  }));
  const stop=async e=>{
   if(e.stopping)return e.stopping;
-  if(['stopped','failed','configured'].includes(e.state)){if(e.state==='configured')e.state='stopped';return;}
-  e.stopRequested=true;if(e.state==='active')e.state='stopping';
+  if(['stopped','failed','configured'].includes(e.state)){if(e.state==='configured')setState(e,'stopped');return;}
+  e.stopRequested=true;if(e.state==='active')setState(e,'stopping');
   e.stopping=(async()=>{
    if(e.starting)try{await e.starting;}catch{}
    if(!['active','stopping'].includes(e.state))return;
-   e.state='stopping';let failed=e.retired===true;const priorErrors=e.app.locals.lifecycle.errors().length;
+   setState(e,'stopping');let failed=e.retired===true;const priorErrors=e.app.locals.lifecycle.errors().length;
    const closes=[...e.servers].map(server=>new Promise(r=>server.close(()=>r())));
    try{await bounded(Promise.all([...e.pending,...closes]));}catch{failed=true;for(const server of e.servers)server.closeAllConnections();for(const res of e.responses)res.destroy();}
    if(failed)e.retired=true;
    try{await bounded(e.app.stop());if(e.app.locals.lifecycle.errors().length>priorErrors)failed=true;}catch{failed=true;}
-   e.retired=true;try{await bounded(e.app.locals.libraries.close());}catch{failed=true;}e.servers.clear();e.state=failed?'failed':'stopped';if(failed)throw fail('HOST.CLEANUP');
+   e.retired=true;try{await bounded(e.app.locals.libraries.close());}catch{failed=true;}e.servers.clear();setState(e,failed?'failed':'stopped');if(failed)throw fail('HOST.CLEANUP');
   })();return e.stopping;
  };
  return Object.freeze({
   status(){return Object.freeze([...entries.values()].map(status));},
+  usage(...args){check(args.length<=1,'HOST.METER','Invalid usage selection');const selected=args.length?[active(args[0])]:[...entries.values()];return freeze(selected.map(e=>({...status(e),usage:e.meter.snapshot(),executionLimits:e.limits})));},
   async activate(id){
-   const e=get(id);check(!e.stopRequested,'HOST.STATE','App stopping');if(['initializing','active'].includes(e.state))return e.starting;check(e.state==='configured','HOST.STATE','App cannot activate');e.state='initializing';
+   const e=get(id);check(!e.stopRequested,'HOST.STATE','App stopping');if(['initializing','active'].includes(e.state))return e.starting;check(e.state==='configured','HOST.STATE','App cannot activate');setState(e,'initializing');
    e.starting=(async()=>{try{
     const deadline=Date.now()+inventory.startupMs;const current=await bounded(validateAppInventory(declaration,options),inventory.startupMs);check(current.apps.find(a=>a.id===id)?.snapshot===e.snapshot,'HOST.STALE','Application configuration changed');
     // Apply reductions after ordinary package/context resolution; never union grants.
@@ -136,15 +139,15 @@ export async function createMultiAppHost(input,options={}){
     const contextPolicy=context=>{checkContext(context);check(context.app===id,'HOST.OWNER','Wrong App context');return new ExecutionContext({...context,limits:{...context.limits,...Object.fromEntries(Object.entries(e.limits).map(([k,v])=>[k,Math.min(v,context.limits[k]??v)]))}});};
     execution.lifecycleContext=contextPolicy(execution.lifecycleContext??new ExecutionContext({publisher:'wydgit.core',self:id,app:id}));
     check(Date.now()<deadline,'HOST.TIMEOUT','App startup deadline');
-    const pending=createHostApp({root:e.root,appId:id,execution,contextPolicy,parking:inventory.routing?.parking.includes(id)??false,libraryAdapters:adapters(id),guard:()=>guard(e),strictStartup:true,logger:options.logger??{error(){}},admit:()=>admit(e)});
+    const pending=createHostApp({root:e.root,appId:id,execution,contextPolicy,parking:inventory.routing?.parking.includes(id)??false,libraryAdapters:adapters(id),guard:()=>guard(e),strictStartup:true,logger:options.logger??{error(){}},admit:()=>admit(e),governance:e.meter});
     pending.then(app=>{if(e.retired)app.stop().catch(()=>{});},()=>{});
     e.app=await bounded(pending,Math.max(1,deadline-Date.now()));check(Date.now()<deadline,'HOST.TIMEOUT','App startup deadline');
-    e.state='active';e.token=Object.freeze(Object.create(null));tokens.set(e.token,e);return e.token;
-   }catch{e.retired=true;e.state='failed';if(e.app)try{await bounded(e.app.stop());}catch{}throw fail('HOST.STARTUP');}})();return e.starting;
+    setState(e,'active');e.token=Object.freeze(Object.create(null));tokens.set(e.token,e);return e.token;
+   }catch{e.retired=true;setState(e,'failed');if(e.app)try{await bounded(e.app.stop());}catch{}throw fail('HOST.STARTUP');}})();return e.starting;
   },
   select(id){const e=get(id);check(e.state==='active'&&!e.stopRequested,'HOST.RETIRED','App unavailable');return e.token;},
   context(token,input){const e=active(token);check(record(input)&&!Object.hasOwn(input,'app'),'HOST.OWNER','App identity is host-bound');const requested=limits(input.limits);const context=new ExecutionContext({...input,app:e.id,limits:{...requested,...Object.fromEntries(Object.entries(e.limits).map(([k,v])=>[k,Math.min(v,requested[k]??v)]))}});contexts.set(context,e);return context;},
-  bind(token,context){const e=active(token);checkContext(context);check(context.app===e.id&&contexts.get(context)===e,'HOST.OWNER','Wrong App context');const dispatch=e.app.locals.libraries.bind(context);return Object.freeze(Object.fromEntries(['call','invoke'].map(name=>[name,async(...args)=>{active(token);const release=admit(e);try{return await dispatch[name](...args);}finally{release();}}])));},
+  bind(token,context){const e=active(token);checkContext(context);check(context.app===e.id&&contexts.get(context)===e,'HOST.OWNER','Wrong App context');const dispatch=e.app.locals.libraries.bind(context);return Object.freeze(Object.fromEntries(['call','invoke'].map(name=>[name,async(...args)=>{active(token);const release=admit(e,'direct');let failed=true;try{const result=await dispatch[name](...args);failed=result?.ok!==true;return result;}finally{release(failed);}}])));},
   async listen(token,...args){
    const e=active(token);check(!e.servers.size,'HOST.STATE','App listener already configured');let server;
    try{
