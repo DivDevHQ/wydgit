@@ -1,0 +1,166 @@
+import { effectiveLimits, serviceLimits, STORE_SERVICE_DEFAULTS, checkJsonBudget } from './limits.js';
+import { checkContext, ExecutionContext } from '../seam/context.js';
+import { bindServices, failure, isServiceFailure } from './dispatch.js';
+import { ensure, version, satisfies, validateConfig, validateManifest, validateRequirements } from './contracts.js';
+import { importNodePackage } from './node-package.js';
+import { clean as validateLifecycle, freeze, WydgitError } from '../object-model/validation.js';
+export { validateConfig, validateManifest, validateRequirements } from './contracts.js';
+const emptyRequirements = () => ({ schema: 'wydgit.requirements/0.1', libraries: [] });
+
+// The registry is published only after every enabled library and requirement
+// succeeds. Package functions and registry mutation never cross into Wydgits.
+export async function loadLibraries({ config: input, requirements: requested = emptyRequirements(), platformVersion, root, lifecycle = async () => {}, adapters = {}, app = null, guard = () => {}, observe }) {
+  let live=true,closing;const stops=[];
+  const assertLive=context=>{ensure(live,'SEAM.DENIED','Application binding retired');guard();if(context){checkContext(context);ensure(app===null||context.app===app,'SEAM.DENIED','Wrong application binding');}};
+  const guarded=(record,context)=>record&&{...record,authorize:async(...args)=>{assertLive(context);const result=await record.authorize?.(...args);assertLive(context);return result;},handler:async(...args)=>{assertLive(context);const result=await record.handler(...args);assertLive(context);return result;}};
+  const bind=(context,lookup)=>{assertLive(context);const dispatch=bindServices(context,(id,name)=>guarded(lookup(id,name),context),id=>staged.get(id)?.manifest);return Object.freeze(Object.fromEntries(['call','invoke'].map(name=>[name,async(...args)=>{assertLive(context);const finish=staged.has(args[0])?observe?.(args[0]):undefined;let failed=true;try{const result=await dispatch[name](...args);assertLive(context);failed=result?.ok!==true;return result;}finally{finish?.(failed);}}])));};
+  const close=()=>closing??=(async()=>{live=false;let failed=false;const results=await Promise.allSettled(stops.toReversed().map(stop=>Promise.resolve().then(stop)));failed=results.some(r=>r.status==='rejected');if(failed)throw new WydgitError('LIBRARY.CLEANUP_FAILED','Library cleanup failed');})();
+  const config = validateConfig(input), requirements = validateRequirements(requested);
+  ensure(version(platformVersion), 'LIBRARY.VERSION_MISMATCH', 'Invalid host platform version');
+  ensure(typeof root === 'string' && root.length > 0, 'LIBRARY.INVALID_CONFIG', 'Host resolution root is required');
+  const configured = new Map(config.libraries.map(entry => [entry.id, entry]));
+  const requiredEnabled = requirements => {
+    for (const requirement of requirements.libraries) {
+      const entry = configured.get(requirement.library);
+      ensure(entry, 'LIBRARY.UNKNOWN', 'Required library has no configured implementation');
+      ensure(entry.enabled, 'LIBRARY.NOT_ENABLED', 'Required library is disabled');
+    }
+  };
+  requiredEnabled(requirements);
+  const staged = new Map(), capabilityOwners = new Map();
+  for (const entry of config.libraries.filter(entry => entry.enabled)) {
+    const { module, packageVersion } = await importNodePackage(entry, root);
+    let manifest, register;
+    try {
+      // Never execute descriptor getters on a module's arbitrary exports.
+      const descriptor = Object.getOwnPropertyDescriptor(module, 'manifest');
+      const registration = Object.getOwnPropertyDescriptor(module, 'register');
+      ensure(descriptor && Object.hasOwn(descriptor, 'value') && registration && typeof registration.value === 'function', 'LIBRARY.INVALID_MANIFEST', 'Expected manifest and register exports');
+      manifest = validateManifest(descriptor.value); register = registration.value;
+    } catch (error) {
+      if (error instanceof WydgitError && ['LIBRARY.INVALID_MANIFEST','LIBRARY.UNTRUSTED'].includes(error.code)) throw error;
+      throw new WydgitError('LIBRARY.INVALID_MANIFEST', 'Invalid library exports');
+    }
+    ensure(manifest.id === entry.id, 'LIBRARY.IDENTITY_MISMATCH', 'Configured identity differs from exported library identity');
+    ensure(manifest.publisher === entry.publisher && manifest.trust === entry.trust, 'LIBRARY.UNTRUSTED', 'Library does not match host trust approval');
+    ensure(manifest.version === packageVersion && satisfies(manifest.version, entry.version) && satisfies(platformVersion, manifest.platform), 'LIBRARY.VERSION_MISMATCH', 'Library or platform version is incompatible');
+    ensure(manifest.targets.includes('server'), 'LIBRARY.TARGET_MISMATCH', 'Library does not support the server runtime');
+    ensure(!staged.has(manifest.id), 'LIBRARY.DUPLICATE', 'Duplicate library identity');
+    for (const capability of manifest.capabilities) ensure(!capabilityOwners.has(capability), 'LIBRARY.DUPLICATE', 'Capability already has a provider');
+    const limits=serviceLimits(entry.serviceLimits, manifest.id==='wydstore' && manifest.publisher==='wydgit.core' && manifest.trust==='canonical' ? STORE_SERVICE_DEFAULTS : undefined);
+    const initialization=Object.getOwnPropertyDescriptor(module,'initialize');
+    ensure(!initialization||typeof initialization.value==='function','LIBRARY.INVALID_MANIFEST','Invalid initialization hook');
+    staged.set(manifest.id, { manifest, register, limits, initialize:initialization?.value, scopeResolver:module.resolvePackageScopes });
+    manifest.capabilities.forEach(capability => capabilityOwners.set(capability, manifest.id));
+  }
+  const resolveRequirements = input => {
+    const requirements = validateRequirements(input);
+    requiredEnabled(requirements);
+    const result = requirements.libraries.map(requirement => {
+      const record = staged.get(requirement.library);
+      ensure(record, 'LIBRARY.NOT_LOADED', 'Required library is not loaded');
+      ensure(satisfies(record.manifest.version, requirement.version), 'LIBRARY.VERSION_MISMATCH', 'Required library version is incompatible');
+      return record.manifest;
+    });
+    return Object.freeze(result);
+  };
+  // Requirement incompatibility cannot run registration code.
+  resolveRequirements(requirements);
+  const requirementsFor = id => ({schema:'wydgit.requirements/0.1',libraries:[...(staged.get(id).manifest.requirements?.libraries??[]),...(staged.get(id).manifest.optionalRequirements?.libraries??[]).filter(r=>configured.get(id).bindings?.some(b=>b.library===r.library))]});
+  // Resolve the complete dependency graph before running any registration.
+  const order = [], visiting = new Set(), visited = new Set();
+  const visit = id => {
+    ensure(!visiting.has(id), 'LIBRARY.DEPENDENCY_CYCLE', 'Cyclic runtime library requirements');
+    if (visited.has(id)) return;
+    visiting.add(id);
+    const requirements = requirementsFor(id);
+    resolveRequirements(requirements).forEach(dependency => visit(dependency.id));
+    visiting.delete(id); visited.add(id); order.push(id);
+  };
+  for (const id of staged.keys()) visit(id);
+  const approved = new Map();
+  for (const [id, {manifest}] of staged) {
+    const required = requirementsFor(id).libraries.map(item => item.library);
+    const bindings = configured.get(id).bindings ?? [];
+    ensure(bindings.length === required.length && bindings.every(binding => required.includes(binding.library)),
+      'LIBRARY.DEPENDENCY_DENIED', 'Each dependency requires an explicit host binding');
+    approved.set(id,new Map(bindings.map(binding => {
+      const dependency = staged.get(binding.library).manifest;
+      ensure(binding.capabilities.every(cap => dependency.capabilities.includes(cap)), 'LIBRARY.DEPENDENCY_DENIED', 'Binding capability is not provided by dependency');
+      // The host grants a separate implementation identity. Libraries cannot
+      // choose its publisher/package or modify the application caller's grants.
+      return [binding.library,new ExecutionContext({publisher:manifest.publisher, package:`library:${id}`,
+        self:`library-${id}`, installation:binding.installation??null, app:binding.app, capabilities:binding.capabilities, scopes:binding.scopes})];
+    })));
+  }
+  const services = new Map(),transports=new Map(),starts=[];
+  try {
+  for (const id of order) {
+    assertLive();
+    const {manifest,register,limits,initialize} = staged.get(id);
+    let host;try{host=initialize?await initialize(Object.freeze({root,options:configured.get(id).options??{},adapter:adapters[id]})):undefined;}catch{throw new WydgitError('LIBRARY.INITIALIZATION_FAILED','Approved library initialization failed');}
+    ensure(!host||typeof host==='object'&&Object.keys(host).every(k=>['context','start','stop'].includes(k))&&(!host.start||typeof host.start==='function')&&(!host.stop||typeof host.stop==='function'),'LIBRARY.INITIALIZATION_FAILED','Invalid initialization result');
+    if(host?.stop)stops.push(host.stop);
+    if(host?.start)starts.push(host.start);
+    assertLive();
+    const handlers = new Map();
+    let active = true, invalid = false;
+    const api = Object.freeze({ options: configured.get(id).options ?? Object.freeze({}), failure, checkJson:checkJsonBudget,
+      hostContext:host?.context??Object.freeze({}),
+      transport(name,handler) {
+        if(!(active && manifest.services.some(s=>s.name===name) && typeof handler==='function' && !transports.has(id+':'+name))){invalid=true;throw new WydgitError('LIBRARY.REGISTRATION_FAILED','Invalid transport registration');}
+        transports.set(id+':'+name,handler);
+      },
+      async lifecycle(event) { assertLive();const data=freeze(validateLifecycle(event));ensure(app===null||data.app===app,'SEAM.DENIED','Wrong lifecycle App');const result=await lifecycle(id,data);assertLive();return result; },
+      dependency(library) {
+        ensure(approved.get(id).has(library), 'LIBRARY.DEPENDENCY_DENIED', 'Dependency binding is not approved');
+        const context = approved.get(id).get(library);
+        const dispatch = bind(context, (target,name) => services.get(target)?.get(name));
+        return Object.freeze({identity:Object.freeze({app:context.app,publisher:context.publisher,library:id}),
+          transfer(name,input,port,limits={}) { return registry.transfer(new ExecutionContext({...context,limits}),library,name,input,port); },
+          call(name,input) { return dispatch.call(library,name,input); },
+          invoke(apiVersion,name,input,limits) { const selected=limits?bind(new ExecutionContext({...context,limits}),(target,operation)=>services.get(target)?.get(operation)):dispatch;return selected.invoke(library,apiVersion,name,input); }});
+      }, service(name, handler, policy = {}) {
+      const valid = active && manifest.services.some(s => s.name === name) && !handlers.has(name) && typeof handler === 'function' && policy && Object.keys(policy).every(key => ['authorize','validate','presentation'].includes(key)) && (policy.presentation === undefined || typeof policy.presentation === 'boolean') && (policy.authorize === undefined || typeof policy.authorize === 'function') && (policy.validate === undefined || typeof policy.validate === 'function') && (!manifest.apiVersion || typeof policy.authorize === 'function' && typeof policy.validate === 'function');
+      if (!valid) { invalid = true; throw new WydgitError('LIBRARY.REGISTRATION_FAILED', 'Invalid service registration'); }
+      handlers.set(name, { handler, limits, presentation:policy.presentation===true, enforceLegacyLimits:manifest.id==='wydstore' || configured.get(id).serviceLimits!==undefined, authorize: policy.authorize, validate: policy.validate, capability: manifest.services.find(s => s.name === name).capability });
+    } });
+    try {
+      await register(api);
+      ensure(!invalid && handlers.size === manifest.services.length, 'LIBRARY.REGISTRATION_FAILED', 'Registration did not supply exactly the declared services');
+    } catch (error) {
+      if (isServiceFailure(error)) throw error;
+      throw new WydgitError('LIBRARY.REGISTRATION_FAILED', 'Library service registration failed');
+    } finally { active = false; }
+    services.set(id, handlers);
+  }
+  const registry=Object.freeze({
+    close,
+    async transfer(context,id,name,input,port) {
+      assertLive(context);const finish=staged.has(id)?observe?.(id):undefined;let failed=true;try{ensure(context.app!==null,'SEAM.DENIED','Transport requires authoritative App identity');
+      const record=services.get(id)?.get(name),handler=transports.get(id+':'+name);
+      ensure(record&&handler&&context.allows(record.capability)&&record.authorize,'SEAM.DENIED','Transport denied');
+      const policy=effectiveLimits(record.limits,context);checkJsonBudget(input,policy.request);
+      const request=freeze(validateLifecycle(input));
+      ensure(await record.authorize(request,context,policy)===true,'SEAM.DENIED','Transport denied');
+      ensure(!record.validate||await record.validate(request,context,policy)===true,'SERVICE.INVALID_REQUEST','Invalid transfer request');
+      assertLive(context);const result=await handler(request,context,port,policy);assertLive(context);failed=false;return result;}finally{finish?.(failed);}
+    },
+    bind(context) { return bind(context, (id, name) => services.get(id)?.get(name)); },
+    bindPresentation(context){return bind(context,(id,name)=>{const record=services.get(id)?.get(name);return record?.presentation?record:undefined;});},
+    list() { return Object.freeze([...staged.values()].map(record => record.manifest)); },
+    get(id) { ensure(staged.has(id), 'LIBRARY.UNKNOWN', 'Unknown loaded library'); return staged.get(id).manifest; },
+    capabilities() { return freeze([...capabilityOwners].sort(([a],[b]) => a < b ? -1 : a > b ? 1 : 0).map(([capability, library]) => ({ capability, library }))); },
+    resolve: resolveRequirements,
+    resolvePackageScopes(id,scopes,app){const provider=staged.get(id);ensure(typeof provider?.scopeResolver==='function','PACKAGE.STORAGE','Library does not support package scopes');try{return freeze(validateLifecycle(provider.scopeResolver({options:configured.get(id).options??{},app,scopes})));}catch{throw new WydgitError('PACKAGE.STORAGE','Library scope approval failed');}},
+    // Raw implementations are host-only. Pass bind(context), never this registry,
+    // across an ordinary package boundary.
+    service(id, name) {
+      ensure(services.get(id)?.has(name), 'LIBRARY.UNKNOWN', 'Unknown library service');
+      return services.get(id).get(name).handler;
+    }
+  });
+  for(const start of starts)try{assertLive();await start(registry);assertLive();}catch{throw new WydgitError('LIBRARY.INITIALIZATION_FAILED','Approved library startup failed');}
+  return registry;
+  }catch(error){try{await close();}catch{}throw error;}
+}

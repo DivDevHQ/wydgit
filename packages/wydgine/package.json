@@ -1,10 +1,35 @@
 {
   "name": "wydgine",
-  "version": "0.3.0-alpha.12",
+  "version": "0.3.0-alpha.13",
   "private": true,
   "type": "module",
   "license": "MPL-2.0",
-  "engines": { "node": ">=24.21.0" },
-  "bin": { "wydgine": "./bin/wydgine.js" },
-  "files": ["bin", "README.md"]
+  "engines": {
+    "node": ">=24.21.0"
+  },
+  "bin": {
+    "wydgine": "./bin/wydgine.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "LICENSE",
+    "runtime"
+  ],
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/app.js",
+    "./trusted/worker": "./src/trusted/worker.js",
+    "./trusted/provider": "./src/trusted/provider.js",
+    "./trusted/services": "./src/trusted/services.js"
+  },
+  "dependencies": {
+    "@hono/node-server": "2.1.4",
+    "busboy": "1.6.0",
+    "hono": "4.13.13",
+    "marked": "^15.0.12",
+    "sanitize-html": "^2.18.0",
+    "semver": "^7.8.5"
+  }
 }

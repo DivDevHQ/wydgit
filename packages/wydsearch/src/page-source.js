@@ -3,8 +3,8 @@ import { createHash } from 'node:crypto';
 import path from 'node:path';
 import sanitizeHtml from 'sanitize-html';
 import { decodeHTML } from 'entities';
-import { loadRepository } from '../../../wydgine/repository.js';
-import { renderMarkdown,pagePath } from '../../../wydgine/index.js';
+import { loadRepository } from 'wydgine/trusted/services';
+import { renderMarkdown,pagePath } from 'wydgine/trusted/services';
 // Explicit, trusted host Page allowlist. Never enumerate configuration or private
 // application state. Reload source and publication flags on every resolution.
 export function pageSearchSource(root) {

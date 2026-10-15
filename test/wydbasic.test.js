@@ -1,7 +1,7 @@
 import {prepareHandlers as prepareClientHandlers} from '../wydgine/events/index.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {compile,parse,tokenize} from '../wydgine/wydbasic/index.js';
+import {compile,parse,tokenize} from '../packages/wydgine/src/engine/wydbasic/index.js';
 import {execute} from '../wydgine/sewn/execute.js';
 import {validate} from '../wydgine/sewn/validate.js';
 import {ExecutionContext} from '../wydgine/seam/context.js';
@@ -58,7 +58,7 @@ test('WydClient Ready and semantic Change execute compiled source without native
  const element=new EventTarget();const client=mountClient({nodes:[{id:'home',element,kind:'field',value:'old'}],context,handlers:prepareClientHandlers([{type:'Client.Ready',owner:'home',wydBasic:'IF Me.id="home" THEN\nRETURN "ready"\nELSE\nRETURN REQUEST.IsPost\nEND IF'},{type:'Change',owner:'home',wydBasic:'EVENT.Cancel()'}])});await client.ready;assert.equal(client.error(),null);element.value='bad';element.dispatchEvent(new Event('change'));await client.idle();assert.equal(element.value,'old');assert.equal(client.error(),null);await client.unmount();
 });
 test('compiler and generated workflows contain no JavaScript/native execution mechanism',async()=>{
- const fs=await import('node:fs/promises');for(const file of ['tokenize','parse','compile','errors','index'])assert.doesNotMatch(await fs.readFile(new URL(`../wydgine/wydbasic/${file}.js`,import.meta.url),'utf8'),/\beval\s*\(|\bFunction\s*\(|node:|\brequire\s*\(|\bimport\s*\(/);
+ const fs=await import('node:fs/promises');for(const file of ['tokenize','parse','compile','errors','index'])assert.doesNotMatch(await fs.readFile(new URL(`../packages/wydgine/src/engine/wydbasic/${file}.js`,import.meta.url),'utf8'),/\beval\s*\(|\bFunction\s*\(|node:|\brequire\s*\(|\bimport\s*\(/);
 });
 test('compiled member/method workflow has the same structure and rendered result as handwritten SEWN',async()=>{
  const source='Me.Set("title", REQUEST.Query.Get("label"))';

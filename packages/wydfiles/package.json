@@ -1,1 +1,23 @@
-{"name":"@wydgit/files","version":"0.1.0-alpha.1","private":true,"type":"module","license":"MPL-2.0","engines":{"node":">=24.21.0"},"exports":{".":"./src/index.js","./package.json":"./package.json"},"dependencies":{"aws4":"1.13.2","fast-xml-parser":"5.11.2"}}
+{
+  "name": "@wydgit/files",
+  "version": "0.1.0-alpha.1",
+  "private": true,
+  "type": "module",
+  "license": "MPL-2.0",
+  "engines": {
+    "node": ">=24.21.0"
+  },
+  "exports": {
+    ".": "./src/index.js",
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "aws4": "1.13.2",
+    "fast-xml-parser": "5.11.2"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ]
+}

@@ -14,5 +14,10 @@
   },
   "dependencies": {
     "argon2": "0.45.1"
-  }
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ]
 }

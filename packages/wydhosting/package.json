@@ -1,12 +1,27 @@
 {
   "name": "wydhosting",
-  "version": "0.3.0-alpha.12",
+  "version": "0.3.0-alpha.13",
   "private": true,
   "type": "module",
   "license": "MPL-2.0",
-  "engines": {"node": ">=24.21.0"},
-  "bin": {"wydhosting": "./bin/wydhosting.js"},
-  "exports": {".": "./src/index.js", "./contracts": "./src/contracts.js"},
-  "files": ["bin", "src", "README.md"],
-  "dependencies": {"wydgine": "0.3.0-alpha.12"}
+  "engines": {
+    "node": ">=24.21.0"
+  },
+  "bin": {
+    "wydhosting": "./bin/wydhosting.js"
+  },
+  "exports": {
+    ".": "./src/index.js",
+    "./contracts": "./src/contracts.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "wydgine": "0.3.0-alpha.13"
+  }
 }

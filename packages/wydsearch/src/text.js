@@ -1,6 +1,6 @@
 export const normalize=text=>text.normalize('NFKC').toLocaleLowerCase('und');
 export const tokens=text=>normalize(text).match(/[\p{L}\p{N}]+/gu)??[];
-export { safeDestination } from '../../../wydgine/http/destination.js';
+export { safeDestination } from 'wydgine/trusted/services';
 export function rank(document,query) {
  const title=tokens(document.title),body=tokens(document.body),tags=tokens(document.categories.join(' '));
  if(!query.terms.every(term=>title.includes(term)||body.includes(term)||tags.includes(term)))return 0;

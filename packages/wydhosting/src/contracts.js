@@ -1,10 +1,10 @@
 import path from 'node:path';
 import {createHash} from 'node:crypto';
-import {clean,freeze,record} from '../../../wydgine/object-model/validation.js';
-import {validId} from '../../../wydgine/object-model/schema.js';
-import {canonicalAuthority} from '../../../wydgine/http/routing.js';
-import {executionLimits} from '../../../wydgine/inventory.js';
-import {resourcePolicy} from '../../../wydgine/governance.js';
+import {clean,freeze,record} from 'wydgine/trusted/provider';
+import {validId} from 'wydgine/trusted/provider';
+import {canonicalAuthority} from 'wydgine/trusted/provider';
+import {executionLimits} from 'wydgine/trusted/provider';
+import {resourcePolicy} from 'wydgine/trusted/provider';
 
 export function fail(code='HOSTING.INVALID'){return Object.assign(new Error('Provider operation refused'),{code});}
 export function check(ok,code){if(!ok)throw fail(code);}

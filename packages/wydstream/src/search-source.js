@@ -1,4 +1,4 @@
-import { destinationWithParameter } from '../../../wydgine/http/destination.js';
+import { destinationWithParameter } from 'wydgine/trusted/services';
 // Trusted source adapter for WydSearch. No binary reads or private-index access.
 // dispatch(caller) must be the canonical caller-bound dispatcher. Both media and
 // search grants remain necessary; this adapter cannot grant either capability.

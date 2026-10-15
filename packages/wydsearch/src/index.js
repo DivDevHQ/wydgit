@@ -1,6 +1,6 @@
 import { pageSearchSource } from './page-source.js';
-import { ExecutionContext } from '../../../wydgine/seam/context.js';
-import { loadRepository } from '../../../wydgine/repository.js';
+import { ExecutionContext } from 'wydgine/trusted/services';
+import { loadRepository } from 'wydgine/trusted/services';
 import { tokens,normalize,rank,snippet,safeDestination } from './text.js';
 const MiB=1024*1024;
 const signature=d=>JSON.stringify([d.id,d.resource,d.owner.publisher,d.owner.package,d.owner.principal,d.title,d.body,d.summary,d.url,d.type,d.categories,d.visibility,d.revision,d.schemaVersion]);

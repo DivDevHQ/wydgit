@@ -12,6 +12,7 @@ for (const minify of [false, true]) {
   const result = await build({ entryPoints: [root + 'src/browser.js'], write: false, metafile: true, bundle: true, format: 'iife', platform: 'browser', target: 'es2022', minify, legalComments: 'none', banner: { js: `/* WydClient ${pkg.version}; WydSUB ${pkg.wydsub}; MPL-2.0 */` },
     plugins: [{ name: 'public-client-core', setup(builder) {
       // Do not ship repository sample behaviors or unused server definitions.
+      builder.onLoad({filter:/[/\\]wydgine[/\\].*\.js$/}, async args => ({contents:await readFile(args.path.replace(/[/\\]wydgine[/\\]/,'/packages/wydgine/src/engine/'),'utf8'),loader:'js'}));
       builder.onLoad({ filter: /prototypes[/\\]objects\.json$/ }, () => ({ contents: JSON.stringify(coreDefinitions), loader: 'json' }));
     } }] });
   const inputs=Object.keys(result.metafile.inputs);

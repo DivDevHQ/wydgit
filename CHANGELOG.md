@@ -1,5 +1,18 @@
 ## Unreleased
 
+### Wydgit 0.3-I5.4 — Independent local packages (alpha.13)
+
+- Move the single engine implementation into packages/wydgine/src, retaining
+  historical re-exports and root sample defaults without duplicating SEAM authority.
+- Package the launcher, installed metadata, compiler signing resources and browser
+  upload/runtime assets; defer Gate client resolution until a configured integration.
+- Declare runtime dependencies, exact WydHosting engine compatibility and trusted
+  canonical-service interfaces; repair Search/Stream cross-repository imports.
+- Add actual tarball installation, runtime-path/dependency-graph and real-App
+  consumer verification. Keep packages private and browser distributions unchanged.
+- Preserve the alpha.12 stopped-local relocation descriptor compatibility contract.
+  No publishing, worker supervision, Linux provisioning or deployment is included.
+
 ### Wydgit 0.3-I5.3 — WydHosting registry and safe setup plans
 
 - Add a private WydHosting development workspace with closed provider identity,

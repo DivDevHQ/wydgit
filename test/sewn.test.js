@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {execute} from '../wydgine/sewn/execute.js';
-import {validate} from '../wydgine/sewn/validate.js';
+import {execute} from '../packages/wydgine/src/engine/sewn/execute.js';
+import {validate} from '../packages/wydgine/src/engine/sewn/validate.js';
 import {ExecutionContext} from '../wydgine/seam/context.js';
 import {runPage,fixture} from '../test-support/events.js';
 import {mountClient} from '../wydclient/index.js';
@@ -41,7 +41,7 @@ test('SEWN client handler executes through WydClient with no DOM access',async()
 });
 test('portable subsystem contains no source evaluation or native imports',async()=>{
  const fs=await import('node:fs/promises');
- for(const file of ['schema','validate','bindings','execute','regex']){const original=await fs.readFile(new URL(`../wydgine/sewn/${file}.js`,import.meta.url),'utf8');const dynamic=[...original.matchAll(/\bimport\s*\([^)]*\)/g)].map(m=>m[0]);assert.deepEqual(dynamic,file==='execute'?["import('./regex.js')"]:[]);const source=original.replace("import('./regex.js')",'');assert.doesNotMatch(source,/\beval\s*\(|\bFunction\s*\(|node:|\brequire\s*\(|\bimport\s*\(/);}
+ for(const file of ['schema','validate','bindings','execute','regex']){const original=await fs.readFile(new URL(`../packages/wydgine/src/engine/sewn/${file}.js`,import.meta.url),'utf8');const dynamic=[...original.matchAll(/\bimport\s*\([^)]*\)/g)].map(m=>m[0]);assert.deepEqual(dynamic,file==='execute'?["import('./regex.js')"]:[]);const source=original.replace("import('./regex.js')",'');assert.doesNotMatch(source,/\beval\s*\(|\bFunction\s*\(|node:|\brequire\s*\(|\bimport\s*\(/);}
 });
 
 test('controlled Insert/Move/Remove reuse request-local mutation and scoped collections',async()=>{

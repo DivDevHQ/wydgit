@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import {validateAppInventory,snapshotAppConfiguration} from '../../../wydgine/inventory.js';
-import {validateConfig} from '../../../wydgine/libraries/contracts.js';
-import {validateRouting} from '../../../wydgine/http/routing.js';
+import {validateAppInventory,snapshotAppConfiguration} from 'wydgine/trusted/provider';
+import {validateConfig} from 'wydgine/trusted/provider';
+import {validateRouting} from 'wydgine/trusted/provider';
 import {check,fail,overlap,absolute,validateRegistry,sealed,digest} from './contracts.js';
 
 // Trusted fixture roots must be inaccessible to hostile concurrent OS writers.

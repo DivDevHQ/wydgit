@@ -1,12 +1,12 @@
 {
   "name": "wydgit",
-  "version": "0.3.0-alpha.12",
+  "version": "0.3.0-alpha.13",
   "description": "A portable, capability-safe application platform for the open web",
   "license": "MPL-2.0",
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=24.21.0"
   },
   "scripts": {
     "wydgine": "node packages/wydgine/bin/wydgine.js",

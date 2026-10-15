@@ -1,6 +1,40 @@
-# Wydgine development adapter
+# Wydgine
 
-Private development-only CLI over the repository engine. This package is **not
-self-contained or publishable**: its bin imports the existing repository source.
-See [I5.2](../../docs/milestones/0.3-I5.2/README.md). I5.4 owns actual extraction
-and isolated tarball installation. No npm availability is claimed.
+Wydgine runs canonical Wydgit Apps. Version 0.3.0-alpha.13 is a private,
+locally packed development artifact; it has not been published to npm.
+Requires Node >=24.21.0. No WydHosting or Linux hosting installation is required.
+
+Install a verified local tarball in a consumer directory:
+
+```sh
+npm install /verified/path/wydgine-0.3.0-alpha.13.tgz
+./node_modules/.bin/wydgine setup
+npm start
+```
+
+Setup configures an existing canonical App; it does not create an App or install
+canonical services. A prepared `wydgine.local.json` is also supported. Commands:
+`wydgine setup`, `wydgine validate <app-path>`, `wydgine start [app-path]`.
+Run `wydgine --help` for exact options. Paths resolve from invocation/configuration
+locations, never from the engine source directory. Missing headless selection,
+malformed configuration and unavailable approved services fail closed.
+
+The root export provides `createApp` and async `createHostApp`. Supply an explicit
+App `root` for embedding; the default is the caller's current working directory.
+`createHostApp` validates and initializes services before publishing HTTP readiness.
+Use its `shutdown(server)` or `stop()` for cleanup.
+
+Trusted Node exports are `wydgine/trusted/worker` (existing controller/operations/
+relocation), `wydgine/trusted/provider` (provider validation helpers), and
+`wydgine/trusted/services` (canonical implementation integration). These are trusted
+native integrations, not portable App grants or a sandbox against hostile Node code.
+There is no worker IPC or process supervisor in this version.
+
+Canonical implementations must be separately installed and explicitly approved in
+App configuration. Resolution starts at the App root and follows normal npm ancestry.
+Store SQLite and Gate use native dependencies. Search and Stream require this exact
+Wydgine prerelease as a peer. Local tarballs remain sufficient while private packages
+are unqualified for publication. Nothing installs providers during HTTP execution.
+
+MPL-2.0; see LICENSE. Future public-registry installation is intended to use
+`npm install wydgine`, after separate publication authorization and qualification.

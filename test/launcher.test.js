@@ -93,13 +93,13 @@ test('actual setup command runs in a TTY and prepares consumer npm start',async 
 });
 test('historical root npm start still serves the sample and shuts down',async t=>{
  const port=await freePort(),p=spawn('npm',['start','--','apps/ignored'],{cwd:project,env:{...process.env,PORT:String(port),HOST:'127.0.0.1'},detached:true,stdio:['ignore','pipe','pipe']});let output='';p.stdout.on('data',v=>output+=v);const exited=once(p,'exit');t.after(()=>{try{process.kill(-p.pid,'SIGKILL');}catch{}});
- for(let i=0;i<300&&!output.includes(`http://127.0.0.1:${port}`);i++)await new Promise(r=>setTimeout(r,20));assert.match(output,/Wydgit 0\.3\.0-alpha\.12/);assert.equal((await fetch(`http://127.0.0.1:${port}`)).status,200);process.kill(-p.pid,'SIGTERM');await exited;
+ for(let i=0;i<300&&!output.includes(`http://127.0.0.1:${port}`);i++)await new Promise(r=>setTimeout(r,20));assert.match(output,/Wydgit 0\.3\.0-alpha\.13/);assert.equal((await fetch(`http://127.0.0.1:${port}`)).status,200);process.kill(-p.pid,'SIGTERM');await exited;
 });
 test('manifest merge preserves metadata/scripts, rejects malformed/conflicts, exact verified version',()=>{
  const source=json({name:'kept',custom:{a:1},scripts:{test:'keep',start:'old'},dependencies:{other:'1'}});
- assert.throws(()=>mergeManifest(source,'0.3.0-alpha.12'),{code:'LAUNCH.SCRIPT_CONFLICT'});
- const result=mergeManifest(source,'0.3.0-alpha.12',{replaceStart:true});assert.equal(result.scripts.test,'keep');assert.equal(result.dependencies.other,'1');assert.deepEqual({...result.custom},{a:1});assert.equal(result.scripts.start,'wydgine start');assert.ok(!result.scripts.install&&!result.scripts.postinstall);
- for(const text of ['bad','[]','{"scripts":[]}','{"scripts":null}','{"dependencies":false}','{"scripts":{"test":2}}'])assert.throws(()=>mergeManifest(text,'0.3.0-alpha.12'));assert.throws(()=>mergeManifest(null,'invented'));assert.throws(()=>mergeManifest('{"scripts":{"start":""}}','0.3.0-alpha.12'),{code:'LAUNCH.SCRIPT_CONFLICT'});
+ assert.throws(()=>mergeManifest(source,'0.3.0-alpha.13'),{code:'LAUNCH.SCRIPT_CONFLICT'});
+ const result=mergeManifest(source,'0.3.0-alpha.13',{replaceStart:true});assert.equal(result.scripts.test,'keep');assert.equal(result.dependencies.other,'1');assert.deepEqual({...result.custom},{a:1});assert.equal(result.scripts.start,'wydgine start');assert.ok(!result.scripts.install&&!result.scripts.postinstall);
+ for(const text of ['bad','[]','{"scripts":[]}','{"scripts":null}','{"dependencies":false}','{"scripts":{"test":2}}'])assert.throws(()=>mergeManifest(text,'0.3.0-alpha.13'));assert.throws(()=>mergeManifest(null,'invented'));assert.throws(()=>mergeManifest('{"scripts":{"start":""}}','0.3.0-alpha.13'),{code:'LAUNCH.SCRIPT_CONFLICT'});
 });
 test('setup fresh, rerun, default preservation, review refusal, conflicting script refusal and backups',async t=>{
  const root=await fixture(t);await app(root,'a');await localAdapter(root);

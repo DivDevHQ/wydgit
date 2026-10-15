@@ -3,7 +3,7 @@ import { filesMediaProvider } from './files-provider.js';
 import { randomBytes,createHash,timingSafeEqual } from 'node:crypto';
 import { fileTypeFromBuffer } from 'file-type';
 import { localProvider } from './local-provider.js';
-import { receiveFile } from '../../../wydgine/http/transfers.js';
+import { receiveFile } from 'wydgine/trusted/services';
 const MiB=1024*1024;
 export const defaults=Object.freeze({fileBytes:8*MiB,quotaBytes:64*MiB,stagingBytes:16*MiB,uploads:2,deliveries:8,durationMs:60000,retentionMs:900000,pageSize:20,items:128,metadataBytes:2048});
 export const ceilings=Object.freeze({fileBytes:64*MiB,quotaBytes:1024*MiB,stagingBytes:128*MiB,uploads:8,deliveries:32,durationMs:300000,retentionMs:3600000,pageSize:40,items:256,metadataBytes:4096});

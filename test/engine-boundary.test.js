@@ -56,7 +56,7 @@ test('standalone and relocation import closures exclude controller and provider 
  async function closure(entry){const seen=new Set();async function visit(file){file=path.resolve(file);if(seen.has(file)||!file.endsWith('.js'))return;seen.add(file);const text=await fs.readFile(file,'utf8');for(const match of text.matchAll(/(?:from\s*|import\s*\(\s*)['"](\.[^'"]+)['"]/g))await visit(path.resolve(path.dirname(file),match[1]));}await visit(entry);return seen;}
  for(const entry of ['app.js','wydgine/relocation.js','wydgine/inventory.js']){
   const files=await closure(entry);
-  for(const file of files)assert.doesNotMatch(file,/\/wydgine\/(?:multi-app|operations)\.js$|wydhosting/i);
-  assert.ok(files.has(path.resolve('wydgine/seam/context.js')));
+  for(const file of files)assert.doesNotMatch(file,/\/(?:wydgine|engine)\/(?:multi-app|operations)\.js$|wydhosting/i);
+  assert.ok(files.has(path.resolve('packages/wydgine/src/engine/seam/context.js')));
  }
 });

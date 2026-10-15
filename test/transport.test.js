@@ -56,7 +56,7 @@ test('Hono TCP host preserves routes, HEAD, security, asset cache and approved r
   const partial = await fetch(url + '/css/site.css', { headers: { range: 'bytes=0-9' } }); assert.equal(partial.status, 206); assert.equal(await partial.text(), text.slice(0, 10));
   assert.equal((await fetch(url + '/css/site.css', { headers: { range: 'bytes=99999999-' } })).status, 416);
   for (const module of ['wydclient/index.js', 'wydgine/events/runtime.js', 'wydgine/object-model/validation.js', 'wydgine/seam/context.js', 'wydgine/seam/capabilities.js', 'wydgine/http/input.js']) {
-    const response = await fetch(url + '/runtime/' + module); assert.equal(response.status, 200); assert.match(response.headers.get('content-type'), /javascript/); security(response); assert.equal(await response.text(), await fs.readFile(path.join(projectRoot, module), 'utf8'));
+    const response = await fetch(url + '/runtime/' + module); assert.equal(response.status, 200); assert.match(response.headers.get('content-type'), /javascript/); security(response); assert.equal(await response.text(), await fs.readFile(path.join(projectRoot,module.startsWith('wydgine/')?'packages/wydgine/src/engine/'+module.slice(8):module), 'utf8'));
   }
   // Follow actual imports: the browser must be able to load the entire portable
   // executor graph, while host-only implementation routes remain private.
@@ -78,7 +78,7 @@ test('Hono TCP host preserves routes, HEAD, security, asset cache and approved r
   // The optional matcher is a local module loaded only by the executor's fixed import.
   assert.ok(!visited.has(url + '/runtime/wydgine/sewn/regex.js'));
   for(const module of ['wydgine/sewn/regex.js','wydgine/sewn/vendor/re2js.js']){
-    const response=await fetch(url+'/runtime/'+module);assert.equal(response.status,200);assert.match(response.headers.get('content-type'),/javascript/);security(response);assert.equal(await response.text(),await fs.readFile(path.join(projectRoot,module),'utf8'));
+    const response=await fetch(url+'/runtime/'+module);assert.equal(response.status,200);assert.match(response.headers.get('content-type'),/javascript/);security(response);assert.equal(await response.text(),await fs.readFile(path.join(projectRoot,module.startsWith('wydgine/')?'packages/wydgine/src/engine/'+module.slice(8):module),'utf8'));
   }
   assert.equal((await fetch(url+'/runtime/node_modules/re2js/build/index.js')).status,404);
   for (const module of ['wydgine/execution/page.js', 'wydgine/http/transport/hono.js', 'packages/wydstore/src/core.js']) assert.equal((await fetch(url + '/runtime/' + module)).status, 404);
@@ -158,6 +158,6 @@ for (const signal of ['SIGINT', 'SIGTERM']) test(`server entrypoint gracefully e
   const exited = once(child, 'exit');
   let output = '';
   await new Promise((resolve, reject) => { child.stdout.on('data', chunk => { output += chunk; if (/http:\/\/127\.0\.0\.1:\d+/.test(output)) resolve(); }); child.once('error', reject); child.once('exit', () => reject(new Error('Server exited before listen'))); });
-  assert.match(output, /Wydgit 0\.3\.0-alpha\.12/); child.kill(signal);
+  assert.match(output, /Wydgit 0\.3\.0-alpha\.13/); child.kill(signal);
   const [code, termination] = await exited; assert.equal(code, 0); assert.equal(termination, null);
 });
