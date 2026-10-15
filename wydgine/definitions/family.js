@@ -7,7 +7,7 @@ import { clean, freeze, record, requireThat as check } from '../object-model/val
 import { LIMITS, validatePackageManifest } from '../packages/manifest.js';
 
 export function lowerFamily(inputs,options={}) {
-  const irs=clean(inputs),manifest=validatePackageManifest(options.manifest);
+  const irs=clean(inputs),manifest=validatePackageManifest(options.manifest,{target:options.target});
   check(Array.isArray(irs)&&irs.length>0&&irs.length<=LIMITS.prototypes,'DEFINITION.FAMILY','Invalid family size');
   check(irs.every(ir=>record(ir)&&record(ir.definition)),'DEFINITION.FAMILY','Invalid family definition');
   const definitions=irs.map(ir=>ir.definition),ids=definitions.map(d=>d.id);

@@ -49,7 +49,8 @@ export function parseDefinition(source,options={}) {
   }
   const propertyTable={...base?.properties,...d.properties};
   if(ast.presentation){
-    if(options.manifest?.runtime?.includes('client'))error(ast.presentation,'TARGET','PRESENTATION SERVER requires a server-only package; H2 cannot execute presentation bindings.');
+    if(ast.presentation.target!==(options.target??'server'))error(ast.presentation,'TARGET','PRESENTATION target differs from build target.');
+    if(options.target!=='client'&&options.manifest?.runtime?.includes('client'))error(ast.presentation,'TARGET','PRESENTATION SERVER requires a server-only package; H2 cannot execute presentation bindings.');
     const binding=(n,locals=new Map())=>{
       if(n.kind==='literal'&&['string','number','boolean'].includes(typeof n.value))return {value:n.value,type:typeof n.value};
       if(n.kind==='name'&&locals.has(n.name.toLowerCase()))return {value:{get:n.name.toLowerCase()},type:locals.get(n.name.toLowerCase())};
@@ -63,6 +64,12 @@ export function parseDefinition(source,options={}) {
     };
     const parts=(nodes,locals=new Map(),depth=0)=>{if(depth>16)error(ast.presentation,'LIMIT','Presentation repetition nesting exceeds 16.');return nodes.map(n=>{
       if(n.kind==='presentationText'){const b=binding(n.value,locals);if(!['string','number','boolean'].includes(b.type))error(n,'TYPE','CONTENT and HEADING require String, Number or Boolean.');return {tag:n.role==='HEADING'?'h2':'p',text:b.value};}
+      if(n.kind==='presentationControl'){
+        const result={control:n.control,name:n.name,label:n.label};
+        for(const key of ['type','required','maxLength','action'])if(n[key]!==undefined)result[key]=n[key];
+        if(n.options)result.options=literal(n.options);if(n.value)result.value=binding(n.value,locals).value;
+        if(n.body)result.children=parts(n.body,locals,depth+1);return result;
+      }
       const source=binding(n.value,locals),limit=literal(n.limit),name=n.name.toLowerCase();
       if(limit!==256)error(n,'LIMIT','Server presentation uses the canonical 256-item bound; specify LIMIT 256.');
       if(source.type!=='array'||!source.element||!['string','number','boolean'].includes(source.element))error(n,'TYPE','REPEAT currently requires a homogeneous scalar literal array; persisted Array properties lack element contracts.');
@@ -70,7 +77,7 @@ export function parseDefinition(source,options={}) {
       if(locals.has(name)||['properties','data','query','id','path','csrf','transfer','constructor','prototype','__proto__'].includes(name)||!/^[a-z][a-z0-9_-]{0,31}$/.test(name))error(n,'NAME','Reserved or duplicate repeat context.');
       return {tag:'div',each:{in:source.value,as:name},children:parts(n.body,new Map([...locals,[name,source.element]]),depth+1)};
     });};
-    d.presentation={schema:'wydgit.presentation/0.1',template:{tag:'section',children:parts(ast.presentation.parts)}};
+    d.presentation={schema:ast.presentation.target==='client'?'wydgit.presentation/0.2':'wydgit.presentation/0.1',...(ast.presentation.target==='client'?{target:'client'}:{}),template:{tag:'section',children:parts(ast.presentation.parts)}};
   }
   const composition=ast.children.map(n=>{reserve(n);const properties=Object.create(null);for(const p of n.initializers){if(Object.hasOwn(properties,p.name))error(p,'NAME','Duplicate child initializer.');properties[p.name]=literal(p.value);}return {name:n.name,type:n.prototype,slot:n.slot,properties};});
   for(const n of ast.contracts){reserve(n);const access=modifiers(n,['public','private','protected','friend']);d.events[n.name]={access,params:n.params.map(p=>{const type=canonicalType(p.type);if(!type)error(p,'TYPE','Event payload requires a portable data type.');return {name:p.name,type};})};}
@@ -96,11 +103,12 @@ export function parseDefinition(source,options={}) {
   let hasEmission=false;
   const inspect=n=>{if(!n||typeof n!=='object')return;if(n.kind==='raiseEvent')hasEmission=true;if(n.kind==='invoke'&&n.target.kind==='member'&&n.target.target.kind==='name'&&n.target.target.name.toLowerCase()==='event'&&n.target.key.toLowerCase()==='raise')error(n,'UNSUPPORTED','Class event emission cannot use the string EVENT.Raise facade.');Object.values(n).forEach(inspect);};
   ast.procedures.forEach(inspect);
+  if(options.target==='client'){const clientScan=n=>{if(!n||typeof n!=='object')return;if(n.kind==='name'&&['server','session','request','response','services','document','window'].includes(n.name.toLowerCase()))error(n,'TARGET','This context is unavailable on CLIENT.');Object.values(n).forEach(clientScan);};ast.procedures.forEach(clientScan);}
   if(ast.events.length)error(ast.events[0],'UNSUPPORTED','Class EVENT declarations are signatures, not workflow handlers.');
   const compileOptions={...options,prototypeRegistry:registry,dependencies:{...options.manifest?.staticLibraries,...options.manifest?.interfaces},classDefinition:{id,publisher,verifiedPublisher:options.verifiedPackages?.[options.manifest?.id]===publisher,children:[...base?.component?.children??[],...composition],eventOwners:{...base?.eventOwners,...Object.fromEntries(Object.keys(d.events).map(name=>[name,id]))},events:{...base?.events,...d.events},properties:propertyTable,propertyOwners:{...base?.propertyOwners,...Object.fromEntries(Object.keys(d.properties).map(n=>[n,base?.propertyOwners[n]??id]))},methods:{...base?.methods,...Object.fromEntries(Object.entries(d.methodContracts).map(([name,s])=>[name,{owner:id,signature:s}]))},methodRules:{...base?.methodRules,...d.methodRules}}};
   const module=procedures=>({kind:'module',location:ast.location,procedures,events:[],imports:ast.imports});
   if(composition.length||ast.subscriptions.length||ast.templates.length||ast.repeaters.length||hasEmission){
-    if(options.manifest?.runtime?.includes('client'))error(ast,'TARGET','Component execution requires the authenticated server runtime.');
+    if(options.target!=='client'&&options.manifest?.runtime?.includes('client'))error(ast,'TARGET','Component execution requires the authenticated server runtime.');
     const children=compileOptions.classDefinition.children;
     const subscriptions=ast.subscriptions.map(n=>{let source,event;
       if(n.source.toLowerCase()==='page'){source='Page';event=['Start','Initialize','Load','Validate','PreRender','Unload'].find(e=>e.toLowerCase()===n.event.toLowerCase());if(!event)error(n,'NAME','Unknown canonical Page event.');}
@@ -113,6 +121,7 @@ export function parseDefinition(source,options={}) {
   }
   d.behavior=compileAst(module(methods),null,true,compileOptions);
   for(const [hook,n] of hooks)d.lifecycle[hook]=compileAst(module([n]),null,true,compileOptions);
-  return freeze(clean({schema:composition.length||ast.presentation||ast.subscriptions.length||ast.templates.length||ast.repeaters.length||ast.slotContracts.length||hasEmission?'wydgit.definition/0.20':'wydgit.definition/0.19',definition:d,metadata,...(composition.length?{composition}:{}),locations:{declaration:ast.location,members:Object.fromEntries([...ast.properties,...ast.procedures,...ast.contracts,...ast.children,...ast.templates.map(n=>({...n,name:'template:'+n.name})),...ast.slotContracts,...ast.repeaters.map(n=>({...n,name:'repeater:'+n.template})),...ast.subscriptions.map(n=>({...n,name:n.handler}))].map(n=>[n.name,n.location])),metadata:Object.fromEntries(ast.metadata.map(n=>[n.name,n.location]))}}));
+  const presentationLocations=[];const locatePresentation=nodes=>{for(const n of nodes){if(n.kind==='presentationControl')presentationLocations.push({name:'control:'+n.name,location:n.location});if(n.body)locatePresentation(n.body);}};if(ast.presentation){presentationLocations.push({name:'presentation',location:ast.presentation.location});locatePresentation(ast.presentation.parts);}
+  return freeze(clean({schema:composition.length||ast.presentation||ast.subscriptions.length||ast.templates.length||ast.repeaters.length||ast.slotContracts.length||hasEmission?'wydgit.definition/0.20':'wydgit.definition/0.19',definition:d,metadata,...(composition.length?{composition}:{}),locations:{declaration:ast.location,members:Object.fromEntries([...presentationLocations,...ast.properties,...ast.procedures,...ast.contracts,...ast.children,...ast.templates.map(n=>({...n,name:'template:'+n.name})),...ast.slotContracts,...ast.repeaters.map(n=>({...n,name:'repeater:'+n.template})),...ast.subscriptions.map(n=>({...n,name:n.handler}))].map(n=>[n.name,n.location])),metadata:Object.fromEntries(ast.metadata.map(n=>[n.name,n.location]))}}));
 }
 export function compileClass(source,options={}) {const ir=parseDefinition(source,options);try{return lowerDefinition(ir,options);}catch(e){fail('DEFINITION',e.message,e.details?.line?e.details:ir.locations.declaration);}}

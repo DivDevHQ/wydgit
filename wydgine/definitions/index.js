@@ -1,3 +1,4 @@
+import {portableComponent} from '../execution/client-target.js';
 import {serverComponent} from '../execution/component-target.js';
 // Small shared definition IR: canonical data plus frontend source locations.
 // Future frontends supply validated SEWN, never callbacks or source evaluators.
@@ -7,13 +8,13 @@ import { clean, freeze, record, requireThat as check, WydgitError } from '../obj
 import { validatePackageManifest,validateComponentPlatform } from '../packages/manifest.js';
 import { resolveProperties } from '../object-model/schema.js';
 import { resolveMember } from '../object-model/members.js';
-export function lowerDefinition(input,{manifest,verifiedPackages={},definitions=[],registryOptions={}}={}) {
+export function lowerDefinition(input,{manifest,verifiedPackages={},definitions=[],registryOptions={},target='server'}={}) {
   const ir=clean(input);
   check(record(ir),'DEFINITION.INVALID','Invalid definition IR');
   const extended=ir.schema==='wydgit.definition/0.20';
   check(record(ir)&&['wydgit.definition/0.19','wydgit.definition/0.20'].includes(ir.schema)&&Object.keys(ir).every(k=>['schema','definition','metadata','locations',...(extended?['composition']:[])].includes(k)),'DEFINITION.INVALID','Invalid definition IR');
   check(JSON.stringify(ir).length<=262144&&record(ir.definition)&&record(ir.metadata),'DEFINITION.INVALID','Invalid or oversized definition IR');
-  const m=validatePackageManifest(manifest),d=ir.definition;validateComponentPlatform(m,[d]);
+  const m=validatePackageManifest(manifest,{target}),d=ir.definition;validateComponentPlatform(m,[d],{target});
   check(verifiedPackages[m.id]===m.publisher,'DEFINITION.PUBLISHER','Build requires independently verified package publisher');
   check(d.publisher===m.publisher&&typeof d.id==='string'&&d.id.startsWith(m.publisher+'/'),'DEFINITION.IDENTITY','Prototype identity differs from trusted package');
   check(Object.keys(ir.metadata??{}).every(k=>['publisher','version','id'].includes(k)),'DEFINITION.METADATA','Unsupported metadata');
@@ -25,11 +26,11 @@ export function lowerDefinition(input,{manifest,verifiedPackages={},definitions=
   let registry;try{registry=new PrototypeRegistry([...definitions,d],{...registryOptions,verifiedPrototypes});}catch(error){
     if(error instanceof WydgitError&&error.details.definition===d.id){const location=Object.entries(ir.locations?.members??{}).find(([name])=>name.toLowerCase()===error.details.member?.toLowerCase())?.[1];if(location)throw new WydgitError(error.code,error.message,{...error.details,...location});}throw error;
   }
-  validateComponentPlatform(m,[registry.get(d.id)]);
-  if(extended)serverComponent(registry.get(d.id),registry);
+  validateComponentPlatform(m,[registry.get(d.id)],{target});
+  if(target==='client'){check(m.storage.length===0&&m.requires.libraries.length===0&&m.bindings.length===0&&m.permissions.capabilities.every(c=>['object.instances.edit','object.instances.construct','event.custom.raise'].includes(c)),'DEFINITION.TARGET','Client service/storage privileges are unsupported');portableComponent(registry.get(d.id),registry);}else if(extended)serverComponent(registry.get(d.id),registry);
   const effectivePresentation=registry.get(d.id).presentation;
   if(effectivePresentation){
-    check(!m.runtime.includes('client'),'DEFINITION.TARGET','Server presentation requires a server-only build');
+    check(target==='client'||!m.runtime.includes('client'),'DEFINITION.TARGET','Server presentation requires a server-only build');
     const inspect=value=>{if(!value||typeof value!=='object')return;if(typeof value.get==='string'&&value.get.startsWith('properties.')){
       const name=value.get.slice('properties.'.length),member=resolveMember(registry.get(d.id),'property',name,true);
       check(!name.includes('.')&&(member.rule.access??'public')==='public'&&!member.rule.hidden&&!member.rule.requires?.length,'DEFINITION.ACCESS','Presentation cannot expose restricted properties');

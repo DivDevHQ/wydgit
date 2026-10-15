@@ -1,3 +1,4 @@
+import {CONTROL_SCHEMA,controlNodes} from '../../../wydgine/controls.js';
 import {portableComponent} from './portable.js';
 import { PrototypeRegistry } from '../../../wydgine/object-model/prototypes.js';
 import { resolveProperties } from '../../../wydgine/object-model/schema.js';
@@ -6,7 +7,7 @@ import { check, record, LIMITS } from './data.js';
 // An exact subset of repository-owned H0 definitions, including all slot dependencies.
 const coreIds = ['object', 'page', 'section', 'block', 'field', 'navigation'].map(x => 'wydgit.core/' + x);
 export const coreDefinitions = definitions.filter(d => coreIds.includes(d.id));
-export function approveRegistry(declarations, verifiedPrototypes, executable = false) {
+export function approveRegistry(declarations, verifiedPrototypes, executable = false, approval) {
   check(declarations.length <= LIMITS.prototypes, 'MANIFEST.LIMIT', 'Prototype limit exceeded');
   for (const d of declarations) {
     check(record(d) && typeof d.id === 'string' && d.publisher !== 'wydgit.core', 'PROTOTYPE.IDENTITY', 'Invalid prototype identity');
@@ -19,6 +20,7 @@ export function approveRegistry(declarations, verifiedPrototypes, executable = f
     const definition=registry.get(d.id);
     check(registry.verifiedPublisher(d.id)===d.publisher,'PROTOTYPE.PUBLISHER','Executable definitions require independent publisher verification');
     portableComponent(definition,registry);
+    if(approval&&definition.presentation?.schema===CONTROL_SCHEMA)for(const n of controlNodes(definition.presentation))if(n.action)check(approval.actions.some(a=>a.toLowerCase()===n.action.method.toLowerCase()),'SEAM.DENIED','Control action lacks host approval');
   }
   for (const d of declarations) resolveProperties({}, registry.get(d.id), { incomplete: true });
   return registry;

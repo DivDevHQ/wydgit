@@ -556,3 +556,11 @@ method/hook entry and live root-local receivers, composes typed events and keyed
 records, and rejects server/service operations before activation. Earlier standalone
 executor references do not imply availability of HTTP, storage or Server/Session
 contexts in this browser profile.
+
+## H4 native interaction entry
+
+Semantic native controls prepare bounded scalar input records inside the existing
+instance-controller invocation ledger, then invoke declared public SEWN methods.
+No new opcode, executor or event dispatcher is introduced. Raw DOM/Event objects
+and host adapters are never SEWN scope values. See [H4](milestones/0.3-H4/README.md)
+for action approval, input drafts, cancellation and unsupported capabilities.

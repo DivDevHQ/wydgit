@@ -1,0 +1,4 @@
+// Independently reviewed local-development policy. No application behavior belongs here.
+globalThis.interactivePolicy={verifiedPrototypes:Object.fromEntries(['task-card','task-record','task-list','task-model','task-navigation','taskboard'].map(name=>['divdev/'+name,'divdev'])),execution:{publisher:'divdev',package:'divdev/taskboard-client',installation:'reviewed-client-taskboard',actions:['nextpage','submittask','cleartasks'],capabilities:['object.instances.edit','object.instances.construct','event.custom.raise'],traversal:['children'],visible:['taskboard','taskboard-*'],editable:['taskboard','taskboard-*'],scopes:{prototypes:['divdev/task-card'],events:['pagechanged']}}};
+if(!document.querySelector('[data-interactive-root]'))globalThis.WydClientConfig=interactivePolicy;
+else addEventListener('DOMContentLoaded',()=>{globalThis.taskboards=[...document.querySelectorAll('[data-interactive-root]')].map(root=>WydClient.mount({root,policy:interactivePolicy}));});

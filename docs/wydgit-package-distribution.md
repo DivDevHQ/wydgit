@@ -487,3 +487,11 @@ The [H3 contract](milestones/0.3-H3/README.md) documents WydClient alpha.6 execu
 definitions, separate host authorization and immutable distribution. It reuses the
 existing pinned signed JSON prototype-package envelope; this does not implement
 the proposed archive/registry infrastructure described above.
+
+## Implemented H4 client authoring
+
+[H4](milestones/0.3-H4/README.md) supplies deterministic CLIENT family builds and
+Ed25519 signing preparation for the implemented `wydgit.prototype-package/0.1`
+and `wydgit.registry/0.1` browser envelopes. Existing hash/signature/origin/version
+checks and independent execution approval remain authoritative. The speculative
+ZIP/registry design above is not substituted for these contracts.

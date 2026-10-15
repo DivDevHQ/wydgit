@@ -310,3 +310,12 @@ host execution policy. Package signatures establish provenance only. The server
 installer and WBasic frontend runtime declarations remain server-specific; H3 does
 not reinterpret those manifests as client installations. See the [H3 profile](milestones/0.3-H3/README.md)
 for the closed browser entry/approval contract and unsupported services.
+
+## H4 explicit CLIENT builds
+
+The [H4 pipeline](milestones/0.3-H4/README.md) compiles an explicit source inventory
+through existing family/IR lowering with `target: 'client'`. It produces the existing
+browser prototype-package/registry JSON and integrity data, with optional Ed25519
+signing. The server installer still rejects client-only manifests by default; this
+is a build target, not server installation authorization or a .wydpkg replacement.
+Requested permissions never become browser host approval.

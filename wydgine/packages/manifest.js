@@ -24,13 +24,14 @@ export function permissions(input) {
   check(p.editable.every(grant=>objectGrantCovers(p.visible,grant)),code,'Editable objects must be visible');
   return p;
 }
-export function validatePackageManifest(input) {
+export function validatePackageManifest(input,{target='server'}={}) {
+  check(['server','client'].includes(target),'PACKAGE.TARGET','Unknown authoring target');
   const text=typeof input==='string'?input:JSON.stringify(clean(input));check(Buffer.byteLength(text)<=LIMITS.manifest,code,'Manifest too large');
   const m=clean(parse(text));fields(m,['schema','id','publisher','version','platform','runtime','resources','requires','storage','permissions','bindings','installables',...(Object.hasOwn(m,'staticLibraries')?['staticLibraries']:[]),...(Object.hasOwn(m,'interfaces')?['interfaces']:[])],code);
   check(m.schema==='wydgit-package/0.1',code,'Unsupported package schema');
   check(qualified(m.id)&&m.publisher===m.id.split('/')[0]&&m.publisher!=='wydgit.core',code,'Invalid package/publisher identity');
   check(version(m.version)&&range(m.platform),code,'Invalid version');check(satisfies(platform.version,m.platform),'PACKAGE.VERSION','Incompatible platform');
-  list(m.runtime,2,x=>['server','client'].includes(x));check(m.runtime.includes('server'),code,'Server runtime required');
+  list(m.runtime,2,x=>['server','client'].includes(x));check(target==='client'?m.runtime.length===1&&m.runtime[0]==='client':m.runtime.includes('server'),code,'Explicit compatible runtime required');
   check(record(m.resources)&&Object.keys(m.resources).length<=LIMITS.resources,code,'Invalid resources');
   fields(m.resources,['prototypes','template','sources'],code);check(resourcePath(m.resources.prototypes)&&resourcePath(m.resources.template)&&record(m.resources.sources),code,'Invalid resource path');
   check(Object.keys(m.resources.sources).every(localName),code,'Invalid source identity');
@@ -64,6 +65,7 @@ export function validatePackageManifest(input) {
   return freeze(m);
 }
 
-export function validateComponentPlatform(manifest,definitions){
+export function validateComponentPlatform(manifest,definitions,{target='server'}={}){
+  if(target==='client'){check(manifest.runtime.length===1&&manifest.runtime[0]==='client','PACKAGE.RUNTIME','CLIENT build requires a client-only manifest');return;}
   if(definitions.some(d=>d.component!==undefined)){check(!manifest.runtime.includes('client'),'PACKAGE.RUNTIME','Executable component contracts are currently server-only');check(semver.subset(manifest.platform,'>=0.3.0-alpha.8',{includePrerelease:true}),'PACKAGE.VERSION','Executable component contracts require Wydgine 0.3.0-alpha.8 or newer');}
 }

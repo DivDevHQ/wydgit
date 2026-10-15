@@ -1,3 +1,4 @@
+import {CONTROL_SCHEMA,controlNodes} from '../../../wydgine/controls.js';
 // Trusted root-local entry facade. Never registered as a SEWN object.
 import {hydrate,ExecutionContext} from '../../../wydgine/object-model/index.js';
 import {resolveProperties} from '../../../wydgine/object-model/schema.js';
@@ -21,7 +22,7 @@ export async function executableInstances({registry,page,entry,approval,regions,
   let count=0;
   const envelope=(id,type,properties={},depth=0)=>{
     check(depth<=32&&++count<=256,'OBJECT.LIMIT','Initial composition bound');
-    const d=registry.get(type);check(registry.verifiedPublisher(type)===d.publisher||d.publisher==='wydgit.core','PROTOTYPE.PUBLISHER','Unverified constructed prototype');
+    const d=registry.get(type);if(d.presentation?.schema===CONTROL_SCHEMA)for(const n of controlNodes(d.presentation))if(n.action)check(approval.actions.some(a=>a.toLowerCase()===n.action.method.toLowerCase()),'SEAM.DENIED','Control action lacks host approval');check(registry.verifiedPublisher(type)===d.publisher||d.publisher==='wydgit.core','PROTOTYPE.PUBLISHER','Unverified constructed prototype');
     const slots=Object.fromEntries(Object.keys(d.slots).map(k=>[k,[]]));
     for(const child of d.component?.children??[])slots[child.slot].push(envelope(`${id}-${child.name}`,child.type,child.properties,depth+1));
     return {schema:'wydgit/0.2',id,prototype:type,properties:resolveProperties(properties,d),slots,provenance:{publisher:d.publisher,...(approval.package?{package:approval.package}:{}),...(provenance?.get(type)??{}),installation:approval.installation}};
@@ -29,9 +30,18 @@ export async function executableInstances({registry,page,entry,approval,regions,
   const child=envelope(entry.id,entry.type,entry.properties);
   const runtime=hydrate({...page,slots:{...page.slots,sections:[child]}},registry,{rootPrototype:'wydgit.core/page'});
   const context=new ExecutionContext({...approval,self:page.id,app:page.id});
-  const renderer=portableRenderer({registry,region:regions.bottom,boundary});
+  regions.bottom.setAttribute('data-wydclient-context',page.id);
+  let controller;
+  const approved=method=>approval.actions.some(name=>name.toLowerCase()===method.toLowerCase());
+  const renderer=portableRenderer({registry,region:regions.bottom,boundary,executable:id=>controller?.executable(id)??false,
+    dispatch:async(id,binding,prepare,lifetime)=>{
+      guard();check(controller.executable(id),'CONTROL.STALE','Inactive control owner');
+      // The renderer captures immutable registry metadata, never DOM IDs as authority.
+      check(approved(binding.action.method),'SEAM.DENIED','Control action is not host-approved');
+      return controller.invoke(id,binding.action.method,[],{prepare,guard:lifetime});
+    }});
   let closed=false;const tokens=new WeakMap(),guard=()=>{active();check(!closed,'OBJECT.ACCESS','Disposed execution root');};
-  const controller=createInstanceController({runtime,registry,context,rootId:page.id,runtimeTarget:'client',renderOnInvoke:true,componentPolicy:portableComponent,placementPolicy:portablePlacement,
+  controller=createInstanceController({runtime,registry,context,rootId:page.id,runtimeTarget:'client',renderOnInvoke:true,componentPolicy:portableComponent,placementPolicy:portablePlacement,
     canEdit:()=>{guard();return true;},canEmit:()=>{guard();return true;},present:(runtime,ledger)=>{guard();renderer.render(runtime,ledger);}});
   const ref=id=>{const token=Object.freeze(Object.create(null));tokens.set(token,id);return token;};
   const resolve=token=>{guard();const id=tokens.get(token);check(id&&controller.executable(id),'OBJECT.ACCESS','Expected a live local receiver');return id;};

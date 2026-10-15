@@ -1,0 +1,69 @@
+{
+  "target": "client",
+  "manifest": {
+    "schema": "wydgit-package/0.1",
+    "id": "divdev/taskboard-client",
+    "publisher": "divdev",
+    "version": "0.1.0",
+    "platform": ">=0.3.0-alpha.8 <0.4.0",
+    "runtime": [
+      "client"
+    ],
+    "resources": {
+      "prototypes": "prototypes.json",
+      "template": "section.json",
+      "sources": {}
+    },
+    "requires": {
+      "schema": "wydgit.requirements/0.1",
+      "libraries": []
+    },
+    "storage": [],
+    "permissions": {
+      "capabilities": [
+        "object.instances.edit",
+        "object.instances.construct",
+        "event.custom.raise"
+      ],
+      "traversal": [
+        "children"
+      ],
+      "visible": [
+        "taskboard",
+        "taskboard-*"
+      ],
+      "editable": [
+        "taskboard",
+        "taskboard-*"
+      ],
+      "scopes": {
+        "wydstore": [],
+        "prototypes": [
+          "divdev/task-card"
+        ],
+        "events": [
+          "pagechanged"
+        ]
+      }
+    },
+    "bindings": [],
+    "installables": [
+      {
+        "id": "taskboard",
+        "kind": "section-template"
+      }
+    ]
+  },
+  "entry": {
+    "id": "taskboard",
+    "type": "divdev/taskboard"
+  },
+  "sources": [
+    "task-record.bas",
+    "task-card.bas",
+    "task-list.bas",
+    "navigation.bas",
+    "task-model.bas",
+    "taskboard.bas"
+  ]
+}

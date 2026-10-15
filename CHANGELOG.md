@@ -1,5 +1,20 @@
 ## Unreleased
 
+### Wydgit 0.3-H4 — Native controls and CLIENT authoring
+
+- Add closed client-target semantic label/status, button, text/textarea, checkbox,
+  select and form controls with native accessibility and bounded scalar records.
+- Bind native interactions to authenticated SEWN methods under independent host
+  action approval, canonical member access and shared execution budgets.
+- Preserve local input drafts across rerenders, validate complete submissions,
+  sanitize feedback, prevent network submission and invalidate retired controls.
+- Reuse WBasic family/IR lowering for explicit CLIENT builds and deterministic
+  browser package/registry output, SHA-256 preparation and Ed25519 signing.
+- Add WBasic-authored interactive Taskboards, signed native Chrome acceptance,
+  root/lifecycle/security tests and independent canonical control evidence.
+- Build reproducible WydClient alpha.7; preserve alpha.1–alpha.6 artifacts, WydSUB
+  0.1 and the existing server-only authoring/renderer contracts.
+
 ### Wydgit 0.3-H3 — Portable browser execution
 
 - Add WydClient alpha.6 authenticated canonical SEWN methods, declaring frames,

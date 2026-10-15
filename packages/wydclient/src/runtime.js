@@ -5,7 +5,7 @@ import { loadPackage, identityPattern, publisherPattern } from './packages.js';
 import {executionPolicy,executableInstances} from './execution.js';
 import { instances } from './instances.js';
 import { approveRegistry } from './registry.js';
-export const VERSION = '0.1.0-alpha.6';
+export const VERSION = '0.1.0-alpha.7';
 export const PROTOCOL = Object.freeze({ name: 'WydSUB', version: '0.1' });
 // Retain the approved read-only registry and canonical Page for later trusted adapters.
 // There is intentionally no host/portable accessor for this private runtime state.
@@ -137,7 +137,7 @@ function createContext(host, configuration, scope) {
       approval=policy.execution;entry=manifest.entry;
       check(!approval||entry,'SEAM.DENIED','Execution approval requires an entry');
       check(!entry||approval,'SEAM.DENIED','Executable entry requires host approval');
-      registry = approveRegistry(declarations, verified,Boolean(approval));
+      registry = approveRegistry(declarations, verified,Boolean(approval),approval);
       const selected = embedded ? scope.page ?? scope.root.getAttribute('data-wydgit-page') ?? 'wydgit.core/page' :
         doc.documentElement.getAttribute('data-wydgit-page') ?? 'wydgit.core/page';
       let definition;

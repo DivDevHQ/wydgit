@@ -1,0 +1,169 @@
+{
+  "id": "independent/control-panel",
+  "publisher": "independent",
+  "extends": "wydgit.core/section",
+  "properties": {
+    "Message": {
+      "type": "string",
+      "default": ""
+    },
+    "Amount": {
+      "type": "number",
+      "default": 0
+    },
+    "Accepted": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "methodRules": {
+    "accept": {
+      "access": "public"
+    }
+  },
+  "behavior": {
+    "schema": "sewn/0.5",
+    "body": [],
+    "procedures": {
+      "accept": {
+        "kind": "sub",
+        "params": [
+          {
+            "name": "data",
+            "type": "Object"
+          }
+        ],
+        "body": [
+          {
+            "op": "memberSet",
+            "target": {
+              "op": "context",
+              "name": "ME"
+            },
+            "name": "Message",
+            "exact": true,
+            "value": {
+              "op": "read",
+              "target": {
+                "op": "variable",
+                "name": "data"
+              },
+              "key": "Text"
+            }
+          },
+          {
+            "op": "memberSet",
+            "target": {
+              "op": "context",
+              "name": "ME"
+            },
+            "name": "Amount",
+            "exact": true,
+            "value": {
+              "op": "read",
+              "target": {
+                "op": "variable",
+                "name": "data"
+              },
+              "key": "Amount"
+            }
+          },
+          {
+            "op": "memberSet",
+            "target": {
+              "op": "context",
+              "name": "ME"
+            },
+            "name": "Accepted",
+            "exact": true,
+            "value": {
+              "op": "binary",
+              "operator": "+",
+              "left": {
+                "op": "memberRead",
+                "target": {
+                  "op": "context",
+                  "name": "ME"
+                },
+                "name": "Accepted",
+                "exact": true
+              },
+              "right": {
+                "op": "literal",
+                "value": 1
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "presentation": {
+    "schema": "wydgit.presentation/0.2",
+    "target": "client",
+    "template": {
+      "tag": "section",
+      "children": [
+        {
+          "control": "form",
+          "name": "Entry",
+          "label": "Independent form",
+          "action": {
+            "method": "accept"
+          },
+          "children": [
+            {
+              "control": "text",
+              "name": "Text",
+              "label": "Text",
+              "type": "String",
+              "required": true,
+              "maxLength": 40
+            },
+            {
+              "control": "checkbox",
+              "name": "Flag",
+              "label": "Flag",
+              "type": "Boolean",
+              "required": false,
+              "maxLength": 1
+            },
+            {
+              "control": "select",
+              "name": "Choice",
+              "label": "Choice",
+              "type": "String",
+              "required": true,
+              "maxLength": 12,
+              "options": [
+                "One",
+                "Two"
+              ]
+            },
+            {
+              "control": "text",
+              "name": "Amount",
+              "label": "Amount",
+              "type": "Float",
+              "required": true,
+              "maxLength": 24
+            },
+            {
+              "control": "submit",
+              "name": "Save",
+              "label": "Save"
+            }
+          ]
+        },
+        {
+          "control": "status",
+          "name": "Status",
+          "label": "Status",
+          "value": {
+            "get": "properties.Message"
+          }
+        }
+      ]
+    }
+  }
+}

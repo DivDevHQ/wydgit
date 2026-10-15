@@ -60,6 +60,7 @@ export async function prepareComponents(model,pageId,input,context,libraries,ses
  await walk(model.pages.get(pageId));return {states,query};
 }
 export function renderComponent(node,state,query,path,escape,skin='',claim=()=>{},budget={steps:0,elements:0,bytes:0},transport={}){
+ check(node.presentation?.schema!=='wydgit.presentation/0.2','COMPONENT.TARGET','Client control presentation has no HTTP mapping');
  const spec=node.presentation,env={properties:node,id:node.id,csrf:transport.csrf??'',transfer:transport.path??'',data:state??{state:'error'},query,path};
  const ids=new Set(),escaped=value=>{const text=String(value??'');check(Buffer.byteLength(text)<=65536,'COMPONENT.LIMIT','Displayed value too large');return escape(text);};
  const ev=v=>evaluate(v,env,budget);

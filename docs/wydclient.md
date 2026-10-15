@@ -1,7 +1,9 @@
 # WydClient
 
-The current runtime is **WydClient 0.1.0-alpha.6**, WydSUB **0.1**, with
-Wydgine/platform reference **0.3.0-alpha.8**. The [H3 contract](milestones/0.3-H3/README.md)
+The current runtime is **WydClient 0.1.0-alpha.7**, WydSUB **0.1**, with
+Wydgine/platform reference **0.3.0-alpha.8**. The [H4 contract](milestones/0.3-H4/README.md) adds semantic native controls, typed
+form drafts/submission, explicit CLIENT family/package authoring and signing.
+The [H3 contract](milestones/0.3-H3/README.md)
 defines authenticated executable components, independent host SEAM approval,
 lifecycle, typed events, shared budgets, public scalar presentation and keyed
 repetition. The [verification](milestones/0.3-H3/verification.md) records static
@@ -39,3 +41,5 @@ validator rather than server lifecycle code. Alpha.1–alpha.4 bytes remain unch
 Alpha.5 exists because shared validator changes require new immutable bytes, not
 because H3 was implemented. See the [precise execution handoff](milestones/sewn-0.20/wydclient-handoff.md)
 and [actual verification matrix](milestones/sewn-0.20/verification.md).
+
+H4 verification: [native Chrome, package/security and distribution results](milestones/0.3-H4/verification.md).

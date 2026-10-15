@@ -195,7 +195,7 @@ export function compileAst(ast,registry,prototype=false,options={}) {
         if(call.kind!=='invoke'||call.target.kind!=='name')error(n,'TYPE','RAISE EVENT requires a statically named event invocation.');
         const names=Object.keys(events).filter(k=>k.toLowerCase()===call.target.name.toLowerCase());if(names.length!==1)error(n,'NAME','Unknown or ambiguous declared event.');
         if(events[names[0]].access==='private'&&options.classDefinition.eventOwners?.[names[0]]!==options.classDefinition.id)error(n,'TYPE','Inherited private events cannot be emitted.');const params=events[names[0]].params;if(call.args.length!==params.length)error(n,'TYPE','Event arity mismatch.');
-        if(options.manifest?.runtime?.includes('client'))error(n,'UNSUPPORTED','Typed class emission requires the authenticated server runtime.');
+        if(options.target!=='client'&&options.manifest?.runtime?.includes('client'))error(n,'UNSUPPORTED','Typed class emission requires the authenticated server runtime.');
         const fields=Object.create(null);call.args.forEach((arg,i)=>{const v=constrainedExpression(arg,params[i].type);checkType(arg,v.type,params[i].type);if(v.kind)error(arg,'TYPE','Event payloads require portable data.');fields[params[i].name]=constrain(arg,v.sewn,params[i].type);});
         out.push({op:'call',target:{op:'context',name:'EVENT'},method:'Raise',args:[literal(names[0]),{op:'context',name:'ME'},{op:'object',fields}]});continue;
       }

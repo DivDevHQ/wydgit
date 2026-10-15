@@ -1,7 +1,7 @@
 # WBasic Language Reference
 **Wydgit Platform — Draft Language Specification 1.0**
 
-**Status:** Implemented through SEWN/WBasic 0.20 on the supported server path; browser component execution awaits H3. Proposed 1.0 constructs below are not implied implemented.
+**Status:** Implemented through SEWN/WBasic 0.20 on the supported server path; the H4 CLIENT profile supports authenticated browser components and semantic controls. Proposed 1.0 constructs below are not implied implemented.
 **Language:** WBasic (WB)  
 **Source extension:** `.bas`  
 **Execution representation:** SEWN  
@@ -1350,3 +1350,21 @@ BIND EVENT, typed RAISE EVENT and statically checked Me.NamedChild access compil
 to canonical JSON/SEWN. Server execution includes authenticated hooks and event
 delivery. Existing 0.19 APIs remain compatible; extended definitions use shared IR
 0.20 and component schema 0.20. Client execution claims fail closed pending H3.
+
+## H4 CLIENT target and semantic presentation
+
+The implemented client authoring contract is documented with complete grammar,
+limits, examples and build instructions in [H4](milestones/0.3-H4/README.md).
+Compile a family with `target: 'client'` and a client-only manifest. The default
+SERVER path and language-neutral definition IR remain unchanged. `PRESENTATION
+CLIENT` supports CONTENT/HEADING plus FORM/CALL, BUTTON/LABEL/CALL, INPUT,
+TEXTAREA, CHECKBOX, SELECT, SUBMIT, RESET, LABEL and STATUS declarations.
+
+Fields declare AS String/Boolean/Integer/Float, literal LABEL, explicit LIMIT,
+optional REQUIRED, OPTIONS and VALUE in that order. A form binds a public
+`SUB Handler(data AS Object)`; a button binds a public zero-argument SUB. Exact
+public property VALUE bindings provide initial/display values, not write authority.
+Native events become validated scalar records and execute SEWN under host approval.
+Server/service contexts, raw HTML/attributes and unsupported target features fail
+with source diagnostics. CLIENT compilation is development-time tooling; browser
+source compilation remains unsupported.

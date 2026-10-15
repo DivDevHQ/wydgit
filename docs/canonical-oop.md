@@ -291,3 +291,12 @@ root-local host tokens and invocation-local adapters. Method declaring frames,
 visibility, overrides, interfaces and caller SEAM semantics remain canonical.
 See [H3](milestones/0.3-H3/README.md) for Page-root hydration, lifetime retirement,
 portable composition and explicit presentation limitations.
+
+## H4 semantic controls
+
+[H4](milestones/0.3-H4/README.md) adds closed `wydgit.presentation/0.2` controls
+owned by existing Section/Block instances. It creates no parallel object hierarchy.
+Control method declarations resolve through canonical visibility/declaring frames;
+field records reuse canonical validation and conversion. DOM IDs and native events
+are not object credentials. Client rendering is explicit; no HTTP lifecycle mapping
+is implied by accepting the language-neutral metadata.

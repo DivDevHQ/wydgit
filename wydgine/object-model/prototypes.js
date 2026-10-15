@@ -1,3 +1,4 @@
+import {validateControlBindings} from '../controls.js';
 import {componentContract,validateComponent} from './component-contracts.js';
 import { classContracts } from './class-contracts.js';
 import {validateInterface,interfaceKey,sameSignature,interfaceTypes} from './interfaces.js';
@@ -117,7 +118,7 @@ export class PrototypeRegistry {
     for(const id of this.#definitions.keys())visitComposition(id);
     // Resolve statically known Me calls through each actual prototype, including overrides.
     for(const d of this.#definitions.values()){
-      if(d.interface)continue;validateComponent(d,this);if(d.extends&&raw.get(d.id).methodContracts!==undefined){const base=this.get(d.extends);for(const [name,slot] of Object.entries(raw.get(d.id).slots??{})){const old=base.slots[name];if(old)check((slot.min??0)>=(old.min??0)&&(old.max===undefined||slot.max!==undefined&&slot.max<=old.max)&&slot.accepts.every(id=>old.accepts.some(parent=>this.isA(id,parent))),'PROTOTYPE.SLOT','A class cannot weaken inherited slot contracts');}}
+      if(d.interface)continue;validateControlBindings(d,this);validateComponent(d,this);if(d.extends&&raw.get(d.id).methodContracts!==undefined){const base=this.get(d.extends);for(const [name,slot] of Object.entries(raw.get(d.id).slots??{})){const old=base.slots[name];if(old)check((slot.min??0)>=(old.min??0)&&(old.max===undefined||slot.max!==undefined&&slot.max<=old.max)&&slot.accepts.every(id=>old.accepts.some(parent=>this.isA(id,parent))),'PROTOTYPE.SLOT','A class cannot weaken inherited slot contracts');}}
       for(const s of Object.values(d.methodContracts??{}))for(const type of [...s.params,s.returns])if(typeof type==='string'&&type.startsWith('interface:'))this.interface(type);
       if(d.behavior)for(const type of interfaceTypes(d.behavior))this.interface(type);
       if(d.static){check(['sewn/0.14','sewn/0.15','sewn/0.16','sewn/0.17','sewn/0.18'].includes(d.behavior?.schema),'PROTOTYPE.STATIC','Static behavior requires sewn/0.14, sewn/0.15 or sewn/0.16');const walk=v=>{if(!v||typeof v!=='object')return;check(!(v.op==='context'&&v.name==='ME'),'PROTOTYPE.STATIC','Static methods have no Me');Object.values(v).forEach(walk);};walk(d.behavior);for(const lib of d.behavior.libraries??[])check(d.dependencies?.[lib.id]===lib.version&&lib.id!==d.id,'PROTOTYPE.STATIC','Linked dependency must be declared');continue;}

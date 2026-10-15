@@ -1,3 +1,22 @@
+# WydClient — current alpha.7
+
+WydClient **0.1.0-alpha.7**, WydSUB **0.1**, adds native semantic controls and
+explicit CLIENT package authoring. See the [H4 contract](../../docs/milestones/0.3-H4/README.md)
+and [verification](../../docs/milestones/0.3-H4/verification.md). Load the versioned
+`dist/wydgit-client-0.1.0-alpha.7.min.js`. The [interactive Taskboard](examples/interactive.html)
+and [embedded Taskboards](examples/interactive-embedded.html) use authored controls,
+compiled SEWN and host policy only; they need no application-authored JavaScript.
+
+Build the example from the repository root with
+`node scripts/build-client-package.js examples/wbasic-taskboard/client/build.json packages/wydclient/examples/interactive divdev`.
+Serve this directory over static HTTP. Third-party deployment requires independently
+trusted publisher keys and exact package/version execution approval. Local sample
+trust is an explicit development choice, never a production default.
+
+The following sections retain H3 and earlier historical contracts; their deferrals
+apply to those versions. H4 supersedes them only for its explicitly documented
+control/profile subset. All historical versioned artifacts remain immutable.
+
 # WydClient — current alpha.6
 
 WydClient **0.1.0-alpha.6** executes a closed portable canonical SEWN component
