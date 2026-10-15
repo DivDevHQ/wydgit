@@ -249,3 +249,10 @@ Unknown/foreign-origin routing rejection is not accepted tenant work. Existing
 SEAM, exact App ownership, CSRF, host cookies and service quotas remain authoritative.
 Single-App entry points retain compatibility. No billing/admin API or hard process
 isolation is introduced.
+
+I3 hosting health, capacity, startup/shutdown and relocation functions are trusted
+Node host APIs only. They are not canonical services or SEWN capabilities. An App
+ID, package receipt or relocation integrity descriptor never grants controller,
+provider, domain or execution authority. Restart/relocation constructs new controller
+lifetimes; source tokens/contexts cannot bind destination services. See the
+[hosting operations contract](milestones/0.3-I3/README.md).

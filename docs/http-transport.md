@@ -83,7 +83,7 @@ replaceable and is not an architectural permanence requirement. No alternate
 adapter, Bun/Deno/Cloudflare host, WebSocket or HTTP/2 support is implemented here.
 Workspace package contracts and versions remain unchanged. Their platform
 compatibility ranges now also accept the 0.3 prerelease series; the host platform
-is `0.3.0-alpha.11`.
+is `0.3.0-alpha.12`.
 
 Verification includes the full `npm test` suite and `npm run check`. Focused real
 TCP tests exercise asset/cache policy, malformed/oversized/chunked/compressed
@@ -140,3 +140,10 @@ Unknown/foreign-origin routing rejection is not accepted tenant work. Existing
 SEAM, exact App ownership, CSRF, host cookies and service quotas remain authoritative.
 Single-App entry points retain compatibility. No billing/admin API or hard process
 isolation is introduced.
+
+I3's trusted [operational wrapper](hosting-operations.md) validates required/optional
+startup before opening the shared listener and marks not-ready before disposal.
+It adds no public diagnostic/admin URL or Session-bearing health route. I1 exact
+hostname/proxy/origin policy remains authoritative; failed tenant routes never fall
+back to parking. The Caddy reference requires sanitized forwarding metadata and a
+private backend and remains documentation-only pending executable validation.

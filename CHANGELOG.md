@@ -1,5 +1,16 @@
 ## Unreleased
 
+### Wydgit 0.3-I3 — Hosting operations and stopped local relocation
+
+- Add trusted frozen health/capacity snapshots, deterministic bounded warnings and
+  explicit required/optional startup orchestration over the existing host controller.
+- Add signal-driven terminal shutdown and a persistent local multi-site CLI profile.
+- Add bounded directory snapshots for cleanly stopped local JSON Apps, integrity
+  validation, destination root rebinding and fresh-controller ownership validation.
+- Verify installed Taskboard execution after restart/relocation, persistent Store
+  data and unaffected siblings. Document provider handoff and shared-process limits.
+- Platform alpha.12; WydClient alpha.8 and WydSUB 0.1 unchanged.
+
 ### Wydgit 0.3-I2 — App resource governance and metering
 
 - Extend the trusted App inventory with finite combined/HTTP/direct admission

@@ -98,7 +98,7 @@ WBasic source → shared definition IR → canonical prototypes + SEWN
 
 ## Current capabilities and boundaries
 
-Current versions are **Wydgine/platform 0.3.0-alpha.11**, **WydClient 0.1.0-alpha.8**
+Current versions are **Wydgine/platform 0.3.0-alpha.12**, **WydClient 0.1.0-alpha.8**
 and **WydSUB 0.1**. WBasic/component contracts are implemented through 0.20;
 the language reference also contains clearly marked future proposals. These are
 separate version axes. Historical browser artifacts remain immutable.
@@ -192,6 +192,12 @@ accounting. Later I phases address the remaining hosting product.
 The broader roadmap continues with I: Multi-App Hosting; J: Platform/App Administration; K: Installable CMS;
 and L: integration, independent security audit, hardening and prerelease. These are
 planned milestones, not existing features or a Wydgit 0.3 final release.
+
+The [I3 hosting operations guide](docs/hosting-operations.md) provides a persistent
+non-production multi-site profile, trusted readiness/capacity snapshots, graceful
+shutdown/restart and stopped local JSON App relocation. Start with the
+[example commands](examples/hosting-operations/README.md); provider handoff and
+shared-process limits remain explicit.
 
 ## License
 

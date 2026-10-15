@@ -1,0 +1,22 @@
+# Documentation reference only. Supply certificates; this file does not request ACME.
+{
+ auto_https disable_certs
+}
+alpha.example.test, beta.example.test, soon.example.test {
+ tls /etc/wydgit/tls/fullchain.pem /etc/wydgit/tls/privatekey.pem
+ reverse_proxy 127.0.0.1:8080 {
+  header_up -Forwarded
+  header_up -X-Forwarded-For
+  header_up -X-Forwarded-Port
+  header_up X-Forwarded-Host {http.request.host}
+  header_up X-Forwarded-Proto https
+  transport http {
+   versions 1.1
+   dial_timeout 3s
+   response_header_timeout 30s
+   read_timeout 60s
+   write_timeout 60s
+   keepalive off
+  }
+ }
+}

@@ -13,3 +13,6 @@ AGENTS.md
 
 # Host runtime/provider data
 .wydgit-data/
+
+# Disposable persistent local hosting example
+.hosting-local/
