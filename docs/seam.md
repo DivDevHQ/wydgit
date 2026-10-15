@@ -222,3 +222,15 @@ identity nor membership authority: the host must pass fresh verified facts. They
 remain independent of capabilities, resource scopes, principal and installation
 receipts. See [WydGate membership](wydgate-membership.md) for the live self-service
 validation and explicit member/bootstrap grants.
+
+## Hostname selection and credentials (I1)
+
+The [I1 routing contract](milestones/0.3-I1/README.md) selects the exact active App
+before authentication, CSRF, execution, services and assets. Hostname mapping is
+trusted operator configuration, not a package permission or proof of ownership.
+Public HTTPS requires an exact approved proxy peer and validated effective origin.
+Credentials stay host-only: reserved __Host-wydgit-* with Secure for HTTPS, reserved
+wydgit-* for explicit local HTTP. Deletion uses matching attributes. Cross-App Gate
+replay is denied; SameSite does not replace exact Origin and session CSRF checks.
+Parking routes use an ordinary service-free App and consume/issue no credentials.
+There is no cross-App SSO, tenant routing API or automatic domain verification.

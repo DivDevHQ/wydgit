@@ -1,3 +1,4 @@
+import {credentialCookies} from '../http/credential-cookies.js';
 import {createExecutionBudget,executionBudget} from '../sewn/budget.js';
 import { matchesObjectGrant } from '../seam/context.js';
 import { randomBytes,createHash } from 'node:crypto';
@@ -27,7 +28,7 @@ export function createLifecycle({app,handlers=[],instances,context=new Execution
     },errors(){return freeze(clean(errors));}
   });
 }
-export function createSessionResolver({app,gate,lifecycle,max=1024}) {
+export function createSessionResolver({app,gate,lifecycle,max=1024,sessionless=false}) {
   let live=true;const anonymous=new Map();const digest=value=>createHash('sha256').update(value).digest('hex');
   const retire=async key=>{
     const entry=anonymous.get(key);if(!entry)return;
@@ -35,15 +36,17 @@ export function createSessionResolver({app,gate,lifecycle,max=1024}) {
     anonymous.delete(key);
     await lifecycle.session({app,type:'End',session:{id:entry.id,app,authenticated:false,expiresAt:entry.expiresAt}});
   };
-  return Object.freeze({close(){live=false;anonymous.clear();},async resolve(cookies) {
+  return Object.freeze({close(){live=false;anonymous.clear();},async resolve(cookies,{secure=true}={}) {
+    const policy=credentialCookies(secure);
     check(live,'EVENT.DENIED','Application Session owner ended');
-    if(cookies['__Host-wydgit-auth']) {
-      check(gate,'EVENT.DENIED','Authentication unavailable');const identity=await gate.resolveSession(cookies['__Host-wydgit-auth']);check(live&&identity.app===app,'EVENT.DENIED','Cross-App Session');
-      return {view:{id:identity.sessionId,app,authenticated:true,identity},active:()=>live&&identity.expiresAt>Date.now(),async authorize(){check(live,'EVENT.DENIED','Application Session owner ended');const fresh=await gate.resolveSession(cookies['__Host-wydgit-auth']);check(live&&fresh.app===app&&fresh.sessionId===identity.sessionId,'EVENT.DENIED','Session changed');return fresh;},retire:()=>retire(cookies['__Host-wydgit-session']&&digest(cookies['__Host-wydgit-session'])),identity,csrf:digest(cookies['__Host-wydgit-auth']+'csrf'),cookie:null};
+    if(sessionless)return {view:{id:randomBytes(16).toString('hex'),app,authenticated:false},active:()=>live,async authorize(){check(live,'EVENT.DENIED','Application stopped');},async retire(){},identity:null,csrf:randomBytes(32).toString('hex'),cookie:null};
+    if(cookies[policy.auth]) {
+      check(gate,'EVENT.DENIED','Authentication unavailable');const identity=await gate.resolveSession(cookies[policy.auth]);check(live&&identity.app===app,'EVENT.DENIED','Cross-App Session');
+      return {view:{id:identity.sessionId,app,authenticated:true,identity},active:()=>live&&identity.expiresAt>Date.now(),async authorize(){check(live,'EVENT.DENIED','Application Session owner ended');const fresh=await gate.resolveSession(cookies[policy.auth]);check(live&&fresh.app===app&&fresh.sessionId===identity.sessionId,'EVENT.DENIED','Session changed');return fresh;},retire:()=>retire(cookies[policy.session]&&digest(cookies[policy.session])),identity,csrf:digest(cookies[policy.auth]+'csrf'),cookie:null};
     }
     const now=Date.now();for(const [key,entry] of anonymous)if(entry.expiresAt<=now){anonymous.delete(key);await lifecycle.session({app,type:'Timeout',session:{id:entry.id,app,authenticated:false,expiresAt:entry.expiresAt}});await lifecycle.session({app,type:'End',session:{id:entry.id,app,authenticated:false,expiresAt:entry.expiresAt}});}
-    const token=cookies['__Host-wydgit-session'];let key=token&&digest(token),entry=anonymous.get(key);let cookie=null;
-    if(!entry){check(anonymous.size<max,'EVENT.LIMIT','Session capacity');const token=randomBytes(32).toString('hex');key=digest(token);entry={id:randomBytes(16).toString('hex'),app,authenticated:false,expiresAt:now+3600000,csrf:randomBytes(32).toString('hex')};anonymous.set(key,entry);cookie=`__Host-wydgit-session=${token}; Path=/; Secure; HttpOnly; SameSite=Lax`;await lifecycle.session({app,type:'Start',session:{id:entry.id,app,authenticated:false,expiresAt:entry.expiresAt}});}
+    const token=cookies[policy.session];let key=token&&digest(token),entry=anonymous.get(key);let cookie=null;
+    if(!entry){check(anonymous.size<max,'EVENT.LIMIT','Session capacity');const token=randomBytes(32).toString('hex');key=digest(token);entry={id:randomBytes(16).toString('hex'),app,authenticated:false,expiresAt:now+3600000,csrf:randomBytes(32).toString('hex')};anonymous.set(key,entry);cookie=policy.serialize('session',token);await lifecycle.session({app,type:'Start',session:{id:entry.id,app,authenticated:false,expiresAt:entry.expiresAt}});}
     return {view:{id:entry.id,app,authenticated:false},active:()=>live&&anonymous.get(key)===entry&&entry.expiresAt>Date.now(),async authorize(){check(anonymous.get(key)===entry&&entry.expiresAt>Date.now(),'EVENT.DENIED','Session ended');},retire:()=>retire(key),identity:null,csrf:entry.csrf,cookie};
   }});
 }

@@ -8,9 +8,9 @@ import { loadRepository } from './wydgine/repository.js';
 import { initializeHost } from './wydgine/host.js';
 
 export const projectRoot = path.dirname(fileURLToPath(import.meta.url));
-export function createApp({ root = projectRoot, logger = console, libraries, execution = {}, lifecycle, admit, guard, contextPolicy, onStop } = {}) {
+export function createApp({ root = projectRoot, logger = console, libraries, execution = {}, lifecycle, admit, guard, contextPolicy, onStop, parking } = {}) {
   const renderer = createRenderer({ root, verifiedPackages:execution.verifiedPackages });
-  const pipeline = createPipeline({ root, libraries, execution, lifecycle, guard, contextPolicy });
+  const pipeline = createPipeline({ root, libraries, execution, lifecycle, guard, contextPolicy, parking });
   const app = createTransport({ root, projectRoot, renderer, pipeline, logger, admit, onStop });
   return app;
 }

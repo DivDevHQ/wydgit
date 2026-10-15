@@ -249,3 +249,15 @@ rejoining a departed membership, scalable indexes/session storage, automatic mig
 retention/purge automation and administration consoles. Age proof must never imply
 legal identity without a future explicit trust contract. No identity documents are
 collected. These extensions must preserve independent identity, membership and SEAM.
+
+## Hostname selection and credentials (I1)
+
+The [I1 routing contract](milestones/0.3-I1/README.md) selects the exact active App
+before authentication, CSRF, execution, services and assets. Hostname mapping is
+trusted operator configuration, not a package permission or proof of ownership.
+Public HTTPS requires an exact approved proxy peer and validated effective origin.
+Credentials stay host-only: reserved __Host-wydgit-* with Secure for HTTPS, reserved
+wydgit-* for explicit local HTTP. Deletion uses matching attributes. Cross-App Gate
+replay is denied; SameSite does not replace exact Origin and session CSRF checks.
+Parking routes use an ordinary service-free App and consume/issue no credentials.
+There is no cross-App SSO, tenant routing API or automatic domain verification.

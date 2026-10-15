@@ -1,5 +1,7 @@
+import {createHash} from 'node:crypto';
+import { requestRoute } from '../routing.js';
 import { Hono } from 'hono';
-import { createAdaptorServer } from '@hono/node-server';
+import { createAdaptorServer, getRequestListener } from '@hono/node-server';
 import { RESPONSE_ALREADY_SENT } from '@hono/node-server/utils/response';
 import { open, realpath } from 'node:fs/promises';
 import { constants } from 'node:fs';
@@ -67,7 +69,7 @@ async function asset(root, relative, type, res, request) {
     res.setHeader('Cache-Control', 'public, max-age=0');
     res.setHeader('Last-Modified', stat.mtime.toUTCString());
     res.setHeader('Accept-Ranges', 'bytes');
-    const etag = `W/"${stat.size.toString(16)}-${Math.trunc(stat.mtimeMs).toString(16)}"`;
+    const etag = `W/"${createHash('sha256').update(approved).digest('hex').slice(0,16)}-${stat.size.toString(16)}-${Math.trunc(stat.mtimeMs).toString(16)}"`;
     res.setHeader('ETag', etag);
     if (request.headers.get('if-none-match')?.split(/\s*,\s*/).some(value => value === etag || value === '*') || (!request.headers.has('if-none-match') && Date.parse(request.headers.get('if-modified-since')) >= Math.floor(stat.mtimeMs / 1000) * 1000)) { res.statusCode = 304; res.end(); return true; }
     let start = 0, end = stat.size - 1;
@@ -103,13 +105,15 @@ export function createTransport({ root, projectRoot, renderer, pipeline, logger,
   const host = new Hono();
   host.all('*', async c => {
     let release;
+    const route=requestRoute(c.env.incoming);
     const request = c.req.raw, res = outputPort(c.env.outgoing, request.method === 'HEAD');
-    try{release=admit();}catch{res.statusCode=503;res.end('Application unavailable');return RESPONSE_ALREADY_SENT;}
+    try{release=admit();}catch{res.statusCode=503;res.setHeader('Cache-Control','no-store');res.end('Application unavailable');return RESPONSE_ALREADY_SENT;}
     try {
     res.setHeader('Content-Security-Policy', policy);
-    res.setHeader('X-Content-Type-Options', 'nosniff');res.setHeader('Referrer-Policy','no-referrer');
+    res.setHeader('X-Content-Type-Options', 'nosniff');res.setHeader('Referrer-Policy',route?'same-origin':'no-referrer');
     try {
       const url = new URL(request.url), pathname = url.pathname;
+      if(route?.parking&&!['GET','HEAD'].includes(request.method)){res.statusCode=405;res.setHeader('Allow','GET, HEAD');res.end('Method not allowed');return RESPONSE_ALREADY_SENT;}
       if (['GET', 'HEAD'].includes(request.method)) {
         if (pathname === '/css/skins.css') {
           res.setHeader('Content-Type', 'text/css; charset=utf-8'); res.setHeader('Cache-Control', 'no-cache');
@@ -124,13 +128,13 @@ export function createTransport({ root, projectRoot, renderer, pipeline, logger,
         }
       }
       if(pathname.startsWith('/_transfer/')) {
-        await pipeline.request({method:request.method,path:pathname,query:url.search.slice(1),cookie:request.headers.get('cookie')??'',transfer:{body:request.body,headers:{type:request.headers.get('content-type')??'',fileSize:request.headers.get('x-wydgit-file-size'),encoding:request.headers.get('content-encoding')??'identity',accept:request.headers.get('accept')??'',range:request.headers.get('range'),ifNoneMatch:request.headers.get('if-none-match'),ifRange:request.headers.get('if-range')}}},res);
+        await pipeline.request({method:request.method,path:pathname,query:url.search.slice(1),transport:route,cookie:route?.parking?'':request.headers.get('cookie')??'',transfer:{body:request.body,headers:{type:request.headers.get('content-type')??'',fileSize:request.headers.get('x-wydgit-file-size'),encoding:request.headers.get('content-encoding')??'identity',accept:request.headers.get('accept')??'',range:request.headers.get('range'),ifNoneMatch:request.headers.get('if-none-match'),ifRange:request.headers.get('if-range')}}},res);
         return RESPONSE_ALREADY_SENT;
       }
       let form;
       try { form = await collectForm(request); }
       catch (error) { logger.error(error.message); res.statusCode = 500; res.setHeader('Content-Type', 'text/html; charset=utf-8'); res.end(errorDocument()); return RESPONSE_ALREADY_SENT; }
-      await pipeline.request({ method: request.method, path: pathname, query: url.search.slice(1), form, cookie: request.headers.get('cookie') ?? '' }, res);
+      await pipeline.request({ method: request.method, path: route?.parking?(route.state==='parked'?'/':'/'+route.state):pathname, query: route?.parking?'':url.search.slice(1), form, transport:route, cookie: route?.parking?'':request.headers.get('cookie') ?? '' }, res);
     } catch (error) {
       logger.error(error.message);
       if (res.headersSent) res.destroy();
@@ -144,6 +148,7 @@ export function createTransport({ root, projectRoot, renderer, pipeline, logger,
   const stop = () => stopping ??= (async()=>{try{await pipeline.lifecycle.stop();}finally{await onStop();}})();
   return {
     locals,ready:pipeline.ready,stop,
+    handle:getRequestListener(host.fetch,{overrideGlobalObjects:false}),
     listen(...args) {
       const server = createAdaptorServer({ fetch: host.fetch, overrideGlobalObjects: false,serverOptions:{maxHeaderSize:pipeline.httpPolicy.headerBytes} });
       server.requestTimeout=pipeline.httpPolicy.requestMs;server.headersTimeout=Math.min(15000,pipeline.httpPolicy.requestMs);server.maxHeadersCount=pipeline.httpPolicy.headerCount;

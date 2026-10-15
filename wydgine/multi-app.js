@@ -1,3 +1,6 @@
+import {presentationPolicy} from './presentation-policy.js';
+import {createServer} from 'node:http';
+import {validateRouting,resolveRoute,bindRequestRoute} from './http/routing.js';
 // Trusted Node host composition. Never imported by portable code or WydClient.
 import fs from 'node:fs/promises';
 import {readFileSync} from 'node:fs';
@@ -46,12 +49,12 @@ function limits(input={}){
 export async function validateAppInventory(input,{root,execution={}}={}){
  try{
   check(typeof input!=='string'||Buffer.byteLength(input)<=65536,'HOST.INVALID','Host inventory too large');
-  const config=clean(typeof input==='string'?JSON.parse(input):input);shape(config,['schema','apps'],['shutdownMs','startupMs','maxPending']);check(Buffer.byteLength(JSON.stringify(config))<=65536,'HOST.INVALID','Host inventory too large');
+  const config=clean(typeof input==='string'?JSON.parse(input):input);shape(config,['schema','apps'],['shutdownMs','startupMs','maxPending','routing']);check(Buffer.byteLength(JSON.stringify(config))<=65536,'HOST.INVALID','Host inventory too large');
   check(config.schema==='wydgit.multi-host/0.1'&&Array.isArray(config.apps)&&config.apps.length>0&&config.apps.length<=16,'HOST.INVALID','Invalid App inventory');
   const shutdownMs=config.shutdownMs??5000,startupMs=config.startupMs??10000,maxPending=config.maxPending??64;
   check(Number.isSafeInteger(startupMs)&&startupMs>=10&&startupMs<=30000&&Number.isSafeInteger(shutdownMs)&&shutdownMs>=10&&shutdownMs<=30000&&Number.isSafeInteger(maxPending)&&maxPending>=1&&maxPending<=256,'HOST.LIMIT','Invalid host limits');
   const base=path.resolve(root);check(await fs.realpath(base)===base,'HOST.ROOT','Host base must be canonical');
-  const ids=new Set(),roots=[],remote=[];const apps=[];
+  const ids=new Set(),roots=[],remote=[],httpPolicies=[];const apps=[];
   for(const entry of config.apps){
    shape(entry,['id','root'],['limits']);
    check(!execution[entry.id]?.lifecycleInstances&&!execution[entry.id]?.files,'HOST.OWNER','I0 requires owned Page instances and canonical file services');
@@ -61,7 +64,7 @@ export async function validateAppInventory(input,{root,execution={}}={}){
    check(!roots.some(r=>r===selected||inside(r,selected)||inside(selected,r)),'HOST.ROOT','Overlapping App roots');roots.push(selected);
    for(const directory of ['content','prototypes','public']){await confined(selected,path.join(selected,directory));await tree(path.join(selected,directory));}
    await confined(selected,path.join(selected,'wydgit.config.json'));checkInstallationRecovery(selected);
-   const appConfig=validateConfig(await fs.readFile(path.join(selected,'wydgit.config.json'),'utf8'));
+   const appConfig=validateConfig(await fs.readFile(path.join(selected,'wydgit.config.json'),'utf8'));httpPolicies.push(presentationPolicy(appConfig.runtime).http);
    validateRequirements(await fs.readFile(path.join(selected,'content/requirements.json'),'utf8'));
    const model=loadRepository(selected,{verifiedPackages:execution[entry.id]?.verifiedPackages});
    check(model.runtime.rootId===entry.id,'HOST.IDENTITY','Canonical App identity mismatch');
@@ -80,12 +83,15 @@ export async function validateAppInventory(input,{root,execution={}}={}){
    }
    apps.push({id:entry.id,root:selected,limits:limits(entry.limits),snapshot:snapshot(selected)});
   }
-  return freeze({apps,shutdownMs,startupMs,maxPending});
+  const routing=Object.hasOwn(config,'routing')?validateRouting(config.routing,apps.map(a=>a.id)):null;
+  if(routing)for(const id of routing.parking){const entry=apps.find(a=>a.id===id),settings=validateConfig(await fs.readFile(path.join(entry.root,'wydgit.config.json'),'utf8'));check(!settings.libraries.some(l=>l.enabled)&&!Object.keys(execution[id]??{}).length,'HOST.ROUTING','Parking App must be anonymous and service-free');}
+  const http=Object.fromEntries(Object.keys(httpPolicies[0]).map(k=>[k,Math.min(...httpPolicies.map(p=>p[k]))]));
+  return freeze({apps,shutdownMs,startupMs,maxPending,routing,http});
  }catch(e){throw e instanceof WydgitError&&e.code.startsWith('HOST.')?e:fail();}
 }
 export async function createMultiAppHost(input,options={}){
  const declaration=typeof input==='string'?input:freeze(clean(input));
- const inventory=await validateAppInventory(declaration,options),entries=new Map(inventory.apps.map(a=>[a.id,{...a,state:'configured',pending:new Set(),servers:new Set()}])),tokens=new WeakMap(),contexts=new WeakMap(),providerOwners=new WeakMap();let disposed=false,disposing;
+ const inventory=await validateAppInventory(declaration,options),entries=new Map(inventory.apps.map(a=>[a.id,{...a,state:'configured',pending:new Set(),servers:new Set(),responses:new Set()}])),tokens=new WeakMap(),contexts=new WeakMap(),providerOwners=new WeakMap();const sharedServers=new Set();let disposed=false,disposing;
  const get=id=>{check(!disposed&&entries.has(id),'HOST.UNKNOWN','Unknown App selection');return entries.get(id);};
  const active=token=>{const e=tokens.get(token);check(!disposed&&e?.state==='active'&&!e.stopRequested,'HOST.RETIRED','Invalid or retired App binding');return e;};
  const status=e=>Object.freeze({id:e.id,state:e.state,pending:e.pending.size});
@@ -113,7 +119,7 @@ export async function createMultiAppHost(input,options={}){
    if(!['active','stopping'].includes(e.state))return;
    e.state='stopping';let failed=e.retired===true;const priorErrors=e.app.locals.lifecycle.errors().length;
    const closes=[...e.servers].map(server=>new Promise(r=>server.close(()=>r())));
-   try{await bounded(Promise.all([...e.pending,...closes]));}catch{failed=true;for(const server of e.servers)server.closeAllConnections();}
+   try{await bounded(Promise.all([...e.pending,...closes]));}catch{failed=true;for(const server of e.servers)server.closeAllConnections();for(const res of e.responses)res.destroy();}
    if(failed)e.retired=true;
    try{await bounded(e.app.stop());if(e.app.locals.lifecycle.errors().length>priorErrors)failed=true;}catch{failed=true;}
    e.retired=true;try{await bounded(e.app.locals.libraries.close());}catch{failed=true;}e.servers.clear();e.state=failed?'failed':'stopped';if(failed)throw fail('HOST.CLEANUP');
@@ -130,7 +136,7 @@ export async function createMultiAppHost(input,options={}){
     const contextPolicy=context=>{checkContext(context);check(context.app===id,'HOST.OWNER','Wrong App context');return new ExecutionContext({...context,limits:{...context.limits,...Object.fromEntries(Object.entries(e.limits).map(([k,v])=>[k,Math.min(v,context.limits[k]??v)]))}});};
     execution.lifecycleContext=contextPolicy(execution.lifecycleContext??new ExecutionContext({publisher:'wydgit.core',self:id,app:id}));
     check(Date.now()<deadline,'HOST.TIMEOUT','App startup deadline');
-    const pending=createHostApp({root:e.root,appId:id,execution,contextPolicy,libraryAdapters:adapters(id),guard:()=>guard(e),strictStartup:true,logger:options.logger??{error(){}},admit:()=>admit(e)});
+    const pending=createHostApp({root:e.root,appId:id,execution,contextPolicy,parking:inventory.routing?.parking.includes(id)??false,libraryAdapters:adapters(id),guard:()=>guard(e),strictStartup:true,logger:options.logger??{error(){}},admit:()=>admit(e)});
     pending.then(app=>{if(e.retired)app.stop().catch(()=>{});},()=>{});
     e.app=await bounded(pending,Math.max(1,deadline-Date.now()));check(Date.now()<deadline,'HOST.TIMEOUT','App startup deadline');
     e.state='active';e.token=Object.freeze(Object.create(null));tokens.set(e.token,e);return e.token;
@@ -147,7 +153,26 @@ export async function createMultiAppHost(input,options={}){
     await new Promise((resolve,reject)=>{server.once('listening',resolve);server.once('error',reject);});return server;
    }catch{if(server)e.servers.delete(server);try{await stop(e);}catch{}throw fail('HOST.LISTEN');}
   },
+  async listenShared(...args){
+   check(!disposed&&inventory.routing&&!sharedServers.size,'HOST.STATE','Shared routing unavailable');
+   // Strict host policy runs on the original native request before App adaptation.
+   const server=createServer({maxHeaderSize:inventory.http.headerBytes},(req,res)=>{
+    const reject=status=>{res.statusCode=status;res.setHeader('Cache-Control','no-store');res.setHeader('Content-Type','text/plain; charset=utf-8');res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Connection','close');res.end(status===503?'Application unavailable':'Request rejected');};
+    if(disposed)return reject(503);
+    if(req.rawHeaders.length/2>inventory.http.headerCount)return reject(431);
+    let route;try{route=resolveRoute(inventory.routing,req);}catch{return reject(400);}
+    if(!route)return reject(421);
+    const e=entries.get(route.app);if(e.state!=='active'||e.stopRequested)return reject(503);
+    bindRequestRoute(req,route);
+    e.responses.add(res);const release=()=>e.responses.delete(res);res.once('finish',release);res.once('close',release);
+    e.app.handle(req,res);
+   });
+   server.requestTimeout=inventory.http.requestMs;server.headersTimeout=Math.min(15000,inventory.http.requestMs);server.maxHeadersCount=0;
+   sharedServers.add(server);server.once('close',()=>sharedServers.delete(server));
+   try{await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(...args,resolve);});return server;}
+   catch{sharedServers.delete(server);server.close();throw fail('HOST.LISTEN');}
+  },
   async stop(token){const e=tokens.get(token);check(e,'HOST.RETIRED','Unknown App binding');return stop(e);},
-  dispose(){return disposing??=(async()=>{disposed=true;const results=await Promise.allSettled([...entries.values()].map(stop));if(results.some(r=>r.status==='rejected'))throw fail('HOST.CLEANUP');})();}
+  dispose(){return disposing??=(async()=>{disposed=true;const closes=[...sharedServers].map(server=>new Promise(resolve=>server.close(()=>resolve())));const results=await Promise.allSettled([...entries.values()].map(stop));try{await bounded(Promise.all(closes));}catch{for(const server of sharedServers)server.closeAllConnections();results.push({status:'rejected'});}if(results.some(r=>r.status==='rejected'))throw fail('HOST.CLEANUP');})();}
  });
 }

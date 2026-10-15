@@ -1,5 +1,18 @@
 ## Unreleased
 
+### Wydgit 0.3-I1 — Trusted hostname routing and parking
+
+- Extend the I0 controller with a closed immutable hostname registry and one shared
+  native HTTP listener; reject duplicate/invalid authorities, unknown hosts and
+  unavailable targets before App-specific processing. Explicit approved-zone parking.
+- Validate exact reverse-proxy peers and HTTPS authority; retain session-bound CSRF
+  alongside exact Origin checks, host-only credential cookies and safe local HTTP.
+- Serve ordinary canonical parking App variants without credentials or services;
+  preserve tenant assets, scoped ETags, admission, drain and single-App entry points.
+- Add real HTTP/Taskboard/Gate/service and hostile routing tests, local Chrome/TLS
+  native-form acceptance and deployment contracts. Platform alpha.10; WydClient
+  alpha.8 and WydSUB 0.1 unchanged. No certificate/domain automation.
+
 ### Wydgit 0.3-I0 — Multi-App host foundation
 
 - Add a closed trusted App inventory and private controller with exact canonical

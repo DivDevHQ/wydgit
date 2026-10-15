@@ -1,3 +1,4 @@
+import {credentialCookies} from './credential-cookies.js';
 import { submissionToken } from './submission-authority.js';
 import { evaluate } from '../components.js';
 import { sendTransfer } from './transfers.js';
@@ -16,7 +17,7 @@ import { parseCookies,parseMap } from './input.js';
 import { ExecutionContext } from '../seam/context.js';
 import { createGate } from '@wydgit/gate/client';
 import { errorDocument,pagePath,escapeHtml } from '../index.js';
-export function createPipeline({root,libraries,execution={},lifecycle,guard=()=>{},contextPolicy=context=>context}) {
+export function createPipeline({root,libraries,execution={},lifecycle,guard=()=>{},contextPolicy=context=>context,parking=false}) {
   execution={...execution,handlers:prepareHandlers(execution.handlers??[],execution.events),actions:(execution.actions??[]).map(record=>prepareAction(record,execution.events))};
   let runtimeSettings;
   try{runtimeSettings=presentationPolicy(validateConfig(readFileSync(path.join(root,'wydgit.config.json'),'utf8')).runtime);}catch(error){if(error.code!=='ENOENT')throw error;runtimeSettings=presentationPolicy();} // Legacy createApp may render without a library host config; createHostApp still requires it.
@@ -27,14 +28,14 @@ export function createPipeline({root,libraries,execution={},lifecycle,guard=()=>
   if(packages){check(!execution.context&&!execution.handlers.length&&!execution.actions.length,'PACKAGE.PRINCIPALS','Package Page authority cannot be combined with independently authorized host execution');execution={...execution,context:packages.context,handlers:packages.handlers,actions:packages.actions};}
   lifecycle??=createLifecycle({app,handlers:execution.lifecycleHandlers,context:execution.lifecycleContext,instances:execution.lifecycleInstances});
   const gate=libraries?.list().some(item=>item.id==='wydgate')&&execution.gateContext?createGate(libraries.bind(execution.gateContext)):null;
-  const sessions=createSessionResolver({app,gate,lifecycle});let closed=false;
+  const sessions=createSessionResolver({app,gate,lifecycle,sessionless:parking});let closed=false;
   const alive=()=>{check(!closed,'EVENT.DENIED','Application stopped');guard();};
   const ready=lifecycle.start();
   const ownedLifecycle={...lifecycle,async stop(){closed=true;sessions.close();await lifecycle.stop();}};
   // Plain transport input and kernel output port only; no host request/context.
   return {lifecycle:ownedLifecycle,ready,httpPolicy:runtimeSettings.http,async request(req,res){
     alive();await ready;alive();
-    let result,transferOutput;
+    let result,transferOutput;const cookiePolicy=credentialCookies(req.transport?.secure??true);
     try {
       res.setHeader('Cache-Control','no-store');
       check(stateFingerprint(root)===catalogHead,'PACKAGE.STALE','Installed packages changed; restart host');
@@ -42,7 +43,7 @@ export function createPipeline({root,libraries,execution={},lifecycle,guard=()=>
       const page=transfer?model.pages.get(transfer[3]):[...model.pages.values()].find(page=>(pagePath(page,model.site).replace(/\/$/,'')||'/')===route);
       if(!page){res.statusCode=404;res.setHeader('Content-Type','text/html; charset=utf-8');res.end(errorDocument(404));return;}
       if(!transfer&&(!['GET','HEAD','POST'].includes(req.method)||req.method==='POST'&&!(execution.actions??[]).some(a=>a.page===page.id))){res.statusCode=405;res.setHeader('Content-Type','text/html; charset=utf-8');res.setHeader('Allow','GET, HEAD');res.end('Method not allowed');return;}
-      const cookies=parseCookies(req.cookie??''),session=await sessions.resolve(cookies);
+      const cookies=parseCookies(parking?'':req.cookie??''),session=await sessions.resolve(cookies,{secure:req.transport?.secure??true});
       const wasActive=session.active,authorize=session.authorize;session.active=()=>{try{alive();return wasActive();}catch{return false;}};session.authorize=async()=>{alive();await authorize();alive();};
       if(execution.authenticatedPages?.includes(page.id))check(session.identity?.authenticated===true,'SEAM.DENIED','Authentication required');
       if(session.cookie)res.setHeader('Set-Cookie',[session.cookie]);
@@ -60,7 +61,7 @@ export function createPipeline({root,libraries,execution={},lifecycle,guard=()=>
         await session.authorize();
         const request=evaluate(binding.input,{properties:node.properties,id:target,query});
         let transitioned=false;
-        const authentication=gate?{token:cookies['__Host-wydgit-auth'],verify:()=>gate.resolveSession(cookies['__Host-wydgit-auth']),async establish(token){const fresh=await gate.resolveSession(token);check(fresh.app===app,'SEAM.DENIED','Wrong App');await session.retire();transitioned=true;res.setHeader('Set-Cookie',[`__Host-wydgit-auth=${token}; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=${Math.max(1,Math.floor((fresh.expiresAt-Date.now())/1000))}`, '__Host-wydgit-session=; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=0']);},async clear(){await session.retire();transitioned=true;res.setHeader('Set-Cookie',['__Host-wydgit-auth=; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=0','__Host-wydgit-session=; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=0']);}}:undefined;
+        const authentication=gate?{token:cookies[cookiePolicy.auth],verify:()=>gate.resolveSession(cookies[cookiePolicy.auth]),async establish(token){const fresh=await gate.resolveSession(token);check(fresh.app===app,'SEAM.DENIED','Wrong App');await session.retire();transitioned=true;res.setHeader('Set-Cookie',[cookiePolicy.serialize('auth',token,Math.max(1,Math.floor((fresh.expiresAt-Date.now())/1000))), cookiePolicy.serialize('session','',0)]);},async clear(){await session.retire();transitioned=true;res.setHeader('Set-Cookie',[cookiePolicy.serialize('auth','',0),cookiePolicy.serialize('session','',0)]);}}:undefined;
         const output=transferOutput=await libraries.transfer(context,library,operation,request,{...req.transfer,method:req.method,sessionId:session.view.id,...(library==='wydgate'?{authentication}:{}),authorize:()=>session.authorize()});
         if(!transitioned)await session.authorize();
         if(session.cookie&&output.headers?.['Cache-Control']?.startsWith('public'))output.headers['Cache-Control']='private, no-store';
@@ -79,7 +80,7 @@ export function createPipeline({root,libraries,execution={},lifecycle,guard=()=>
       }
       result=await executePage({model,pageId:page.id,session,input,context,runtimeSettings,handlers:execution.handlers,actions:execution.actions,events:execution.events,files:execution.files,libraries,serviceMappings:packages?.pages.get(page.id)?.storageMappings,csrf:session.csrf});
       await result.response.send(res,req.method==='HEAD');
-    }catch(error){if(!res.headersSent){if(error.code==='GATE.SESSION_INVALID')res.setHeader('Set-Cookie',['__Host-wydgit-auth=; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=0']);res.statusCode=req.path.startsWith('/_transfer/')?(/DENIED|FORGERY|GATE\.SESSION_INVALID/.test(error.code??'')?403:/LIMIT|QUOTA/.test(error.code??'')?413:/UNSUPPORTED_MEDIA|INVALID_MEDIA/.test(error.code??'')?415:/CONFLICT|STATE/.test(error.code??'')?409:/NOT_FOUND/.test(error.code??'')?404:400):(/DENIED|FORGERY|GATE\.SESSION_INVALID/.test(error.code??'')?403:400);res.setHeader('Content-Type','text/html; charset=utf-8');res.end(errorDocument());}else res.destroy();}
+    }catch(error){if(!res.headersSent){if(error.code==='GATE.SESSION_INVALID')res.setHeader('Set-Cookie',[cookiePolicy.serialize('auth','',0)]);res.statusCode=req.path.startsWith('/_transfer/')?(/DENIED|FORGERY|GATE\.SESSION_INVALID/.test(error.code??'')?403:/LIMIT|QUOTA/.test(error.code??'')?413:/UNSUPPORTED_MEDIA|INVALID_MEDIA/.test(error.code??'')?415:/CONFLICT|STATE/.test(error.code??'')?409:/NOT_FOUND/.test(error.code??'')?404:400):(/DENIED|FORGERY|GATE\.SESSION_INVALID/.test(error.code??'')?403:400);res.setHeader('Content-Type','text/html; charset=utf-8');res.end(errorDocument());}else res.destroy();}
     finally{transferOutput?.stream?.destroy();await transferOutput?.close?.();await result?.response.close();}
   }};
 }

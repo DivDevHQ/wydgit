@@ -1,8 +1,9 @@
 # HTTP transport — 0.2-I
 
-> I0 adds trusted per-App selection and independent listeners before authentication,
-> assets or Page execution. Ordinary single-App transport remains supported. There is
-> no public hostname routing or default-App fallback; see the [I0 host contract](milestones/0.3-I0/README.md).
+> I1 adds a shared native HTTP hostname boundary before App pipelines, including
+> exact proxy peer/HTTPS origin checks, host-only credentials and sessionless parking.
+> Single-App entry points remain supported. See the [I1 contract](milestones/0.3-I1/README.md).
+
 
 Hono is Wydgine’s default HTTP host adapter, not part of the Wydgit application
 programming model. No Hono Context, Request implementation detail, middleware
@@ -57,7 +58,7 @@ No upload or unrestricted body API is added.
 symlink escapes and encoded traversal are denied. Existing CSS typing, no-cache
 freshness (`public, max-age=0`), Last-Modified, weak ETags, conditional requests and
 single byte ranges are retained. Runtime modules retain their existing URLs,
-JavaScript content type and the six-module explicit allowlist rooted in the
+JavaScript content type and the explicit browser-safe dependency allowlist rooted in the
 platform repository. Other source files are unavailable. Directory indexes and
 symlink aliases are deliberately not served.
 
@@ -82,7 +83,7 @@ replaceable and is not an architectural permanence requirement. No alternate
 adapter, Bun/Deno/Cloudflare host, WebSocket or HTTP/2 support is implemented here.
 Workspace package contracts and versions remain unchanged. Their platform
 compatibility ranges now also accept the 0.3 prerelease series; the host platform
-is `0.3.0-alpha.7`.
+is `0.3.0-alpha.10`.
 
 Verification includes the full `npm test` suite and `npm run check`. Focused real
 TCP tests exercise asset/cache policy, malformed/oversized/chunked/compressed
@@ -103,3 +104,24 @@ request/response handles are exposed. Generic bounded multipart and streaming
 output utilities provide backpressure, timeout/disconnect cleanup and accessible
 browser submission feedback. Safe local media elements use CSP media-src:self.
 Trusted `runtime.http` bounds headers/request duration; see [WydStream](wydstream.md).
+
+## Shared hostname listener (I1)
+
+`createMultiAppHost(...).listenShared(...)` validates raw native headers before
+Hono normalization, binds an immutable route privately to the request and invokes
+that App's existing transport handler. No second Page/form/transfer dispatcher.
+The strictest configured App HTTP limits apply to the listener; raw excess header
+count rejects rather than silently truncating authority headers. Unknown/invalid
+hosts never parse App cookies or select assets. Shared close does not implicitly
+stop all Apps; controller disposal owns their cleanup.
+
+The effective origin is not derived from arbitrary headers. Public use requires
+exact trusted proxy peers plus sanitized single X-Forwarded-Host/Proto fields;
+direct HTTP is restricted to explicit development names. Routed POSTs require an
+exact Origin and the existing session CSRF. Routed Referrer-Policy is same-origin
+(native no-referrer form navigations can send null Origin); legacy policy remains
+no-referrer. Credential cookies are host-only, Secure on validated HTTPS, with
+reserved unprefixed local HTTP names. Parking is a read-only ordinary App without
+credential consumption, session persistence or services. Asset ETags contain an
+opaque root discriminator. External caches must include the public origin in keys
+and honor no-store/private. See I1 for exact configuration and deployment limits.
