@@ -143,6 +143,7 @@ ZIP format are distinct; the latter is not the current installer.
 
 ## Documentation and examples
 
+- [I4 Wydgine/WydHosting architecture and I5 implementation plan](docs/milestones/0.3-I4/README.md)
 - [Development rules](docs/DEVELOPMENT.md) and [founding architecture](docs/FOUNDING-ARCHITECTURE.md)
 - [Canonical objects](docs/canonical-oop.md), [object model](docs/object-model.md), [mutation](docs/mutation-model.md)
 - [WBasic implemented guide](docs/wydbasic.md) and [language reference](docs/wbasic-language-ref.md)

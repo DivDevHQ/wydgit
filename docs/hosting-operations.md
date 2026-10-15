@@ -157,3 +157,10 @@ Test restoration on disposable roots. Keep originals until verification finishes
 History and install recovery are not backups; clean restart does not prove recovery
 from SIGKILL, power loss, disk failure or interrupted remote I/O. See the full
 [persistence matrix](milestones/0.3-I3/README.md#persistence-and-recovery-matrix).
+
+## Architecture and next implementation phase
+
+[I4](milestones/0.3-I4/README.md) separates trusted Wydgine worker facilities from
+optional WydHosting provider orchestration. Its [I5 plan](milestones/0.3-I4/I5-plan.md)
+preserves the operational behavior described here; no provider supervisor, Linux
+isolation or installer is implemented by that design milestone.

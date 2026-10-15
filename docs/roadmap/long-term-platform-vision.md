@@ -263,3 +263,11 @@ Existing Wydgine I0–I2 host code includes `wydgine/multi-app.js`, `wydgine/htt
 ------
 
 **North star:** Developers can run `Wydgine` on their own VPS with a single App. Hosting providers can add `WydHosting` to operate many customers and pools. Almond Linux Server makes that provider setup turnkey. Almond Milk brings the same Wydgit application model onto lightweight local devices via `WydOS/Almond`. Users can move between those environments without being trapped by the platform.
+
+## I4 implementation handoff
+
+The [I4 architecture](../milestones/0.3-I4/README.md) audits actual I0–I3 code and
+records the [incremental I5 plan](../milestones/0.3-I4/I5-plan.md). I3's stopped local
+JSON relocation is implemented; installable engine/provider packages, process/OS
+isolation and provisioning remain future work. The preceding strategic snapshot
+is preserved; it is not evidence that those capabilities already exist.

@@ -1,5 +1,15 @@
 ## Unreleased
 
+### Wydgit 0.3-I4 — Wydgine / WydHosting architecture
+
+- Audit implemented I0–I3 dependencies and establish optional provider infrastructure
+  around the existing trusted engine/controller, with an incremental I5 specification.
+- Define standalone CLI/setup, customer/pool identity, process protocol, filesystem,
+  Linux provisioning, administration and stopped migration/recovery contracts.
+- Add disposable explicit-root, path-boundary and offline npm contract validation.
+- Design milestone only: platform alpha.12, WydClient alpha.8 and WydSUB 0.1 unchanged;
+  no supervisor, OS isolation, commercial provisioning or native installer implemented.
+
 ### Wydgit 0.3-I3 — Hosting operations and stopped local relocation
 
 - Add trusted frozen health/capacity snapshots, deterministic bounded warnings and
