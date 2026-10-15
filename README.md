@@ -144,6 +144,7 @@ ZIP format are distinct; the latter is not the current installer.
 ## Documentation and examples
 
 - [I5.1 engine boundary and baseline locks](docs/milestones/0.3-I5.1/README.md)
+- [I5.2 standalone CLI, App selection and terminal setup](docs/milestones/0.3-I5.2/README.md)
 - [I4 Wydgine/WydHosting architecture and I5 implementation plan](docs/milestones/0.3-I4/README.md)
 - [Development rules](docs/DEVELOPMENT.md) and [founding architecture](docs/FOUNDING-ARCHITECTURE.md)
 - [Canonical objects](docs/canonical-oop.md), [object model](docs/object-model.md), [mutation](docs/mutation-model.md)

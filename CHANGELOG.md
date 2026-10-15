@@ -1,5 +1,16 @@
 ## Unreleased
 
+### Wydgit 0.3-I5.2 — Standalone App selection and setup
+
+- Add private development Wydgine bin with strict setup/start/validate commands,
+  canonical single-App selection, bounded TTY discovery and safe headless refusal.
+- Add closed launcher configuration, reviewed setup/default persistence with atomic
+  file replacement/backups, and consent-based consumer startup manifest merging.
+- Preserve historical root npm start, trusted engine/service/SEAM boundaries and
+  browser artifacts. Platform remains alpha.12; independent npm packaging is I5.4.
+- Add real terminal, npm cwd/forwarding, HTTP/process/signal/collision and setup tests;
+  see the I5.2 verification report for executed gates and limitations.
+
 ### Wydgit 0.3-I5.1 — Engine boundary and baseline locks
 
 - Extract the authoritative trusted App inventory validator; preserve its compatibility
