@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {provisionExample} from '../examples/multi-app/setup.js';
-import {createMultiAppHost,validateAppInventory} from '../wydgine/multi-app.js';
+import {createMultiAppHost,validateAppInventory} from '../wydgine/trusted/worker.js';
 import {createGate} from '@wydgit/gate/client';
 import {manifest as gateManifest} from '@wydgit/gate';
 import {ExecutionContext} from '../wydgine/seam/context.js';

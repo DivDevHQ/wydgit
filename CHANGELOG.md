@@ -1,5 +1,14 @@
 ## Unreleased
 
+### Wydgit 0.3-I5.1 — Engine boundary and baseline locks
+
+- Extract the authoritative trusted App inventory validator; preserve its compatibility
+  export and remove relocation's controller dependency.
+- Add thin trusted worker re-exports and standalone/inventory/import-identity regression
+  coverage; exercise existing real multi-App/operational fixtures through the adapters.
+- Audit engine metadata, runtime assets, canonical service resolution and packed closure
+  requirements. No platform version, dependency, browser distribution or WydSUB change.
+
 ### Wydgit 0.3-I4 — Wydgine / WydHosting architecture
 
 - Audit implemented I0–I3 dependencies and establish optional provider infrastructure

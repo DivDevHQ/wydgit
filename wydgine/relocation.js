@@ -1,4 +1,5 @@
 // Stopped local Apps only. Caller is trusted host code; metadata grants no authority.
+import {validateAppInventory} from './inventory.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
@@ -36,6 +37,6 @@ export async function restoreLocalApp(snapshot,{root,directory,app,verifiedPacka
   for(const l of config.libraries){const o=l.options??{},resources=l.id==='wydstore'?o.stores:l.id==='wydfiles'?o.apps.flatMap(a=>a.mounts):l.id==='wydstream'?o.apps:[];for(const r of resources){check(!r.provider||['json','local'].includes(r.provider),'HOST.RELOCATION','Unsupported provider');if(r.root){check(['data','files','media'].includes(r.root),'HOST.RELOCATION','Invalid rebound root');r.root=path.join(target,r.root);}}}
   await fs.writeFile(path.join(target,'wydgit.config.json'),JSON.stringify(config));
   const stateFile=path.join(target,'content/installed-packages.json');try{const state=JSON.parse(await fs.readFile(stateFile));state.baseFingerprint=baseFingerprint(target);await fs.writeFile(stateFile,JSON.stringify(state));}catch(e){if(e.code!=='ENOENT')throw e;}
-  const model=loadRepository(target,{verifiedPackages});check(model.runtime.rootId===app,'HOST.RELOCATION','Wrong canonical identity');const catalog=readInstalledState(target);check(JSON.stringify(clean(catalog?.packages.map(p=>({id:p.manifest.id,version:p.manifest.version}))??[]))===JSON.stringify(m.packages),'HOST.RELOCATION','Package inventory mismatch');const {validateAppInventory}=await import('./multi-app.js');await validateAppInventory({schema:'wydgit.multi-host/0.1',apps:[{id:app,root:directory}]},{root,execution:{[app]:{verifiedPackages}}});return freeze({id:app,root:directory});
+  const model=loadRepository(target,{verifiedPackages});check(model.runtime.rootId===app,'HOST.RELOCATION','Wrong canonical identity');const catalog=readInstalledState(target);check(JSON.stringify(clean(catalog?.packages.map(p=>({id:p.manifest.id,version:p.manifest.version}))??[]))===JSON.stringify(m.packages),'HOST.RELOCATION','Package inventory mismatch');await validateAppInventory({schema:'wydgit.multi-host/0.1',apps:[{id:app,root:directory}]},{root,execution:{[app]:{verifiedPackages}}});return freeze({id:app,root:directory});
  }catch{if(created)await fs.rm(target,{recursive:true,force:true});throw new WydgitError('HOST.RELOCATION','Local restore failed; validate snapshot and destination');}
 }

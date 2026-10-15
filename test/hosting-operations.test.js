@@ -6,7 +6,7 @@ import path from 'node:path';
 import http from 'node:http';
 import {provisionHostnameExample} from '../examples/hostname-host/setup.js';
 import {installTaskboards} from '../examples/hostname-host/taskboards.js';
-import {createOperationalHost} from '../wydgine/operations.js';
+import {createOperationalHost} from '../wydgine/trusted/worker.js';
 const request=(s,host,url='/',headers={})=>new Promise((resolve,reject)=>{http.get({host:'127.0.0.1',port:s.address().port,path:url,headers:{Host:host,...headers}},r=>{let body='';r.on('data',c=>body+=c);r.on('end',()=>resolve({status:r.statusCode,body}));}).on('error',reject);});
 async function fixture(t){const root=await fs.mkdtemp(path.join(os.tmpdir(),'wyd-ops-'));const inventory=await provisionHostnameExample(root),execution=await installTaskboards(root);const hosts=[];t.after(async()=>{for(const h of hosts)try{await h.shutdown();}catch{}await fs.rm(root,{recursive:true,force:true});});return {root,inventory,async host(optional=[],overrides={},hostOptions={}){const h=await createOperationalHost({schema:'wydgit.operations/0.1',inventory,optional},{root,...hostOptions,execution:{...execution,...overrides}});hosts.push(h);return h;}};}
 test('operational startup, real installed execution, sanitized snapshots and fresh restart lifetime',async t=>{
