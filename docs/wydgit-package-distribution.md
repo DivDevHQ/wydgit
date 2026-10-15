@@ -480,3 +480,10 @@ component contracts require platform alpha.8 or newer, server execution eligibil
 and existing independent publisher/owner approval. The installer validates manually
 constructed artifacts too. No package source compiler runs at browser/runtime startup,
 no new package format is added, and no metadata authenticates a publisher or grants SEAM.
+
+## Implemented H3 browser profile
+
+The [H3 contract](milestones/0.3-H3/README.md) documents WydClient alpha.6 executable
+definitions, separate host authorization and immutable distribution. It reuses the
+existing pinned signed JSON prototype-package envelope; this does not implement
+the proposed archive/registry infrastructure described above.

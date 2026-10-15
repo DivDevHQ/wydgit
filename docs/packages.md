@@ -301,3 +301,12 @@ Trusted HTTP hosts supply independently approved `execution.verifiedPackages` to
 `createHostApp`/`createApp`; startup, renderer and per-request reloads preserve it.
 It verifies declaring prototype identity for typed emissions/interfaces and supplies
 no SEAM grants. Installed permission receipts still determine Page authority.
+
+## H3 browser distribution boundary
+
+WydClient alpha.6 accepts supported reviewed canonical executable definitions through
+its existing signed prototype-package/local registry loader and a separate trusted
+host execution policy. Package signatures establish provenance only. The server
+installer and WBasic frontend runtime declarations remain server-specific; H3 does
+not reinterpret those manifests as client installations. See the [H3 profile](milestones/0.3-H3/README.md)
+for the closed browser entry/approval contract and unsupported services.

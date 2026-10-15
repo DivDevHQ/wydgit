@@ -53,7 +53,7 @@ test('three sibling roots coexist with unchanged standalone bootstrap and unique
     assert.equal(roots[i].firstChild.getAttribute('data-wydclient-region'), 'top');
     assert.equal(roots[i].lastChild.getAttribute('data-wydclient-region'), 'bottom');
     assert.equal(roots[i].childNodes[1], content[i][0]);
-    assert.deepEqual(Object.keys(handles[i]), ['ready', 'host', 'state', 'unmount']);
+    assert.deepEqual(Object.keys(handles[i]), ['ready', 'host', 'execution', 'state', 'unmount']);
     assert.equal(Object.isFrozen(handles[i]), true); assert.equal(Object.isFrozen(r), true);
     assert.doesNotMatch(JSON.stringify(r), /ownerDocument|trustedKeys|verifiedPrototypes|capabilities/);
   }

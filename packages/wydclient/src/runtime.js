@@ -2,9 +2,10 @@ import { SCHEMA, resolveProperties } from '../../../wydgine/object-model/schema.
 import { clean, freeze, record, check, shape, parseJSON, LIMITS, decode64 } from './data.js';
 import { download } from './network.js';
 import { loadPackage, identityPattern, publisherPattern } from './packages.js';
+import {executionPolicy,executableInstances} from './execution.js';
 import { instances } from './instances.js';
 import { approveRegistry } from './registry.js';
-export const VERSION = '0.1.0-alpha.5';
+export const VERSION = '0.1.0-alpha.6';
 export const PROTOCOL = Object.freeze({ name: 'WydSUB', version: '0.1' });
 // Retain the approved read-only registry and canonical Page for later trusted adapters.
 // There is intentionally no host/portable accessor for this private runtime state.
@@ -16,7 +17,7 @@ const messages = Object.freeze({
 });
 function policyFrom(input = {}) {
   const config = clean(input);
-  shape(config, ['allowedOrigins', 'trustedKeys', 'verifiedPrototypes']);
+  shape(config, ['allowedOrigins', 'trustedKeys', 'verifiedPrototypes','execution']);
   const origins = config.allowedOrigins ?? [], keys = config.trustedKeys ?? [], bindings = config.verifiedPrototypes ?? {};
   check(Array.isArray(origins) && origins.length <= 16 && origins.every(x => typeof x === 'string' && new URL(x).origin === x && /^https?:/.test(x)), 'BOOTSTRAP.CONFIG', 'Invalid trusted origin policy');
   check(Array.isArray(keys) && keys.length <= 64 && record(bindings) && Object.keys(bindings).length <= LIMITS.prototypes, 'BOOTSTRAP.CONFIG', 'Invalid trusted publisher policy');
@@ -29,7 +30,7 @@ function policyFrom(input = {}) {
     check(!seen.has(id), 'BOOTSTRAP.CONFIG', 'Duplicate trusted key binding'); seen.add(id);
   }
   for (const [id, publisher] of Object.entries(bindings)) check(identityPattern.test(id) && id.split('/')[0] === publisher && publisher !== 'wydgit.core', 'BOOTSTRAP.CONFIG', 'Invalid trusted publisher binding');
-  return freeze({ allowedOrigins: origins, trustedKeys: keys, verifiedPrototypes: bindings });
+  return freeze({ allowedOrigins: origins, trustedKeys: keys, verifiedPrototypes: bindings, ...(config.execution?{execution:executionPolicy(config.execution)}:{}) });
 }
 // This factory is a trusted adapter implementation, excluded from the site-author global.
 export function createRuntime(host, configuration = {}) {
@@ -62,9 +63,11 @@ function createContext(host, configuration, scope) {
   scope.properties = null;
   let resolveDisposal;
   const disposal = new Promise(resolve => { resolveDisposal = resolve; });
-  const api = Object.freeze(embedded ? { ready, host: hostAdapter, get state() { return state; }, unmount } :
-    { host: hostAdapter, version: VERSION, protocol: PROTOCOL, ready, get state() { return state; }, mount: scope.mount });
-  function hostAdapter() { check(state === 'ready' && objects, 'OBJECT.CONTEXT', 'Expected approved live environment'); return objects.api; }
+  const api = Object.freeze(embedded ? { ready, host: hostAdapter, execution: executionAdapter, get state() { return state; }, unmount } :
+    { host: hostAdapter, execution: executionAdapter, version: VERSION, protocol: PROTOCOL, ready, get state() { return state; }, mount: scope.mount });
+  function executionAdapter(){check(state==='ready'&&entryAPI(),'OBJECT.CONTEXT','Expected executable environment');return objects.api;}
+  function entryAPI(){return objects?.api?.invoke;}
+  function hostAdapter() { check(!entryAPI(),'OBJECT.CONTEXT','Executable environment uses the trusted execution facade');check(state === 'ready' && objects, 'OBJECT.CONTEXT', 'Expected approved live environment'); return objects.api; }
   const active = () => check(state !== 'disposed', 'BOOTSTRAP.DISPOSED', 'Page environment disposed');
   function unmount() {
     if (state === 'disposed') return result;
@@ -94,7 +97,7 @@ function createContext(host, configuration, scope) {
       controller.signal.addEventListener('abort', done, { once: true });
     });
     if (state === 'disposed') return result;
-    let registry, page, error = null; const provenance = new Map();
+    let registry, page, entry, approval, error = null; const provenance = new Map();
     try {
       if (snapshotError) throw snapshotError;
       const policy = policyFrom(configuration);
@@ -117,7 +120,7 @@ function createContext(host, configuration, scope) {
         manifest = parseJSON(await download(external[0].getAttribute('href'), host, policy, controller.signal));
         active();
       }
-      shape(manifest, ['schema', 'protocol', 'prototypes', 'packages'], ['schema', 'prototypes']);
+      shape(manifest, ['schema', 'protocol', 'prototypes', 'packages','entry'], ['schema', 'prototypes']);
       check(manifest.schema === 'wydgit.registry/0.1' && (manifest.protocol ?? '0.1') === PROTOCOL.version, 'MANIFEST.VERSION', 'Unsupported manifest version');
       check(Array.isArray(manifest.prototypes) && Array.isArray(manifest.packages ?? []) && (manifest.packages ?? []).length <= LIMITS.packages, 'MANIFEST.SHAPE', 'Invalid manifest declarations');
       const declarations = [...manifest.prototypes], verified = { ...policy.verifiedPrototypes };
@@ -131,12 +134,16 @@ function createContext(host, configuration, scope) {
         declarations.push(...definitions);
         for (const d of definitions) { verified[d.id] = ref.publisher; provenance.set(d.id, { publisher: ref.publisher, package: ref.id, packageVersion: ref.version }); }
       }
-      registry = approveRegistry(declarations, verified);
+      approval=policy.execution;entry=manifest.entry;
+      check(!approval||entry,'SEAM.DENIED','Execution approval requires an entry');
+      check(!entry||approval,'SEAM.DENIED','Executable entry requires host approval');
+      registry = approveRegistry(declarations, verified,Boolean(approval));
       const selected = embedded ? scope.page ?? scope.root.getAttribute('data-wydgit-page') ?? 'wydgit.core/page' :
         doc.documentElement.getAttribute('data-wydgit-page') ?? 'wydgit.core/page';
       let definition;
       try {
         definition = registry.get(selected);
+        check(!definition.component?.children.length&&!definition.component?.repeaters.length,'PAGE.PROTOTYPE','Initial Page composition is unsupported');
         check(registry.isA(selected, 'wydgit.core/page') && !definition.abstract, 'PAGE.PROTOTYPE', 'Expected concrete Page prototype');
         // Top/Bottom are adapter-owned destinations, never class members or slots.
         check(![...Object.keys(definition.properties), ...Object.keys(definition.slots), ...Object.keys(definition.methods)].some(k => ['top', 'bottom', 'sub'].includes(k.toLowerCase())), 'PAGE.MOUNT', 'Reserved Page destination');
@@ -169,8 +176,13 @@ function createContext(host, configuration, scope) {
       scope.regions.add(top); scope.regions.add(bottom);
       regions = Object.freeze({ top, bottom });
     } catch { error = freeze({ code: 'BOOTSTRAP.BODY', message: messages.bootstrap }); }
-    state = error ? 'failed' : 'ready';
-    if (!error) objects = instances({ registry, page, regions, provenance, active: () => check(state === 'ready', 'OBJECT.CONTEXT', 'Expected live environment'), boundary: scope.isBoundary });
+    state = error ? 'failed' : entry ? 'initializing' : 'ready';
+    if(!error&&entry){
+      try{const executable=await executableInstances({registry,page,entry,approval,regions,active,boundary:scope.isBoundary,provenance});
+        if(state==='disposed'){void executable.dispose();return result;}objects=executable;state='ready';}
+      catch(failure){if(state==='disposed')return result;error=freeze({code:typeof failure.code==='string'?failure.code:'BOOTSTRAP.FAILED',message:messages.bootstrap});state='failed';}
+    }
+    if (!error&&!entry) objects = instances({ registry, page, regions, provenance, active: () => check(state === 'ready', 'OBJECT.CONTEXT', 'Expected live environment'), boundary: scope.isBoundary });
     runtimes.set(api, Object.freeze({ registry, page, destinations, regions, approved: !error }));
     // Public diagnostics use the H0 generic export filter; registry remains closure-private.
     const publicProperties = Object.fromEntries(Object.entries(page.properties).filter(([key]) => {

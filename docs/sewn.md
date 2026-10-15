@@ -547,3 +547,12 @@ modules are not callable instance methods. Declaration-bound EVENT.Raise preserv
 actual owner/source and typed payload, then uses the existing dispatcher. Legacy
 EVENT.Raise cannot forge nominal `prototype#Event` identities. See [0.20](milestones/sewn-0.20/README.md)
 for delivery ordering, failure policy, capability/scope checks and server support.
+
+## H3 browser execution profile
+
+WydClient alpha.6 shares this executor, canonical member kernel and terminal ledger
+with Wydgine. Its [portable profile](milestones/0.3-H3/README.md) authenticates
+method/hook entry and live root-local receivers, composes typed events and keyed
+records, and rejects server/service operations before activation. Earlier standalone
+executor references do not imply availability of HTTP, storage or Server/Session
+contexts in this browser profile.

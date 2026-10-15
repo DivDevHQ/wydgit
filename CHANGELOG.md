@@ -1,5 +1,19 @@
 ## Unreleased
 
+### Wydgit 0.3-H3 — Portable browser execution
+
+- Add WydClient alpha.6 authenticated canonical SEWN methods, declaring frames,
+  opaque root-local references and independent host-approved SEAM execution policy.
+- Reuse the shared instance/lifecycle controller, typed FIFO event dispatcher,
+  construction/reconciliation kernel and terminal execution ledger in the browser.
+- Add bounded public scalar presentation and keyed typed-record composition;
+  preserve literal Markdown and reject unsupported server contexts/services/markup.
+- Exercise real compiled six-class Taskboard navigation on static HTML and isolated
+  embedded roots, plus independent canonical server/artifact conformance and
+  adversarial lifetime, authorization, budget and injection tests.
+- Preserve immutable alpha.1–alpha.5 artifacts and compiler/server-free distribution;
+  document the explicit portable profile, size growth and remaining browser work.
+
 ### WBasic / SEWN 0.20 — Supported server component execution
 
 - Complete typed child references/default construction, canonical slot contracts,

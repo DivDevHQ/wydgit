@@ -283,3 +283,11 @@ ownership/slot/type checks. IDs/names are not credentials. NEW creates bounded d
 composition drafts; host attachment/activation establishes lifetime. No second object
 tree, class registry or live reference wire representation exists. Platform alpha.8
 is the minimum executing component runtime; H2 alpha.5 rejects these contracts.
+
+## H3 browser instance bindings
+
+WydClient alpha.6 uses the shared canonical member/instance controller with opaque
+root-local host tokens and invocation-local adapters. Method declaring frames,
+visibility, overrides, interfaces and caller SEAM semantics remain canonical.
+See [H3](milestones/0.3-H3/README.md) for Page-root hydration, lifetime retirement,
+portable composition and explicit presentation limitations.

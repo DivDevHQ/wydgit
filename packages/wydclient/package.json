@@ -1,7 +1,7 @@
 {
   "name": "@wydgit/client",
-  "version": "0.1.0-alpha.5",
-  "description": "Standalone WydClient browser bootstrap",
+  "version": "0.1.0-alpha.6",
+  "description": "Standalone authenticated WydClient component runtime",
   "type": "module",
   "license": "MPL-2.0",
   "files": [

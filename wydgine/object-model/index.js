@@ -9,7 +9,7 @@ export { PrototypeRegistry } from './prototypes.js';
 export { WydgitError } from './validation.js';
 export { ExecutionContext } from '../seam/context.js';
 const graphs = new WeakMap();
-export function hydrate(input, registry, { revision = 0 } = {}) {
+export function hydrate(input, registry, { revision = 0, rootPrototype = 'wydgit.core/app' } = {}) {
   check(Number.isSafeInteger(revision) && revision >= 0, 'OBJECT.REVISION', 'Revision must be a non-negative safe integer');
   if (typeof input === 'string') input = parse(input);
   const nodes = new Map(), parents = new Map(), positions = new Map(), active = new Set(), seen = new Set();
@@ -23,7 +23,7 @@ export function hydrate(input, registry, { revision = 0 } = {}) {
     check(!nodes.has(raw.id), 'OBJECT.DUPLICATE_ID', `Duplicate instance ID: ${raw.id}`);
     const definition = registry.get(raw.prototype);
     check(!definition.abstract&&!definition.static, 'OBJECT.ABSTRACT', 'Cannot instantiate abstract prototype');
-    check(parent ? !registry.isA(definition.id, 'wydgit.core/app') : registry.isA(definition.id, 'wydgit.core/app'), 'OBJECT.ROOT', 'Exactly one App must be the root');
+    check(parent ? !registry.isA(definition.id, 'wydgit.core/app') : registry.isA(definition.id, rootPrototype), 'OBJECT.ROOT', 'Exactly one App must be the root');
     jsonKeys(raw.slots);
     const properties = resolveProperties(raw.properties, definition), provenance = clean(raw.provenance);
     const node = { id: raw.id, prototype: definition.id, properties: freeze(properties), provenance: freeze(provenance), slots: Object.create(null) };
@@ -53,7 +53,7 @@ export function hydrate(input, registry, { revision = 0 } = {}) {
     // Host-only APIs: never hand this runtime or its context factory to package code.
     rootId: root.id,
     revision,
-    edit(context) { return createEdit(runtime, context, registry, hydrate, dehydrate); },
+    edit(context) { return createEdit(runtime, context, registry, (input, _registry, options) => hydrate(input, registry, {...options, rootPrototype}), dehydrate); },
     get(id) { check(nodes.has(id), 'OBJECT.UNKNOWN', 'Unknown object'); return nodes.get(id); },
     scope(context, startId = context.self) {
       checkContext(context); check(nodes.has(context.self), 'SEAM.CONTEXT', 'Unknown self object');

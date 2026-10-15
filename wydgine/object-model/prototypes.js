@@ -3,7 +3,7 @@ import { classContracts } from './class-contracts.js';
 import {validateInterface,interfaceKey,sameSignature,interfaceTypes} from './interfaces.js';
 import { isCapability } from '../seam/capabilities.js';
 import { accessOf, validateMember, resolveMember, authorizeMember } from './members.js';
-import { validatePresentation } from '../components.js';
+import { validatePresentation } from '../presentation-contract.js';
 import { validate } from '../sewn/validate.js';
 import { methods as facadeMethods } from '../sewn/bindings.js';
 import { clean, freeze, record, requireThat as check } from './validation.js';

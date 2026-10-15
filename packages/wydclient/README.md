@@ -1,3 +1,23 @@
+# WydClient — current alpha.6
+
+WydClient **0.1.0-alpha.6** executes a closed portable canonical SEWN component
+profile on static websites. WydSUB remains **0.1**. See the [H3 contract](../../docs/milestones/0.3-H3/README.md)
+for independent host execution approval, opaque references, methods, lifecycle,
+typed events, shared budgets, scalar bindings and keyed repetition, and its
+[verification](../../docs/milestones/0.3-H3/verification.md) for measurements and limits.
+
+Load `dist/wydgit-client-0.1.0-alpha.6.min.js`. The runnable static examples are
+[Taskboard](examples/taskboard.html) and [independent roots](examples/taskboard-embedded.html).
+Publisher signatures authenticate provenance; a separate trusted host execution
+policy grants authority. Neither the execution facade nor H2 `host()` may enter
+ordinary SEWN scope. Runtime services, Server/Session, raw HTML/CSS, full Markdown,
+Forms and general browser controls remain unsupported.
+
+The following sections retain the historical H1/H2 bootstrap and immutable artifact
+contracts. Statements there about deferred execution describe those earlier versions;
+the H3 contract above defines executable alpha.6 behavior. Historical filenames
+and size records remain unchanged.
+
 # WydClient 0.1 — Standalone and container bootstrap
 
 WydClient **0.1.0-alpha.5** is a standalone browser runtime bootstrap. It works on

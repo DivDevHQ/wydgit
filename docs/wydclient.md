@@ -1,11 +1,15 @@
 # WydClient
 
-The current standalone bootstrap is **WydClient 0.1.0-alpha.5**, independently compatible
-with **WydSUB 0.1**. Wydgine is **0.3.0-alpha.8**. H0 continues to define the
-canonical OOP contract; H1 uses the existing validators without changing server
-semantics. H1b adds trusted-host container mounting, per-root configuration and
-independent nested cleanup. This browser stage does not execute portable code or
-grant authority.
+The current runtime is **WydClient 0.1.0-alpha.6**, WydSUB **0.1**, with
+Wydgine/platform reference **0.3.0-alpha.8**. The [H3 contract](milestones/0.3-H3/README.md)
+defines authenticated executable components, independent host SEAM approval,
+lifecycle, typed events, shared budgets, public scalar presentation and keyed
+repetition. The [verification](milestones/0.3-H3/verification.md) records static
+Taskboard/Chrome acceptance, conformance, bundle growth and unsupported capabilities.
+
+Earlier H1/H2 descriptions below are historical baselines. Their execution deferrals
+are superseded only by the explicit closed H3 profile; signatures still grant no
+execution authority and same-realm host JavaScript remains trusted.
 
 See the [package documentation](../packages/wydclient/README.md) for lifecycle,
 Page adaptation, manifests, signatures, publisher-key policy, logical regions,

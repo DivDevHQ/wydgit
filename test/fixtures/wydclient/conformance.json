@@ -1,0 +1,473 @@
+[
+  {
+    "id": "conformance/icount",
+    "publisher": "conformance",
+    "interface": true,
+    "alias": "ICount",
+    "version": "1.0.0",
+    "signatures": {
+      "count": {
+        "kind": "function",
+        "params": [],
+        "returns": "Integer"
+      }
+    }
+  },
+  {
+    "id": "conformance/probe",
+    "publisher": "conformance",
+    "public": true,
+    "extends": "wydgit.core/section",
+    "implements": {
+      "conformance/icount": "1.0.0"
+    },
+    "methodRules": {
+      "probe": {
+        "access": "public"
+      },
+      "count": {
+        "access": "public"
+      },
+      "start": {
+        "access": "public"
+      },
+      "first": {
+        "access": "private"
+      },
+      "second": {
+        "access": "private"
+      },
+      "third": {
+        "access": "private"
+      }
+    },
+    "behavior": {
+      "schema": "sewn/0.18",
+      "body": [],
+      "procedures": {
+        "lib0": {
+          "kind": "function",
+          "params": [
+            {
+              "name": "text",
+              "type": "String"
+            }
+          ],
+          "returns": "Boolean",
+          "body": [
+            {
+              "op": "return",
+              "value": {
+                "op": "functionCall",
+                "name": "lib1",
+                "args": [
+                  {
+                    "op": "variable",
+                    "name": "text"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "lib1": {
+          "kind": "function",
+          "params": [
+            {
+              "name": "text",
+              "type": "String"
+            }
+          ],
+          "returns": "Boolean",
+          "body": [
+            {
+              "op": "return",
+              "value": {
+                "op": "operation",
+                "name": "RegexTest",
+                "args": [
+                  {
+                    "op": "variable",
+                    "name": "text"
+                  },
+                  {
+                    "op": "literal",
+                    "value": "^[A-Z]{3}-\\d{4}$"
+                  },
+                  {
+                    "op": "literal",
+                    "value": ""
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "count": {
+          "kind": "function",
+          "params": [],
+          "returns": "Integer",
+          "body": [
+            {
+              "op": "return",
+              "value": {
+                "op": "literal",
+                "value": 7
+              }
+            }
+          ]
+        },
+        "probe": {
+          "kind": "function",
+          "params": [],
+          "returns": "Array",
+          "body": [
+            {
+              "op": "return",
+              "value": {
+                "op": "array",
+                "items": [
+                  {
+                    "op": "literal",
+                    "value": "typed"
+                  },
+                  {
+                    "op": "numeric",
+                    "operator": "+",
+                    "left": {
+                      "op": "literal",
+                      "value": 2
+                    },
+                    "right": {
+                      "op": "literal",
+                      "value": 3
+                    },
+                    "type": "Integer"
+                  },
+                  {
+                    "op": "binary",
+                    "operator": "AND",
+                    "left": {
+                      "op": "literal",
+                      "value": true
+                    },
+                    "right": {
+                      "op": "not",
+                      "value": {
+                        "op": "literal",
+                        "value": false
+                      }
+                    }
+                  },
+                  {
+                    "op": "operation",
+                    "name": "Substring",
+                    "args": [
+                      {
+                        "op": "literal",
+                        "value": "Goober"
+                      },
+                      {
+                        "op": "literal",
+                        "value": 0
+                      },
+                      {
+                        "op": "literal",
+                        "value": 3
+                      }
+                    ]
+                  },
+                  {
+                    "op": "operation",
+                    "name": "Slice",
+                    "args": [
+                      {
+                        "op": "literal",
+                        "value": [
+                          1,
+                          2,
+                          3
+                        ]
+                      },
+                      {
+                        "op": "literal",
+                        "value": 1
+                      },
+                      {
+                        "op": "literal",
+                        "value": 3
+                      }
+                    ]
+                  },
+                  {
+                    "op": "operation",
+                    "name": "FormatDate",
+                    "args": [
+                      {
+                        "op": "dateTime",
+                        "value": {
+                          "op": "literal",
+                          "value": "2024-02-29T00:00:00.000Z"
+                        }
+                      },
+                      {
+                        "op": "literal",
+                        "value": "yyyy-MM-dd"
+                      },
+                      {
+                        "op": "literal",
+                        "value": "UTC"
+                      }
+                    ]
+                  },
+                  {
+                    "op": "methodValue",
+                    "target": {
+                      "op": "cast",
+                      "type": "interface:conformance/icount@1.0.0",
+                      "value": {
+                        "op": "context",
+                        "name": "ME"
+                      }
+                    },
+                    "name": "count",
+                    "args": []
+                  },
+                  {
+                    "op": "identity",
+                    "left": {
+                      "op": "context",
+                      "name": "ME"
+                    },
+                    "right": {
+                      "op": "cast",
+                      "type": "interface:conformance/icount@1.0.0",
+                      "value": {
+                        "op": "context",
+                        "name": "ME"
+                      }
+                    },
+                    "negate": false
+                  },
+                  {
+                    "op": "functionCall",
+                    "name": "lib0",
+                    "args": [
+                      {
+                        "op": "literal",
+                        "value": "ABC-1234"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "start": {
+          "kind": "sub",
+          "params": [],
+          "body": [
+            {
+              "op": "call",
+              "target": {
+                "op": "context",
+                "name": "EVENT"
+              },
+              "method": "Raise",
+              "args": [
+                {
+                  "op": "literal",
+                  "value": "Ping"
+                },
+                {
+                  "op": "context",
+                  "name": "ME"
+                },
+                {
+                  "op": "object",
+                  "fields": {}
+                }
+              ]
+            }
+          ]
+        },
+        "first": {
+          "kind": "sub",
+          "params": [],
+          "body": [
+            {
+              "op": "memberSet",
+              "target": {
+                "op": "context",
+                "name": "ME"
+              },
+              "name": "Log",
+              "exact": true,
+              "value": {
+                "op": "binary",
+                "operator": "concat",
+                "left": {
+                  "op": "memberRead",
+                  "target": {
+                    "op": "context",
+                    "name": "ME"
+                  },
+                  "name": "Log",
+                  "exact": true
+                },
+                "right": {
+                  "op": "literal",
+                  "value": "A"
+                }
+              }
+            },
+            {
+              "op": "call",
+              "target": {
+                "op": "context",
+                "name": "EVENT"
+              },
+              "method": "Raise",
+              "args": [
+                {
+                  "op": "literal",
+                  "value": "Tick"
+                },
+                {
+                  "op": "context",
+                  "name": "ME"
+                },
+                {
+                  "op": "object",
+                  "fields": {}
+                }
+              ]
+            }
+          ]
+        },
+        "second": {
+          "kind": "sub",
+          "params": [],
+          "body": [
+            {
+              "op": "memberSet",
+              "target": {
+                "op": "context",
+                "name": "ME"
+              },
+              "name": "Log",
+              "exact": true,
+              "value": {
+                "op": "binary",
+                "operator": "concat",
+                "left": {
+                  "op": "memberRead",
+                  "target": {
+                    "op": "context",
+                    "name": "ME"
+                  },
+                  "name": "Log",
+                  "exact": true
+                },
+                "right": {
+                  "op": "literal",
+                  "value": "B"
+                }
+              }
+            }
+          ]
+        },
+        "third": {
+          "kind": "sub",
+          "params": [],
+          "body": [
+            {
+              "op": "memberSet",
+              "target": {
+                "op": "context",
+                "name": "ME"
+              },
+              "name": "Log",
+              "exact": true,
+              "value": {
+                "op": "binary",
+                "operator": "concat",
+                "left": {
+                  "op": "memberRead",
+                  "target": {
+                    "op": "context",
+                    "name": "ME"
+                  },
+                  "name": "Log",
+                  "exact": true
+                },
+                "right": {
+                  "op": "literal",
+                  "value": "C"
+                }
+              }
+            }
+          ]
+        }
+      },
+      "libraries": [
+        {
+          "id": "acme/patterns",
+          "version": "1.0.0",
+          "alias": "Patterns",
+          "methods": {
+            "lib0": {
+              "name": "valid",
+              "access": "public",
+              "requires": []
+            },
+            "lib1": {
+              "name": "helper",
+              "access": "private",
+              "requires": []
+            }
+          }
+        }
+      ]
+    },
+    "properties": {
+      "Log": {
+        "type": "string",
+        "access": "public",
+        "default": ""
+      }
+    },
+    "events": {
+      "Ping": {
+        "access": "public",
+        "params": []
+      },
+      "Tick": {
+        "access": "public",
+        "params": []
+      }
+    },
+    "component": {
+      "schema": "wydgit.component/0.20",
+      "children": [],
+      "subscriptions": [
+        {
+          "source": "Me",
+          "event": "Ping",
+          "handler": "first"
+        },
+        {
+          "source": "Me",
+          "event": "Ping",
+          "handler": "second"
+        },
+        {
+          "source": "Me",
+          "event": "Tick",
+          "handler": "third"
+        }
+      ]
+    }
+  }
+]

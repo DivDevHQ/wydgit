@@ -51,6 +51,11 @@ try {
     if(path.includes('embedded')) assert.match($('body').text(),/Surviving root/);
     console.log(`PASS ${path}: construction, placement, removal, isolation`);
   }
+  for(const path of ['/examples/taskboard.html','/examples/taskboard-embedded.html']){
+    requestedArtifacts.clear();
+    const {stdout}=await run(browser,['--headless','--disable-gpu',`--user-data-dir=${tmpdir()}/wydclient-h3-${process.pid}`,'--dump-dom','--virtual-time-budget=5000',`http://127.0.0.1:${server.address().port}${path}`],{maxBuffer:1024*1024,timeout:20000});
+    checkArtifact();const $=load(stdout);assert.match($('#h3-result').text(),/^PASS /,path+' '+$('#h3-result').text());console.log(`PASS ${path}: ${$('#h3-result').text()}`);
+  }
   const version = (await run(browser, ['--version'])).stdout.trim(); console.log(version);
   const cases = [
     ['/examples/index.html', true, 'acme/home-page'], ['/examples/default.html', true, 'wydgit.core/page'],
@@ -92,5 +97,5 @@ try {
     }
     console.log(`PASS ${path}: independent embedded Pages, trust and lifecycle, preserved host`);
   }
-  console.log(`${cases.length + 4}/${cases.length + 4} real-browser smoke cases passed.`);
+  console.log(`${cases.length + 6}/${cases.length + 6} real-browser smoke cases passed.`);
 } finally { await new Promise(resolve => server.close(resolve)); }
