@@ -161,11 +161,19 @@ Declarative inputs may use bounded `maxlength` and semantic `autocomplete` hints
 values always render empty. These generic hints apply independently of WydGate;
 portable forms still use the existing labelled input and approved submission binding.
 
-## Source authoring checkpoint (0.20, incomplete)
+## Source-authored composition and typed repetition (0.20)
 
-WBasic PRESENTATION SERVER now authors a checked subset of this existing model:
-scalar CONTENT/HEADING, public one-way property reads and bounded scalar literal
-each. Dynamic data-provider and typed child-template authoring remain unsupported.
+WBasic now lowers SERVER presentation and public exact-property one-way bindings to
+this existing model. Scalar reads reevaluate on explicit render; service/provider
+methods populate typed data separately, never as rendering callbacks. Literal Markdown
+retains canonical content and server sanitization; escaped scalar CONTENT is distinct.
+Existing approved format and skin hooks remain available, without arbitrary CSS/HTML/JS.
+Section presentation is rendered together with canonical ordered native children.
 
-See [the 0.20 checkpoint](milestones/sewn-0.20/README.md) for implemented grammar,
-validation, evidence and remaining completion gates.
+Closed component metadata supports typed record templates and dedicated-slot repeaters
+(limit 1–256), validated keys/types/required properties, stable reorder and child-first
+cleanup for removal. Expansion uses existing canonical edits and shared construction
+budgets, not presentation HTML. Unsupported visual slots fail capability validation.
+See [0.20](milestones/sewn-0.20/README.md) for exact grammar, runtime/error semantics,
+limits and explicit server/browser distinctions. H2 retains literal Markdown and
+rejects executable component metadata pending H3.

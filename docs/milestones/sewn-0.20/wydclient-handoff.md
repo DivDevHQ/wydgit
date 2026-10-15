@@ -1,51 +1,71 @@
-# WydClient H3 execution handoff — 0.20 checkpoint
+# WydClient H3 handoff — executable component contracts
 
-H2 alpha.4 remains unchanged. Successful source compilation is not browser
-execution. New `PRESENTATION SERVER` declarations require server-only manifests;
-client targets fail compilation/lowering. Composition outputs are canonical server
-package templates, not WydSUB bootstrap manifests. No portable full Taskboard
-artifact or H3 executable acceptance fixture exists yet. Server event/lifecycle
-integration must also finish before this is a complete 0.20 handoff.
+0.20 supplies working **server** contracts and independent canonical conformance
+fixtures, not a browser implementation. H2 alpha.5 adds explicit fail-closed component
+validation while preserving H2 literal rendering and root isolation. Alpha.1–alpha.4
+versioned artifacts remain immutable. No H3, release, deployment or browser compiler
+is included.
 
-H3 must establish these enforcement points before enabling executable components:
+## Enforcement points before enabling browser execution
 
-1. Validate actual canonical class/procedure contracts before activation; retain
-   independent signature/namespace approval and exact dependency pins.
-2. Bind a live ExecutionContext and opaque references to one WydSUB root. JSON IDs,
-   signed publishers, DOM containment and the trusted H2 host adapter are not authority.
-3. Preserve original caller capabilities through declaring-class frames, method
-   dispatch, libraries, child access, bindings and handlers. Recheck visibility,
-   ownership, member access and lifetime on every invocation/mutation.
-4. Use the shared SEWN executor, with one effective event/activation-chain ledger;
-   do not create an executor inside the source compiler or reset limits per handler.
-5. Implement the canonical server instance lifecycle controller contract after that
-   contract is actually implemented and tested. Init-once, activation failure,
-   repeated render, child-first teardown, hook exceptions and idempotent disposal
-   need identical observable guarantees.
-6. Authenticate declared custom emitters, typed payloads and source/recipient
-   contracts. Preserve sequential registration order, no bubbling, cancellation,
-   sanitized failures and bounded nested delivery. Page subscriptions need actual
-   root-local host eligibility; Server/Session sources cannot be impersonated.
-7. Add portable presentation/binding capability validation explicitly. Existing
-   server templates are HTML-oriented and cannot silently become H2 literal content.
-   H2 Markdown stays literal text until a separately validated Markdown feature.
-8. Cancel and invalidate pending work/subscriptions before unmount/removal can expose
-   stale callbacks. Late service results must not mutate or reactivate disposed
-   instances; nested roots remain independent throughout rerender and cleanup.
-9. Keep host() private to trusted embedding code. Do not add it to SEWN facades or
-   use it as a substitute for object/context authorization.
-10. Ship any changed browser behavior under a new immutable implementation filename,
-    reproduce it and run actual Chrome fixtures. Keep alpha.1–alpha.4 bytes unchanged.
+| Responsibility | Server reference / required browser boundary |
+| --- | --- |
+| Validate definitions | `object-model/component-contracts.js`, `class-contracts.js`, `prototypes.js`; closed metadata, exact dependencies, verified installation/publisher, slot contracts, finite defaults |
+| Authenticate entry | `sewn/entry.js`; opaque tokens bound to exact registry, ExecutionContext and live receiver; no JSON/DOM/ID credentials |
+| Resolve live references | `execution/instances.js` bound adapters; ownership, declared containing slot/type, visibility, traversal, lifetime, root isolation |
+| Methods and libraries | Shared SEWN executor and member authorization; preserve caller SEAM through declaring frames and static helpers |
+| Lifecycle | Host-only controller: Init once per live hydration, Preload activation, repeated Render, Unload reactivation, permanent/idempotent child-first Dispose |
+| Typed emission | Verify declaring owner, actual receiver, payload, live source, event capability/scope; nominal `prototype#Event` identity cannot be raised by legacy string façade |
+| Subscriptions | Validated declarative metadata, original declaring handler access, authentic root-local Page/child source; active lifetime only, detach before teardown |
+| Event ordering | Existing sequential registration-order/FIFO queue after remaining handlers/default; cancellation, sanitized exceptions, stale recipient checks, no bubbling |
+| Shared accounting | `sewn/budget.js` exact-context ledger across methods, hooks, handlers, nested raises, libraries, service calls and construction; terminal exhaustion/deadline |
+| Presentation | Explicit portable canonical capability profile/lowering; one-way public exact-property reads, fixed format/skin hooks, no executable markup or hidden coercion |
+| Repeaters | Typed plain records, explicit limits/key validation, stable reorder, new lifetime for removed/reappearing keys, complete candidate edits and bounded cleanup |
+| Unmount/cancellation | Invalidate adapters/subscriptions first; late awaited results cannot mutate/resurrect; no host adapter enters application code |
 
-Existing reusable fixtures include `test/wbasic-classes.test.js` for class access,
-methods/interfaces/authority and `test/wbasic-families.test.js` for generated
-composition and independent JSON/SEWN presentation behavior. H3 must add executable
-browser tests for methods, all hook transitions, event storms, handler teardown,
-forged/cross-root references, restricted bindings and cancellation; the current
-Chrome H2 fixtures do not establish these results.
+H2's public bootstrap normalization and standalone prototype-validation closure
+currently **reject component metadata**. Package build/installation reject client
+runtime claims for these contracts (`PACKAGE.RUNTIME`); `PRESENTATION CLIENT` fails
+capability validation. H2 has no authenticated application entry/controller, callback
+wiring or executable binding capability. These are precise missing enforcement
+points, not a rendering option to bypass. The trusted H2 `host()` stays private.
 
-App-wide class bindings have no established source integration in this checkpoint.
-Actual host names remain Server.Start/Stop, Session.Start/Authenticated/Logout/
-Timeout/End and Page.Start/Initialize/Load/Validate/PreRender/Unload. Instance hooks
-are separate. Cleanup/termination events cannot guarantee delivery at process crash,
-network loss or browser close. There is no durable exactly-once mechanism.
+SERVER presentation trees remain validated `wydgit.presentation/0.1` artifacts,
+but are HTML-oriented and are not claimed portable to H2. The scalar values, typed
+property/event/slot/composition contracts and independent fixtures are language-neutral;
+a browser-capable presentation profile must be separately validated. Unsupported
+features must fail before activation. Preserve H2 Markdown-as-literal behavior until
+a separately implemented sanitized Markdown capability. Do not silently omit content,
+execute server markup or infer Wydgit relationships from DOM containment.
+
+Server/Session sources cannot exist in browser application scope. App has no invented
+canonical event family. Page browser lifecycle sources need their own verified host
+eligibility and documented delivery points. Embedded WydSUB roots remain independent;
+no nesting, shared publisher label or serialized child ID delegates authority.
+
+## Reusable acceptance and adversarial fixtures
+
+- `test/fixtures/taskboard/golden.json`: independently authored six-class canonical
+  JSON/SEWN equivalent of `examples/wbasic-taskboard/*.bas`.
+- `test/wbasic-taskboard.test.js`: package build/install/reload, real Page execution,
+  queued typed navigation, updated rendering, all hooks, removal/disposal, stable keys,
+  cancellation, authority denials, nominal event identities and hostile metadata.
+- `test/sewn-shared-budget.test.js`: exact-context ledger, cumulative steps/services/
+  construction, fatal exhaustion and nested-event budget sharing.
+- Retain `test/wbasic-classes.test.js`, `wbasic-families.test.js`, `events.test.js`,
+  object-model/SEAM/static-library tests, and all H2 browser/root isolation fixtures.
+
+H3 must reproduce these observable results in Chrome with authentic browser
+contexts. Add cross-root forged-handle, root-removal during awaited work, event-storm,
+handler-cancellation and teardown tests. Current 14 Chrome H2 tests prove only H2
+compatibility, rejection and distribution loading; they do **not** prove browser
+methods, hooks, typed events, templates or property-bound presentation execution.
+
+Use a new immutable WydClient version for actual H3 changes, reproducibly build it,
+update references/size metadata and run actual artifact fixtures. Shared server code
+must never silently rewrite committed artifacts. Git-history guards fail closed when
+required history is unavailable. No release/tag/main merge is implied by this handoff.
+
+Cleanup/session termination is best effort at process crash, network loss and browser
+close. There is no durable exactly-once delivery promise or authority transfer from
+an official event source.

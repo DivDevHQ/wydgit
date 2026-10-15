@@ -622,15 +622,16 @@ methods, abstract/virtual overrides, implemented interfaces, typed custom events
 and isolated lifecycle hook modules. Existing standalone and static APIs remain.
 Read the [implemented 0.19 grammar, build API and target boundaries](milestones/sewn-0.19/README.md).
 Properties cannot persist Integer/Float/DateTime/reference contracts and reject
-those declarations. Lifecycle bodies compile but are not automatically dispatched;
-RAISE EVENT is type-checked and explicitly rejected pending shared-budget instance
-dispatch. H2 browser bootstrap does not accept executable class definitions.
+those declarations. At 0.19, hook bodies compiled without automatic dispatch and typed emission was
+rejected. The supported 0.20 server controller and shared-budget dispatcher below
+now execute those contracts. H2 browser bootstrap does not accept executable class definitions.
 
-## Source authoring checkpoint (0.20, incomplete)
+## 0.20 complete server authoring
 
-compileFamily now builds explicit source maps into existing prototype resources
-and Section templates. New grammar and exact restrictions are documented in the linked checkpoint;
-0.19 class programs and standalone APIs retain their behavior.
-
-See [the 0.20 checkpoint](milestones/sewn-0.20/README.md) for implemented grammar,
-validation, evidence and remaining completion gates.
+See the [implemented grammar, build/install guide and Taskboard](milestones/sewn-0.20/README.md).
+Multi-file source builds now cover ordered default children, slot contracts, one-way
+presentation, typed keyed child templates, child references, custom emissions and
+declarative subscriptions. A trusted server controller executes lifecycle modules
+without exposing hooks as methods. The existing dispatcher and shared SEWN ledger
+carry caller SEAM throughout. This supersedes earlier deferred server descriptions;
+H2 remains explicitly unsupported for executable component contracts.

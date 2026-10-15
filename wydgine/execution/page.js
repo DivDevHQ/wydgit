@@ -1,3 +1,6 @@
+import {createInstanceController} from './instances.js';
+import {createExecutionBudget,executionBudget} from '../sewn/budget.js';
+import {execute as executeWorkflow} from '../sewn/execute.js';
 import { bindMembers, authorizeMember, resolveMember } from '../object-model/members.js';
 import { matchesObjectGrant } from '../seam/context.js';
 import { descendantFields,formOperation,fieldKind,fieldValidation,publicProperties } from '../object-model/forms.js';
@@ -17,6 +20,7 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
   check((context.identity?.sessionId??null)===(session.identity?.sessionId??null),'EVENT.DENIED','Wrong Session identity');
   const presentationLedger=createPresentationLedger(context,pageId,runtimeSettings);
   let runtime=hydrate(dehydrate(model.runtime,{includeSensitive:true}),model.registry),alive=true,writable=true,unloading=false;
+  const executionLedger=createExecutionBudget(context,{guard:()=>check(alive&&session.active(),'EVENT.DENIED','Page execution ended')});
   const ledger=[],initialized=new Set(),archive=new Map(),errors=[];let failure;let resolving=false;
   const response=createResponse(context),requestData={...input,route:{page:pageId}};
   const tree=(state=runtime)=>{const ids=[];const walk=id=>{ids.push(id);for(const slot of Object.keys(state.get(id).slots).sort())state.get(id).slots[slot].forEach(walk);};walk(pageId);return ids;};
@@ -42,7 +46,7 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
       FormState(operation,data){guard();check(model.registry.isA(node().prototype,'wydgit.core/form'),'FORM.OPERATION','Receiver must be Form');check(context.traversal.includes('children'),'SEAM.TRAVERSAL','Form traversal denied');const fields=descendantFields(runtime,model.registry,id,context);check(fields.every(f=>matchesObjectGrant(context.visible, f.id)),'SEAM.VISIBILITY','Invisible Form field');const changes=[];const value=formOperation(fields,model.registry,operation,data,(id,p)=>changes.push([id,p]));if(operation==='validate')changes.push([id,{valid:value}]);if(operation==='clear')changes.push([id,{valid:true}]);if(changes.length){guard();check(writable&&!unloading&&response.state==='Open','EVENT.DENIED','Tree is read-only');const edit=runtime.edit(context);for(const [id,p] of changes)for(const [key,v] of Object.entries(p))edit.setProperty(id,key,v);runtime=edit.commit().runtime;}return value;},
       related(relation,slot){guard();check(exists(id),'EVENT.DENIED','Removed object');const related=runtime.scope(context,id).related(relation,slot);const wrap=value=>{check(exists(value.id),'EVENT.DENIED','Outside Page');return handle(value.id,invocation);};return Array.isArray(related)?Object.freeze(related.map(wrap)):related?wrap(related):null;},
       Set(name,value){authorizeMember(model.registry,resolveMember(model.registry.get(node().prototype),'property',name),null,context);edit('setProperty',name,value);},Insert(slot,index,envelope){edit('insertChild',slot,index,envelope);},Remove(){check(id!==pageId,'EVENT.DENIED','Page root immutable');edit('remove');},Replace(envelope){check(id!==pageId,'EVENT.DENIED','Page root immutable');edit('replaceChild',envelope);},Move(parent,slot,index){check(ownedHandles.has(parent),'EVENT.DENIED','Foreign handle');check(id!==pageId,'EVENT.DENIED','Page root immutable');edit('moveChild',parent.id,slot,index);}
-    });bindMembers(result,{context,node:()=>{guard();return node();},read:name=>{guard();return name==='value'&&model.registry.isA(node().prototype,'wydgit.core/password-input')?'':node().properties[name];},set:(name,value)=>edit('setProperty',name,value)});ownedHandles.add(result);cache.set(id,result);return result;
+    });bindMembers(result,{context,executable:()=>check(componentsRuntime.executable(id),'EVENT.DENIED','Disposed instance method'),node:()=>{guard();return node();},read:name=>{guard();return name==='value'&&model.registry.isA(node().prototype,'wydgit.core/password-input')?'':node().properties[name];},set:(name,value)=>edit('setProperty',name,value)});ownedHandles.add(result);cache.set(id,result);return result;
   };
   const rootGuard=()=>{};
   const request=requestFacade(requestData,context);
@@ -65,6 +69,8 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
     ...(resolving?{}:{FILESYS:Object.freeze({Get(id){guard();check(files,'FILE.DENIED','No approved files');return files.get(id,context,guard);}})}),
     SERVICES:Object.freeze({async Invoke(library,apiVersion,name,input){guard();check(!resolving||library==='wydstore'&&['get','query'].includes(name),'EVENT.DENIED','Resolvers may only read records');await session.authorize();guard();check(libraries,'SEAM.DENIED','No services');input=storageInput(library,name,input);return libraries.bind(context).invoke(library,apiVersion,name,input);},async Call(library,name,input){guard();check(!resolving||library==='wydstore'&&['get','query'].includes(name),'EVENT.DENIED','Resolvers may only read records');await session.authorize();guard();check(libraries,'SEAM.DENIED','No services');input=storageInput(library,name,input);return libraries.bind(context).call(library,name,input);}})
   });
+  const componentsRuntime=createInstanceController({runtime,registry:model.registry,context,rootId:pageId,budget:executionLedger,events,services:contexts(rootGuard).SERVICES,scope:contexts(rootGuard),canEdit:()=>writable&&!unloading&&response.state==='Open',canEmit:()=>writable&&!unloading,onRuntime:next=>{runtime=next;}});
+  const executor=async(document,options)=>{const id=options.scope.ME.id;if(!exists(id))return executeWorkflow(document,options);const d=model.registry.get(runtime.get(id).prototype);if(!d.component&&!Object.keys(d.events).length)return executeWorkflow(document,options);componentsRuntime.adopt(runtime);if(!componentsRuntime.executable(id))await componentsRuntime.activate();return componentsRuntime.workflow(document,options.scope,id,options);};
   const candidates=actions.filter(a=>a.page===pageId&&a.type===input.action?.type&&(a.delegation?matchesObjectGrant([a.target],input.action?.target):a.target===input.action?.target));
   let action=candidates.length===1?candidates[0]:null;
   const defaults={};
@@ -72,18 +78,20 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
     if(action.delegation)verifyDelegation(action);
     context.require(action.capability);await session.authorize();
     // Default is a trusted registered adapter; receives the same safe contexts, no grants.
-    const dispatcher=createDispatcher({prototypeRegistry:model.registry,registry:events,handlers:[{type:action.type,owner:action.target,...(action.workflow!==undefined?{workflow:action.workflow}:{run:action.run})}],context,handle,contexts,exists});
+    const dispatcher=createDispatcher({budget:executionLedger,executor,dynamicHandlers:options=>{componentsRuntime.adopt(runtime);return componentsRuntime.handlers(options);},prototypeRegistry:model.registry,registry:events,handlers:[{type:action.type,owner:action.target,...(action.workflow!==undefined?{workflow:action.workflow}:{run:action.run})}],context,handle,contexts,exists});
     try{await dispatcher.dispatch({type:action.type,source:action.target,target:action.target,payload:input.action.payload??{}});}finally{dispatcher.close();}
   };
-  const dispatcher=createDispatcher({prototypeRegistry:model.registry,registry:events,handlers,context,handle,contexts,exists,canRaise:id=>initialized.has(id),defaults,completed:()=>response.explicit,identifiers:{session:session.view.id,page:pageId}});
+  const dispatcher=createDispatcher({budget:executionLedger,executor,dynamicHandlers:options=>{componentsRuntime.adopt(runtime);return componentsRuntime.handlers(options);},prototypeRegistry:model.registry,registry:events,handlers,context,handle,contexts,exists,canRaise:id=>initialized.has(id),defaults,completed:()=>response.explicit,identifiers:{session:session.view.id,page:pageId}});
+  componentsRuntime.attachDispatcher(dispatcher);
   const dispatch=(type,id,payload={},valid=true)=>dispatcher.dispatch({type,source:type.startsWith('Page.')?pageId:id,target:id,payload,valid});
   const initialize=async()=>{
+    componentsRuntime.adopt(runtime);await componentsRuntime.activate();
     let rounds=0;
-    while(true){const pending=tree().filter(id=>!initialized.has(id));if(!pending.length||response.explicit)return;check(++rounds<=32&&ledger.length+pending.length<=10000,'EVENT.LIMIT','Initialization limit');
+    while(true){componentsRuntime.adopt(runtime);await componentsRuntime.activate();const pending=tree().filter(id=>!initialized.has(id));if(!pending.length||response.explicit)return;check(++rounds<=32&&ledger.length+pending.length<=10000,'EVENT.LIMIT','Initialization limit');
       for(const id of pending){if(!exists(id))continue;initialized.add(id);if(!ledger.includes(id))ledger.push(id);archive.set(id,runtime.get(id));await dispatch('Page.Initialize',id);if(response.explicit)return;}
     }
   };
-  const phase=async name=>{const snapshot=tree();for(const id of snapshot){if(exists(id)){await dispatch(`Page.${name}`,id);if(response.explicit)return;}}await initialize();};
+  const phase=async name=>{componentsRuntime.adopt(runtime);const snapshot=tree();for(const id of snapshot){if(exists(id)){await dispatch(`Page.${name}`,id);if(response.explicit)return;}}await initialize();};
   const systemSet=(id,properties)=>{
     // Trusted input binding only touches declared semantic fields, not arbitrary data.
     const raw=dehydrate(runtime,{includeSensitive:true});const walk=node=>{if(node.id===id)Object.assign(node.properties,properties);Object.values(node.slots).flat().forEach(walk);};walk(raw);runtime=hydrate(raw,model.registry);
@@ -97,7 +105,7 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
     check(record.type!=='Submit'||model.registry.isA(node.prototype,'wydgit.core/form'),'EVENT.DENIED','Submit requires Form');
   };
   try {
-    check(exists(pageId),'EVENT.INVALID','Page missing');
+    check(exists(pageId),'EVENT.INVALID','Page missing');await componentsRuntime.activate();
     if(input.method==='POST') {
       check(action&&action.method==='POST'&&validId(input.action.target)&&matchesObjectGrant(context.visible,input.action.target),'EVENT.DENIED','Action denied');
       if(!action.delegation)check(exists(action.target),'EVENT.DENIED','Action target missing');
@@ -108,7 +116,7 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
         const d=action.delegation;
         check(context.package===d.package&&context.installation===d.installation&&exists(d.root),'EVENT.DENIED','Wrong delegation principal');
         requestData.route.target=input.action.target;
-        const resolver=createDispatcher({prototypeRegistry:model.registry,registry:events,handlers:[{type:'Page.Resolve',owner:d.root,workflow:d.resolver}],context,handle,contexts,exists});
+        const resolver=createDispatcher({budget:executionLedger,executor,dynamicHandlers:options=>{componentsRuntime.adopt(runtime);return componentsRuntime.handlers(options);},prototypeRegistry:model.registry,registry:events,handlers:[{type:'Page.Resolve',owner:d.root,workflow:d.resolver}],context,handle,contexts,exists});
         resolving=true;
         try{await resolver.dispatch({type:'Page.Resolve',source:d.root,target:d.root,payload:{}});}finally{resolving=false;resolver.close();}
         verifyDelegation(action);action={...action,target:input.action.target};
@@ -146,14 +154,15 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
       await initialize();
     }
     if(!response.explicit)await phase('PreRender');
+    if(!response.explicit){componentsRuntime.adopt(runtime);await componentsRuntime.render();}
     writable=false;
     if(!response.explicit){const projection=webModel(runtime,model);const components=await prepareComponents(projection,pageId,input,context,libraries,session,presentationLedger);const result=await render(projection,input.path,{csrf,components});response.tree(result.html,result.status);}
   }catch(error){failure=safeError(error);}
   finally {
     writable=false;unloading=true;response.beginCleanup();dispatcher.close();
-    const cleanup=createDispatcher({prototypeRegistry:model.registry,registry:events,handlers,context,handle,contexts,exists:id=>exists(id)||archive.has(id)});
+    const cleanup=createDispatcher({budget:executionLedger,executor,dynamicHandlers:options=>componentsRuntime.handlers(options),prototypeRegistry:model.registry,registry:events,handlers,context,handle,contexts,canRaise:()=>false,exists:id=>exists(id)||archive.has(id)});
     for(const id of [...ledger].reverse())try{await cleanup.dispatch({type:'Page.Unload',source:pageId,target:id,payload:{}});}catch(error){errors.push(safeError(error).toJSON());}
-    cleanup.close();alive=false;
+    cleanup.close();await componentsRuntime.dispose();errors.push(...componentsRuntime.errors());executionBudget(executionLedger,context).close();alive=false;
   }
   if(failure&&response.state==='Open')response.tree(errorDocument(),failure.code==='EVENT.DENIED'||failure.code==='SEAM.DENIED'||failure.code==='REQUEST.FORGERY'?403:500);
   return {response,error:failure?.toJSON()??null,cleanupErrors:errors};

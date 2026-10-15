@@ -10,7 +10,7 @@ export class EventRegistry {
     this.define('Submit',{family:'Semantic',cancelable:true,fields:{}});
   }
   define(name,input) {
-    check(typeof name==='string'&&/^[A-Za-z][A-Za-z0-9]*(?:\.[A-Za-z][A-Za-z0-9]*)?$/.test(name)&&!this.#events.has(name),'EVENT.INVALID','Invalid event definition');
+    check(typeof name==='string'&&(/^[A-Za-z][A-Za-z0-9]*(?:\.[A-Za-z][A-Za-z0-9]*)?$/.test(name)||/^[a-z][a-z0-9.-]*\/[a-z][a-z0-9-]*#[A-Za-z][A-Za-z0-9_]{0,63}$/.test(name))&&!this.#events.has(name),'EVENT.INVALID','Invalid event definition');
     const d=clean(input);check(record(d)&&Object.keys(d).every(k=>['family','cancelable','fields'].includes(k))&&['Server','Session','Page','Client','Semantic','Custom'].includes(d.family)&&typeof d.cancelable==='boolean'&&record(d.fields),'EVENT.INVALID','Invalid event schema');
     for(const rule of Object.values(d.fields))check(record(rule)&&Object.keys(rule).every(k=>['type','optional'].includes(k))&&types.includes(rule.type)&&(rule.optional===undefined||typeof rule.optional==='boolean'),'EVENT.INVALID','Invalid payload rule');
     check(['Semantic','Custom'].includes(d.family)||!d.cancelable,'EVENT.INVALID','Lifecycle cannot cancel');

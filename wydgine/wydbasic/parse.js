@@ -75,7 +75,7 @@ export function parse(source,{module=false,interfaceDeclaration=false,classDecla
   }
   const modifiers=()=>{const values=[];while(['PUBLIC','PRIVATE','PROTECTED','FRIEND','MUSTINHERIT','MUSTOVERRIDE','VIRTUAL','OVERRIDE','REQUIRED','HIDDEN'].some(is)){const t=take();const v=t.value.toLowerCase();if(values.includes(v))fail('SYNTAX','Duplicate modifier.',t.location);values.push(v);}return values;};
   let className=null,classModifiers=[],parent=null;
-  const metadata=[],properties=[],contracts=[],implementations=[],children=[];
+  const metadata=[],properties=[],contracts=[],implementations=[],children=[],subscriptions=[],templates=[],repeaters=[],slotContracts=[];
   let presentation=null;
   function child(slot=null) {
     const start=expect('CHILD'),name=identifier();expect('AS');const prototype=take();
@@ -103,8 +103,12 @@ export function parse(source,{module=false,interfaceDeclaration=false,classDecla
   const procedures=[],events=[];blank();
   while(token().kind!=='eof'&&!((interfaceDeclaration||classDeclaration)&&is('END'))){
     const start=token(),mods=classDeclaration?modifiers():[];
+    if(classDeclaration&&eat('CONTENT')){if(mods.length)fail('SYNTAX','CONTENT has no modifiers.',start.location);expect('MARKDOWN');const value=expression();if(value.kind!=='literal'||typeof value.value!=='string')fail('TYPE','CONTENT MARKDOWN requires a literal String.',value.location);properties.push(node('property',start,{name:'content',type:'Object',value:{kind:'object',location:start.location,fields:[{key:'type',value:{kind:'literal',value:'markdown',location:start.location}},{key:'value',value}]},enumeration:null,requires:null,modifiers:[]}));endLine();continue;}
+    if(classDeclaration&&eat('TEMPLATE')){if(mods.length)fail('SYNTAX','Templates have no modifiers.',start.location);const name=identifier().value;expect('AS');const type=take();expect('INPUT');const model=take();if(type.kind!=='string'||model.kind!=='string')fail('SYNTAX','Template types must be quoted exact IDs.',start.location);expect('KEY');const key=identifier().value;endLine();const bindings=[];while(!is('END')){expect('BIND');const property=identifier().value;expect('TO');expect('ITEM');expect('.');const input=identifier().value;endLine();bindings.push({property,input});}expect('END');expect('TEMPLATE');endLine();templates.push(node('template',start,{name,type:type.value,model:model.value,key,bindings}));continue;}
+    if(classDeclaration&&eat('REPEAT')){if(mods.length)fail('SYNTAX','Repeaters have no modifiers.',start.location);const template=identifier().value;expect('FROM');expect('ME');expect('.');const property=identifier().value;expect('INTO');const slot=identifier().value;expect('LIMIT');const limit=take();if(limit.kind!=='number')fail('SYNTAX','Repeat limit must be a positive literal integer.',limit.location);endLine();repeaters.push(node('repeater',start,{template,property,slot,limit:limit.value}));continue;}
+    if(classDeclaration&&eat('BIND')){if(mods.length)fail('SYNTAX','Bindings have no modifiers.',start.location);expect('EVENT');const source=identifier().value;expect('.');const event=identifier().value;expect('TO');expect('ME');expect('.');const handler=identifier().value;endLine();subscriptions.push(node('subscription',start,{source,event,handler}));continue;}
     if(classDeclaration&&is('CHILD')){if(mods.length)fail('SYNTAX','CHILD has no access modifiers.',start.location);children.push(child());continue;}
-    if(classDeclaration&&eat('SLOT')){if(mods.length)fail('SYNTAX','SLOT has no access modifiers.',start.location);const slot=identifier().value;endLine();while(is('CHILD'))children.push(child(slot));expect('END');expect('SLOT');endLine();continue;}
+    if(classDeclaration&&eat('SLOT')){if(mods.length)fail('SYNTAX','SLOT has no access modifiers.',start.location);const slot=identifier().value;if(eat('ACCEPTS')){const accepts=expression();expect('MIN');const min=expression();expect('MAX');const max=expression();slotContracts.push(node('slotContract',start,{name:slot,accepts,min,max}));}endLine();while(is('CHILD'))children.push(child(slot));expect('END');expect('SLOT');endLine();continue;}
     if(classDeclaration&&eat('PRESENTATION')){if(mods.length||presentation)fail('SYNTAX','Declare one unmodified PRESENTATION block.',start.location);expect('SERVER');endLine();const parts=presentationParts();expect('END');expect('PRESENTATION');endLine();presentation=node('presentation',start,{target:'server',parts});continue;}
     if(classDeclaration&&eat('META')){const name=identifier();expect('=');metadata.push(node('metadata',start,{name:name.value,value:expression(),modifiers:mods}));endLine();continue;}
     if(classDeclaration&&eat('IMPLEMENTS')){const id=take();if(id.kind!=='string')fail('SYNTAX','IMPLEMENTS requires an exact quoted interface ID.',id.location);implementations.push(node('implementation',start,{id:id.value,modifiers:mods}));endLine();continue;}
@@ -122,7 +126,7 @@ export function parse(source,{module=false,interfaceDeclaration=false,classDecla
     }else fail('SYNTAX',classDeclaration?'Class bodies contain metadata, properties, methods and event signatures.':'Modules contain only SUB, FUNCTION and EVENT declarations.',start.location);
   }
   if(interfaceDeclaration){expect('END');expect('INTERFACE');endLine();if(token().kind!=='eof'||imports.length)fail('SYNTAX','Interfaces contain signatures only.',token().location);}
-  if(classDeclaration){expect('END');expect('CLASS');endLine();if(token().kind!=='eof')fail('SYNTAX','One class per source file; no top-level executable code.',token().location);return {kind:'class',location,name:className,modifiers:classModifiers,parent,metadata,properties,contracts,implementations,procedures,events,imports,children,presentation};}
+  if(classDeclaration){expect('END');expect('CLASS');endLine();if(token().kind!=='eof')fail('SYNTAX','One class per source file; no top-level executable code.',token().location);return {kind:'class',location,name:className,modifiers:classModifiers,parent,metadata,properties,contracts,implementations,procedures,events,imports,children,presentation,subscriptions,templates,repeaters,slotContracts};}
   return {kind:'module',location,procedures,events,imports,interfaceName};
 }
 

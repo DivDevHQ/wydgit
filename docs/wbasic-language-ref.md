@@ -1,7 +1,7 @@
 # WBasic Language Reference
 **Wydgit Platform — Draft Language Specification 1.0**
 
-**Status:** Implemented through SEWN 0.14; later milestones are proposed
+**Status:** Implemented through SEWN/WBasic 0.20 on the supported server path; browser component execution awaits H3. Proposed 1.0 constructs below are not implied implemented.
 **Language:** WBasic (WB)  
 **Source extension:** `.bas`  
 **Execution representation:** SEWN  
@@ -1337,15 +1337,16 @@ methods, abstract/virtual overrides, implemented interfaces, typed custom events
 and isolated lifecycle hook modules. Existing standalone and static APIs remain.
 Read the [implemented 0.19 grammar, build API and target boundaries](milestones/sewn-0.19/README.md).
 Properties cannot persist Integer/Float/DateTime/reference contracts and reject
-those declarations. Lifecycle bodies compile but are not automatically dispatched;
-RAISE EVENT is type-checked and explicitly rejected pending shared-budget instance
-dispatch. H2 browser bootstrap does not accept executable class definitions.
+those declarations. At 0.19, hook bodies compiled without automatic dispatch and typed emission was
+rejected. The supported 0.20 server controller and shared-budget dispatcher below
+now execute those contracts. H2 browser bootstrap does not accept executable class definitions.
 
-## Source authoring checkpoint (0.20, incomplete)
+## Implemented 0.20 component authoring
 
-The in-progress 0.20 checkpoint adds CHILD/INTO, inherited SLOT selection,
-PRESENTATION SERVER and trusted compileFamily builds. Dynamic typed templates,
-event delivery and automatic instance lifecycle execution remain unfinished.
-
-See [the 0.20 checkpoint](milestones/sewn-0.20/README.md) for implemented grammar,
-validation, evidence and remaining completion gates.
+The [0.20 grammar and getting-started guide](milestones/sewn-0.20/README.md) is the
+implemented source/component contract. CHILD/INTO, explicit SLOT acceptance/cardinality,
+CONTENT MARKDOWN, SERVER presentation, typed TEMPLATE/INPUT/KEY and bounded REPEAT,
+BIND EVENT, typed RAISE EVENT and statically checked Me.NamedChild access compile
+to canonical JSON/SEWN. Server execution includes authenticated hooks and event
+delivery. Existing 0.19 APIs remain compatible; extended definitions use shared IR
+0.20 and component schema 0.20. Client execution claims fail closed pending H3.

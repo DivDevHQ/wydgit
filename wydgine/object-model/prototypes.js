@@ -1,3 +1,4 @@
+import {componentContract,validateComponent} from './component-contracts.js';
 import { classContracts } from './class-contracts.js';
 import {validateInterface,interfaceKey,sameSignature,interfaceTypes} from './interfaces.js';
 import { isCapability } from '../seam/capabilities.js';
@@ -104,15 +105,19 @@ export class PrototypeRegistry {
           check(accessOf(member.rule)==='public'&&!member.rule.hidden&&sameSignature(signature,method.behavior.procedures[member.name]),'INTERFACE.CONFORMANCE','Required public instance signature does not match');
         }
       }
-      const declarations=classContracts(d,base,methods,properties);
-      const result = freeze({ ...d, ...declarations, implements:implementations, ...(presentation?{presentation}:{}), abstract: d.abstract ?? false, properties, propertyOwners, slots, methods, methodRules, friends, actions, ancestors: base ? [base.id, ...base.ancestors] : [] });
+      const declarations=classContracts(d,base,methods,properties);const component=componentContract(d,base);
+      const result = freeze({ ...d, ...declarations, ...(component?{component}:{}), implements:implementations, ...(presentation?{presentation}:{}), abstract: d.abstract ?? false, properties, propertyOwners, slots, methods, methodRules, friends, actions, ancestors: base ? [base.id, ...base.ancestors] : [] });
       visiting.delete(id); this.#definitions.set(id, result); return result;
     };
     for (const id of raw.keys()) resolve(id);
     for (const d of this.#definitions.values()) for (const slot of Object.values(d.slots)) for (const id of slot.accepts) this.get(id);
+    // Default composition must be finite even for manually authored canonical JSON.
+    const composing=new Set(),composed=new Set();
+    const visitComposition=id=>{check(!composing.has(id),'PROTOTYPE.COMPONENT','Cyclic default composition');if(composed.has(id))return;composing.add(id);for(const child of this.get(id).component?.children??[])visitComposition(child.type);composing.delete(id);composed.add(id);};
+    for(const id of this.#definitions.keys())visitComposition(id);
     // Resolve statically known Me calls through each actual prototype, including overrides.
     for(const d of this.#definitions.values()){
-      if(d.interface)continue;
+      if(d.interface)continue;validateComponent(d,this);if(d.extends&&raw.get(d.id).methodContracts!==undefined){const base=this.get(d.extends);for(const [name,slot] of Object.entries(raw.get(d.id).slots??{})){const old=base.slots[name];if(old)check((slot.min??0)>=(old.min??0)&&(old.max===undefined||slot.max!==undefined&&slot.max<=old.max)&&slot.accepts.every(id=>old.accepts.some(parent=>this.isA(id,parent))),'PROTOTYPE.SLOT','A class cannot weaken inherited slot contracts');}}
       for(const s of Object.values(d.methodContracts??{}))for(const type of [...s.params,s.returns])if(typeof type==='string'&&type.startsWith('interface:'))this.interface(type);
       if(d.behavior)for(const type of interfaceTypes(d.behavior))this.interface(type);
       if(d.static){check(['sewn/0.14','sewn/0.15','sewn/0.16','sewn/0.17','sewn/0.18'].includes(d.behavior?.schema),'PROTOTYPE.STATIC','Static behavior requires sewn/0.14, sewn/0.15 or sewn/0.16');const walk=v=>{if(!v||typeof v!=='object')return;check(!(v.op==='context'&&v.name==='ME'),'PROTOTYPE.STATIC','Static methods have no Me');Object.values(v).forEach(walk);};walk(d.behavior);for(const lib of d.behavior.libraries??[])check(d.dependencies?.[lib.id]===lib.version&&lib.id!==d.id,'PROTOTYPE.STATIC','Linked dependency must be declared');continue;}

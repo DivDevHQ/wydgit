@@ -327,11 +327,28 @@ POST population now discovers every descendant Field of the target Form and adap
 
 Normal startup activates cataloged declarative Page lifecycle and semantic action bindings through existing WydBASIC/SEWN event machinery. No package JavaScript runs. One package principal per Page is enforced. See [packages](packages.md).
 
-## Source authoring checkpoint (0.20, incomplete)
+## 0.20 class events and instance lifecycle
 
-The 0.20 checkpoint does not change host event names, dispatch semantics, handler
-budgets or application lifecycle integration. Typed class events and the trusted
-instance-hook controller are still required implementation work.
+The [0.20 contract](milestones/sewn-0.20/README.md) adds class metadata to this
+existing dispatcher; it does not introduce another event system. Typed raises are
+authenticated to the live declaring receiver and queued FIFO after remaining
+handlers/defaults. Methods, hooks and all deliveries share one SEWN ledger. Page
+class subscriptions use the same native dispatcher and original source identity.
+Exceptions stop the chain; cancel/handled semantics remain unchanged; stale
+subscribers are skipped, stale queued emitters fail closed, and no implicit bubbling
+occurs. Unload/Dispose detach class bindings before invalidated callbacks can execute.
 
-See [the 0.20 checkpoint](milestones/sewn-0.20/README.md) for implemented grammar,
-validation, evidence and remaining completion gates.
+`execution/instances.js` controls constructed → initialized → active → initialized
+(on Unload) → disposed, with transient initializing/preloading/unloading/disposing
+states. Init runs once per hydration, Preload per activation, Render may repeat, and
+child teardown precedes parent. Failed activation invalidates the owned tree. Host
+cleanup survives hook errors/budget exhaustion; pending work cannot resurrect it.
+
+Trusted `createLifecycle({instances,context,...})` activates an explicitly supplied
+verified App-root controller before Server.Start and disposes it after Server.Stop.
+HTTP hosts may provide `execution.lifecycleInstances` with the same lifecycleContext.
+Server/Session class subscriptions additionally need trusted build `hostEvents:true`,
+`event.lifecycle.subscribe` and exact lower-case host event scope. App controllers
+skip Page descriptor execution; live Pages remain request-owned. Existing host names
+are retained; App/Client pseudo-event families are rejected. No durable exactly-once
+cleanup or crash/close delivery guarantee exists.

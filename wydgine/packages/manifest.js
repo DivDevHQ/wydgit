@@ -1,3 +1,4 @@
+import semver from 'semver';
 import { clean, freeze, record, parse, requireThat as check } from '../object-model/validation.js';
 import { fields, version, range, satisfies, validateRequirements } from '../libraries/contracts.js';
 import { validObjectGrant, matchesObjectGrant, objectGrantCovers } from '../seam/context.js';
@@ -61,4 +62,8 @@ export function validatePackageManifest(input) {
   }
   check(Array.isArray(m.installables)&&m.installables.length===1,code,'Exactly one installable supported');fields(m.installables[0],['id','kind'],code);check(localName(m.installables[0].id)&&m.installables[0].kind==='section-template',code,'Invalid installable');
   return freeze(m);
+}
+
+export function validateComponentPlatform(manifest,definitions){
+  if(definitions.some(d=>d.component!==undefined)){check(!manifest.runtime.includes('client'),'PACKAGE.RUNTIME','Executable component contracts are currently server-only');check(semver.subset(manifest.platform,'>=0.3.0-alpha.8',{includePrerelease:true}),'PACKAGE.VERSION','Executable component contracts require Wydgine 0.3.0-alpha.8 or newer');}
 }

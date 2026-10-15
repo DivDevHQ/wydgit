@@ -9,7 +9,7 @@ import { initializeHost } from './wydgine/host.js';
 
 export const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 export function createApp({ root = projectRoot, logger = console, libraries, execution = {}, lifecycle } = {}) {
-  const renderer = createRenderer({ root });
+  const renderer = createRenderer({ root, verifiedPackages:execution.verifiedPackages });
   const pipeline = createPipeline({ root, libraries, execution, lifecycle });
   const app = createTransport({ root, projectRoot, renderer, pipeline, logger });
   return app;
@@ -21,7 +21,7 @@ export async function createHostApp(options = {}) {
   const root=options.root??projectRoot;
   let lifecycle;
   const libraries = await initializeHost({ root, adapters:options.libraryAdapters, lifecycle:async(id,event)=>{if(id==='wydgate'&&lifecycle)await lifecycle.session(event);} });
-  lifecycle=createLifecycle({app:loadRepository(root).runtime.rootId,handlers:options.execution?.lifecycleHandlers,context:options.execution?.lifecycleContext});
+  lifecycle=createLifecycle({app:loadRepository(root,{verifiedPackages:options.execution?.verifiedPackages}).runtime.rootId,handlers:options.execution?.lifecycleHandlers,context:options.execution?.lifecycleContext,instances:options.execution?.lifecycleInstances});
   const app = createApp({...options,libraries,lifecycle});
   app.locals.libraries = libraries; // Trusted host access only; never serialized.
   return app;

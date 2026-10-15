@@ -1,7 +1,7 @@
 # WydClient
 
-The current standalone bootstrap is **WydClient 0.1.0-alpha.4**, independently compatible
-with **WydSUB 0.1**. Wydgine remains **0.3.0-alpha.7**. H0 continues to define the
+The current standalone bootstrap is **WydClient 0.1.0-alpha.5**, independently compatible
+with **WydSUB 0.1**. Wydgine is **0.3.0-alpha.8**. H0 continues to define the
 canonical OOP contract; H1 uses the existing validators without changing server
 semantics. H1b adds trusted-host container mounting, per-root configuration and
 independent nested cleanup. This browser stage does not execute portable code or
@@ -21,16 +21,17 @@ remains H3 work; publisher signatures and object possession grant no authority.
 
 Alpha.4 packages the updated shared canonical validation from WBasic 0.19 under a
 new immutable filename. Alpha.3 was restored byte-for-byte to the previously
-verified H2 artifacts. All current examples pin alpha.4; protocol 0.1 and Wydgine
-0.3.0-alpha.7 remain unchanged. Repository builds now reject overwrites/deletions
+verified H2 artifacts. At that correction, examples pinned alpha.4 and protocol 0.1/Wydgine
+0.3.0-alpha.7 remained unchanged. Repository builds now reject overwrites/deletions
 of committed versioned artifacts and require a new implementation version for
 changed bytes. See [distribution correction and verification](milestones/sewn-0.19/distribution-correction.md).
 
-## Source authoring checkpoint (0.20, incomplete)
+## 0.20 boundary and alpha.5 validation distribution
 
-The 0.20 checkpoint changes build tooling only; alpha.4 and historical artifacts
-remain unchanged. SERVER presentation explicitly rejects client targets. Browser
-class execution and binding/lifecycle/event support still require H3.
-
-See [the 0.20 checkpoint](milestones/sewn-0.20/README.md) for implemented grammar,
-validation, evidence and remaining completion gates.
+WBasic 0.20 server artifacts use closed component metadata for executable composition,
+subscriptions and repeaters. H2 alpha.5 explicitly rejects that metadata and does not
+execute class methods/hooks/events/bindings. Its standalone closure carries a rejection
+validator rather than server lifecycle code. Alpha.1–alpha.4 bytes remain unchanged.
+Alpha.5 exists because shared validator changes require new immutable bytes, not
+because H3 was implemented. See the [precise execution handoff](milestones/sewn-0.20/wydclient-handoff.md)
+and [actual verification matrix](milestones/sewn-0.20/verification.md).

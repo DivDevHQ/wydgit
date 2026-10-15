@@ -1,15 +1,15 @@
 # WydClient 0.1 — Standalone and container bootstrap
 
-WydClient **0.1.0-alpha.4** is a standalone browser runtime bootstrap. It works on
+WydClient **0.1.0-alpha.5** is a standalone browser runtime bootstrap. It works on
 static HTTP websites without Wydgine, a database, npm, module imports or build
-tools on the consuming host. Wydgine remains **0.3.0-alpha.7**. WydSUB compatibility
+tools on the consuming host. Wydgine is **0.3.0-alpha.8**. WydSUB compatibility
 is independently declared as **0.1**, not derived from implementation SemVer.
 No native runtime is implemented. The logical destination names and canonical
 JSON Page snapshot are the renderer-independent contract for later adapters.
 
 ## Distribution and host API
 
-Self-host `dist/wydgit-client-0.1.0-alpha.4.min.js` or upload the exact artifact to
+Self-host `dist/wydgit-client-0.1.0-alpha.5.min.js` or upload the exact artifact to
 your CDN under that immutable filename. Do not overwrite deployed version paths;
 pin upgrades explicitly. A readable `.js` artifact accompanies it. CDN hosting is
 a deployment approach, not an existing hosted CDN or published npm release. This
@@ -17,7 +17,7 @@ repository workspace is distributable with `npm pack --workspace @wydgit/client`
 publishing, tags and releases remain manual. Build tooling is repository-only.
 
 ```html
-<script defer src="/wydgit/wydgit-client-0.1.0-alpha.4.min.js"></script>
+<script defer src="/wydgit/wydgit-client-0.1.0-alpha.5.min.js"></script>
 ```
 
 The frozen global API is only `WydClient.version`, `WydClient.protocol`
@@ -354,7 +354,7 @@ A single-file host (the immutable runtime remains an external script):
 <script type="application/json" id="wydgit-manifest">
 {"schema":"wydgit.registry/0.1","prototypes":[{"id":"acme/home-page","publisher":"acme","extends":"wydgit.core/page"}]}
 </script>
-<script defer src="/wydgit/wydgit-client-0.1.0-alpha.4.min.js"></script>
+<script defer src="/wydgit/wydgit-client-0.1.0-alpha.5.min.js"></script>
 <script>addEventListener('DOMContentLoaded', async () => {
   const result = await WydClient.ready();
   document.getElementById('status').textContent = JSON.stringify(result, null, 2);
@@ -365,7 +365,7 @@ A single-file host (the immutable runtime remains an external script):
 
 ## H2 trusted instance adapter (introduced in alpha.3)
 
-New integrations use `dist/wydgit-client-0.1.0-alpha.4.min.js` (or readable `.js`).
+New integrations use `dist/wydgit-client-0.1.0-alpha.5.min.js` (or readable `.js`).
 Alpha.1, alpha.2 and restored alpha.3 distributions remain immutable compatibility artifacts.
 `ready()` retains its result shape. The global and mounted handles add `host()`
 for trusted host construction, ordered canonical placement, text rendering and
@@ -409,3 +409,11 @@ fetch-history diagnostic. Build tooling stays outside the distributed browser co
 
 See [the correction verification](../../docs/milestones/sewn-0.19/distribution-correction.md)
 for byte hashes, functional comparison and final test/browser results.
+
+## 0.20 server contract validation artifact
+
+Alpha.5 updates the shared registry dependency closure with explicit rejection
+of server component metadata. H2 still rejects these executable component definitions before mounting;
+there is no H3 execution adapter. Alpha.1–alpha.4 artifacts and versioned size
+reports are immutable and unchanged. Current examples pin alpha.5. This is an
+implementation artifact update, not a publication or release.

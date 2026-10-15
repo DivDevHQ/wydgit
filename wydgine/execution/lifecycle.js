@@ -1,22 +1,25 @@
+import {createExecutionBudget,executionBudget} from '../sewn/budget.js';
 import { matchesObjectGrant } from '../seam/context.js';
 import { randomBytes,createHash } from 'node:crypto';
 import { createDispatcher,safeError,prepareHandlers } from '../events/index.js';
 import { freeze,clean,requireThat as check } from '../object-model/validation.js';
 import { ExecutionContext } from '../seam/context.js';
-export function createLifecycle({app,handlers=[],context=new ExecutionContext({publisher:'wydgit.core',self:app,app})}) {
+export function createLifecycle({app,handlers=[],instances,context=new ExecutionContext({publisher:'wydgit.core',self:app,app})}) {
   handlers=prepareHandlers(handlers);
   check(context.app===app,'EVENT.DENIED','Wrong lifecycle App');
   let started=false,stopped=false,chain=Promise.resolve();const errors=[];
   const emit=(family,type,session)=>{
     chain=chain.catch(()=>{}).then(async()=>{
       const caches=new WeakMap();const handle=(id,guard)=>{check(matchesObjectGrant(context.visible, id),'EVENT.DENIED','Invisible lifecycle owner');let cache=caches.get(guard);if(!cache){cache=new Map();caches.set(guard,cache);}if(!cache.has(id))cache.set(id,Object.freeze({get id(){guard();return id;}}));return cache.get(id);};
-      const dispatcher=createDispatcher({handlers,context,handle,exists:id=>matchesObjectGrant(context.visible, id),contexts:()=>({SERVER:Object.freeze({App:app}),...(session?{SESSION:freeze(clean(session))}:{})})});
-      try{await dispatcher.dispatch({type:`${family}.${type}`,source:app,target:app,payload:{}});}catch(error){if(errors.length<256)errors.push(safeError(error).toJSON());}finally{dispatcher.close();}
+      const budget=createExecutionBudget(context);
+      const bound=instances?[...handlers,{type:`${family}.${type}`,owner:app,run:async function(){await instances.hostEvent(this.EVENT.Type,{scope:this,budget});}}]:handlers;
+      const dispatcher=createDispatcher({budget,handlers:bound,context,handle,exists:id=>matchesObjectGrant(context.visible, id),contexts:()=>({SERVER:Object.freeze({App:app}),...(session?{SESSION:freeze(clean(session))}:{})})});
+      try{await dispatcher.dispatch({type:`${family}.${type}`,source:app,target:app,payload:{}});}catch(error){if(errors.length<256)errors.push(safeError(error).toJSON());}finally{dispatcher.close();executionBudget(budget,context).close();}
     });return chain;
   };
   return Object.freeze({
-    async start(){if(started)return;started=true;await emit('Server','Start');},
-    async stop(){if(stopped)return;stopped=true;await emit('Server','Stop');},
+    async start(){if(started)return;started=true;if(instances)await instances.activate();await emit('Server','Start');},
+    async stop(){if(stopped)return;stopped=true;try{await emit('Server','Stop');}finally{if(instances)await instances.dispose();}},
     async session(event){check(event.app===app,'EVENT.DENIED','Wrong App');
       // Gate's committed revocation marker (or anonymous resolver ownership) is
       // the terminal ledger. Do not retain an unbounded second Session database.

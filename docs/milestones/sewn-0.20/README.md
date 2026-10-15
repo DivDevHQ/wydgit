@@ -1,185 +1,355 @@
-# WBasic / SEWN 0.20 — implementation in progress
+# WBasic / SEWN 0.20 — Complete server component authoring
 
-**The 0.20 work order is not complete.** This checkpoint implements source-authored
-package composition, server presentation and trusted family builds. It does not
-implement typed event delivery, symbolic runtime child references, instance
-lifecycle execution, dynamic typed child repeaters or the required Taskboard
-acceptance application. Those are remaining server work, not browser deferrals.
+0.20 extends the intermediate `04447a0` checkpoint with executable server composition,
+typed templates, event wiring and trusted lifecycle execution. Canonical JSON defines
+objects, SEWN defines behavior, SEAM grants authority, and the existing installer and
+renderer consume the artifacts. Source language never grants privileges.
 
-Canonical JSON remains authoritative; SEWN executes behavior; SEAM owns authority.
-No runtime, registry, installer, dispatcher or rendering model is replaced.
+The supported execution target is **Wydgine server**. WydClient H2 rejects executable
+component contracts. Alpha.5 is a validation/distribution update, not H3 execution.
+See [verification](verification.md) and the [H3 contract](wydclient-handoff.md).
 
-## Supported grammar and complete sample
+## Getting started
 
-Existing 0.19 programs and APIs retain their results. New constructs are:
+The complete [Taskboard family](../../../examples/wbasic-taskboard/) has six source
+files, an existing package manifest and a trusted build helper. No prototype JSON or
+SEWN is required from its author. The public entry composes a typed model, list and
+navigation component; the list expands keyed task cards; navigation raises a typed
+event; a private handler changes the model selection and rendered list.
 
-- `CHILD Name AS "publisher/prototype" INTO ExactSlot`, literal `PROPERTY Name = value`
-  initializers, then `END CHILD`.
-- `SLOT ExactSlot`, ordered CHILD declarations without INTO, then `END SLOT`.
-  This selects an inherited canonical slot; it does not declare a new slot contract.
-- `PRESENTATION SERVER`, scalar `HEADING value` / `CONTENT value`, then
-  `END PRESENTATION`. Values are scalar literals or known `Me.Property` references.
-- Within presentation, `REPEAT Item IN [scalar literals] LIMIT 256` and `END REPEAT`.
-  Repetition emits existing bounded presentation `each`; it creates no instances.
-  Only nonempty homogeneous String/Number/Boolean literal arrays are currently
-  accepted. Dynamic arrays, typed record templates and arbitrary expressions fail.
+A complete small source class can combine these declarations:
 
 ```vb
-PUBLIC CLASS StatusCard EXTENDS wydgit.core/block
-    META Id = "divdev/source-card"
-    PUBLIC PROPERTY content AS Object = {"type":"markdown","value":""}
-    PUBLIC PROPERTY Title AS String = "Ready"
-    PUBLIC PROPERTY Status AS String = "Pending"
-
-    PUBLIC SUB Complete()
-        Me.Status = "Complete"
+PUBLIC CLASS Panel EXTENDS wydgit.core/section
+    META Id = "divdev/panel"
+    PUBLIC PROPERTY Selected AS Number = 1
+    CHILD Pager AS "divdev/task-navigation" INTO blocks
+    END CHILD
+    PRIVATE SUB OnPageChanged(PageNumber AS Integer)
+        Me.Selected = PageNumber
     END SUB
-
+    BIND EVENT Pager.PageChanged TO Me.OnPageChanged
+    PUBLIC SUB SelectPage(PageNumber AS Integer)
+        Me.Pager.GoToPage(PageNumber)
+    END SUB
     PRESENTATION SERVER
-        HEADING Me.Title
-        CONTENT Me.Status
-        REPEAT Item IN ["Source authored", "Canonical JSON"] LIMIT 256
-            CONTENT Item
-        END REPEAT
+        HEADING "Selected page"
+        CONTENT Me.Selected
     END PRESENTATION
 END CLASS
 ```
 
-The executable [example family](../../../examples/source-components/card.bas) adds
-an ordered [Section container](../../../examples/source-components/panel.bas).
-Literal Markdown remains the canonical `content` property; it is sanitized by the
-existing Wydgine Markdown renderer. Presentation CONTENT means escaped scalar text,
-not Markdown, HTML, a slot or executable source. H2 Markdown stays literal text.
+The navigation class declares `PUBLIC EVENT PageChanged(PageNumber AS Integer)`
+and executes `RAISE EVENT PageChanged(NewPage)` from its public GoToPage method.
+[TaskCard](../../../examples/wbasic-taskboard/task-card.bas) demonstrates literal
+Markdown, public property bindings and all five hook bodies. The renderer escapes
+scalar presentation text; Markdown uses the existing sanitized server path.
 
-Existing `format` and `skin` properties remain authorable with PROPERTY declarations
-or child initializers. The compiler adds no CSS, stylesheet, selector or skin
-registry. Actual skin resource approval and rendering remain host responsibilities.
-The fixed H2 format vocabulary is not a claim that server presentation and H2
-implement equivalent styling or rendering.
-
-## Build and install without prototype JSON
-
-One source file still defines one class. `compileFamily` consumes an explicit
-file-to-source map and trusted 0.19 build options plus an entry descriptor:
+From the repository root, with Node 24 and installed dependencies:
 
 ```js
-import {compileFamily} from './wydgine/wydbasic/index.js';
-const result = compileFamily({'card.bas': cardSource, 'panel.bas': panelSource}, {
-  manifest, verifiedPackages, definitions, registryOptions,
-  entry: {type: 'divdev/source-panel', id: 'source-panel'}
+import {build} from './examples/wbasic-taskboard/build.mjs';
+import {readFileSync} from 'node:fs';
+import {compileDefinitions} from './wydgine/repository.js';
+const result = await build({
+  definitions: compileDefinitions(JSON.parse(readFileSync('prototypes/objects.json','utf8'))),
+  verifiedPackages: {'divdev/wbasic-taskboard': 'divdev'}
 });
 ```
 
-`manifest` is the existing `wydgit-package/0.1` manifest. `verifiedPackages` is
-independent host approval; source and package metadata cannot supply authentication.
-Dependencies are an explicit approved canonical snapshot. There are no downloads.
-Classes resolve parent, interface and child dependencies in deterministic order;
-unknown dependencies, cycles, duplicates and namespace disagreement fail before
-returning any output. Linked libraries and interfaces retain exact manifest pins.
-Foreign child composition is rejected: this installer's Section templates require
-package-owned prototype instances and have no ordinary foreign-component approval
-surface. Parent inheritance retains existing official/same-publisher rules.
+`verifiedPackages` must come from independent trusted host approval, not source or
+manifest claims. For a standalone build the tested canonical dependency snapshot is
+`compileDefinitions(JSON.parse(readFileSync('prototypes/objects.json','utf8')))` from
+`wydgine/repository.js`. The build API is pure and returns the existing manifest,
+dependency-ordered definitions, entry instance template and resource-path/text map.
+Stage `result.resources` and `manifest.json` in a package directory. Use the existing
+`planPackageInstall` and `applyPackageInstall` APIs with independently approved
+permissions, installation context and placement. [The executable installer
+acceptance](../../../test/wbasic-taskboard.test.js) shows these exact steps in a
+temporary application, reloads installed artifacts and executes a real Page request.
 
-The result contains `manifest`, dependency-ordered `definitions`, canonical
-`template` and `resources`, keyed by the existing manifest resource paths. Write
-those resources to a staged package directory, together with the existing manifest
-and any separately supplied workflow resources. There is no new package format.
-The [trusted build helper](../../../examples/source-components/build.mjs) accepts
-host approval and an output directory; it reads these two example source files.
-Compilation is atomic; filesystem publication is the embedding host's responsibility.
+For example, the following **trusted local operator script** stages this reviewed
+example, installs it at the end of the existing `home` Page and starts the host.
+Run it from the repository root in a disposable site checkout. The independent
+publisher map and approvals here are site-owner choices, not package authentication.
+It uses the `result` from the build above:
 
-Use the existing `planPackageInstall` / `applyPackageInstall` API with owner approvals,
-placement and a trusted installation context. The installer still validates resource
-sizes, namespace, complete containment, grants and receipts; startup reloads stored
-canonical artifacts without source compilation. Run:
-
-```sh
-node --test --test-isolation=none test/wbasic-families.test.js
+```js
+import {mkdir,writeFile} from 'node:fs/promises';
+import path from 'node:path';
+import {loadRepository} from './wydgine/repository.js';
+import {ExecutionContext} from './wydgine/seam/context.js';
+import {planPackageInstall,applyPackageInstall} from './wydgine/packages/index.js';
+import {createHostApp} from './app.js';
+const root = process.cwd(), packagePath = '/tmp/wbasic-taskboard-package';
+const verifiedPackages = {'divdev/wbasic-taskboard':'divdev'};
+await mkdir(packagePath, {recursive:true});
+await writeFile(path.join(packagePath,'manifest.json'), JSON.stringify(result.manifest));
+for (const [file,text] of Object.entries(result.resources))
+  await writeFile(path.join(packagePath,file), text);
+const site = loadRepository(root, {verifiedPackages});
+const placement = {page:'home',parent:'home',slot:'sections',
+  index:site.runtime.get('home').slots.sections.length};
+const grants = ['home',...site.runtime.get('home').slots.sections,
+  'taskboard','taskboard-*'];
+const plan = await planPackageInstall({root,packagePath,placement,verifiedPackages,
+  approvals:result.manifest.permissions,storageMappings:{},
+  installationContext:new ExecutionContext({publisher:'operator',self:'home',
+    app:site.runtime.rootId,visible:grants,editable:grants,
+    capabilities:['object.instances.edit']})});
+await applyPackageInstall(plan);
+const app = await createHostApp({root,execution:{verifiedPackages}});
+app.listen(3000,'127.0.0.1');
 ```
 
-This test builds, installs and reloads the family in a temporary application;
-constructs its complete tree; executes Complete under a caller context; and verifies
-escaped rendering before and after the state change. It also executes the independent
-JSON/SEWN golden fixture. No production database is needed.
+`execution.verifiedPackages` is carried through startup, renderer and request reloads;
+it independently verifies installed declaring prototypes and grants **no capabilities**.
+The stored approved package permissions still determine its Page execution context.
+The [TCP acceptance test](../../../test/wbasic-taskboard.test.js) additionally packages
+a WBasic `EVENT Page.PreRender / CALL Me.SelectPage(2) / END EVENT` workflow through
+existing manifest bindings, proving authenticated navigation in the normal host.
+Without independent publisher verification, that emission fails closed with HTTP 403.
+The example's public method can also be invoked by approved host workflows as shown
+in the controller tests; it does not claim a browser navigation callback.
 
-## Shared IR and generated artifacts
+Run the complete reproducible acceptance:
 
-Old classes use `wydgit.definition/0.19` unchanged. New declarations select
-`wydgit.definition/0.20`; the canonical `definition` may contain existing presentation,
-and optional build-only `composition` holds ordered
-`{name,type,slot,properties}` records. `type` avoids reserved JSON prototype keys.
-`lowerDefinition` returns `composition` only for the deliberately versioned new IR.
-`lowerFamily` is language-independent and accepts IRs from any future frontend.
-Neither lowerer depends on WBasic AST nodes. Composition is not a new prototype
-field; it produces the existing package instance template.
+```sh
+node --test --test-isolation=none test/wbasic-taskboard.test.js test/sewn-shared-budget.test.js
+npm test
+npm run check
+```
 
-Generated presentation:
+The Taskboard data provider is deterministic in-memory WBasic business logic. A
+public typed provider method populates the list's Array property. Approved SERVICES
+calls may supply data through existing caller-bound contracts; presentation never
+executes service calls, SQL, host expressions or callbacks. WydStore remains storage,
+not a compulsory Model layer. No production database is needed for this example.
+
+## Grammar and compiler APIs
+
+Existing 0.19 source and result shapes remain compatible. One class per file remains.
+New grammar includes:
+
+- `CHILD Name AS "publisher/type" INTO Slot`, literal `PROPERTY Name = value`,
+  `END CHILD`; a surrounding `SLOT Slot ... END SLOT` supplies explicit placement.
+- `SLOT Slot ACCEPTS ["publisher/type"] MIN 0 MAX 8 ... END SLOT` declares a
+  canonical slot contract. Derived class contracts may narrow but not weaken it.
+- `CONTENT MARKDOWN "literal"` supplies the canonical content property default.
+- `PRESENTATION SERVER`, `HEADING value`, `CONTENT value`, `END PRESENTATION`.
+  Values are scalar literals or statically resolved `Me.Property` reads.
+- Presentation-local `REPEAT Item IN [homogeneous scalar literals] LIMIT 256`
+  uses existing presentation `each`, without creating Wydgits.
+- `TEMPLATE Card AS "publisher/card" INPUT "publisher/record" KEY Key`, typed
+  `BIND Title TO Item.Title` entries, `END TEMPLATE`.
+- Class-level `REPEAT Card FROM Me.Tasks INTO blocks LIMIT 8` creates canonical
+  child instances through that validated template.
+- `BIND EVENT Pager.PageChanged TO Me.OnPageChanged`, also Me and supported Page
+  sources. Trusted builds may enable App-root Server/Session declarations with
+  `hostEvents:true`; execution still needs actual host authorization.
+- `Me.NamedChild.PublicMethod(...)` and public child property reads/writes.
+- `RAISE EVENT DeclaredName(typed arguments)` within an authorized class body.
+
+`compileClass(source, options)` and `compileFamily(fileToSource, options)` retain
+trusted manifest, approved dependency and publisher options. Family builds resolve
+parent, interface, child, template input/output and slot dependencies deterministically.
+Cycles, unresolved dependencies, namespace disagreement and invalid whole trees
+fail atomically before returning resources. There is no remote fetching or source
+execution at build time. Existing `resources.prototypes`/template package contracts
+are reused, including current restrictions on foreign package template instances.
+
+Diagnostics retain error code and source location where the frontend can identify
+the declaration; canonical validator/runtime errors intentionally sanitize values
+and host details. Exact slot/property identities are preserved. No hidden helper
+procedures become public instance methods.
+
+## Language-neutral artifacts
+
+Old classes retain `wydgit.definition/0.19`. Extended classes use
+`wydgit.definition/0.20`, with build composition and closed canonical prototype
+metadata `wydgit.component/0.20`. Shared lowerers own validation; no WBasic AST is
+required by the lowerer, installer, runtime or independent JSON fixture.
+
+```json
+{"component":{"schema":"wydgit.component/0.20","children":[{"name":"Pager","type":"divdev/task-navigation","slot":"blocks","properties":{}}],"subscriptions":[{"source":"Pager","event":"PageChanged","handler":"onpagechanged"}],"templates":[],"repeaters":[]}}
+```
+
+The resolved registry derives subscription declaring owners; serialized metadata
+cannot supply or forge them. A template contains `{name,type,model,key,bindings}`;
+a repeater contains `{template,property,slot,limit}`. These are validated canonical
+composition contracts, not callbacks or another template interpreter.
+
+Presentation remains existing `wydgit.presentation/0.1`:
 
 ```json
 {"schema":"wydgit.presentation/0.1","template":{"tag":"section","children":[{"tag":"h2","text":{"get":"properties.Title"}}]}}
 ```
 
-Generated method body uses existing sewn/0.5, with no new executable wire schema:
+Child envelopes remain `wydgit/0.2`. Declared children have deterministic IDs such as
+`taskboard-Pager`; IDs carry no authority. Executable wire schemas are unchanged:
 
 ```json
-{"op":"memberSet","target":{"op":"context","name":"ME"},"name":"Status","value":{"op":"literal","value":"Complete"},"exact":true}
+{"op":"invoke","target":{"op":"context","name":"ME"},"method":"related","args":[{"op":"literal","value":"child"},{"op":"literal","value":"Pager"}]}
 ```
 
-A child becomes a canonical envelope, with deterministic build-assigned identity:
+Emission uses the existing EVENT.Raise operation with a literal declared name, ME
+and an object of typed parameters. The controller authenticates the declaring
+frame and live receiver, then queues the existing dispatcher event under stable
+`declaring/prototype#EventName` identity. Legacy string EVENT.Raise cannot forge
+these names. No new SEWN wire opcode or browser executor is introduced.
 
-```json
-{"schema":"wydgit/0.2","id":"source-panel-First","prototype":"divdev/source-card","properties":{"Title":"First task","Status":"Pending","content":{"type":"markdown","value":""},"anchors":[],"format":{},"order":0,"position":"main"},"slots":{"children":[]},"provenance":{}}
+New component packages require platform `>=0.3.0-alpha.8 <0.4.0` and server runtime;
+build and installation reject weaker version floors and client execution claims.
+The floor prevents older runtimes silently accepting inert component metadata.
+
+## Composition and symbolic references
+
+Children are uniquely named, ordered within explicit canonical slots, single-owned
+and checked for known types, initializer visibility/types/constraints, required
+values, acceptance/cardinality and complete-tree validity. Inherited children precede
+new declarations. Compile-time templates retain no native objects or live references.
+Ordinary NEW now expands default static children into bounded invocation-local
+canonical drafts. Init runs only after trusted attachment/activation, not compilation
+or draft construction. Every constructed prototype needs the caller's explicit scope.
+
+Named runtime lookup rechecks children traversal, visibility, actual containing slot,
+expected prototype, owning root and live lifetime through the current instance's
+opaque adapter. Forged names/IDs, removed relationships and disposed handles fail.
+It is not arbitrary tree traversal or a WBasic-only reference type.
+
+Logical slots retain canonical contracts. Current visual server placements are App
+pages/navigation, Page sections/navigation, Section blocks, Block children and Form
+blocks/fields. Unsupported visual slots/targets fail `COMPONENT.TARGET`; HTML nesting
+never establishes canonical ownership. Field/navigation child slots are unsupported. A source component cannot combine Form
+presentation replacement with composed fields/blocks: native field placement inside
+that presentation has no current contract, so the target explicitly rejects it.
+
+## Presentation, styling and data binding
+
+Bindings are one-way declarative exact property reads, reevaluated at explicit
+render. Sources must be public, discoverable, unrestricted scalar properties; no
+Object/Array-to-text coercion, private/protected read, executable markup, script,
+inline handler, arbitrary CSS or dynamic host expression is permitted. There is no
+reactive propagation graph or two-way binding, hence no cyclic update mechanism.
+Invalid canonical values fail validation; existing renderer errors are sanitized.
+Methods/services update model properties separately from rendering.
+
+`format` and `skin` remain ordinary canonical property declarations/initializers.
+Existing fixed alignment/width/tone/layout vocabularies and approved skin identity
+resolution are reused. Unsafe/missing skins and unsupported format values fail the
+existing renderer checks. The compiler does not create a styling registry.
+
+Server presentation is HTML-oriented and more capable than H2. Scalar content and
+fixed format *concepts* are portable, but this milestone does not claim its server
+presentation tree is a browser presentation contract. SERVER declarations and
+component execution on client targets explicitly fail. H2 literal content/Markdown
+and its independent roots remain supported by H2, with Markdown displayed literally.
+Future portable presentation lowering/capability validation belongs to H3; no raw
+HTML escape hatch is provided.
+
+## Templates and repeaters
+
+Template input is a named canonical prototype's public property schema, applied to
+plain JSON records, not serialized instance handles. Target bindings require matching
+types and public unrestricted properties; full required values, enums and constraints
+are revalidated at runtime. Source Array reads are authorized ordinary property reads.
+Each dedicated repeater slot has one owner and one explicit limit (1–256).
+
+Keys must be unique nonempty bounded ASCII identifiers (alphanumeric first, then
+alphanumeric/underscore/hyphen, maximum 64 characters). Reorder preserves live IDs
+and Init count; retained keys update validated properties; empty data removes all
+items. Removed keys are retired; reappearing keys receive new lifetime IDs. Removed
+subtrees are invalidated and cleaned up child-first. Reconciliation runs after
+activation, methods/workflows/handlers and before render. No database pagination
+is inferred. Native edits validate a complete candidate before publication; earlier
+successful application mutations/service commits are not transactionally rolled
+back if subsequent reconciliation fails. No silent partial list truncation occurs.
+
+Expansion shares SEWN construction/step/deadline accounting, maximum active tree
+256/depth 32, maximum controller lifetime identities 4096, and at most 32 reconciliation
+rounds. Exhaustion/cancellation stops the chain. A failed child Init/Preload invalidates
+the controller's owned tree; reactivation requires fresh trusted hydration.
+
+## Trusted instance lifecycle
+
+The controller owns transitions:
+
+```text
+constructed -> initializing -> initialized -> preloading -> active
+                                 ^                       |  Render (repeat)
+                                 +------ Unload ----------+
+any live/failed state -> disposing -> disposed
 ```
 
-## Composition and binding semantics
+Init runs at most once per live hydration. Activation is idempotent, Preload runs on
+first activation/reactivation, Render runs on newly active instances and explicit
+renders. Unload detaches activation subscriptions and returns to initialized; Dispose
+permanently retires authority and is idempotent. Child teardown precedes parent.
+Init/Preload failure cannot leave a usable partial activation. Cleanup continues
+through hook failures and exhausted budgets: application hooks may fail, host
+invalidation still completes. Error details are sanitized and bounded.
 
-Child names are case-insensitively unique and cannot collide with ordinary members.
-Slots and property initializer names preserve exact canonical identities. Ordering
-is source order per slot; inherited children precede newly declared children.
-Inherited child names cannot be redeclared. Known child prototype, public initializer,
-type, enum, required-value, acceptance and maximum-cardinality checks occur in the
-shared lowerer. Whole-family expansion additionally checks minimum cardinality,
-acyclic composition, identity collisions, Form contracts, and installer node/depth/
-resource bounds (256 nodes, depth 32, 64 KiB per generated resource).
+Hooks are isolated modules, never ordinary callable methods. Only trusted entry
+tokens bound to the exact registry, context and live receiver can execute them.
+Removal/disposal invalidates references and subscriptions before cleanup callbacks;
+pending work cannot later mutate or resurrect the object. Budgets survive hook and
+method boundaries. An Unload or Dispose hook may update its own authorized cleanup
+state but cannot traverse/mutate containment or raise events.
 
-Compilation retains no live instances or runtime references. These names/IDs are
-not credentials. Arbitrary NEW does not expand build-only composition. Runtime
-`Me.Child` lookup is still unsupported; the package template is the supported
-construction path at this checkpoint. Existing canonical complete-tree hydration
-and installation validate the generated tree again.
+Page requests use independent hydrated trees and the controller automatically.
+Server App roots use an explicitly trusted `createInstanceController` supplied as
+`instances` to `createLifecycle`, or `execution.lifecycleInstances` plus the same
+`lifecycleContext` to HTTP host configuration. start activates it before Server.Start;
+stop delivers Server.Stop then disposes even on cleanup failure. App controllers do
+not execute Page descriptors: Page instances are request-scoped. Nothing supplies
+capabilities from package/source metadata. Crash/network/browser-close cleanup is
+best effort, not durable exactly-once delivery.
 
-Presentation binding is one-way and evaluated on each existing server render.
-Only public discoverable properties without capability requirements may bind.
-Exact bracket spelling works. Object/Array-to-text coercion, arbitrary functions,
-restricted/private values and unsupported client targets fail compilation.
-Canonical values remain declarative; no JavaScript callback or source evaluator
-is emitted. There is no update propagation graph, so there are no binding cycles
-or two-way updates. A later render reads the supplied current projection; it does
-not automatically schedule a render. Existing renderer bounds and error behavior
-remain in force. Service-backed data-source authoring is still missing.
+## Events and host wiring
 
-## Events, lifecycle and remaining completion gates
+A typed raise is accepted only from its verified live authorized declaring receiver,
+with visibility/member access, payload schema, `event.custom.raise` and lower-case
+logical event scope (for example `pagechanged`). Events use the **existing** sequential
+FIFO dispatcher. Handlers run in deterministic registration order, are awaited,
+and nested raises wait until remaining handlers and the current default complete.
+No bubbling occurs. Original source identity is preserved, never replaced by the
+subscriber or publisher. Disallowed mutation fails normally under caller SEAM.
 
-0.19's typed EVENT declarations and five isolated hook modules still compile.
-RAISE EVENT remains rejected, hook modules remain unreachable as ordinary methods,
-and the existing Page/Server/Session dispatcher is unchanged. There is no new
-instance state machine, hook invocation policy, subscription lifecycle, shared
-handler SEWN budget or declaration-authenticated emitter in this checkpoint.
-Do not use this example as proof of those required behaviors.
+Cancelable custom events can stop remaining delivery via EVENT.Cancel/Handled;
+structural Page lifecycle delivery cannot be canceled/suppressed. Exceptions stop
+the chain and pending queued work, with sanitized errors. Disposed subscribers are
+skipped, disposed emitters stop remaining delivery; stale queued targets fail closed.
+Source removal and pending cancellation do not undo already committed mutations.
+Nested raises share the chain's depth, event, handler, step, time, construction,
+service and allocation limits. No handler/library/hook receives a fresh budget.
 
-Remaining 0.20 gates:
+Subscriptions derive from validated metadata only while recipient/source are live
+and authorized. Child binding resolves actual ownership and public event signature;
+handler access is checked against the original declaring prototype. Page bindings
+use actual Start (Page root only), Initialize, Load, Validate, PreRender, Unload.
+These share the native Page dispatcher queue, including legacy workflows/defaults.
+Server.Start/Stop and Session.Start/Authenticated/Logout/Timeout/End require a verified
+App root, explicit trusted build policy, `event.lifecycle.subscribe`, exact lower-case
+host event scope and genuine host context. Source declaration alone cannot subscribe.
+There is no separate canonical App event family; App/Client pseudo-sources are rejected.
+Browser components cannot impersonate Server/Session contexts.
 
-- Authenticated symbolic child references with visibility, ownership and lifetime checks.
-- Typed templates and dynamic bounded child repetition, key/update/disposal rules.
-- Data-provider and approved service bindings.
-- Shared step/time/construction/service budgets across the existing event chain.
-- Declared custom emission and child/host subscriptions using actual event contracts.
-- Trusted server Init/Preload/Render/Unload/Dispose controller and cancellation/cleanup tests.
-- Complete Taskboard family and independent full-family golden equivalence.
-- Portable validated browser artifacts and the executable conformance handoff.
+## Budgets, compatibility and limitations
 
-These are unfinished implementation, not claimed incompatibilities with the
-canonical design. Supported server presentation is explicitly server-only; client
-packages fail instead of discarding it. No WydClient artifact/version changes are
-required for this build-only checkpoint. The [verification matrix](verification.md)
-and [browser handoff](wydclient-handoff.md) distinguish actual evidence from future work.
+`createExecutionBudget` tokens are opaque and exact-context-bound. Default maxima
+remain existing SEWN ceilings (including time, steps, services, drafts/construction),
+plus dispatches 256, handlers 2048, raises 256, depth 16; native queue bound is 64.
+Caller limits only reduce effective ceilings. A Page request shares one ledger across
+all phases, events, defaults, hooks and cleanup. A host operation shares its ledger
+across nested handlers/hooks/libraries; each independent host lifecycle delivery has
+one ledger. Exhaustion is terminal for that ledger. Standalone execute retains an
+independent ledger when none is supplied. Presentation retains its separate existing
+bounded output/evaluation policy, never an executable service path.
+
+No H3 execution, browser compiler, new VM/package installer/event system, remote
+dependency downloads, generalized two-way reactivity, arbitrary HTML/CSS/JS, durable
+lifecycle guarantees or unrestricted tree authority is added. Arbitrary third-party
+visual slots and foreign package templates remain subject to existing renderer and
+installer policy. Firefox/Safari/native execution and an independent exhaustive
+security audit are not claimed. Follow [the handoff](wydclient-handoff.md) for the
+next browser execution milestone.

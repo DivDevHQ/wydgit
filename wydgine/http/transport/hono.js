@@ -12,10 +12,10 @@ const policy = "default-src 'none'; style-src 'self'; img-src 'self'; media-src 
 // Explicit browser-safe dependency closure; no server/provider modules are exposed.
 const clientModules = [
   'wydclient/uploads.js', 'wydclient/index.js', 'wydgine/events/runtime.js', 'wydgine/events/registry.js',
-  'wydgine/object-model/class-contracts.js', 'wydgine/object-model/interfaces.js', 'wydgine/object-model/members.js', 'wydgine/object-model/forms.js', 'wydgine/object-model/validation.js', 'wydgine/object-model/schema.js', 'wydgine/object-model/construction.js', 'wydgine/object-model/prototypes.js', 'wydgine/seam/context.js',
+  'wydgine/object-model/class-contracts.js', 'wydgine/object-model/component-contracts.js', 'wydgine/object-model/interfaces.js', 'wydgine/object-model/members.js', 'wydgine/object-model/forms.js', 'wydgine/object-model/validation.js', 'wydgine/object-model/schema.js', 'wydgine/object-model/construction.js', 'wydgine/object-model/prototypes.js', 'wydgine/seam/context.js',
   'wydgine/seam/capabilities.js', 'wydgine/http/input.js',
   'wydgine/sewn/schema.js', 'wydgine/sewn/validate.js',
-  'wydgine/sewn/execute.js', 'wydgine/sewn/bindings.js', 'wydgine/sewn/numeric.js', 'wydgine/sewn/operations.js', 'wydgine/sewn/dates.js', 'wydgine/sewn/regex.js', 'wydgine/sewn/vendor/re2js.js', 'wydgine/sewn/types.js'
+  'wydgine/sewn/execute.js', 'wydgine/sewn/budget.js', 'wydgine/sewn/entry.js', 'wydgine/sewn/bindings.js', 'wydgine/sewn/numeric.js', 'wydgine/sewn/operations.js', 'wydgine/sewn/dates.js', 'wydgine/sewn/regex.js', 'wydgine/sewn/vendor/re2js.js', 'wydgine/sewn/types.js'
 ];
 
 // Kernel-only output port. Neither Hono nor native response objects leave this adapter.

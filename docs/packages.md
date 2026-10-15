@@ -35,7 +35,9 @@ Bindings declare `owner`, `event`, named `source` and `kind`. For this milestone
 handlers are Page lifecycle events; actions are semantic events with `method:POST`
 and a required `capability`. Each source declares exactly the bound EVENT. Existing
 compiler, event registry and action validation remain authoritative. Server/Session
-package lifecycle bindings and custom event definitions are deferred.
+manifest lifecycle binding records remain unchanged. The 0.20 component metadata
+contract below supplies typed custom events and supported class subscriptions;
+Server/Session integration requires an explicit trusted App-root host controller.
 
 ## Manifest, plan and receipt
 
@@ -283,12 +285,19 @@ directories into an explicitly approved build context. See
 [the 0.14 authoring and installation contract](milestones/wbasic-sewn-0.14.md).
 No new CLI, archive, registry, signing interface or runtime service is introduced.
 
-## Source authoring checkpoint (0.20, incomplete)
+## Source families (0.20)
 
-Trusted compileFamily builds now emit existing resources.prototypes and
-resources.template contents from WBasic classes, after atomic validation. The
-installer, approvals and receipt workflow are unchanged. Source is not another
-installed executable representation.
+[WBasic family builds](milestones/sewn-0.20/README.md) produce this existing package
+manifest's resources.prototypes and complete entry template. No alternate package
+format or installer exists. Parent/interface/child/template dependencies resolve from
+an explicit approved snapshot; unknown dependencies/cycles fail the whole pure build.
+There are no implicit remote downloads or compiler-executed package callbacks.
+Component packages must require platform >=0.3.0-alpha.8 and server runtime; the
+build and installer reject an older floor or client claims rather than accepting
+inert behavior. Independent publisher approval, namespace/installation checks, exact
+dependency pins, grants and receipts are unchanged. Source metadata grants nothing.
 
-See [the 0.20 checkpoint](milestones/sewn-0.20/README.md) for implemented grammar,
-validation, evidence and remaining completion gates.
+Trusted HTTP hosts supply independently approved `execution.verifiedPackages` to
+`createHostApp`/`createApp`; startup, renderer and per-request reloads preserve it.
+It verifies declaring prototype identity for typed emissions/interfaces and supplies
+no SEAM grants. Installed permission receipts still determine Page authority.

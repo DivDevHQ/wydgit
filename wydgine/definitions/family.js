@@ -22,8 +22,8 @@ export function lowerFamily(inputs,options={}) {
   const composition=id=>{
     if(compositions.has(id))return compositions.get(id);
     check(!active.has(id),'DEFINITION.CYCLE','Family inheritance/composition cycle');active.add(id);
-    const d=registry.get(id),own=families.get(id)?.composition??[];
-    const inherited=d.extends?composition(d.extends):[];
+    const d=registry.get(id),own=families.has(id)?families.get(id).composition??[]:d.component?.children??[];
+    const inherited=families.has(id)&&d.extends?composition(d.extends):[];
     const result=[...inherited,...own],names=new Set();
     for(const child of result){check(!names.has(child.name.toLowerCase())&&![...Object.keys(d.properties),...Object.keys(d.methods),...Object.keys(d.events)].some(name=>name.toLowerCase()===child.name.toLowerCase()),'DEFINITION.COMPOSITION','Inherited child name collision');names.add(child.name.toLowerCase());if(families.has(child.type))composition(child.type);}
     active.delete(id);compositions.set(id,result);return result;
@@ -36,6 +36,7 @@ export function lowerFamily(inputs,options={}) {
   const expand=(prototype,id,properties,depth=0)=>{
     check(depth<=LIMITS.templateDepth&&++nodes<=LIMITS.templateNodes,'DEFINITION.LIMIT','Package template expansion limit');
     check(validId(id)&&id.length<=128&&!instanceIds.has(id),'DEFINITION.IDENTITY','Invalid or duplicate expanded identity');instanceIds.add(id);
+    check(families.has(prototype),'DEFINITION.DEPENDENCY','Installable default instances must be declared in the built family');
     const d=registry.get(prototype),slots=Object.create(null);
     check(!d.abstract&&!d.static&&!d.interface,'DEFINITION.COMPOSITION','Unconstructible template prototype');
     for(const slot of Object.keys(d.slots))slots[slot]=[];
@@ -50,7 +51,7 @@ export function lowerFamily(inputs,options={}) {
   formTree(template,registry);
   const ordered=[],emitted=new Set();
   const emit=id=>{if(emitted.has(id)||!families.has(id))return;emitted.add(id);const family=families.get(id),d=family.definition;
-    for(const dependency of [d.extends,...Object.keys(d.implements??{}),...(family.composition??[]).map(c=>c.type)].filter(Boolean).sort())emit(dependency);
+    for(const dependency of [d.extends,...Object.keys(d.implements??{}),...(family.composition??[]).map(c=>c.type),...(d.component?.templates??[]).flatMap(t=>[t.type,t.model])].filter(Boolean).sort())emit(dependency);
     ordered.push(d);
   };
   for(const id of [...ids].sort())emit(id);

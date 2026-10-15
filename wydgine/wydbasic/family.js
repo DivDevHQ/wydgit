@@ -24,7 +24,7 @@ export function compileFamily(sources,options={}) {
   const visit=id=>{
     if(done.has(id)||!records.has(id))return;
     const {file,ast}=records.get(id);check(!active.has(id),'WYDBASIC.CYCLE',`${file}: Family dependency cycle`);active.add(id);
-    const dependencies=[ast.parent,...ast.implementations.map(n=>n.id),...ast.children.map(n=>n.prototype)].filter(Boolean).sort();
+    const dependencies=[ast.parent,...ast.implementations.map(n=>n.id),...ast.children.map(n=>n.prototype),...ast.templates.flatMap(n=>[n.type,n.model]).filter(type=>type!==id),...ast.slotContracts.flatMap(n=>n.accepts.kind==='array'?n.accepts.items.filter(v=>v.kind==='literal'&&typeof v.value==='string').map(v=>v.value).filter(type=>type!==id):[])].filter(Boolean).sort();
     for(const dependency of dependencies)visit(dependency);
     const verifiedPrototypes={...options.registryOptions?.verifiedPrototypes,...Object.fromEntries(irs.map(ir=>[ir.definition.id,ir.definition.publisher]))};
     const ir=locate(file,()=>parseDefinition(sources[file],{...options,definitions,registryOptions:{...options.registryOptions,verifiedPrototypes}}));

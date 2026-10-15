@@ -20,12 +20,12 @@ export function createPipeline({root,libraries,execution={},lifecycle}) {
   execution={...execution,handlers:prepareHandlers(execution.handlers??[],execution.events),actions:(execution.actions??[]).map(record=>prepareAction(record,execution.events))};
   let runtimeSettings;
   try{runtimeSettings=presentationPolicy(validateConfig(readFileSync(path.join(root,'wydgit.config.json'),'utf8')).runtime);}catch(error){if(error.code!=='ENOENT')throw error;runtimeSettings=presentationPolicy();} // Legacy createApp may render without a library host config; createHostApp still requires it.
-  const model=loadRepository(root),app=model.runtime.rootId;
+  const model=loadRepository(root,{verifiedPackages:execution.verifiedPackages}),app=model.runtime.rootId;
   if(execution.authenticatedPages!==undefined)check(Array.isArray(execution.authenticatedPages)&&execution.authenticatedPages.every(id=>model.pages.has(id)),'SEAM.CONTEXT','Invalid authenticated Page policy');
   const catalogHead=stateFingerprint(root);
   const packages=model.installed?activatePackages(model,libraries,root):null;
   if(packages){check(!execution.context&&!execution.handlers.length&&!execution.actions.length,'PACKAGE.PRINCIPALS','Package Page authority cannot be combined with independently authorized host execution');execution={...execution,context:packages.context,handlers:packages.handlers,actions:packages.actions};}
-  lifecycle??=createLifecycle({app,handlers:execution.lifecycleHandlers,context:execution.lifecycleContext});
+  lifecycle??=createLifecycle({app,handlers:execution.lifecycleHandlers,context:execution.lifecycleContext,instances:execution.lifecycleInstances});
   const ready=lifecycle.start();
   const gate=libraries?.list().some(item=>item.id==='wydgate')&&execution.gateContext?createGate(libraries.bind(execution.gateContext)):null;
   const sessions=createSessionResolver({app,gate,lifecycle});
@@ -36,7 +36,7 @@ export function createPipeline({root,libraries,execution={},lifecycle}) {
     try {
       res.setHeader('Cache-Control','no-store');
       check(stateFingerprint(root)===catalogHead,'PACKAGE.STALE','Installed packages changed; restart host');
-      const model=loadRepository(root),transfer=/^\/_transfer\/([a-z][a-z0-9-]*)\/([a-z][a-z0-9-]*)\/([\w-]+)\/([\w-]+)$/.exec(req.path),route=req.path.replace(/\/$/,'')||'/';
+      const model=loadRepository(root,{verifiedPackages:execution.verifiedPackages}),transfer=/^\/_transfer\/([a-z][a-z0-9-]*)\/([a-z][a-z0-9-]*)\/([\w-]+)\/([\w-]+)$/.exec(req.path),route=req.path.replace(/\/$/,'')||'/';
       const page=transfer?model.pages.get(transfer[3]):[...model.pages.values()].find(page=>(pagePath(page,model.site).replace(/\/$/,'')||'/')===route);
       if(!page){res.statusCode=404;res.setHeader('Content-Type','text/html; charset=utf-8');res.end(errorDocument(404));return;}
       if(!transfer&&(!['GET','HEAD','POST'].includes(req.method)||req.method==='POST'&&!(execution.actions??[]).some(a=>a.page===page.id))){res.statusCode=405;res.setHeader('Content-Type','text/html; charset=utf-8');res.setHeader('Allow','GET, HEAD');res.end('Method not allowed');return;}

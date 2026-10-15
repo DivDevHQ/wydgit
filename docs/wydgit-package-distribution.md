@@ -471,3 +471,12 @@ Licensing independently defines the legal terms under which the package may be u
 The long-term objective is a secure, publisher-independent package ecosystem whose installed applications can execute across Wydgine and WydClient without unnecessary historical compatibility code or unrestricted host access.
 
 **End of draft specification.**
+
+## 0.20 authoring/runtime compatibility
+
+The existing distribution/installation contract also consumes trusted source-family
+build output; see [the Taskboard workflow](milestones/sewn-0.20/README.md). Canonical
+component contracts require platform alpha.8 or newer, server execution eligibility
+and existing independent publisher/owner approval. The installer validates manually
+constructed artifacts too. No package source compiler runs at browser/runtime startup,
+no new package format is added, and no metadata authenticates a publisher or grants SEAM.

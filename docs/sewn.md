@@ -528,15 +528,22 @@ Class authoring introduces no `sewn/0.19` executable schema. Instance methods an
 isolated lifecycle hook modules use the existing minimum validated grammar required
 by their bodies. New method/event/lifecycle metadata belongs to canonical prototype
 validation, not to the SEWN executable envelope. Hook modules are not ordinary
-methods and are not dispatched automatically. Typed event emission is rejected
-until declaration-bound instance dispatch can preserve shared chain budgets.
+methods. At 0.19 automatic hook dispatch and typed emission were deferred; the
+0.20 server contract below implements declaration-bound dispatch and shared budgets.
 See [0.19](milestones/sewn-0.19/README.md) for exact supported and deferred behavior.
 
-## Source authoring checkpoint (0.20, incomplete)
+## 0.20 shared chains and trusted entries
 
-The 0.20 composition/presentation checkpoint adds no executable SEWN wire schema
-or runtime operation. Generated methods keep their existing minimum schema. Typed
-class emission and shared budgets across separate handler executions remain missing.
+Executable wire schemas remain unchanged. `sewn/budget.js` owns opaque exact-context
+ledgers; supplied budgets are shared by methods, hooks, handlers, FIFO nested raises,
+static calls, services and construction. No transition resets counts/deadline. Default
+limits remain SEWN maxima, plus 256 event dispatches/raises, 2048 handlers and depth
+16; native queue size is 64. A Page request shares one ledger through cleanup.
+Exhaustion/cancellation is terminal; late work must pass the same live guard before
+mutation. Standalone execution without a supplied budget remains independent.
 
-See [the 0.20 checkpoint](milestones/sewn-0.20/README.md) for implemented grammar,
-validation, evidence and remaining completion gates.
+`sewn/entry.js` binds trusted entry tokens to registry, context and receiver. Lifecycle
+modules are not callable instance methods. Declaration-bound EVENT.Raise preserves
+actual owner/source and typed payload, then uses the existing dispatcher. Legacy
+EVENT.Raise cannot forge nominal `prototype#Event` identities. See [0.20](milestones/sewn-0.20/README.md)
+for delivery ordering, failure policy, capability/scope checks and server support.

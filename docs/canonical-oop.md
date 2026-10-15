@@ -263,17 +263,23 @@ hook work, not an automatically implemented state controller.
 
 The universal abstract Wydgit authoring contract is implicit and has no installable
 root prototype or privilege. Existing semantic ancestry and JSON definitions need
-no migration. Automatic instance hook execution and typed event emission remain
-deferred; current class compilation rejects emission and does not grant H2 host
+no migration. At 0.19 automatic hooks and typed emission were deferred; 0.20
+implements the supported server path below. Class compilation never grants H2 host
 construction access. See [0.19](milestones/sewn-0.19/README.md) for exact contracts,
 metadata trust, portable property type restrictions and runtime prerequisites.
 
-## Source authoring checkpoint (0.20, incomplete)
+## Component contracts (0.20)
 
-Source-authored children now lower to existing canonical package templates.
-Build-only child names are not runtime references or new prototype fields. Existing
-ownership/slot/hydration/member contracts remain unchanged. Instance lifecycle and
-custom-event execution required by 0.20 are still unfinished.
+The optional closed `wydgit.component/0.20` prototype field records children,
+subscriptions, typed templates and bounded repeaters. See the [full contract](milestones/sewn-0.20/README.md).
+Shared canonical validation applies equally to handwritten JSON and compiler output: finite
+default composition, known types, ordered accepted slots, public typed initializers,
+template bindings and exact handler signatures. Resolved subscription owners and
+lifecycle owners are derived by the registry, never accepted as authority from JSON.
+Modern derived class slot declarations cannot weaken inherited acceptance/cardinality.
 
-See [the 0.20 checkpoint](milestones/sewn-0.20/README.md) for implemented grammar,
-validation, evidence and remaining completion gates.
+Named-child access returns existing opaque member adapters through trusted current
+ownership/slot/type checks. IDs/names are not credentials. NEW creates bounded default
+composition drafts; host attachment/activation establishes lifetime. No second object
+tree, class registry or live reference wire representation exists. Platform alpha.8
+is the minimum executing component runtime; H2 alpha.5 rejects these contracts.

@@ -1,5 +1,21 @@
 ## Unreleased
 
+### WBasic / SEWN 0.20 — Supported server component execution
+
+- Complete typed child references/default construction, canonical slot contracts,
+  one-way presentation, typed keyed templates and bounded dynamic child repetition.
+- Execute trusted Init/Preload/Render/Unload/Dispose with child-first invalidation,
+  cancellation, failure closure and idempotent teardown over canonical runtime trees.
+- Deliver typed class events and declarative child/Page subscriptions through the
+  existing FIFO dispatcher; explicitly authorize verified App-root Server/Session wiring.
+- Share opaque SEWN budgets across handlers, hooks, nested raises, services and
+  construction; preserve caller SEAM and reject hostile manually authored metadata.
+- Add source-only six-class Taskboard build/install/real-Page acceptance and independent
+  canonical JSON/SEWN behavioral equivalence; retain historical compatibility checks.
+- Require platform 0.3.0-alpha.8 for component contracts; publish no release. Prepare
+  WydClient alpha.5 validation artifacts under new immutable filenames, preserving
+  alpha.1–alpha.4; reject H3 execution and document its concrete conformance handoff.
+
 ### WBasic 0.20 checkpoint — Source composition and server presentation
 
 - Add CHILD/INTO and inherited SLOT authoring, typed public literal initializers,

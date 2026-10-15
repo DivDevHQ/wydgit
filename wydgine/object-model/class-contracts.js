@@ -49,14 +49,14 @@ export function classContracts(d,base,methods,properties) {
     const lower=n.toLowerCase();check(!groups.has(lower),'PROTOTYPE.CASE_COLLISION','Case-equivalent declarations denied');groups.add(lower);
     check(!(events[n]&&(properties[n]||methods[n]||contracts[n])),'PROTOTYPE.EVENT','Event collides with member');
   }
-  const lifecycle={...base?.lifecycle};
+  const lifecycle={...base?.lifecycle},lifecycleOwners={...base?.lifecycleOwners};
   check(record(d.lifecycle??{}),'PROTOTYPE.LIFECYCLE','Invalid lifecycle hooks');
   for(const [hook,program] of Object.entries(d.lifecycle??{})) {
     check(lifecycleHooks.includes(hook),'PROTOTYPE.LIFECYCLE','Unknown lifecycle hook');
     const behavior=validate(program),entry=behavior.procedures?.[hook.toLowerCase()];
     check(behavior.body.length===0&&entry?.kind==='sub'&&entry.params.length===0,'PROTOTYPE.LIFECYCLE','Lifecycle requires a compiled parameterless SUB');
-    lifecycle[hook]=behavior;
+    lifecycle[hook]=behavior;lifecycleOwners[hook]=d.id;
   }
   if(d.static)check(!d.methodContracts&&!d.events&&!d.lifecycle,'PROTOTYPE.STATIC','Static prototypes have no instance class contracts');
-  return freeze(clean({methodContracts:contracts,events,eventOwners,lifecycle}));
+  return freeze(clean({methodContracts:contracts,events,eventOwners,lifecycle,lifecycleOwners}));
 }

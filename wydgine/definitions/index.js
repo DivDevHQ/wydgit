@@ -1,9 +1,10 @@
+import {serverComponent} from '../execution/component-target.js';
 // Small shared definition IR: canonical data plus frontend source locations.
 // Future frontends supply validated SEWN, never callbacks or source evaluators.
 import { interfaceTypes } from '../object-model/interfaces.js';
 import { PrototypeRegistry } from '../object-model/prototypes.js';
-import { clean, freeze, record, requireThat as check } from '../object-model/validation.js';
-import { validatePackageManifest } from '../packages/manifest.js';
+import { clean, freeze, record, requireThat as check, WydgitError } from '../object-model/validation.js';
+import { validatePackageManifest,validateComponentPlatform } from '../packages/manifest.js';
 import { resolveProperties } from '../object-model/schema.js';
 import { resolveMember } from '../object-model/members.js';
 export function lowerDefinition(input,{manifest,verifiedPackages={},definitions=[],registryOptions={}}={}) {
@@ -12,16 +13,20 @@ export function lowerDefinition(input,{manifest,verifiedPackages={},definitions=
   const extended=ir.schema==='wydgit.definition/0.20';
   check(record(ir)&&['wydgit.definition/0.19','wydgit.definition/0.20'].includes(ir.schema)&&Object.keys(ir).every(k=>['schema','definition','metadata','locations',...(extended?['composition']:[])].includes(k)),'DEFINITION.INVALID','Invalid definition IR');
   check(JSON.stringify(ir).length<=262144&&record(ir.definition)&&record(ir.metadata),'DEFINITION.INVALID','Invalid or oversized definition IR');
-  const m=validatePackageManifest(manifest),d=ir.definition;
+  const m=validatePackageManifest(manifest),d=ir.definition;validateComponentPlatform(m,[d]);
   check(verifiedPackages[m.id]===m.publisher,'DEFINITION.PUBLISHER','Build requires independently verified package publisher');
   check(d.publisher===m.publisher&&typeof d.id==='string'&&d.id.startsWith(m.publisher+'/'),'DEFINITION.IDENTITY','Prototype identity differs from trusted package');
   check(Object.keys(ir.metadata??{}).every(k=>['publisher','version','id'].includes(k)),'DEFINITION.METADATA','Unsupported metadata');
   for(const [k,v] of Object.entries(ir.metadata??{}))check(v===(k==='id'?d.id:m[k]),'DEFINITION.METADATA','Source metadata conflicts with build manifest');
-  check(Object.keys(d).every(k=>['id','publisher','public','abstract','extends','properties','slots','behavior','methodRules','methodContracts','overrides','implements','events','lifecycle','friends','dependencies',...(extended?['presentation']:[])].includes(k)),'DEFINITION.INVALID','Unsupported canonical field');
+  check(Object.keys(d).every(k=>['id','publisher','public','abstract','extends','properties','slots','behavior','methodRules','methodContracts','overrides','implements','events','lifecycle','friends','dependencies',...(extended?['presentation','component']:[])].includes(k)),'DEFINITION.INVALID','Unsupported canonical field');
   for(const [id,v] of Object.entries(d.implements??{}))check(m.interfaces?.[id]===v,'DEFINITION.DEPENDENCY','Interface must match manifest pin');
   for(const [id,v] of Object.entries(d.dependencies??{}))check(({...m.interfaces,...m.staticLibraries})[id]===v,'DEFINITION.DEPENDENCY','Dependency must match manifest pin');
   const verifiedPrototypes={...registryOptions.verifiedPrototypes,[d.id]:m.publisher};
-  const registry=new PrototypeRegistry([...definitions,d],{...registryOptions,verifiedPrototypes});
+  let registry;try{registry=new PrototypeRegistry([...definitions,d],{...registryOptions,verifiedPrototypes});}catch(error){
+    if(error instanceof WydgitError&&error.details.definition===d.id){const location=Object.entries(ir.locations?.members??{}).find(([name])=>name.toLowerCase()===error.details.member?.toLowerCase())?.[1];if(location)throw new WydgitError(error.code,error.message,{...error.details,...location});}throw error;
+  }
+  validateComponentPlatform(m,[registry.get(d.id)]);
+  if(extended)serverComponent(registry.get(d.id),registry);
   const effectivePresentation=registry.get(d.id).presentation;
   if(effectivePresentation){
     check(!m.runtime.includes('client'),'DEFINITION.TARGET','Server presentation requires a server-only build');

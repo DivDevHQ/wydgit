@@ -15,7 +15,7 @@ import { compileModule } from '../wydbasic/index.js';
 import { validateConfig, validateManifest as libraryManifest, satisfies, fields } from '../libraries/contracts.js';
 import { importNodePackage } from '../libraries/node-package.js';
 import platform from '../../package.json' with { type: 'json' };
-import { validatePackageManifest, LIMITS, permissions } from './manifest.js';
+import { validatePackageManifest,validateComponentPlatform, LIMITS, permissions } from './manifest.js';
 import { STATE, readInstalledState, safeRead, baseFingerprint, stateFingerprint, digest } from './state.js';
 export { validatePackageManifest } from './manifest.js';
 const plans=new WeakMap();
@@ -37,6 +37,7 @@ function loadPackage(packagePath) {
   const resources={};for(const file of [manifest.resources.prototypes,manifest.resources.template,...Object.values(manifest.resources.sources)])resources[file]=safeRead(directory,file);
   const definitions=JSON.parse(resources[manifest.resources.prototypes]);check(Array.isArray(definitions)&&definitions.length<=LIMITS.prototypes,'PACKAGE.LIMIT','Too many prototypes');
   check(definitions.every(d=>d.publisher===manifest.publisher&&d.id?.startsWith(manifest.publisher+'/')),'PACKAGE.NAMESPACE','Prototype namespace differs from package');
+  validateComponentPlatform(manifest,definitions);
   const template=JSON.parse(resources[manifest.resources.template]);let count=0;const walk=(n,d=0)=>{check(d<=LIMITS.templateDepth&&++count<=LIMITS.templateNodes,'PACKAGE.LIMIT','Template too large');check(n&&n.slots&&typeof n.slots==='object','PACKAGE.TEMPLATE','Invalid template');for(const children of Object.values(n.slots)){check(Array.isArray(children),'PACKAGE.TEMPLATE','Invalid children');children.forEach(c=>walk(c,d+1));}};walk(template);
   return {manifest,resources,definitions,template};
 }
@@ -61,7 +62,7 @@ export function packageBindings(entry,registry,runtime) {
   return {handlers,actions};
 }
 async function resolveLibraries(root,manifest,hostConfig) {
-  const config=validateConfig(hostConfig??safeRead(root,'wydgit.config.json')),resolved=[],scopeResolvers=new Map(),available=new Set(['object.instances.edit','object.instances.construct','app.forms.submit']);
+  const config=validateConfig(hostConfig??safeRead(root,'wydgit.config.json')),resolved=[],scopeResolvers=new Map(),available=new Set(['object.instances.edit','object.instances.construct','app.forms.submit','event.custom.raise']);
   for(const required of manifest.requires.libraries){const entry=config.libraries.find(x=>x.id===required.library);check(entry?.enabled,'PACKAGE.LIBRARY','Required library must already be enabled');
     const {module,packageVersion}=await importNodePackage(entry,root);const m=libraryManifest(module.manifest);
     check(m.id===entry.id&&m.publisher===entry.publisher&&m.trust===entry.trust&&m.version===packageVersion&&satisfies(m.version,required.version)&&satisfies(platform.version,m.platform)&&m.targets.includes('server'),'PACKAGE.LIBRARY','Incompatible library');scopeResolvers.set(m.id,input=>module.resolvePackageScopes?.({...input,options:entry.options??{}}));resolved.push({id:m.id,version:m.version,package:entry.package});m.capabilities.forEach(cap=>available.add(cap));
@@ -120,7 +121,7 @@ export async function planPackageInstall({root,packagePath,placement,approvals,s
   check(Object.keys(properties).every(id=>idsOf(template).includes(id)),'PACKAGE.TEMPLATE','Properties outside template');configure(configuredTemplate);
   const instanceIds=[...idsOf(configuredTemplate),...extra.flatMap(item=>idsOf(item.instance))];check(instanceIds.length<=LIMITS.templateNodes&&new Set(instanceIds).size===instanceIds.length,'PACKAGE.LIMIT','Invalid attachment IDs');
   const approved=approve(manifest,approvals,instanceIds,idsOf(dehydrate(model.runtime))),{config,resolved,available,scopeResolvers}=await resolveLibraries(root,manifest,hostConfig),storage=mapStorage(manifest,config,storageMappings,model.runtime.rootId);
-  const libraryScopes=Object.fromEntries(Object.entries(manifest.permissions.scopes).filter(([id])=>!['wydstore','prototypes'].includes(id)).map(([id,scopes])=>{check(scopeResolvers.has(id),'PACKAGE.STORAGE','Scope provider must be required');let grants;try{grants=clean(scopeResolvers.get(id)({app:model.runtime.rootId,scopes}));}catch{check(false,'PACKAGE.STORAGE','Library scope approval failed');}check(Array.isArray(grants)&&grants.length<=16,'PACKAGE.STORAGE','Invalid library grants');return [id,grants];}));
+  const libraryScopes=Object.fromEntries(Object.entries(manifest.permissions.scopes).filter(([id])=>!['wydstore','prototypes','events'].includes(id)).map(([id,scopes])=>{check(scopeResolvers.has(id),'PACKAGE.STORAGE','Scope provider must be required');let grants;try{grants=clean(scopeResolvers.get(id)({app:model.runtime.rootId,scopes}));}catch{check(false,'PACKAGE.STORAGE','Library scope approval failed');}check(Array.isArray(grants)&&grants.length<=16,'PACKAGE.STORAGE','Invalid library grants');return [id,grants];}));
   check(approved.capabilities.every(cap=>available.has(cap)),'PACKAGE.DENIED','Requested capability has no required provider');
   checkContext(installationContext);check(installationContext.app===model.runtime.rootId,'PACKAGE.DENIED','Wrong installation App');
   let runtime=hydrate(dehydrate(model.runtime,{includeSensitive:true}),registry,{revision:model.installed?.revision??0});
@@ -187,7 +188,7 @@ export function activatePackages(model,libraries,root) {
     approve(entry.manifest,entry.approved,entry.instanceIds,idsOf(dehydrate(model.runtime)));
     const declared=JSON.parse(entry.resources[entry.manifest.resources.prototypes]).map(d=>d.id);
     for(const item of entry.additions??[]){const p=item.placement,instance=copyEnvelope(JSON.parse(item.instance));check(model.registry.isA(model.runtime.get(p.page).prototype,'wydgit.core/page'),'PACKAGE.CATALOG','Invalid attachment Page');const descendants=[];const walk=id=>{descendants.push(id);Object.values(model.runtime.get(id).slots).flat().forEach(walk);};walk(p.page);check(descendants.includes(p.parent)&&model.runtime.get(p.parent).slots[p.slot]?.[p.index]===instance.id,'PACKAGE.CATALOG','Attachment placement drift');for(const id of idsOf(instance))check(declared.includes(model.runtime.get(id).prototype),'PACKAGE.CATALOG','Attachment prototype drift');check(!pages.has(p.page)||pages.get(p.page)===entry,'PACKAGE.PRINCIPALS','Multiple package principals on Page');pages.set(p.page,entry);}
-    const libraryScopes=Object.fromEntries(Object.entries(entry.manifest.permissions.scopes).filter(([id])=>!['wydstore','prototypes'].includes(id)).map(([id,scopes])=>[id,libraries.resolvePackageScopes(id,scopes,model.runtime.rootId)]));check(equal(libraryScopes,entry.libraryScopes??{}),'PACKAGE.CATALOG','Library scope drift');
+    const libraryScopes=Object.fromEntries(Object.entries(entry.manifest.permissions.scopes).filter(([id])=>!['wydstore','prototypes','events'].includes(id)).map(([id,scopes])=>[id,libraries.resolvePackageScopes(id,scopes,model.runtime.rootId)]));check(equal(libraryScopes,entry.libraryScopes??{}),'PACKAGE.CATALOG','Library scope drift');
     const storage=mapStorage(entry.manifest,config,entry.storageMappings,model.runtime.rootId);check(equal(storage.scopes,entry.storageScopes),'PACKAGE.CATALOG','Catalog storage scope drift');
     libraries.resolve(entry.manifest.requires);
     check(entry.libraries.every(mapping=>libraries.get(mapping.id).version===mapping.version&&config.libraries.find(item=>item.id===mapping.id)?.package===mapping.package),'PACKAGE.LIBRARY','Approved library mapping changed');

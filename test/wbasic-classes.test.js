@@ -104,10 +104,10 @@ test('explicit static imports retain exact dependency pins and linked helpers ca
  assert.throws(()=>build(text,{...o,manifest:{...manifest,staticLibraries:{'divdev/wbasic':'9.0.0'}}}));
  assert.throws(()=>build(wrap('PUBLIC FUNCTION Label(value AS String) AS String\nRETURN Mid(value,2,3)\nEND FUNCTION'),o));
 });
-test('event emission diagnoses declaration and typed arguments before rejecting unsupported runtime delivery',()=>{
+test('event emission checks declaration and typed arguments before lowering authenticated server delivery',()=>{
  const s=arg=>wrap(`PUBLIC EVENT Changed(value AS Boolean)\nPUBLIC SUB Go()\nRAISE EVENT Changed(${arg})\nEND SUB`);
  assert.throws(()=>build(s('1')),{code:'WYDBASIC.TYPE'});
- assert.throws(()=>build(s('TRUE')),{code:'WYDBASIC.UNSUPPORTED'});
+ const emitted=build(s('TRUE'),{...options(),manifest:{...manifest,platform:'>=0.3.0-alpha.8 <0.4.0'}});assert.equal(emitted.behavior.procedures.go.body[0].method,'Raise');
  assert.throws(()=>build(s('TRUE').replace('RAISE EVENT Changed','RAISE EVENT Missing')),{code:'WYDBASIC.NAME'});
  const ir=parseDefinition(wrap('PUBLIC PROPERTY Ready AS Boolean = TRUE'),options());
  for(const mutate of [d=>d.properties.Ready.default='true',d=>d.properties.Ready.required='yes',d=>d.events={ServerStart:{access:'public',params:[],family:'Server'}},d=>d.methodContracts={evil:{kind:'sub',params:[],access:'public',virtual:true,abstract:true}}]){const x=structuredClone(ir);mutate(x.definition);assert.throws(()=>lowerDefinition(x,options()));}

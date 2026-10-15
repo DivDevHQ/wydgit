@@ -1,0 +1,960 @@
+[
+  {
+    "id": "divdev/task-card",
+    "publisher": "divdev",
+    "public": true,
+    "abstract": false,
+    "extends": "wydgit.core/block",
+    "properties": {
+      "content": {
+        "type": "object",
+        "access": "public",
+        "default": {
+          "type": "markdown",
+          "value": ""
+        }
+      },
+      "Key": {
+        "type": "string",
+        "access": "public",
+        "required": true
+      },
+      "Title": {
+        "type": "string",
+        "access": "public",
+        "required": true
+      },
+      "Status": {
+        "type": "string",
+        "access": "public",
+        "required": true,
+        "enum": [
+          "Pending",
+          "Complete"
+        ]
+      },
+      "Stage": {
+        "type": "string",
+        "access": "public",
+        "default": "Constructed"
+      },
+      "InitCount": {
+        "type": "number",
+        "access": "public",
+        "default": 0
+      }
+    },
+    "slots": {},
+    "methodRules": {},
+    "methodContracts": {},
+    "overrides": [],
+    "implements": {},
+    "events": {},
+    "lifecycle": {
+      "Init": {
+        "schema": "sewn/0.5",
+        "body": [],
+        "procedures": {
+          "init": {
+            "kind": "sub",
+            "params": [],
+            "body": [
+              {
+                "op": "memberSet",
+                "target": {
+                  "op": "context",
+                  "name": "ME"
+                },
+                "name": "InitCount",
+                "exact": true,
+                "value": {
+                  "op": "binary",
+                  "operator": "+",
+                  "left": {
+                    "op": "memberRead",
+                    "target": {
+                      "op": "context",
+                      "name": "ME"
+                    },
+                    "name": "InitCount",
+                    "exact": true
+                  },
+                  "right": {
+                    "op": "literal",
+                    "value": 1
+                  }
+                }
+              },
+              {
+                "op": "memberSet",
+                "target": {
+                  "op": "context",
+                  "name": "ME"
+                },
+                "name": "Stage",
+                "exact": true,
+                "value": {
+                  "op": "literal",
+                  "value": "Initialized"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "Preload": {
+        "schema": "sewn/0.5",
+        "body": [],
+        "procedures": {
+          "preload": {
+            "kind": "sub",
+            "params": [],
+            "body": [
+              {
+                "op": "memberSet",
+                "target": {
+                  "op": "context",
+                  "name": "ME"
+                },
+                "name": "Stage",
+                "exact": true,
+                "value": {
+                  "op": "literal",
+                  "value": "Preloaded"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "Render": {
+        "schema": "sewn/0.5",
+        "body": [],
+        "procedures": {
+          "render": {
+            "kind": "sub",
+            "params": [],
+            "body": [
+              {
+                "op": "memberSet",
+                "target": {
+                  "op": "context",
+                  "name": "ME"
+                },
+                "name": "Stage",
+                "exact": true,
+                "value": {
+                  "op": "literal",
+                  "value": "Rendered"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "Unload": {
+        "schema": "sewn/0.5",
+        "body": [],
+        "procedures": {
+          "unload": {
+            "kind": "sub",
+            "params": [],
+            "body": [
+              {
+                "op": "memberSet",
+                "target": {
+                  "op": "context",
+                  "name": "ME"
+                },
+                "name": "Stage",
+                "exact": true,
+                "value": {
+                  "op": "literal",
+                  "value": "Unloaded"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "Dispose": {
+        "schema": "sewn/0.5",
+        "body": [],
+        "procedures": {
+          "dispose": {
+            "kind": "sub",
+            "params": [],
+            "body": [
+              {
+                "op": "memberSet",
+                "target": {
+                  "op": "context",
+                  "name": "ME"
+                },
+                "name": "Stage",
+                "exact": true,
+                "value": {
+                  "op": "literal",
+                  "value": "Disposed"
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "behavior": {
+      "schema": "sewn/0.3",
+      "body": [],
+      "procedures": {}
+    },
+    "presentation": {
+      "schema": "wydgit.presentation/0.1",
+      "template": {
+        "tag": "section",
+        "children": [
+          {
+            "tag": "h2",
+            "text": {
+              "get": "properties.Title"
+            }
+          },
+          {
+            "tag": "p",
+            "text": {
+              "get": "properties.Status"
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "divdev/task-record",
+    "publisher": "divdev",
+    "public": true,
+    "abstract": false,
+    "properties": {
+      "Key": {
+        "type": "string",
+        "access": "public",
+        "required": true
+      },
+      "Title": {
+        "type": "string",
+        "access": "public",
+        "required": true
+      },
+      "Status": {
+        "type": "string",
+        "access": "public",
+        "required": true,
+        "enum": [
+          "Pending",
+          "Complete"
+        ]
+      }
+    },
+    "slots": {},
+    "methodRules": {},
+    "methodContracts": {},
+    "overrides": [],
+    "implements": {},
+    "events": {},
+    "lifecycle": {},
+    "behavior": {
+      "schema": "sewn/0.3",
+      "body": [],
+      "procedures": {}
+    }
+  },
+  {
+    "id": "divdev/task-list",
+    "publisher": "divdev",
+    "public": true,
+    "abstract": false,
+    "extends": "wydgit.core/section",
+    "properties": {
+      "Tasks": {
+        "type": "array",
+        "access": "public",
+        "default": []
+      }
+    },
+    "slots": {
+      "blocks": {
+        "accepts": [
+          "divdev/task-card"
+        ],
+        "ordered": true,
+        "min": 0,
+        "max": 8
+      }
+    },
+    "methodRules": {},
+    "methodContracts": {},
+    "overrides": [],
+    "implements": {},
+    "events": {},
+    "lifecycle": {},
+    "behavior": {
+      "schema": "sewn/0.3",
+      "body": [],
+      "procedures": {}
+    },
+    "component": {
+      "schema": "wydgit.component/0.20",
+      "children": [],
+      "subscriptions": [],
+      "templates": [
+        {
+          "name": "Card",
+          "type": "divdev/task-card",
+          "model": "divdev/task-record",
+          "key": "Key",
+          "bindings": [
+            {
+              "property": "Key",
+              "input": "Key"
+            },
+            {
+              "property": "Title",
+              "input": "Title"
+            },
+            {
+              "property": "Status",
+              "input": "Status"
+            }
+          ]
+        }
+      ],
+      "repeaters": [
+        {
+          "template": "Card",
+          "property": "Tasks",
+          "slot": "blocks",
+          "limit": 8
+        }
+      ]
+    }
+  },
+  {
+    "id": "divdev/task-model",
+    "publisher": "divdev",
+    "public": true,
+    "abstract": false,
+    "extends": "wydgit.core/block",
+    "properties": {
+      "content": {
+        "type": "object",
+        "access": "public",
+        "default": {
+          "type": "markdown",
+          "value": ""
+        }
+      }
+    },
+    "slots": {},
+    "methodRules": {
+      "loadtasks": {
+        "access": "public"
+      }
+    },
+    "methodContracts": {
+      "loadtasks": {
+        "kind": "function",
+        "params": [
+          "Integer"
+        ],
+        "returns": "Array",
+        "access": "public",
+        "abstract": false,
+        "virtual": false
+      }
+    },
+    "overrides": [],
+    "implements": {},
+    "events": {},
+    "lifecycle": {},
+    "behavior": {
+      "schema": "sewn/0.10",
+      "body": [],
+      "procedures": {
+        "loadtasks": {
+          "kind": "function",
+          "params": [
+            {
+              "name": "pagenumber",
+              "type": "Integer"
+            }
+          ],
+          "returns": "Array",
+          "body": [
+            {
+              "op": "select",
+              "value": {
+                "op": "variable",
+                "name": "pagenumber"
+              },
+              "cases": [
+                {
+                  "tests": [
+                    {
+                      "operator": "=",
+                      "value": {
+                        "op": "literal",
+                        "value": 1
+                      }
+                    }
+                  ],
+                  "body": [
+                    {
+                      "op": "return",
+                      "value": {
+                        "op": "array",
+                        "items": [
+                          {
+                            "op": "object",
+                            "fields": {
+                              "Key": {
+                                "op": "literal",
+                                "value": "alpha"
+                              },
+                              "Title": {
+                                "op": "literal",
+                                "value": "Write WBasic"
+                              },
+                              "Status": {
+                                "op": "literal",
+                                "value": "Complete"
+                              }
+                            }
+                          },
+                          {
+                            "op": "object",
+                            "fields": {
+                              "Key": {
+                                "op": "literal",
+                                "value": "beta"
+                              },
+                              "Title": {
+                                "op": "literal",
+                                "value": "Test canonical artifacts"
+                              },
+                              "Status": {
+                                "op": "literal",
+                                "value": "Pending"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                },
+                {
+                  "tests": [
+                    {
+                      "operator": "=",
+                      "value": {
+                        "op": "literal",
+                        "value": 2
+                      }
+                    }
+                  ],
+                  "body": [
+                    {
+                      "op": "return",
+                      "value": {
+                        "op": "array",
+                        "items": [
+                          {
+                            "op": "object",
+                            "fields": {
+                              "Key": {
+                                "op": "literal",
+                                "value": "gamma"
+                              },
+                              "Title": {
+                                "op": "literal",
+                                "value": "Verify lifecycle cleanup"
+                              },
+                              "Status": {
+                                "op": "literal",
+                                "value": "Pending"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              ],
+              "else": [
+                {
+                  "op": "return",
+                  "value": {
+                    "op": "array",
+                    "items": []
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "divdev/task-navigation",
+    "publisher": "divdev",
+    "public": true,
+    "abstract": false,
+    "extends": "wydgit.core/block",
+    "properties": {
+      "content": {
+        "type": "object",
+        "access": "public",
+        "default": {
+          "type": "markdown",
+          "value": "Select a page through GoToPage."
+        }
+      }
+    },
+    "slots": {},
+    "methodRules": {
+      "gotopage": {
+        "access": "public"
+      }
+    },
+    "methodContracts": {
+      "gotopage": {
+        "kind": "sub",
+        "params": [
+          "Integer"
+        ],
+        "access": "public",
+        "abstract": false,
+        "virtual": false
+      }
+    },
+    "overrides": [],
+    "implements": {},
+    "events": {
+      "PageChanged": {
+        "access": "public",
+        "params": [
+          {
+            "name": "PageNumber",
+            "type": "Integer"
+          }
+        ]
+      }
+    },
+    "lifecycle": {},
+    "behavior": {
+      "schema": "sewn/0.10",
+      "body": [],
+      "procedures": {
+        "gotopage": {
+          "kind": "sub",
+          "params": [
+            {
+              "name": "pagenumber",
+              "type": "Integer"
+            }
+          ],
+          "body": [
+            {
+              "op": "if",
+              "condition": {
+                "op": "binary",
+                "operator": "AND",
+                "left": {
+                  "op": "binary",
+                  "operator": ">=",
+                  "left": {
+                    "op": "variable",
+                    "name": "pagenumber"
+                  },
+                  "right": {
+                    "op": "literal",
+                    "value": 1
+                  }
+                },
+                "right": {
+                  "op": "binary",
+                  "operator": "<=",
+                  "left": {
+                    "op": "variable",
+                    "name": "pagenumber"
+                  },
+                  "right": {
+                    "op": "literal",
+                    "value": 3
+                  }
+                }
+              },
+              "then": [
+                {
+                  "op": "call",
+                  "target": {
+                    "op": "context",
+                    "name": "EVENT"
+                  },
+                  "method": "Raise",
+                  "args": [
+                    {
+                      "op": "literal",
+                      "value": "PageChanged"
+                    },
+                    {
+                      "op": "context",
+                      "name": "ME"
+                    },
+                    {
+                      "op": "object",
+                      "fields": {
+                        "PageNumber": {
+                          "op": "numericCheck",
+                          "type": "Integer",
+                          "value": {
+                            "op": "variable",
+                            "name": "pagenumber"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "component": {
+      "schema": "wydgit.component/0.20",
+      "children": [],
+      "subscriptions": [],
+      "templates": [],
+      "repeaters": []
+    }
+  },
+  {
+    "id": "divdev/taskboard",
+    "publisher": "divdev",
+    "public": true,
+    "abstract": false,
+    "extends": "wydgit.core/section",
+    "properties": {
+      "CurrentPage": {
+        "type": "number",
+        "access": "public",
+        "default": 1
+      },
+      "LoadCount": {
+        "type": "number",
+        "access": "public",
+        "default": 0
+      }
+    },
+    "slots": {},
+    "methodRules": {
+      "selectpage": {
+        "access": "public"
+      },
+      "applypage": {
+        "access": "private"
+      },
+      "onpagechanged": {
+        "access": "private"
+      },
+      "onpageload": {
+        "access": "private"
+      }
+    },
+    "methodContracts": {
+      "selectpage": {
+        "kind": "sub",
+        "params": [
+          "Integer"
+        ],
+        "access": "public",
+        "abstract": false,
+        "virtual": false
+      },
+      "applypage": {
+        "kind": "sub",
+        "params": [],
+        "access": "private",
+        "abstract": false,
+        "virtual": false
+      },
+      "onpagechanged": {
+        "kind": "sub",
+        "params": [
+          "Integer"
+        ],
+        "access": "private",
+        "abstract": false,
+        "virtual": false
+      },
+      "onpageload": {
+        "kind": "sub",
+        "params": [],
+        "access": "private",
+        "abstract": false,
+        "virtual": false
+      }
+    },
+    "overrides": [],
+    "implements": {},
+    "events": {},
+    "lifecycle": {
+      "Preload": {
+        "schema": "sewn/0.5",
+        "body": [],
+        "procedures": {
+          "preload": {
+            "kind": "sub",
+            "params": [],
+            "body": [
+              {
+                "op": "methodCall",
+                "target": {
+                  "op": "context",
+                  "name": "ME"
+                },
+                "name": "applypage",
+                "exact": true,
+                "args": []
+              }
+            ]
+          }
+        }
+      }
+    },
+    "behavior": {
+      "schema": "sewn/0.10",
+      "body": [],
+      "procedures": {
+        "selectpage": {
+          "kind": "sub",
+          "params": [
+            {
+              "name": "pagenumber",
+              "type": "Integer"
+            }
+          ],
+          "body": [
+            {
+              "op": "methodCall",
+              "target": {
+                "op": "invoke",
+                "target": {
+                  "op": "context",
+                  "name": "ME"
+                },
+                "method": "related",
+                "args": [
+                  {
+                    "op": "literal",
+                    "value": "child"
+                  },
+                  {
+                    "op": "literal",
+                    "value": "Pager"
+                  }
+                ]
+              },
+              "name": "gotopage",
+              "exact": true,
+              "args": [
+                {
+                  "op": "numericCheck",
+                  "type": "Integer",
+                  "value": {
+                    "op": "variable",
+                    "name": "pagenumber"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "applypage": {
+          "kind": "sub",
+          "params": [],
+          "body": [
+            {
+              "op": "memberSet",
+              "target": {
+                "op": "invoke",
+                "target": {
+                  "op": "context",
+                  "name": "ME"
+                },
+                "method": "related",
+                "args": [
+                  {
+                    "op": "literal",
+                    "value": "child"
+                  },
+                  {
+                    "op": "literal",
+                    "value": "List"
+                  }
+                ]
+              },
+              "name": "Tasks",
+              "exact": true,
+              "value": {
+                "op": "methodValue",
+                "target": {
+                  "op": "invoke",
+                  "target": {
+                    "op": "context",
+                    "name": "ME"
+                  },
+                  "method": "related",
+                  "args": [
+                    {
+                      "op": "literal",
+                      "value": "child"
+                    },
+                    {
+                      "op": "literal",
+                      "value": "Model"
+                    }
+                  ]
+                },
+                "name": "loadtasks",
+                "exact": true,
+                "args": [
+                  {
+                    "op": "numericCheck",
+                    "type": "Integer",
+                    "value": {
+                      "op": "memberRead",
+                      "target": {
+                        "op": "context",
+                        "name": "ME"
+                      },
+                      "name": "CurrentPage",
+                      "exact": true
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "onpagechanged": {
+          "kind": "sub",
+          "params": [
+            {
+              "name": "pagenumber",
+              "type": "Integer"
+            }
+          ],
+          "body": [
+            {
+              "op": "memberSet",
+              "target": {
+                "op": "context",
+                "name": "ME"
+              },
+              "name": "CurrentPage",
+              "exact": true,
+              "value": {
+                "op": "variable",
+                "name": "pagenumber"
+              }
+            },
+            {
+              "op": "methodCall",
+              "target": {
+                "op": "context",
+                "name": "ME"
+              },
+              "name": "applypage",
+              "exact": true,
+              "args": []
+            }
+          ]
+        },
+        "onpageload": {
+          "kind": "sub",
+          "params": [],
+          "body": [
+            {
+              "op": "memberSet",
+              "target": {
+                "op": "context",
+                "name": "ME"
+              },
+              "name": "LoadCount",
+              "exact": true,
+              "value": {
+                "op": "binary",
+                "operator": "+",
+                "left": {
+                  "op": "memberRead",
+                  "target": {
+                    "op": "context",
+                    "name": "ME"
+                  },
+                  "name": "LoadCount",
+                  "exact": true
+                },
+                "right": {
+                  "op": "literal",
+                  "value": 1
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "component": {
+      "schema": "wydgit.component/0.20",
+      "children": [
+        {
+          "name": "Model",
+          "type": "divdev/task-model",
+          "slot": "blocks",
+          "properties": {}
+        },
+        {
+          "name": "List",
+          "type": "divdev/task-list",
+          "slot": "blocks",
+          "properties": {}
+        },
+        {
+          "name": "Pager",
+          "type": "divdev/task-navigation",
+          "slot": "blocks",
+          "properties": {}
+        }
+      ],
+      "subscriptions": [
+        {
+          "source": "Pager",
+          "event": "PageChanged",
+          "handler": "onpagechanged"
+        },
+        {
+          "source": "Page",
+          "event": "Load",
+          "handler": "onpageload"
+        }
+      ],
+      "templates": [],
+      "repeaters": []
+    }
+  }
+]

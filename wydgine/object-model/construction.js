@@ -4,10 +4,10 @@ import { formTree,publicProperties } from './forms.js';
 import { checkContext } from '../seam/context.js';
 import { clean,freeze,requireThat as check } from './validation.js';
 import { validId,resolveProperties,copyEnvelope } from './schema.js';
-export function construction(registry,context,bounds,guard) {
+export function construction(registry,context,bounds,guard,ledger) {
   checkContext(context);
   const drafts=new WeakMap(),roots=new Set();let created=0,operations=0;
-  const tick=()=>{guard();check(++operations<=bounds.constructionOperations,'SEWN.LIMIT','Construction limit');};
+  const tick=()=>{guard();if(ledger)ledger.take('constructionOperations');else check(++operations<=bounds.constructionOperations,'SEWN.LIMIT','Construction limit');};
   const requireScope=type=>{context.require('object.instances.construct');check(Array.isArray(context.scopes.prototypes)&&context.scopes.prototypes.includes(type),'SEAM.DENIED','Prototype construction denied');};
   const state=handle=>{guard();const s=drafts.get(handle);check(s&&!s.consumed,'OBJECT.CONSTRUCTION','Stale construction handle');return s;};
   const validate=(raw,complete=false,depth=0,ids=new Set())=>{
@@ -25,10 +25,17 @@ export function construction(registry,context,bounds,guard) {
   const size=(candidate,excluded)=>{let total=0,nodes=0;const count=raw=>{nodes++;Object.values(raw.slots).flat().forEach(count);};for(const root of roots){if(root===excluded)continue;const raw=root===candidate?.state?candidate.raw:root.raw;total+=JSON.stringify(raw).length;count(raw);}check(nodes<=bounds.draftNodes,'SEWN.LIMIT','Draft node limit');check(total<=bounds.constructionSize,'SEWN.LIMIT','Construction size limit');};
   const update=(s,raw,excluded)=>{raw=validate(raw);size({state:s,raw},excluded);s.raw=raw;};
   const consume=s=>{s.consumed=true;s.raw=null;roots.delete(s);};
+  const defaults=(type,id,properties={},depth=0)=>{
+    if(depth)tick();check(depth<=bounds.draftDepth&&validId(id),'OBJECT.CONSTRUCTION','Invalid default composition');requireScope(type);
+    if(ledger){ledger.take('drafts');ledger.take('draftNodes');}else check(++created<=bounds.drafts,'SEWN.LIMIT','Draft count limit');
+    const definition=registry.get(type);check(!definition.abstract&&!definition.static&&!registry.isA(type,'wydgit.core/app'),'OBJECT.CONSTRUCTION','Prototype cannot be constructed');
+    const slots=Object.create(null);for(const key of Object.keys(definition.slots))slots[key]=[];
+    for(const child of definition.component?.children??[])slots[child.slot].push(defaults(child.type,`${id}-${child.name}`,child.properties,depth+1));
+    return {id,prototype:type,properties,slots};
+  };
   return Object.freeze({
     has:handle=>drafts.has(handle),
-    create(type,id){tick();check(registry,'OBJECT.CONSTRUCTION','Construction unavailable');requireScope(type);check(++created<=bounds.drafts,'SEWN.LIMIT','Draft count limit');
-      const s={raw:validate({id,prototype:type,properties:{},slots:{}}),consumed:false};
+    create(type,id){tick();check(registry,'OBJECT.CONSTRUCTION','Construction unavailable');const s={raw:validate(defaults(type,id)),consumed:false};
       const set=(name,value)=>{tick();const current=state(handle),raw=copyEnvelope(current.raw);check(Object.hasOwn(registry.get(raw.prototype).properties,name),'OBJECT.PROPERTY','Unknown draft property');raw.properties[name]=clean(value);update(current,raw);};
       const handle=Object.freeze({get id(){return state(handle).raw.id;},get prototype(){return state(handle).raw.prototype;},get properties(){return freeze(clean(publicProperties(state(handle).raw,registry)));},
         Set(name,value){check(Object.hasOwn(registry.get(state(handle).raw.prototype).properties,name),'OBJECT.PROPERTY','Unknown draft property');authorizeMember(registry,resolveMember(registry.get(state(handle).raw.prototype),'property',name),null,context);set(name,value);},

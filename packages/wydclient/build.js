@@ -11,6 +11,12 @@ for (const minify of [false, true]) {
   const path = `${DIST}/wydgit-client-${pkg.version}${minify ? '.min' : ''}.js`;
   const result = await build({ entryPoints: [root + 'src/browser.js'], write: false, bundle: true, format: 'iife', platform: 'browser', target: 'es2022', minify, legalComments: 'none', banner: { js: `/* WydClient ${pkg.version}; WydSUB ${pkg.wydsub}; MPL-2.0 */` },
     plugins: [{ name: 'public-client-core', setup(builder) {
+      // H2 rejects component metadata before registry construction. Keep the
+      // server component validator out of this public dependency closure; retain
+      // an explicit rejection if a future caller reaches the shared registry.
+      builder.onLoad({ filter: /object-model[/\\]component-contracts\.js$/ }, () => ({ contents: `import {requireThat as check} from './validation.js';
+export function componentContract(d){check(d.component===undefined,'PROTOTYPE.COMPONENT','Executable component contracts require a later client runtime');}
+export function validateComponent(d){componentContract(d);}`, loader: 'js' }));
       // Do not ship repository sample behaviors or unused server definitions.
       builder.onLoad({ filter: /prototypes[/\\]objects\.json$/ }, () => ({ contents: JSON.stringify(coreDefinitions), loader: 'json' }));
     } }] });

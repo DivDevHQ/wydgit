@@ -108,9 +108,9 @@ export function renderSite(model, requestPath = '/', {csrf='',components} = {}) 
       });
     }
     function block(raw) {
-      if(raw.presentation)return guard(()=>{return renderComponent(raw,components?.states.get(raw.id),components?.query??{},pagePath(page,site),escapeHtml,skinAttribute(raw,model),claim,componentBudget,{csrf:submissionToken(csrf,site.id,page.id,raw.id,raw.presentation.submission),path:raw.presentation.submission?`/_transfer/${raw.presentation.submission.library}/${raw.presentation.submission.operation}/${page.id}/${raw.id}`:raw.presentation.delivery?`/_transfer/${raw.presentation.delivery.library}/${raw.presentation.delivery.operation}/${page.id}/${raw.id}`:''});});
-      if(raw.prototype==='field')return renderField(raw,escapeHtml,claim);
       if(raw.prototype==='section')return nestedSection(raw);
+      if(raw.presentation)return guard(()=>{const styled=Object.keys(raw.format??{}).length?classes(resolve(raw,raw.prototype==='section'?'section':'block',model)):'';return renderComponent(raw,components?.states.get(raw.id),components?.query??{},pagePath(page,site),escapeHtml,skinAttribute(raw,model),claim,componentBudget,{classes:styled,csrf:submissionToken(csrf,site.id,page.id,raw.id,raw.presentation.submission),path:raw.presentation.submission?`/_transfer/${raw.presentation.submission.library}/${raw.presentation.submission.operation}/${page.id}/${raw.id}`:raw.presentation.delivery?`/_transfer/${raw.presentation.delivery.library}/${raw.presentation.delivery.operation}/${page.id}/${raw.id}`:''})+(raw.children??[]).map(block).join('');});
+      if(raw.prototype==='field')return renderField(raw,escapeHtml,claim);
       if(raw.prototype==='form'){const presentation=resolve({...raw,prototype:'section'},'section',model);claim(raw.id);return `<form class="wyd-form ${classes(presentation)}"${skinAttribute(presentation,model)} id="${escapeHtml(raw.id)}" method="post" data-wydgit="${escapeHtml(raw.id)}"><input type="hidden" name="_target" value="${escapeHtml(raw.id)}"><input type="hidden" name="_action" value="Submit"><input type="hidden" name="_csrf" value="${escapeHtml(csrf)}">${raw.content?.value?renderMarkdown(raw.content.value):''}${sectionContent(presentation)}${(raw.fields??[]).map(block).join('')}<button class="wyd-submit" type="submit">${escapeHtml(raw.label)}</button></form>`;}
       return guard(() => {
         const node = resolve(raw, 'block', model);
@@ -147,7 +147,7 @@ export function renderSite(model, requestPath = '/', {csrf='',components} = {}) 
       }
       return blocks.map(block).join('');
     }
-    function nestedSection(raw){return guard(()=>{const node=resolve(raw,'section',model);claim(node.id);return `<section ${attrs(node)}${skinAttribute(node,model)}>${sectionContent(node)}</section>`;});}
+    function nestedSection(raw){return guard(()=>{const node=resolve(raw,'section',model);claim(node.id);const own=raw.presentation?renderComponent(raw,components?.states.get(raw.id),components?.query??{},pagePath(page,site),escapeHtml,skinAttribute(node,model),claim,componentBudget):'';return `<section ${attrs(node)}${skinAttribute(node,model)}>${own}${sectionContent(node)}</section>`;});}
     const pageChildren=model.prototypes.get('page').children;
     if(pageChildren.prototype!=='section')throw new Error('Unsupported page child prototype');
     const orderedSections=ordered(page[pageChildren.property]);
@@ -171,9 +171,9 @@ export function renderSite(model, requestPath = '/', {csrf='',components} = {}) 
 }
 
 // Files are reread per render in this alpha: editing JSON requires no server restart.
-export function createRenderer({ root }) {
-  return { renderStyles() { return renderSkinCss(loadRepository(root)); }, renderPage(pathname = '/') {
-    try { return renderSite(loadRepository(root), pathname); }
+export function createRenderer({ root, verifiedPackages }) {
+  return { renderStyles() { return renderSkinCss(loadRepository(root,{verifiedPackages})); }, renderPage(pathname = '/') {
+    try { return renderSite(loadRepository(root,{verifiedPackages}), pathname); }
     catch (error) { return { status: 500, html: errorDocument(), diagnostics: [error.message] }; }
   } };
 }
