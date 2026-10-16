@@ -11,6 +11,14 @@ _spec.loader.exec_module(s)
 RELEASE = '/opt/wydhosting/release'
 
 
+def inherit_control(sock):
+    os.dup2(sock.fileno(), 3, inheritable=True)
+    # dup2(fd, fd) is a no-op on Linux, including the original CLOEXEC bit.
+    os.set_inheritable(3, True)
+    if sock.fileno() != 3:
+        sock.close()
+
+
 def main():
     s.require(os.getuid() >= 60000 and len(sys.argv) == 2, 'WORKER.IDENTITY')
     filename = sys.argv[1]
@@ -33,10 +41,8 @@ def main():
     s.require(re.fullmatch('[a-f0-9]{64}', challenge['challenge']))
     s.write_frame(sock, {**challenge, 'poolId': job['poolId'], 'generation': job['generation']})
     sock.settimeout(None)
-    os.dup2(sock.fileno(), 3, inheritable=True)
+    inherit_control(sock)
     # All other descriptors are CLOEXEC. No source-controlled cwd/env/executable.
-    if sock.fileno() != 3:
-        sock.close()
     os.execve(RELEASE + '/bin/node', [RELEASE + '/bin/node', RELEASE + '/node_modules/wydgine/bin/wydgine-worker.js', '--linux-service'],
               {'LANG': 'C.UTF-8', 'WYD_PEERCRED_HELPER': RELEASE + '/lib/peercred.node'})
 

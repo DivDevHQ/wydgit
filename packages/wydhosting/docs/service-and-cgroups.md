@@ -1,8 +1,10 @@
 # Services, cgroups and disposable VM procedure
 
-**Generated candidate units; no actual systemd/cgroup provisioning executed.** Service
-syntax/contract review and unprivileged child supervision do not establish these Linux
-properties. Never run this walkthrough on the operator's development host.
+**Actual AlmaLinux broker-managed service/lifetime checks and separate bounded
+cgroup stress fixtures passed; full production integration remains unqualified.**
+See [verification](verification.md). Syntax/contract review and ordinary-user child
+supervision alone do not establish these Linux properties. Never run this walkthrough
+on the operator's development host.
 
 ## Ownership split
 
@@ -51,7 +53,7 @@ A pool can still fill its permitted persistent filesystem without an independent
 configured quota; this is a qualification/implementation limitation, not a passing
 resource-isolation claim. Do not disable system MAC to make the candidate work.
 
-## Disposable VM walkthrough — operator only, not executed
+## Disposable VM walkthrough — operator only, complete chain not executed
 
 This procedure requires a **new isolated candidate amd64 VM**, snapshot,
 independent hypervisor console and explicit administrator authorization for that VM.
@@ -187,7 +189,9 @@ In the VM use the exact recorded unit/cgroup identities, not numeric PID guesses
   arbitrary allocation API merely to test the kernel. Tests for this hostile service
   fixture now exist in `test-support/linux/qualify-kernel.py` and passed on AlmaLinux,
   explicitly separate from the production broker/worker lane. They use a private
-  socket sibling rather than a canonical App; production-lane qualification remains pending.
+  socket sibling rather than a canonical App. The separate 56-case production matrix
+  verifies both real canonical App workers and healthy-sibling cleanup; full production
+  exhaustion and provider/proxy integration remain pending.
 - Probe worker sockets as an unauthorized local UID; forge Host/Forwarded/X-Forwarded
   and Origin, route to another pool, retire endpoint and retry. Verify listener PID/UID
   through SO_PEERCRED, exact ready generation and no TCP listener.

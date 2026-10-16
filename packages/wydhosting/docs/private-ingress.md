@@ -1,7 +1,8 @@
 # Private ingress and control transport
 
-**Real same-UID Unix HTTP/peer checks tested; full cross-UID/systemd/TLS proxy chain
-not executed.** Development fork workers retain their explicitly nonproduction TCP
+**Real same-UID and AlmaLinux cross-UID/systemd worker Unix HTTP checks passed;
+the full provider/Caddy/TLS proxy chain remains unqualified.** See
+[verification](verification.md). Development fork workers retain their explicitly nonproduction TCP
 profile. Managed Linux workers require private-Unix bootstrap and cannot substitute
 a loopback listener. A local port alone is not authentication.
 

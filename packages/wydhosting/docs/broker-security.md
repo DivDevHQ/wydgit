@@ -1,9 +1,11 @@
 # Privileged broker security contract
 
-**Implemented candidate, privileged startup tested and blocked before dispatch.**
-On AlmaLinux 10.2/systemd 257 the shipped RestrictSUIDSGID filter returns ENOSYS for
-mandatory openat2 calls. Startup fails closed. The directive remains unchanged pending
-review of the hardening tradeoff; production authorization/launch are unqualified.
+**Implemented candidate, 56 real AlmaLinux broker/worker checks passed; NOT qualified.**
+A causal on/off/on experiment confirmed systemd 257 RestrictSUIDSGID returns ENOSYS
+for mandatory openat2 calls. Under explicit authorization, only the trusted broker
+omits that directive. Workers retain it; all other restrictions remain unchanged.
+The broker loses this extra SUID/SGID-marking filter; NNP is not an equivalent ban
+on creating those mode bits for other processes. No unsafe path fallback was added.
 Sanitized startup events now record a fixed phase/code without paths or exception text.
 See [verification](verification.md). Python 3 standard library;
 no package installer, JavaScript evaluation, submitted executable, shell command,
@@ -25,7 +27,8 @@ standard libraries. Before operations it walks the installed release through hel
 descriptors, rejecting symlinks, hardlinks, mount crossings, special files and any
 non-root owner or group/world-writable entry. The release check limits entries/depth.
 Unused npm `.bin` links must be removed from the prepared runtime closure, or the
-check refuses. This strict release shape still needs installed-VM testing.
+check refuses. This release shape passed the installed AlmaLinux VM campaign;
+other runtime/library closures still need separate qualification.
 
 The long-running provider is nonroot, with no capabilities. Broker sessions are root
 because fixed account tools and system service operations require it. The service
@@ -116,8 +119,10 @@ success. A broker disconnect without explicit cgroup-empty confirmation leaves t
 supervisor ownership unknown and prevents automatic reuse.
 
 Unit/schema/request tests simulate some administrative failures. Actual root caller
-authorization, cross-UID handshake, service identity and parent-death behavior have
-**not executed**. The broker is not yet approved for production deployment.
+authorization, cross-UID launch, service identity, status/reconciliation and provider-
+disconnect cleanup now pass on AlmaLinux 10.2. Replay/load, interrupted startup,
+MAC and complete provider/proxy installation remain unqualified. The broker is not
+approved for production deployment.
 
 Lifetime verification additionally pins the kernel process start-time, and provider
 checks actual `/proc/<peer>/cgroup` and start-time on each newly connected worker
@@ -131,4 +136,5 @@ Before systemd starts a worker, the broker verifies its effective FragmentPath i
 the exact protected generated unit, DropInPaths is empty, identity/restart/kill/
 NoNewPrivileges policy matches, and no process is already active. An /etc unit or
 unreviewed global drop-in cannot override the generated service silently. These
-manager-field checks have contract tests; actual systemd integration is pending.
+manager-field checks have contract tests and actual AlmaLinux service/lease evidence;
+hostile global drop-in and interrupted-start VM attacks remain unqualified.

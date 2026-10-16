@@ -5,7 +5,8 @@ Platform, Wydgine and WydHosting **0.3.0-alpha.15**. Worker protocol
 qualified; NOT implementation complete**. Live firewall transactions, automatic
 resource retirement and production VM integration remain incomplete. Real kernel
 fixtures and an unused-zone firewalld rollback probe passed on AlmaLinux 10.2;
-the production broker fails startup because RestrictSUIDSGID blocks openat2.
+an authorized, causally verified broker-only adjustment resolves its openat2 filter
+conflict. The real broker/worker matrix now passes 56 checks with worker hardening intact.
 There is no production
 activation certification or supported production Linux distribution.
 
@@ -19,7 +20,7 @@ ceiling remain. No broker/control API is registered with SEAM, HTTP, WBasic or C
 - Read-only `wydhosting setup` preflight and `setup --input <file>` candidate approval.
 - Shared explicit Ubuntu/Debian/AlmaLinux 10/RHEL 10 candidate matrix; EL lanes require
   SELinux enforcing. AlmaLinux 10.2 has real kernel fixture evidence, separately
-  labelled from the still-blocked production broker/worker lane.
+  labelled from the 56-check production broker/worker campaign and remaining gates.
   No elevation, install hook, account, service or network mutation on inspection.
 - Separately installed Python socket-activated privileged broker. Closed, versioned
   operations, kernel Unix peer credentials, explicit root-reviewed pool/byte approval,
@@ -43,9 +44,9 @@ These are implemented code paths, not a claim that their combined privileged beh
 has executed successfully. Read the [verification report](verification.md) for counts,
 intermediate failures and the exact missing evidence.
 
-The gate table below describes the original delivery. The fresh-baseline campaign
-adds 26 actual kernel checks and real firewalld manager recovery, while finding a
-production broker startup blocker. It does not close gates B–F.
+The gate table below describes the original delivery. Follow-up campaigns add 26
+actual kernel checks, real firewalld manager recovery and 56 production broker/worker
+checks. These qualify specific AlmaLinux observations; gates B–F remain incomplete.
 
 ## Gates
 

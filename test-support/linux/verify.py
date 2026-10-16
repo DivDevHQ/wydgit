@@ -21,6 +21,22 @@ s = broker.s
 
 
 class BoundaryTests(unittest.TestCase):
+    def test_real_launcher_control_fd_survives_exec_for_same_and_different_fd(self):
+        import subprocess
+        code = '''import importlib.util,os,socket,sys
+sys.dont_write_bytecode=True
+spec=importlib.util.spec_from_file_location('worker',sys.argv[1]);w=importlib.util.module_from_spec(spec);spec.loader.exec_module(w)
+left,right=socket.socketpair();assert left.fileno()==3
+if sys.argv[2]=='move':
+ fd=os.dup(left.fileno());left.close();left=socket.socket(fileno=fd);assert os.open('/dev/null',os.O_RDONLY)==3
+right.sendall(b'proof');w.inherit_control(left)
+os.execve(sys.executable,[sys.executable,'-I','-c',"import os;assert os.read(3,5)==b'proof';print('inherited control verified')"],{'LANG':'C'})
+'''
+        for mode in ('same', 'move'):
+            result = subprocess.run([sys.executable, '-I', '-c', code, str(broker_path/'worker.py'), mode], capture_output=True, text=True, timeout=5)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.strip(), 'inherited control verified')
+
     @unittest.skipIf(os.geteuid() == 0, 'requires an ordinary unprivileged test identity')
     def test_real_nonroot_startup_refusal_has_sanitized_phase_diagnostic(self):
         import subprocess
@@ -294,8 +310,11 @@ class BoundaryTests(unittest.TestCase):
     def test_unit_template_has_closed_fixed_executable_resource_and_lifetime_policy(self):
         pool = {'poolId':'p','account':{'uid':60000,'gid':60000},'base':'/var/lib/wydhosting/pools/p/generations/1','deployments':[{'directory':'app'}], 'limits':{'memoryBytes':134217728,'cpuPercent':50,'tasks':32,'fileDescriptors':128,'temporaryBytes':1048576}}
         unit, text = broker.service_text(pool, '12345678-1234-1234-1234-123456789abc','wydhosting-broker@one.service','/run/wydhosting/job-'+'1'*32+'.json')
-        for expected in ('User=60000','NoNewPrivileges=yes','Restart=no','KillMode=control-group','MemorySwapMax=0','RestrictAddressFamilies=AF_UNIX','CPUQuota=50%','TasksMax=32','BindsTo=wydhosting-broker@one.service'):
+        for expected in ('User=60000','NoNewPrivileges=yes','RestrictSUIDSGID=yes','Restart=no','KillMode=control-group','MemorySwapMax=0','RestrictAddressFamilies=AF_UNIX','CPUQuota=50%','TasksMax=32','BindsTo=wydhosting-broker@one.service'):
             self.assertIn(expected,text)
+        active = [line for line in (broker_path.parent/'templates/wydhosting-broker@.service').read_text().splitlines() if not line.startswith('#')]
+        self.assertNotIn('RestrictSUIDSGID=yes', active)
+        self.assertIn('NoNewPrivileges=yes', active)
         pool['deployments'][0]['directory'] = 'app\nUser=root'
         with self.assertRaises(s.Refused): broker.service_text(pool,'1'*32,'wydhosting-broker@one.service','job')
 

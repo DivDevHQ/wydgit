@@ -120,8 +120,15 @@ def refused(value, code=None):
     return value
 
 
+def accepted(value):
+    assert value.get('ok') is True, value
+    return value
+
+
 def launch(policy, pool):
     generation = str(uuid.uuid4())
+    expected_unit = 'wydhosting-pool-'+hashlib.sha256(pool['poolId'].encode()).hexdigest()[:32]+'-'+generation.replace('-', '')+'.service'
+    units.append(expected_unit)  # Also own the exact unit on an interrupted launch.
     b = dict(providerId=policy['providerId'], poolId=pool['poolId'], workerId='qualification',
              generation=generation, epoch=1, registryRevision=1, root=pool['base'],
              inventory=pool['inventory'], snapshots={'boilerplate': pool['deployments'][0]['snapshot']},
@@ -170,7 +177,7 @@ while True:
         return json.loads(data)
     reply = line()
     assert reply.get('ok'), reply
-    units.append(reply['unit'])
+    assert reply['unit'] == expected_unit, reply
     while True:
         frame = line()
         assert frame.get('type') not in ('failure', 'rejected'), frame
@@ -234,6 +241,10 @@ def main(build):
         upload = ROOT / 'uploads' / account_id
         mkdir(upload)
         shutil.copytree(build / 'app', upload / 'deployment')
+        # Install the reviewed upload with protected ancestry, independent of builder umask.
+        for current, dirs, files in os.walk(upload / 'deployment'):
+            Path(current).chmod(0o755)
+            for name in files: (Path(current)/name).chmod(0o644)
         account = dict(accountId=account_id, customerId=account_id, uid=uid, gid=uid, home=str(ROOT / 'accounts' / account_id), state='intended')
         pools.append(dict(poolId=account_id, account=account, base=str(ROOT / 'pools' / account_id / 'generations/1'), generation=1,
             inventory={'schema': 'wydgit.multi-host/0.1', 'apps': [{'id': 'boilerplate', 'root': 'app'}],
@@ -263,16 +274,21 @@ def main(build):
     command(['/usr/bin/systemctl', 'start', 'wydhosting-broker.socket'])
     for pool in pools:
         users.append((broker.account_name(pool['account']), pool['account']['uid']))
-        check('real broker ensure-account ' + pool['poolId'], lambda p=pool: request(policy, 'ensure-account', p['poolId'])['ok'])
+        check('real broker ensure-account ' + pool['poolId'], lambda p=pool: accepted(request(policy, 'ensure-account', p['poolId'])))
         name = broker.account_name(pool['account'])
         if pwd.getpwnam(name).pw_uid == pool['account']['uid']:
             log('broker-created-account', name=name, uid=pool['account']['uid'])
-        check('real broker stage ' + pool['poolId'], lambda p=pool: request(policy, 'stage', p['poolId'])['ok'])
+        check('real broker stage ' + pool['poolId'], lambda p=pool: accepted(request(policy, 'stage', p['poolId'])))
     check('same UID wrong primary GID kernel authorization', lambda: refused(request(policy, gid=A), 'BROKER.UNAUTHORIZED'))
     # Stale root approval vs existing socket owner exercises actual UID check, without opening socket permissions.
-    policy['providerUid'] = B; write_policy(policy)
+    # Keep the replacement approval internally valid and distinct from tenant IDs.
+    policy['providerUid'] = 61059
+    for p in pools: p['inventory']['routing']['transport']['uid'] = 61059
+    write_policy(policy)
     check('wrong UID rejected using actual SO_PEERCRED', lambda: refused(request(policy), 'BROKER.UNAUTHORIZED'))
-    policy['providerUid'] = PROVIDER; write_policy(policy)
+    policy['providerUid'] = PROVIDER
+    for p in pools: p['inventory']['routing']['transport']['uid'] = PROVIDER
+    write_policy(policy)
     for uid in (A, B):
         check(f'tenant {uid} broker socket DAC denial', lambda u=uid: denied(u, "socket.socket(socket.AF_UNIX).connect(sys.argv[1])", RUN / 'broker.sock'))
     for operation, body in [('retire', {}), ('cleanup', {}), ('stage', {'path': '/etc'}), ('reconcile', {'unit': 'sshd.service'})]:
@@ -318,7 +334,10 @@ def main(build):
         check('actual service identity/capabilities ' + bootstrap['poolId'], lambda r=reply: broker.verify_process_identity(r['pid'], next(p['account'] for p in pools if p['poolId']==bootstrap['poolId'])) or 'numeric UID/GID, groups, NNP, CapEff/Prm/Amb checked')
         check('actual cgroup membership ' + bootstrap['poolId'], lambda r=reply: Path(f'/proc/{r["pid"]}/cgroup').read_text() == '0::'+r['cgroup']+'\n')
         check('actual cgroup limits ' + bootstrap['poolId'], lambda r=reply: cgroup_limits(r))
+        check('effective worker and broker hardening ' + bootstrap['poolId'], lambda r=reply: effective_hardening(r))
         check('authorized provider private HTTP ' + bootstrap['poolId'], lambda b=bootstrap: http_probe(b))
+        check('authenticated active service status ' + bootstrap['poolId'], lambda b=bootstrap: accepted(request(policy, 'status', b['poolId'])))
+        check('active lease cannot be reconciled concurrently ' + bootstrap['poolId'], lambda b=bootstrap: refused(request(policy, 'reconcile', b['poolId']), 'BROKER.BUSY'))
         other = B if reply['uid'] == A else A
         check('cross UID worker socket denied ' + bootstrap['poolId'], lambda u=other, b=bootstrap: denied(u, "socket.socket(socket.AF_UNIX).connect(sys.argv[1])", b['listener']['path']))
     if len(live) == 2:
@@ -327,6 +346,15 @@ def main(build):
         child.terminate(); child.wait(timeout=5)
         check('frozen worker independently reaped by systemd', lambda: wait(lambda: not Path('/proc/'+str(reply['pid'])).exists(), 20))
         check('healthy sibling survives frozen peer cleanup', lambda: http_probe(live[1][2]))
+        check('authenticated stopped service status', lambda: stopped_status(request(policy, 'status', bootstrap['poolId'])))
+        check('authorized exact stopped lease reconciliation', lambda: accepted(request(policy, 'reconcile', bootstrap['poolId'])))
+        # Independent manager binding must also survive an ungraceful root broker death.
+        sibling, sibling_reply, sibling_bootstrap = live[1]
+        session = bound_session(sibling_reply)
+        command(['/usr/bin/systemctl', 'kill', '--kill-whom=main', '--signal=KILL', session])
+        check('systemd BindsTo reaps worker after broker SIGKILL', lambda: wait(lambda: not Path('/proc/'+str(sibling_reply['pid'])).exists(), 20))
+        check('dead broker cannot acknowledge successful cleanup', lambda: no_cleanup_ack(sibling))
+        check('authorized interrupted lease reconciliation', lambda: accepted(request(policy, 'reconcile', sibling_bootstrap['poolId'])))
     check('SELinux remains enforcing', lambda: Path('/sys/fs/selinux/enforce').read_text().strip() == '1')
 
 
@@ -337,6 +365,37 @@ def cgroup_limits(reply):
     quota, period = map(int, values['cpu.max'].split()); assert quota / period == .25
     assert str(reply['pid']) in values['cgroup.procs'].split()
     return values
+
+
+def stopped_status(value):
+    accepted(value)
+    assert value['state'] == 'stopped' and value['service']['MainPID'] == '0', value
+    return value
+
+
+def effective_hardening(reply):
+    fields = 'RestrictSUIDSGID,NoNewPrivileges,ProtectSystem,ProtectControlGroups,RestrictNamespaces,CapabilityBoundingSet'
+    def show(unit):
+        return dict(line.split('=', 1) for line in command(['/usr/bin/systemctl', 'show', unit, '--property='+fields]).stdout.splitlines())
+    worker = show(reply['unit'])
+    assert worker == dict(RestrictSUIDSGID='yes', NoNewPrivileges='yes', ProtectSystem='strict', ProtectControlGroups='yes', RestrictNamespaces='yes', CapabilityBoundingSet=''), worker
+    session = bound_session(reply)
+    broker = show(session)
+    assert broker['RestrictSUIDSGID'] == 'no' and all(broker[k] == worker[k] for k in ('NoNewPrivileges', 'ProtectSystem', 'ProtectControlGroups', 'RestrictNamespaces'))
+    assert set(broker['CapabilityBoundingSet'].split()) == {'cap_chown', 'cap_dac_override', 'cap_fowner', 'cap_setuid', 'cap_setgid', 'cap_audit_write'}
+    return dict(worker=worker, broker=broker, workerSELinux=Path('/proc/'+str(reply['pid'])+'/attr/current').read_text().strip('\0\n'))
+
+
+def bound_session(reply):
+    text = (Path('/run/systemd/system')/reply['unit']).read_text()
+    return next(line.split('=', 1)[1] for line in text.splitlines() if line.startswith('BindsTo='))
+
+
+def no_cleanup_ack(child):
+    wait(lambda: child.poll() is not None, 5)
+    remaining = child.stdout.read()
+    assert b'wydhosting.broker-result/1' not in remaining, remaining
+    return dict(providerExited=True, successfulCleanupAcknowledgement=False)
 
 
 def http_probe(bootstrap):

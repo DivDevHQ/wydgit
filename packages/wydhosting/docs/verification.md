@@ -13,8 +13,8 @@ git log -1 --format=%H -- docs/milestones/0.3-I5.6/verification.md
 ```
 
 **Overall: experimental partial implementation; not implementation complete; NOT
-security qualified. Real AlmaLinux kernel fixture and firewall rollback results are
-recorded below; the production broker is blocked before dispatch.** At the original alpha.15 delivery no authorized disposable VM was available.
+security qualified. Real AlmaLinux broker/account/staging/worker, kernel fixture and
+firewall rollback results are recorded below; integrated release gates remain open.** At the original alpha.15 delivery no authorized disposable VM was available.
 No root/sudo/account/systemd/cgroup/firewall/SSH/network/DNS/certificate provisioning
 was performed on the operator's machine. Sandboxed test restrictions were bypassed
 only for explicitly authorized ordinary-user subprocess/socket/browser/npm/Git work,
@@ -55,7 +55,205 @@ Browser/client suites were not rerun for this follow-up; no browser/client sourc
 distribution changed. Versions remain alpha.15; this adds candidate platform policy
 without changing worker/broker protocol or canonical library/client version axes.
 
-## Fresh-baseline privileged campaign — 2026-10-16
+## Authorized broker hardening follow-up — 2026-10-16
+
+Started clean at **d2713754893dc56aafd3a79c492422f6a1427ca4** on `develop/0.3`.
+The operator explicitly authorized a **conditional broker-only** RestrictSUIDSGID
+adjustment, contingent on a causal reproduction, preserving worker restrictions,
+SELinux enforcing and every other hardening control. The inspected proposal changes
+only `templates/wydhosting-broker@.service`: one directive removed and explanatory
+comments added. No additional hardening change was made. This section supersedes
+the earlier startup-blocked status; earlier failures remain preserved below.
+
+### Root cause confirmed before changing the broker
+
+`test-support/linux/verify-openat2-systemd.py` executed **4/4** actual VM checks:
+an unsandboxed prerequisite followed by otherwise identical broker-sandbox services
+with the directive **on, off, on again**. It uses the same read-only openat2 flags,
+zero mode and NO_XDEV/NO_SYMLINKS/BENEATH resolution as the broker. A legacy openat
+read acts as the control. Execution/stdin/stdout and disposable write paths were
+adapted consistently for this standalone probe; all security directives stayed
+constant across the three services except the one variable under test.
+
+| Real guest test | openat | openat2 | NNP / seccomp / effective capabilities |
+| --- | --- | --- | --- |
+| Ordinary root prerequisite, no service sandbox | success | success | baseline only |
+| Full broker sandbox, RestrictSUIDSGID=yes | success | **ENOSYS (38)** | 1 / 2 / `000000002000004b` |
+| Same sandbox, RestrictSUIDSGID=no | success | **success** | 1 / 2 / `000000002000004b` |
+| Same sandbox, RestrictSUIDSGID=yes restored | success | **ENOSYS (38)** | 1 / 2 / `000000002000004b` |
+
+Effective capability bounds, ProtectSystem=strict, ProtectControlGroups=yes,
+RestrictNamespaces=yes, NoNewPrivileges=yes and SELinux service context were
+identical. Seccomp remained active with the directive off. All three fixture units
+and both fixture roots were removed. This reversal establishes causation rather
+than merely observing a successful broker after removing a setting.
+
+Systemd **v257** corroborates the observation: `seccomp_restrict_suid_sgid()` calls
+`seccomp_restrict_sxid()`, which explicitly adds a blanket openat2 denial returning
+ENOSYS because seccomp cannot inspect its indirect flags/mode structure. See the
+[pinned v257 implementation](https://github.com/systemd/systemd/blob/v257/src/shared/seccomp-util.c#L2165-L2176).
+This is the directive's implicit filter, not a separately configured SystemCallFilter
+or an old guest kernel. Keeping that filter and adding a syscall allow entry cannot
+override a denial in a stacked seccomp filter. A fallback to legacy path operations
+would lose the required mount/symlink protections; a new privileged helper would
+expand architecture and scope. Neither alternative was introduced.
+
+### Authorized change and residual risk
+
+Only the trusted root broker omits RestrictSUIDSGID. Its capability bound remains
+exactly CHOWN, DAC_OVERRIDE, FOWNER, SETUID, SETGID and AUDIT_WRITE; no capabilities
+were added. NoNewPrivileges, system write boundaries, namespace/address-family/
+resource restrictions and SELinux mode are unchanged. **Actual production worker
+services still report RestrictSUIDSGID=yes**, empty capabilities and NNP=1.
+
+This is a real hardening tradeoff: the broker loses the extra filter against marking
+files SUID/SGID. NoNewPrivileges prevents its own descendants acquiring privileges
+through such executables, but is not an equivalent ban on creating those mode bits
+for other processes. The fixed trusted broker only performs closed, root-approved
+operations and uses reviewed modes; no publisher path, executable, shell, generic
+chmod or arbitrary administrative command was added. Root compromise/MAC confinement
+remain independent concerns. The adjustment does not certify the broker as production
+safe; it restores its mandatory openat2 enforcement without weakening tenant workers.
+
+### Additional real launcher defect fixed without relaxing restrictions
+
+The initial post-adjustment launch authenticated the worker, then lost its control
+stream at exec. Both host and guest ordinary-user reproductions showed that
+`dup2(3, 3, inheritable=True)` leaves Python's existing **CLOEXEC** flag unchanged.
+The launcher now explicitly sets only FD 3 inheritable after dup2, then closes the
+original descriptor when different. Real socket/exec regressions cover both an
+already-FD-3 socket and relocation from another FD. Worker identity, authentication,
+challenge and service restrictions are unchanged. No raw API was exposed to Wydgits.
+
+The first rerun also exposed a fixture setup error: builder umask left copied upload
+ancestry mode 0775. Staging correctly returned BROKER.PATH. The fixture now installs
+reviewed upload directories 0755/files 0644 before approval; the broker path guard
+was not changed. Its wrong-UID test now uses an internally valid replacement root
+approval with a distinct expected UID, so the refusal actually reaches SO_PEERCRED
+rather than failing approval validation. It keeps the real socket at 0600.
+
+### Before/after results and qualification limits
+
+The final real production matrix passed **56/56**, **0 failed**. It uses the
+shipped socket-activated root broker and Python launcher, independently installed
+WydHosting/Wydgine packages, a vetted Node 24.21.0 binary/native credential helper,
+and the existing authenticated broker protocol. No broker operation is mocked.
+
+- Real broker `ensure-account` created two locked/nologin restricted users, UID/GID
+  **61051** (`wyd-69816689df4526f12832`) and **61052** (`wyd-08f155da2e286dcb3a87`).
+  Provider UID/GID **61050** is separate. No supplementary privileges were granted.
+- Both exact byte manifests staged successfully into root-sealed generations. Both
+  tenant writes to sealed code were denied; tenant approval-file reads were denied.
+  A symlink substituted at the approved source path returned BROKER.PATH without
+  publishing a redirected generation.
+- Actual kernel wrong UID and wrong primary GID returned BROKER.UNAUTHORIZED.
+  Tenants were denied the 0600 socket. Unsupported cleanup/retire operations,
+  foreign/traversal pool selectors, injected paths/unit arguments, malformed JSON,
+  duplicate and reserved keys failed closed through real broker sessions.
+- Both production workers completed root-peer/MainPID/UID/GID/cgroup/challenge launch
+  and served **HTTP 200** through private Unix sockets as the intended tenants.
+  Cross-UID private file/socket/signal attacks were denied; same-tenant operations
+  succeeded. No control/authentication shortcut was installed.
+- Actual worker UID/GID/groups/NNP/capabilities, cgroup membership and limits were
+  inspected: memory.max=268435456, swap.max=0, pids.max=32, cpu.max=`25000 100000`.
+  Effective worker RestrictSUIDSGID=yes and broker RestrictSUIDSGID=no were checked,
+  along with unchanged NNP, capabilities, system/cgroup and namespace restrictions.
+- Authenticated active/stopped status succeeded. Concurrent reconciliation against
+  the held active lease returned BROKER.BUSY. Exact stopped-lease reconciliation
+  succeeded. A frozen worker was reaped after provider disconnect while a healthy
+  sibling canonical App continued returning HTTP 200. SIGKILL of the exact sibling
+  broker session then independently triggered systemd BindsTo worker termination;
+  the dead broker issued no successful cleanup acknowledgement, and authenticated
+  interrupted-lease reconciliation succeeded. Test cleanup verified stopped owned
+  units before deleting their disposable files/accounts.
+
+The separate real kernel stress matrix was repeated: **26/26**, **0 failed**,
+including task exhaustion/EAGAIN, CPU throttling, cgroup-contained OOM, protected
+filesystem/cgroup/network/namespace operations and cross-UID symlink races. These
+remain separately labelled hostile fixtures, not arbitrary-code capabilities added
+inside an App. The production matrix inspects configured limits and lifecycle;
+resource exhaustion is exercised by those bounded fixtures.
+
+Before correction, four original broker startups failed. In this follow-up the
+initial matrix had **27 passed / 6 failed** (upload-mode failure and downstream missing
+staging/launch); correcting the fixture yielded **31 passed / 2 failed** (CLOEXEC
+handoff). The real FD fix yielded **45/45**; adding effective-hardening/status/lease
+checks yielded **53/53**; adding actual broker SIGKILL/BindsTo, fail-closed cleanup
+acknowledgement and interrupted-lease reconciliation yielded **56/56**. Earlier
+failures are retained, not relabelled as passes.
+
+SELinux remained **enforcing**, with **no AVC/USER_AVC matches** in the audit query.
+Actual worker context is `system_u:system_r:unconfined_service_t:s0`. These results
+establish DAC/systemd/cgroup/native-peer enforcement, **not per-tenant SELinux MAC**.
+No SELinux module, permissive domain, boolean, label rule or additional allow was
+installed. Firewalld/SSH remained active and unchanged; no firewall rule was modified
+in this follow-up. The previous unused-zone rollback evidence still has its limited
+manager/recovery scope and does not qualify public packet enforcement.
+
+**I5.6 remains experimental and NOT security qualified.** Full canonical provider
+registry/journal/setup-daemon integration is not established by this manually reviewed
+fixture approval (its registry digest is a fixture selector). Caddy/TLS, external
+IPv4/IPv6, production SELinux domains/labels, challenge replay/load, hostile mount
+substitution, storage quotas, disk-full/startup/power-loss/reboot interruption and
+automated destructive retirement remain unqualified. No RHEL or fresh Debian/Ubuntu
+VM qualification is inferred. Next work is the remaining I5.6 integration/MAC/recovery
+matrix, before I5.7/I5.8 release gates.
+
+### Reproduction, VM mutations and regression record
+
+Before applying the change, transfer the reviewed **original** broker template and
+`verify-openat2-systemd.py` into a new root-protected `/var/tmp/wyd-i56-followup`, then:
+
+```sh
+ssh almond-lab 'sudo -n timeout 90s python3 -B /var/tmp/wyd-i56-followup/verify-openat2-systemd.py --target=almond-lab /var/tmp/wyd-i56-followup/wydhosting-broker@.service'
+```
+
+The causal runner requires that input still contain RestrictSUIDSGID=yes. Prepare and
+transfer a fresh independent build using the build/transfer procedure in the initial
+campaign below, then use the updated `qualify.py` and `qualify-kernel.py`. Every command
+that creates privileged fixtures is targeted to `almond-lab`, never Mint. The updated
+matrix is runnable with the adjusted shipped assets, without altering worker units.
+
+Additional VM mutations: new `/opt/wyd-i56-causal/{probe.py}` and
+`/var/lib/wyd-i56-causal/{input,on1.json,off.json,on2.json}`;
+`/run/systemd/system/wyd-i56-causal-{on1,off,on2}.service`; all removed after the
+causal experiment. New root-protected `/var/tmp/wyd-i56-followup` contains only
+transferred scripts, reviewed original template, archive and extracted build; removed
+at completion. Production test roots/unit templates are the same disposable layout
+listed below, recreated only after proving absence, then removed. Two broker-created
+tenants now genuinely exist during the campaign and are deleted after owned services
+stop. Exact generated units/generations, provider and test account operations, cleanup
+and before/after results are preserved in
+`test-support/linux/evidence/2026-10-16-broker-followup.json`. Account-tool credential
+DB backup/lock changes and journal/audit records remain documented side effects.
+No existing account, baseline backup, SSH/firewall configuration, SELinux policy or
+Mint service/configuration was changed.
+
+Focused Linux passed **20/20**. The independently packed WydHosting tarball passed
+**30/30** Python cases as the ordinary VM user (including explicit administrative/
+platform mocks and the two real descriptor/exec variants inside one case), plus
+**6/6 mocked** firewall guards. These are nested counts, not additional npm tests.
+Fresh installed-package consumers passed service-free CLI/HTTP, **148/148** canonical-
+library tests, **35/35** provider tests, **20/20** real subprocess-supervisor tests and
+**20/20** Linux boundary tests, with repository imports refused. Package evidence is
+`/tmp/wyd-i54-packed-1n49SD`; full logs use `/tmp/wydgit-i56-followup-*.log`.
+
+The first complete follow-up `npm test` passed **930/931**, with one failure:
+`JSON: clean interactive Contact install, concurrent HTTP submissions, restart and
+explicit base-site cleanup` received HTTP 500 where 200 was expected. The unchanged
+hardening file subsequently passed **4/4** in isolation. This resembles the historical
+Contact/Guestbook HTTP500 observation; its cause remains **undiagnosed**. No HTTP
+implementation, assertion, budget, normal test concurrency or resource policy was
+changed, and successful repetitions are not described as a fix. The independently
+installed canonical-library suite includes that fixture and passed all 148 cases.
+
+The unchanged normal-policy full rerun passed **931/931**, **0 failed/skipped/
+cancelled**. Required checks are repeated after final evidence/document synchronization
+before commit/push. `npm run check` passed **3 pages / 42 links**. Version remains **0.3.0-alpha.15**; dependencies, platform
+admissions and worker protocol remain unchanged. Debian/Ubuntu contract admissions
+remain covered by Node/Python tests; no actual Debian/Ubuntu/RHEL guest was run.
+
+## Initial fresh-baseline privileged campaign — 2026-10-16
 
 Started clean at **a4b78a844b471c3fab7de6d72ffe40fc2f9b773b**, branch
 `develop/0.3`. The operator restored `almond-lab` to its baseline. No previous test
@@ -65,9 +263,9 @@ sudo access. This campaign did not edit sudoers or authentication policy. Mint w
 used only for ordinary-user repository work, compilation, local tests, npm package
 consumers and SSH. No privileged hosting command ran on Mint.
 
-**Current decision: I5.6 remains experimental and NOT security qualified.** The real
-kernel fixtures pass, but the production broker refuses startup before authorization
-or account operations. Those fixture results do not qualify the integrated worker lane.
+**Initial campaign decision (superseded by the authorized follow-up above): I5.6
+remained experimental and NOT security qualified.** Kernel fixtures passed while the
+production broker refused startup before authorization or account operations.
 
 ### Exact guest and enforcement scope
 

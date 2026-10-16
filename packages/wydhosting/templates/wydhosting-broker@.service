@@ -23,7 +23,9 @@ ProtectKernelTunables=yes
 ProtectKernelModules=yes
 ProtectKernelLogs=yes
 ProtectControlGroups=yes
-RestrictSUIDSGID=yes
+# RestrictSUIDSGID blocks openat2 with ENOSYS on systemd 257. The trusted broker
+# requires openat2 NO_XDEV/NO_SYMLINKS/BENEATH and never falls back. NNP and the
+# capability bound remain; workers retain RestrictSUIDSGID=yes.
 RestrictRealtime=yes
 LockPersonality=yes
 RestrictNamespaces=yes

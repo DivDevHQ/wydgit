@@ -1,5 +1,11 @@
 ## Unreleased
 
+- Confirm the systemd openat2 conflict with a reversible on/off/on VM experiment;
+  remove RestrictSUIDSGID only from the trusted broker under explicit authorization.
+- Fix launcher FD 3 close-on-exec handling, preserving all worker hardening;
+  pass 56 real broker/account/staging/worker checks and repeat 26 kernel checks.
+  Keep I5.6 experimental pending integrated MAC, exposure and recovery qualification.
+
 - Add opt-in, bounded AlmaLinux VM fixtures with real cross-UID denials, symlink
   races, cgroup task/CPU/memory enforcement and complete disposable-resource logs.
 - Add firewalld preview and an administrator-only unused-zone transaction probe,

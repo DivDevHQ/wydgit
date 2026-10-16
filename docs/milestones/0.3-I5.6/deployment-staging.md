@@ -1,7 +1,8 @@
 # Immutable execution staging
 
-**Implemented helper, tested with real unprivileged files. Root/cross-UID integration,
-mount attacks and power-loss durability have not executed.** No claim that Node
+**Real unprivileged primitives and AlmaLinux root/cross-UID broker staging passed.
+Hostile mount attacks and power-loss durability remain unqualified.** See
+[verification](verification.md). No claim that Node
 `realpath()` plus path strings closes a hostile filesystem race.
 
 ## Approval

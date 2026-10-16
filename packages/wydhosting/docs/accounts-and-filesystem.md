@@ -1,7 +1,9 @@
 # Restricted identities and filesystem ownership
 
-**Candidate implementation; actual Linux account provisioning/cross-UID attacks not
-executed.** No development-host account, group, sudo, SSH or home directory changed.
+**Candidate implementation; actual broker account/staging and cross-UID checks passed
+on AlmaLinux 10.2.** See [verification](verification.md) for the 53-case campaign and
+remaining hostile-mount, MAC and recovery gaps. No development-host account, group,
+sudo, SSH or home directory changed.
 
 ## Identities
 
