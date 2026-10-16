@@ -1,5 +1,13 @@
 # Private ingress and control transport
 
+**Latest:** the real canonical provider, two categorized workers and Caddy 2.11.7
+now serve actual TLS responses over VM loopback IPv4/IPv6. The shipped Caddyfile
+explicitly rejects unknown authorities with 421. Header spoofing, separate edge UID,
+private routing, retirement/restart and worker TCP-listener absence have real VM
+evidence. This supersedes the earlier full-chain-unexecuted status below, without
+qualifying external networking, production certificates or the proxy's MAC domain.
+See [verification](verification.md#integrated-enterprise-campaign--2026-10-16).
+
 **Real same-UID and AlmaLinux cross-UID/systemd worker Unix HTTP checks passed;
 the full provider/Caddy/TLS proxy chain remains unqualified.** See
 [verification](verification.md). Development fork workers retain their explicitly nonproduction TCP
@@ -80,13 +88,17 @@ there is an explicit matching-generation cgroup-stopped acknowledgement.
 ## TLS/proxy candidate and remaining gaps
 
 The shipped Caddyfile uses explicit host/certificate/key placeholders, HTTP/1.1 backend,
-stripped untrusted forwarding headers and overwritten exact HTTPS host/proto. Certificate
+stripped untrusted forwarding headers and overwritten exact HTTPS host/proto.
+The complete candidate also disables the admin API, persisted config and automatic
+redirect listeners and selects HTTP/1.1; the fixture adds loopback binds to both the
+named site and reject site. Certificate
 selection/expiry/key permissions and Caddy executable/config validation are manual VM
 qualification steps. No DNS/ACME automation, live certificate management or qualified
 Caddy adapter is claimed. The provider service must grant only the approved edge group
-access to its edge directory/socket. Real separate-UID unauthorized traffic, service
-listener substitution, external reachability and all-route browser behavior through
-this exact proxy chain remain untested. The existing browser suite verifies the
+access to its edge directory/socket. Separate-UID credential/routing and unauthorized
+local-socket denials now have integrated loopback VM evidence. Service listener
+substitution, external reachability and all-route browser behavior through the exact
+proxy chain remain untested. The existing browser suite verifies the
 preserved I1 transport semantics, not a Caddy production deployment.
 
 Lifetime verification additionally pins the kernel process start-time, and provider

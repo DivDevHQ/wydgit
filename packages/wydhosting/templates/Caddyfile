@@ -1,5 +1,14 @@
 # Candidate only. Replace hostnames/certificate paths with reviewed literal values.
 # Caddy runs as a separate restricted edge UID, never a customer UID.
+{
+    admin off
+    persist_config off
+    auto_https disable_redirects
+    servers {
+        protocols h1
+    }
+}
+
 @HOSTNAME@ {
     tls @CERTIFICATE@ @PRIVATE_KEY@
     reverse_proxy unix//run/wydhosting/provider/edge.sock {
@@ -12,4 +21,11 @@
         header_up X-Forwarded-Host {http.request.host}
         header_up X-Forwarded-Proto https
     }
+}
+
+# Unknown HTTP authorities must receive an explicit rejection. Caddy otherwise
+# completes an unmatched route with an empty successful response.
+:443 {
+    tls @CERTIFICATE@ @PRIVATE_KEY@
+    respond "Request rejected" 421
 }

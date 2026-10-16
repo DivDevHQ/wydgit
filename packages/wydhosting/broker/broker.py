@@ -54,8 +54,9 @@ def validate_policy(p):
     s.require(type(p['pools']) is list and 0 < len(p['pools']) <= 128)
     seen = set()
     accounts = {}
+    categories = {}
     for pool in p['pools']:
-        s.closed(pool, ('poolId', 'account', 'base', 'generation', 'inventory', 'deployments', 'limits', 'execution', 'optional'))
+        s.closed(pool, ('poolId', 'account', 'base', 'generation', 'inventory', 'deployments', 'limits', 'execution', 'optional') + (('selinuxCategory',) if 'selinuxCategory' in pool else ()))
         s.require(s.identifier(pool['poolId']) and pool['poolId'] not in seen and s.integer(pool['generation'], 1))
         seen.add(pool['poolId'])
         a = pool['account']
@@ -65,6 +66,12 @@ def validate_policy(p):
         for other in accounts.values():
             s.require(other == a or (other['uid'] != a['uid'] and other['accountId'] != a['accountId']), 'BROKER.OWNERSHIP')
         accounts[a['accountId']] = a
+        if 'selinuxCategory' in pool:
+            category = pool['selinuxCategory']
+            s.require(s.integer(category, 1, 1023), 'BROKER.SELINUX_POLICY')
+            s.require(category not in categories or categories[category] == a['accountId'], 'BROKER.SELINUX_POLICY')
+            s.require(all(c == category or owner != a['accountId'] for c, owner in categories.items()), 'BROKER.SELINUX_POLICY')
+            categories[category] = a['accountId']
         s.closed(pool['limits'], ('memoryBytes', 'cpuPercent', 'tasks', 'fileDescriptors', 'temporaryBytes'))
         for field, low, high in [('memoryBytes', 64*1024**2, 64*1024**3), ('cpuPercent', 1, 6400), ('tasks', 16, 4096), ('fileDescriptors', 64, 65536), ('temporaryBytes', 1024**2, 1024**3)]:
             s.require(s.integer(pool['limits'][field], low, high))
@@ -78,7 +85,47 @@ def validate_policy(p):
             for previous in destinations:
                 s.require(not (deployment['directory'] == previous or deployment['directory'].startswith(previous + '/') or previous.startswith(deployment['directory'] + '/')))
             destinations.append(deployment['directory'])
+    s.require(not categories or all('selinuxCategory' in pool for pool in p['pools']), 'BROKER.SELINUX_POLICY')
     return p
+
+
+def label(fd, kind, category):
+    # Only held descriptors to broker-owned generated resources reach this call.
+    # No submitted context/type, pathname traversal or external label command.
+    s.require(kind in ('code', 'data', 'run') and s.integer(category, 1, 1023), 'BROKER.SELINUX_POLICY')
+    context = f'system_u:object_r:wydhosting_{kind}_t:s0:c{category}'.encode()
+    os.setxattr(fd, 'security.selinux', context)
+    s.require(os.getxattr(fd, 'security.selinux').rstrip(b'\0') == context, 'BROKER.SELINUX_POLICY')
+    os.fsync(fd)
+
+
+def reserve_category(pool, state):
+    if 'selinuxCategory' not in pool:
+        return
+    category, account = pool['selinuxCategory'], pool['account']
+    record = {'accountId': account['accountId'], 'uid': account['uid'], 'gid': account['gid'], 'category': category}
+    # Never recycle category ownership, including across approval revisions.
+    for name in ('selinux-category-' + str(category) + '.json', 'selinux-account-' + key(account['accountId']) + '.json'):
+        try:
+            s.require(s.decode(s.read_file(state, name)) == record, 'BROKER.SELINUX_POLICY')
+        except FileNotFoundError:
+            s.atomic_file(state, name, s.encode(record))
+
+
+def label_staged_tree(fd, category, writable=(), relative=''):
+    kind = 'data' if any(relative == p or relative.startswith(p + '/') for p in writable) else 'code'
+    label(fd, kind, category)
+    for name in os.listdir(fd):
+        info = os.stat(name, dir_fd=fd, follow_symlinks=False)
+        s.require(stat.S_ISDIR(info.st_mode) or stat.S_ISREG(info.st_mode), 'BROKER.SELINUX_POLICY')
+        child = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC, dir_fd=fd)
+        try:
+            if stat.S_ISDIR(info.st_mode):
+                label_staged_tree(child, category, writable, relative + '/' + name if relative else name)
+            else:
+                label(child, kind, category)
+        finally:
+            os.close(child)
 
 
 def load_policy():
@@ -138,6 +185,9 @@ def stage(pool, state):
     parent = s.mkdir_owned(pools, pool['poolId'], 0, account['gid'], 0o710)
     os.close(pools)
     generations = s.mkdir_owned(parent, 'generations', 0, account['gid'], 0o710)
+    if 'selinuxCategory' in pool:
+        label(parent, 'code', pool['selinuxCategory'])
+        label(generations, 'code', pool['selinuxCategory'])
     os.close(parent)
     temporary = '.staging-' + secrets.token_hex(16)
     target = s.mkdir_owned(generations, temporary, 0, account['gid'])
@@ -173,6 +223,8 @@ def stage(pool, state):
                 os.close(current)
         # A protected manifest binds the complete bytes and placement, not just JSON config.
         s.atomic_file(target, 'deployment.json', s.encode(pool), mode=0o440)
+        if 'selinuxCategory' in pool:
+            label_staged_tree(target, pool['selinuxCategory'], tuple(app['directory'] + '/' + name for app in pool['deployments'] for name in ('data', 'files', 'media')))
         os.fchmod(target, 0o550)
         os.fsync(target)
         os.rename(temporary, str(pool['generation']), src_dir_fd=generations, dst_dir_fd=generations)
@@ -256,6 +308,9 @@ def service_text(pool, generation, session, job):
     runtime = 'wydhosting/workers/' + generation
     limits = pool['limits']
     writes = []
+    if 'selinuxCategory' in pool:
+        s.require(s.integer(pool['selinuxCategory'], 1, 1023), 'BROKER.SELINUX_POLICY')
+    mac = f"SELinuxContext=system_u:system_r:wydhosting_worker_t:s0:c{pool['selinuxCategory']}\n" if 'selinuxCategory' in pool else ''
     for app in pool['deployments']:
         # Unit path syntax must be a strict subset, including no %/$/quotes/whitespace.
         s.require(re.fullmatch(r'[A-Za-z0-9_/-]+', app['directory']))
@@ -268,7 +323,7 @@ BindsTo={session}
 After={session}
 [Service]
 Type=exec
-User={a['uid']}
+{mac}User={a['uid']}
 Group={a['gid']}
 SupplementaryGroups=
 ExecStart=/usr/bin/python3 -I {RELEASE}/node_modules/wydhosting/broker/worker.py {job}
@@ -343,7 +398,7 @@ def validate_bootstrap(b, policy, pool):
     s.require(type(b['configurationRevision']) is str and re.fullmatch('[a-f0-9]{64}', b['configurationRevision']))
 
 
-def verify_process_identity(pid, account):
+def verify_process_identity(pid, account, category=None):
     with open('/proc/' + str(pid) + '/status', encoding='ascii') as stream:
         text = stream.read(65537)
     s.require(len(text) <= 65536, 'BROKER.PEER')
@@ -351,6 +406,9 @@ def verify_process_identity(pid, account):
     s.require(fields.get('Uid', '').split() == [str(account['uid'])] * 4 and fields.get('Gid', '').split() == [str(account['gid'])] * 4, 'BROKER.PEER')
     s.require(set(fields.get('Groups', '').split()).issubset({str(account['gid'])}), 'BROKER.GROUPS')
     s.require(fields.get('NoNewPrivs', '').strip() == '1' and all(int(fields.get(name, '1').strip(), 16) == 0 for name in ('CapEff', 'CapPrm', 'CapAmb')), 'BROKER.PEER')
+    if category is not None:
+        with open('/proc/' + str(pid) + '/attr/current', encoding='ascii') as stream:
+            s.require(stream.read(256).rstrip('\0\n') == f'system_u:system_r:wydhosting_worker_t:s0:c{category}', 'BROKER.SELINUX_POLICY')
 
 
 def validate_worker_frame(frame, binding, sequence):
@@ -402,6 +460,13 @@ def relay(provider, worker, binding, on_worker_frame=lambda _: None):
 
 
 def launch(provider, policy, pool, b, state):
+    try:
+        with open('/sys/fs/selinux/enforce', encoding='ascii') as stream:
+            enforcing = stream.read(16).strip() == '1'
+    except FileNotFoundError:
+        enforcing = False
+    # An enforcing guest must never silently use an unconfined legacy worker.
+    s.require((not enforcing and 'selinuxCategory' not in pool) or (enforcing and 'selinuxCategory' in pool), 'BROKER.SELINUX_POLICY')
     validate_bootstrap(b, policy, pool)
     ensure_account(pool['account'], state)
     sealed = s.open_directory(pool['base'])
@@ -445,6 +510,16 @@ def launch(provider, policy, pool, b, state):
         s.atomic_file(state, lease_name, s.encode(intent), replace=True)
         command(['/usr/bin/systemctl', 'daemon-reload'])
         verify_unit(show(unit), unit, pool['account'], inactive=True)
+        if 'selinuxCategory' in pool:
+            parent = s.open_directory(RUN + '/workers')
+            try:
+                directory = s.mkdir_owned(parent, b['generation'], pool['account']['uid'], pool['account']['gid'], 0o700)
+                try:
+                    label(directory, 'run', pool['selinuxCategory'])
+                finally:
+                    os.close(directory)
+            finally:
+                os.close(parent)
         command(['/usr/bin/systemctl', 'start', unit])
         actual = show(unit)
         verify_unit(actual, unit, pool['account'])
@@ -458,7 +533,7 @@ def launch(provider, policy, pool, b, state):
             try:
                 pid, uid, gid = s.peercred(candidate)
                 s.require(uid == pool['account']['uid'] and gid == pool['account']['gid'] and str(pid) == actual['MainPID'], 'BROKER.PEER')
-                verify_process_identity(pid, pool['account'])
+                verify_process_identity(pid, pool['account'], pool.get('selinuxCategory'))
                 with open('/proc/' + str(pid) + '/cgroup', encoding='ascii') as cgroup_file:
                     cgroup = cgroup_file.read(4096)
                 s.require(cgroup == '0::' + record['cgroup'] + '\n', 'BROKER.PEER')
@@ -548,6 +623,7 @@ def handle(provider, policy, state, audit=None):
                 fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
             except BlockingIOError:
                 raise s.Refused('BROKER.BUSY') from None
+            reserve_category(pool, state)
         if operation == 'ensure-account':
             ensure_account(pool['account'], state)
         elif operation == 'stage':
@@ -632,6 +708,16 @@ def main():
         outcome, code = 'completed', 'BROKER.OK'
     except Exception as error:
         code = error.code if isinstance(error, s.Refused) else 'BROKER.INTERNAL'
+        if not isinstance(error, s.Refused):
+            # Closed diagnostic vocabulary; never exception text, paths or data.
+            audit['failureKind'] = 'missing' if isinstance(error, FileNotFoundError) else 'permission' if isinstance(error, PermissionError) else 'os' if isinstance(error, OSError) else 'internal'
+            audit['failurePhase'] = 'dispatch'
+            frame = error.__traceback__
+            while frame:
+                name = frame.tb_frame.f_code.co_name
+                if name in ('relay', 'launch', 'stop_owned', 'owned_status', 'process_start', 'cgroup_empty'):
+                    audit['failurePhase'] = name
+                frame = frame.tb_next
         try:
             s.write_frame(provider, {'ok': False, 'code': code})
         except OSError:

@@ -12,6 +12,13 @@ no package installer, JavaScript evaluation, submitted executable, shell command
 arbitrary path operation or portable capability. Files ship under WydHosting `broker/`;
 reviewed service/socket assets ship under `templates/`.
 
+The [integrated follow-up](verification.md#integrated-enterprise-campaign--2026-10-16)
+adds root-approved account SELinux categories, descriptor-applied deployment/runtime
+labels, nonrecyclable category markers and actual domain verification before launch.
+On an enforcing guest a missing category refuses execution. Provider/workers now have
+an experimental confined policy; the root broker still uses the distro unconfined
+service domain and is **not production MAC qualified**. See [SELinux](selinux.md).
+
 ## Installation trust
 
 Administrator installs a reviewed immutable runtime closure at
@@ -35,8 +42,8 @@ because fixed account tools and system service operations require it. The servic
 limits retained capabilities, address families, memory/tasks/descriptors, host writes,
 core dumps and inherited environment. Account tools need atomic writes/locks in `/etc`;
 the template honestly permits that directory rather than claiming file-only writes
-would safely support `useradd`. NoNewPrivileges prevents acquired privilege. MAC
-policy and a fully capability-split account/service helper are not delivered.
+would safely support `useradd`. NoNewPrivileges prevents acquired privilege. Dedicated
+broker MAC and a fully capability-split account/service helper are not delivered.
 
 ## Closed protocol
 

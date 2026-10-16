@@ -5,6 +5,7 @@ Requires=wydhosting-broker.socket
 After=wydhosting-broker.socket
 [Service]
 Type=exec
+SELinuxContext=system_u:system_r:wydhosting_provider_t:s0
 User=@PROVIDER_UID@
 Group=@PROVIDER_GID@
 ExecStart=/opt/wydhosting/release/bin/node /opt/wydhosting/release/node_modules/wydhosting/bin/wydhosting.js serve --config /etc/wydhosting/provider.json

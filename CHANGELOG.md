@@ -1,5 +1,16 @@
 ## Unreleased
 
+- Exercise the real canonical provider/broker/two-worker/private-ingress/Caddy chain
+  on AlmaLinux, with confined provider/worker SELinux domains and pinned account MCS
+  categories; reject unconfined legacy launches on enforcing guests.
+- Seal and persist category ownership/labels, test same-UID MAC denials, actual worker
+  crash/OOM replacement, sibling survival and fail-closed service recovery.
+- Reject unknown Caddy authorities with HTTP 421 and add sanitized broker failure
+  phases. Keep I5.6 experimental: broker/edge MAC, external/firewall/reboot/storage
+  gates and intermittent broker retirement/App HTTP500 observations remain unresolved.
+- Surface returned Page/cleanup failure codes through the trusted HTTP logger without
+  exception text, request data or credentials; preserve response and timeout policies.
+
 - Confirm the systemd openat2 conflict with a reversible on/off/on VM experiment;
   remove RestrictSUIDSGID only from the trusted broker under explicit authorization.
 - Fix launcher FD 3 close-on-exec handling, preserving all worker hardening;

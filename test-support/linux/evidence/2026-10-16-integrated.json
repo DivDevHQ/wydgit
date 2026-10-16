@@ -1,0 +1,2794 @@
+{
+  "schema": "wydhosting.integrated-qualification-evidence/1",
+  "date": "2026-10-16",
+  "base": "d08eda8897f0e26111e570a68e26434cfb56eb35",
+  "branch": "develop/0.3",
+  "version": "0.3.0-alpha.15",
+  "target": "almond-lab",
+  "implementationComplete": false,
+  "productionQualified": false,
+  "externalNetworkTests": 0,
+  "rebootTests": 0,
+  "sourceSHA256": {
+    "packages/wydhosting/selinux/wydhosting_worker.cil": "f5426c41a82e4aba4788178c5f6d47e50d2397cadc34575bc18f8da6a7384cad",
+    "packages/wydhosting/broker/broker.py": "0d3c380a0997d93c7e331e58d7902790fa89b4e85fd9022005124f92e18fa20e",
+    "packages/wydhosting/src/platform/linux/plan.js": "037ea4cb79a9ed4ff057d9a4ddef65c4ef87a13abb97c629d9916363eac69aaf",
+    "packages/wydhosting/src/platform/linux/provider.js": "4132469794a981950fdeb86480159d53d4379165270dc8ed46923f6c03cc680f",
+    "packages/wydhosting/templates/Caddyfile": "b873f99e390509eb842acb387040fdc4993d2b6bb3239b9b7dcc8acf75e22146",
+    "packages/wydgine/src/app.js": "8ddb892f7e249d5543a6c1f2b858164af5090605088d64bc82722fe23fe87d9b",
+    "packages/wydgine/src/engine/http/pipeline.js": "e5c26cf98dd7bc6170747d463849ed78b52f52ee3fbc913f0380f72b7cfc0f9f",
+    "test-support/linux/qualify.py": "a9f1885ebf529a0dbd72f82f6ccc44a3134e9c8df28aecad9c0b1be51a8683f4",
+    "test-support/linux/qualify-integrated.py": "cca06d608289ccc0559bd5984c230611e99dc611a06af59b48f4a8c8b5338119",
+    "test-support/linux/qualification-registry.mjs": "ef10eca4822e6ff7b8aebfbe9e5b4490f67970092fa15a5551c1ccc060aec19d"
+  },
+  "artifactManifestSHA256": "43016f8ce8a1ecd78c05432aa18fd5f7ebd97292978892b90f62d95bb4d97d8a",
+  "caddyArchiveSHA256": "727b91701a392de6ebc5027509f548bf39979e5216340d0faed8fa5e69c84f8b",
+  "automaticReview": {
+    "rejected": "automatic unconfined transition revision; command not executed",
+    "resolution": "removed transition; explicit confined provider and worker contexts"
+  },
+  "runs": [
+    {
+      "log": "wydgit-i56-integrated-first.log",
+      "sha256": "80c1870895f4e63281f2a123db6589a3bad7a1dcf7892f474cee91d95053a78c",
+      "events": [
+        {
+          "event": "FATAL",
+          "error": "['/opt/wydhosting/release/bin/node', '/opt/wydhosting/release/qualification-registry.mjs', '[{\"poolId\": \"i56-a\", \"accoun [abbreviated; exact raw log retained] 0f2fd0d\", \"size\": 43}]}}], \"limits\": {\"memoryBytes\": 268435456, \"cpuPercent\": 25, \"tasks\": 32, \"fileDescriptors\": 128, \"temporaryBytes\": 1048576}, \"execution\": {}, \"optional\": []}]']: 1: file:///opt/wydhosting/release/node_modules/wydhosting/src/contracts.js:9\nexport function fail(code='HOSTING.INVALID'){return Object.assign(new Error('Provider operation refused'),{code});}\n                                                                  ^\n\nError: Provider operation refused\n    at fail (file:///opt/wydhosting/release/node_modules/wydhosting/src/contracts.js:9:67)\n    at check (file:///opt/wydhosting/release/node_modules/wydhosting/src/contracts.js:10:45)\n    at createLinuxPlan (file:///opt/wydhosting/release/node_modules/wydhosting/src/platform/linux/plan.js:36:4)\n    at file:///opt/wydhosting/release/qualification-registry.mjs:23:22 {\n  code: 'HOSTING.LINUX_LAYOUT'\n}\n\nNode.js v24.21.0\n"
+        },
+        {
+          "event": "TOTAL",
+          "passed": 0,
+          "failed": 1
+        }
+      ]
+    },
+    {
+      "log": "wydgit-i56-integrated-second.log",
+      "sha256": "b7d024c8ca81278929b1c69da618bd16caf0b48b96fa97e357e3646f51f56e7a",
+      "events": [
+        {
+          "event": "canonical-registry-plan",
+          "revision": 1,
+          "digest": "60258395d4342aad8de559ff85bd897653cf14880cc4cff4917cc4dd8831479d",
+          "policyRevision": "f3121d0f973aa53131d184357dc11fdd6742750a039321b767453f270adcc0f9",
+          "apps": [
+            "i56-a",
+            "i56-b"
+          ]
+        },
+        {
+          "event": "FAIL",
+          "name": "installed canonical provider service starts",
+          "error": "['/usr/bin/systemctl', 'start', 'wydhosting-provider.service']: 1: Job for wydhosting-provider.service failed because the control process exited with error code.\nSee \"systemctl status wydhosting-provider.service\" and \"journalctl -xeu wydhosting-provider.service\" for details.\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "edge -> canonical provider -> worker tenant a",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "edge -> canonical provider -> worker tenant b",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "provider rejects unknown hostname",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "provider rejects spoofed headers Forwarded",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "provider rejects spoofed headers X-Forwarded-For",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "provider rejects spoofed headers X-Forwarded-Port",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "provider rejects spoofed headers X-Forwarded-Host",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "provider rejects spoofed headers X-Forwarded-Proto",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "provider rejects spoofed headers Connection",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "HEAD status and empty response",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "unknown application route preserves 404",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "unauthorized local identity cannot reach provider socket",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 3, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"<string>\", line 5, in <module>\nAssertionError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FATAL",
+          "error": "[Errno 2] No such file or directory: '/var/lib/wydhosting/broker/lease-69816689df4526f1283221607d19e1fb.json'"
+        },
+        {
+          "event": "TOTAL",
+          "passed": 30,
+          "failed": 14
+        }
+      ]
+    },
+    {
+      "log": "wydgit-i56-integrated-third.log",
+      "sha256": "5e9122c4fd9a1940e8c3c99248443dd43f85e65c3b44afd4ef865e000546319b",
+      "events": [
+        {
+          "event": "canonical-registry-plan",
+          "revision": 1,
+          "digest": "60258395d4342aad8de559ff85bd897653cf14880cc4cff4917cc4dd8831479d",
+          "policyRevision": "f3121d0f973aa53131d184357dc11fdd6742750a039321b767453f270adcc0f9",
+          "apps": [
+            "i56-a",
+            "i56-b"
+          ]
+        },
+        {
+          "event": "TOTAL",
+          "passed": 52,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "log": "wydgit-i56-integrated-mac-eighteenth.log",
+      "sha256": "eefbb4cad650573cde071aa7adbdc290de1b0cbf9b4c20f1c7cb46e381840bb5",
+      "events": [
+        {
+          "event": "install-selinux-module",
+          "module": "wydhosting_worker",
+          "sha256": "110b527540111aef92aec8d5990c91fe2daf4d4a8ffa48ea45ed208a542d52f0"
+        },
+        {
+          "event": "canonical-registry-plan",
+          "revision": 1,
+          "digest": "60258395d4342aad8de559ff85bd897653cf14880cc4cff4917cc4dd8831479d",
+          "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+          "apps": [
+            "i56-a",
+            "i56-b"
+          ]
+        },
+        {
+          "event": "bounded-integrated-memory-pressure",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-c7129bc2f0ec4149b723f0a71ca05f3a.service",
+          "cgroupMemoryMax": 268435456,
+          "helperAddressSpaceMax": 536870912,
+          "helperAllocationCeiling": 402653184,
+          "helperCpuSeconds": 3,
+          "deadlineSeconds": 15,
+          "helperSignal": "SIGKILL"
+        },
+        {
+          "event": "TOTAL",
+          "passed": 76,
+          "failed": 0,
+          "categories": {
+            "privileged-broker-dac": {
+              "passed": 30,
+              "failed": 0
+            },
+            "integrated-service": {
+              "passed": 19,
+              "failed": 0
+            },
+            "selinux-mac": {
+              "passed": 1,
+              "failed": 0
+            },
+            "proxy-loopback": {
+              "passed": 10,
+              "failed": 0
+            },
+            "service-recovery": {
+              "passed": 15,
+              "failed": 0
+            },
+            "integrated-resource": {
+              "passed": 1,
+              "failed": 0
+            }
+          },
+          "productionQualified": false
+        }
+      ]
+    },
+    {
+      "log": "wydgit-i56-integrated-mac-eighth.log",
+      "sha256": "d65b3686e41aa8b01d958744d0bed38e45c95def45d67efbc66040efd23d1ecb",
+      "events": [
+        {
+          "event": "install-selinux-module",
+          "module": "wydhosting_worker",
+          "sha256": "c9ef307e55ebffbadad00232a35e15f472640ec9e8789f3b61abc7cd2b07ce8d"
+        },
+        {
+          "event": "canonical-registry-plan",
+          "revision": 1,
+          "digest": "60258395d4342aad8de559ff85bd897653cf14880cc4cff4917cc4dd8831479d",
+          "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+          "apps": [
+            "i56-a",
+            "i56-b"
+          ]
+        },
+        {
+          "event": "FAIL",
+          "name": "installed canonical provider service starts",
+          "error": "provider service failed; inspect journal and wyd_i56_diag audit key"
+        },
+        {
+          "event": "TOTAL",
+          "passed": 31,
+          "failed": 1
+        }
+      ]
+    },
+    {
+      "log": "wydgit-i56-integrated-mac-eleventh.log",
+      "sha256": "8c8bdd83e33d45d286155f7ec707514089be5a98fc601919f2c07afe7d1608ec",
+      "events": [
+        {
+          "event": "install-selinux-module",
+          "module": "wydhosting_worker",
+          "sha256": "95dea64024ee9c9125b45600b107a02f174d0e5fe4b7a4362855f2a5c068966a"
+        },
+        {
+          "event": "canonical-registry-plan",
+          "revision": 1,
+          "digest": "60258395d4342aad8de559ff85bd897653cf14880cc4cff4917cc4dd8831479d",
+          "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+          "apps": [
+            "i56-a",
+            "i56-b"
+          ]
+        },
+        {
+          "event": "FATAL",
+          "error": "[Errno 2] No such file or directory: '/usr/bin/openssl'"
+        },
+        {
+          "event": "TOTAL",
+          "passed": 43,
+          "failed": 1
+        }
+      ]
+    },
+    {
+      "log": "wydgit-i56-integrated-mac-fifteenth.log",
+      "sha256": "7c66ffe5e78f0123105dfcbcce8a4652231095b27f86d17c11116634f8fedf26",
+      "events": [
+        {
+          "event": "install-selinux-module",
+          "module": "wydhosting_worker",
+          "sha256": "d8ae12735dd8d93226d344ee68b03302503a6e9b04c77c448834d2a01f19ffca"
+        },
+        {
+          "event": "canonical-registry-plan",
+          "revision": 1,
+          "digest": "60258395d4342aad8de559ff85bd897653cf14880cc4cff4917cc4dd8831479d",
+          "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+          "apps": [
+            "i56-a",
+            "i56-b"
+          ]
+        },
+        {
+          "event": "FAIL",
+          "name": "installed canonical provider service starts",
+          "error": "provider service failed; inspect journal and wyd_i56_diag audit key"
+        },
+        {
+          "event": "TOTAL",
+          "passed": 31,
+          "failed": 1
+        }
+      ]
+    },
+    {
+      "log": "wydgit-i56-integrated-mac-fifth.log",
+      "sha256": "9109cf0a86aa91eaf9df6b8d6bf4bf9ab63a91433a207f208842e69868061369",
+      "events": [
+        {
+          "event": "install-selinux-module",
+          "module": "wydhosting_worker",
+          "sha256": "b712164124284c818d11b740b9ee1895e1285593a0733cb2982a6fd288628028"
+        },
+        {
+          "event": "canonical-registry-plan",
+          "revision": 1,
+          "digest": "60258395d4342aad8de559ff85bd897653cf14880cc4cff4917cc4dd8831479d",
+          "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+          "apps": [
+            "i56-a",
+            "i56-b"
+          ]
+        },
+        {
+          "event": "FAIL",
+          "name": "installed canonical provider service starts",
+          "error": "bounded wait expired"
+        },
+        {
+          "event": "FAIL",
+          "name": "edge -> canonical provider -> worker tenant a",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "edge -> canonical provider -> worker tenant b",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "provider rejects unknown hostname",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "provider rejects spoofed headers Forwarded",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "provider rejects spoofed headers X-Forwarded-For",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "provider rejects spoofed headers X-Forwarded-Port",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "provider rejects spoofed headers X-Forwarded-Host",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "provider rejects spoofed headers X-Forwarded-Proto",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "provider rejects spoofed headers Connection",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "HEAD status and empty response",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "unknown application route preserves 404",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "unauthorized local identity cannot reach provider socket",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 3, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"<string>\", line 5, in <module>\nAssertionError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FATAL",
+          "error": "[Errno 2] No such file or directory: '/var/lib/wydhosting/broker/lease-69816689df4526f1283221607d19e1fb.json'"
+        },
+        {
+          "event": "TOTAL",
+          "passed": 30,
+          "failed": 14
+        }
+      ]
+    },
+    {
+      "log": "wydgit-i56-integrated-mac-first.log",
+      "sha256": "cdbfddfdf0a8fb34c7377fb188805f71ed87d21f6fda31c7042f791532d90e0e",
+      "events": [
+        {
+          "event": "install-selinux-module",
+          "module": "wydhosting_worker",
+          "sha256": "e1c45e7d32ed8e33d579b5e4f7ff5e2d05e022c969b380bafd05363901b414eb"
+        },
+        {
+          "event": "canonical-registry-plan",
+          "revision": 1,
+          "digest": "60258395d4342aad8de559ff85bd897653cf14880cc4cff4917cc4dd8831479d",
+          "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+          "apps": [
+            "i56-a",
+            "i56-b"
+          ]
+        },
+        {
+          "event": "FATAL",
+          "error": "['/usr/bin/systemctl', 'start', 'wydhosting-broker.socket']: 1: Job failed. See \"journalctl -xe\" for details.\n"
+        },
+        {
+          "event": "TOTAL",
+          "passed": 0,
+          "failed": 1
+        }
+      ]
+    },
+    {
+      "log": "wydgit-i56-integrated-mac-fourteenth.log",
+      "sha256": "a7da6452800cd2822cb1594b7eb678f76139e20caf056348cc24d8a63b17fbe5",
+      "events": [
+        {
+          "event": "install-selinux-module",
+          "module": "wydhosting_worker",
+          "sha256": "49a21af32013e9312cb6c2a08213381be4b7ef7765bc4517ea844106c1fd4a86"
+        },
+        {
+          "event": "canonical-registry-plan",
+          "revision": 1,
+          "digest": "60258395d4342aad8de559ff85bd897653cf14880cc4cff4917cc4dd8831479d",
+          "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+          "apps": [
+            "i56-a",
+            "i56-b"
+          ]
+        },
+        {
+          "event": "FAIL",
+          "name": "installed canonical provider service starts",
+          "error": "provider service failed; inspect journal and wyd_i56_diag audit key"
+        },
+        {
+          "event": "TOTAL",
+          "passed": 31,
+          "failed": 1
+        }
+      ]
+    },
+    {
+      "log": "wydgit-i56-integrated-mac-fourth.log",
+      "sha256": "27f9334d8e1a5d697798db0b5c112b16164ffd6ad7f71c9c1232b01e7b831b67",
+      "events": [
+        {
+          "event": "install-selinux-module",
+          "module": "wydhosting_worker",
+          "sha256": "a0bcd2ca62d9d5dec7c89e04fe2cc0483dd26f85bc5083ca1b5e8e9bb2a89499"
+        },
+        {
+          "event": "canonical-registry-plan",
+          "revision": 1,
+          "digest": "60258395d4342aad8de559ff85bd897653cf14880cc4cff4917cc4dd8831479d",
+          "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+          "apps": [
+            "i56-a",
+            "i56-b"
+          ]
+        },
+        {
+          "event": "FAIL",
+          "name": "installed canonical provider service starts",
+          "error": "['/usr/bin/systemctl', 'start', 'wydhosting-provider.service']: 1: Job for wydhosting-provider.service failed because the control process exited with error code.\nSee \"systemctl status wydhosting-provider.service\" and \"journalctl -xeu wydhosting-provider.service\" for details.\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "edge -> canonical provider -> worker tenant a",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "edge -> canonical provider -> worker tenant b",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "provider rejects unknown hostname",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "provider rejects spoofed headers Forwarded",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "provider rejects spoofed headers X-Forwarded-For",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "provider rejects spoofed headers X-Forwarded-Port",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "provider rejects spoofed headers X-Forwarded-Host",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "provider rejects spoofed headers X-Forwarded-Proto",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "provider rejects spoofed headers Connection",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "HEAD status and empty response",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "unknown application route preserves 404",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FAIL",
+          "name": "unauthorized local identity cannot reach provider socket",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 3, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"<string>\", line 5, in <module>\nAssertionError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FATAL",
+          "error": "[Errno 2] No such file or directory: '/var/lib/wydhosting/broker/lease-69816689df4526f1283221607d19e1fb.json'"
+        },
+        {
+          "event": "TOTAL",
+          "passed": 30,
+          "failed": 14
+        }
+      ]
+    },
+    {
+      "log": "wydgit-i56-integrated-mac-ninth.log",
+      "sha256": "ba2ade48664980af1b52c7de90effdac10667dec1193c9511b4f574e2ba3fd8b",
+      "events": [
+        {
+          "event": "FATAL",
+          "error": "['/usr/sbin/semodule', '-i', '/opt/wydhosting/release/node_modules/wydhosting/selinux/wydhosting_worker.cil']: 1: Type wydhosting_control_t is invalid for role object_r\nInvalid context\nInvalid filecon at /var/lib/selinux/targeted/tmp/modules/400/wydhosting_worker/cil:93\nFailed to verify cil database\nFailed to verify cil database\nPost process failed\n/usr/sbin/semodule:  Failed!\n"
+        },
+        {
+          "event": "TOTAL",
+          "passed": 0,
+          "failed": 1
+        }
+      ]
+    },
+    {
+      "log": "wydgit-i56-integrated-mac-second.log",
+      "sha256": "caf368e38002ff03408a033f29f7192bc3c614cb75c5a57b446edbcc838365c3",
+      "events": [
+        {
+          "event": "FATAL",
+          "error": "preexisting runtime units"
+        },
+        {
+          "event": "TOTAL",
+          "passed": 0,
+          "failed": 1
+        }
+      ]
+    },
+    {
+      "log": "wydgit-i56-integrated-mac-seventeenth.log",
+      "sha256": "6e5f6a3a337b9a5b6f0a61ea60d603bcb510e861355fe0797646338f6398fd3c",
+      "events": [
+        {
+          "event": "install-selinux-module",
+          "module": "wydhosting_worker",
+          "sha256": "110b527540111aef92aec8d5990c91fe2daf4d4a8ffa48ea45ed208a542d52f0"
+        },
+        {
+          "event": "canonical-registry-plan",
+          "revision": 1,
+          "digest": "60258395d4342aad8de559ff85bd897653cf14880cc4cff4917cc4dd8831479d",
+          "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+          "apps": [
+            "i56-a",
+            "i56-b"
+          ]
+        },
+        {
+          "event": "bounded-integrated-memory-pressure",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-45303d3068e94506b5fee0bfc17477d5.service",
+          "cgroupMemoryMax": 268435456,
+          "helperAddressSpaceMax": 536870912,
+          "helperAllocationCeiling": 402653184,
+          "helperCpuSeconds": 3,
+          "deadlineSeconds": 15,
+          "helperSignal": "SIGKILL"
+        },
+        {
+          "event": "FAIL",
+          "name": "provider restart from durable stopped leases",
+          "error": "provider service failed; inspect journal and wyd_i56_diag audit key"
+        },
+        {
+          "event": "FAIL",
+          "name": "provider restart restores correct tenant response",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nFileNotFoundError: [Errno 2] No such file or directory\n"
+        },
+        {
+          "event": "FATAL",
+          "error": "['/usr/bin/systemctl', 'kill', '--kill-whom=main']: 1: Failed to kill unit wydhosting-broker@18-21971-61050.service: Unit wydhosting-broker@18-21971-61050.service not loaded.\n"
+        },
+        {
+          "event": "TOTAL",
+          "passed": 67,
+          "failed": 3
+        }
+      ]
+    },
+    {
+      "log": "wydgit-i56-integrated-mac-seventh.log",
+      "sha256": "a4cf6492cac5afff7ed0333f05b3f0a4de124f23ee4ec82b8dd9d9f3ec7fa9b1",
+      "events": [
+        {
+          "event": "install-selinux-module",
+          "module": "wydhosting_worker",
+          "sha256": "41a1b65ee3c3b799d58098867fb608e43052e8872da5b81f5f1b398b3fde9937"
+        },
+        {
+          "event": "canonical-registry-plan",
+          "revision": 1,
+          "digest": "60258395d4342aad8de559ff85bd897653cf14880cc4cff4917cc4dd8831479d",
+          "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+          "apps": [
+            "i56-a",
+            "i56-b"
+          ]
+        },
+        {
+          "event": "FAIL",
+          "name": "installed canonical provider service starts",
+          "error": "provider service failed; inspect journal and wyd_i56_diag audit key"
+        },
+        {
+          "event": "TOTAL",
+          "passed": 31,
+          "failed": 1
+        }
+      ]
+    },
+    {
+      "log": "wydgit-i56-integrated-mac-sixteenth.log",
+      "sha256": "3e373dc3a3604d9c49a7d7812ce4071ef04f3adfc73b27fbfc4cf89849e15ceb",
+      "events": [
+        {
+          "event": "install-selinux-module",
+          "module": "wydhosting_worker",
+          "sha256": "110b527540111aef92aec8d5990c91fe2daf4d4a8ffa48ea45ed208a542d52f0"
+        },
+        {
+          "event": "canonical-registry-plan",
+          "revision": 1,
+          "digest": "60258395d4342aad8de559ff85bd897653cf14880cc4cff4917cc4dd8831479d",
+          "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+          "apps": [
+            "i56-a",
+            "i56-b"
+          ]
+        },
+        {
+          "event": "TOTAL",
+          "passed": 67,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "log": "wydgit-i56-integrated-mac-sixth.log",
+      "sha256": "efc3f5a6848efa5716dc61c726abbc2b981a16a2be8229f79098798da3518fb7",
+      "events": [
+        {
+          "event": "install-selinux-module",
+          "module": "wydhosting_worker",
+          "sha256": "41a1b65ee3c3b799d58098867fb608e43052e8872da5b81f5f1b398b3fde9937"
+        },
+        {
+          "event": "canonical-registry-plan",
+          "revision": 1,
+          "digest": "60258395d4342aad8de559ff85bd897653cf14880cc4cff4917cc4dd8831479d",
+          "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+          "apps": [
+            "i56-a",
+            "i56-b"
+          ]
+        },
+        {
+          "event": "FATAL",
+          "error": "[Errno 2] No such file or directory: '/usr/sbin/auditctl'"
+        },
+        {
+          "event": "TOTAL",
+          "passed": 30,
+          "failed": 1
+        }
+      ]
+    },
+    {
+      "log": "wydgit-i56-integrated-mac-tenth.log",
+      "sha256": "680fa45d8d85f86de32ea3c604e07af0c77303bfb7e99a75d71ac9c995dcf426",
+      "events": [
+        {
+          "event": "install-selinux-module",
+          "module": "wydhosting_worker",
+          "sha256": "32673f56660b7d17291c38a799ac7d7ce3ebcb2f6942f351b451500594916669"
+        },
+        {
+          "event": "canonical-registry-plan",
+          "revision": 1,
+          "digest": "60258395d4342aad8de559ff85bd897653cf14880cc4cff4917cc4dd8831479d",
+          "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+          "apps": [
+            "i56-a",
+            "i56-b"
+          ]
+        },
+        {
+          "event": "FAIL",
+          "name": "installed canonical provider service starts",
+          "error": "provider service failed; inspect journal and wyd_i56_diag audit key"
+        },
+        {
+          "event": "TOTAL",
+          "passed": 31,
+          "failed": 1
+        }
+      ]
+    },
+    {
+      "log": "wydgit-i56-integrated-mac-third.log",
+      "sha256": "9ad9a8de17b17de7c2e87d60d11459ae9340aac8f0f82ef2aef80c6fd6568eda",
+      "events": [
+        {
+          "event": "install-selinux-module",
+          "module": "wydhosting_worker",
+          "sha256": "0e5dac5b3b9340feb6915fab55d370062ff5f21b315d6280e78c650cbb7c376f"
+        },
+        {
+          "event": "canonical-registry-plan",
+          "revision": 1,
+          "digest": "60258395d4342aad8de559ff85bd897653cf14880cc4cff4917cc4dd8831479d",
+          "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+          "apps": [
+            "i56-a",
+            "i56-b"
+          ]
+        },
+        {
+          "event": "FAIL",
+          "name": "real broker ensure-account i56-a",
+          "error": "Traceback (most recent call last):\n  File \"<string>\", line 5, in <module>\nConnectionResetError: [Errno 104] Connection reset by peer\n"
+        },
+        {
+          "event": "FATAL",
+          "error": "\"getpwnam(): name not found: 'wyd-69816689df4526f12832'\""
+        },
+        {
+          "event": "TOTAL",
+          "passed": 0,
+          "failed": 2
+        }
+      ]
+    },
+    {
+      "log": "wydgit-i56-integrated-mac-thirteenth.log",
+      "sha256": "cf9cae91661819df54846ee5916249b020c80aa64d915c2f74bc7a8c27690abd",
+      "events": [
+        {
+          "event": "install-selinux-module",
+          "module": "wydhosting_worker",
+          "sha256": "42defe169758434888f6f188b5fb7c8216bcde5d2b7ff86be4c243fe7708f853"
+        },
+        {
+          "event": "canonical-registry-plan",
+          "revision": 1,
+          "digest": "60258395d4342aad8de559ff85bd897653cf14880cc4cff4917cc4dd8831479d",
+          "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+          "apps": [
+            "i56-a",
+            "i56-b"
+          ]
+        },
+        {
+          "event": "FAIL",
+          "name": "Caddy rejects unknown HTTP hostname",
+          "error": "false result"
+        },
+        {
+          "event": "FAIL",
+          "name": "provider refuses stale supervisor ownership after SIGKILL",
+          "error": "false result"
+        },
+        {
+          "event": "TOTAL",
+          "passed": 65,
+          "failed": 2
+        }
+      ]
+    },
+    {
+      "log": "wydgit-i56-integrated-mac-twelfth.log",
+      "sha256": "221440590f29b5bd334de94680d4a5f0cfe5623e0a8f6d7a95990c6d16aaa0a4",
+      "events": [
+        {
+          "event": "install-selinux-module",
+          "module": "wydhosting_worker",
+          "sha256": "95dea64024ee9c9125b45600b107a02f174d0e5fe4b7a4362855f2a5c068966a"
+        },
+        {
+          "event": "canonical-registry-plan",
+          "revision": 1,
+          "digest": "60258395d4342aad8de559ff85bd897653cf14880cc4cff4917cc4dd8831479d",
+          "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+          "apps": [
+            "i56-a",
+            "i56-b"
+          ]
+        },
+        {
+          "event": "FATAL",
+          "error": "[Errno 2] No such file or directory: '/usr/bin/ss'"
+        },
+        {
+          "event": "TOTAL",
+          "passed": 44,
+          "failed": 1
+        }
+      ]
+    },
+    {
+      "log": "wydgit-i56-integrated-vm-final.log",
+      "sha256": "50dd935583fb2a1bbf2993fcc1eccbc68b5bb539f6f1eb987a10dea517c1513d",
+      "events": [
+        {
+          "event": "install-selinux-module",
+          "module": "wydhosting_worker",
+          "sha256": "ebedec5f1e47ab68c335c4e15cb46fa9ab778bcc51a723d830c4f8f937a50aec"
+        },
+        {
+          "event": "canonical-registry-plan",
+          "revision": 1,
+          "digest": "60258395d4342aad8de559ff85bd897653cf14880cc4cff4917cc4dd8831479d",
+          "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+          "apps": [
+            "i56-a",
+            "i56-b"
+          ]
+        },
+        {
+          "event": "FAIL",
+          "category": "proxy-loopback",
+          "name": "Caddy forwards bounded bodies and preserves application method rejection",
+          "error": ""
+        },
+        {
+          "event": "bounded-integrated-memory-pressure",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-5ec2ab15ebfe45aa87b9c29fb782e358.service",
+          "cgroupMemoryMax": 268435456,
+          "helperAddressSpaceMax": 536870912,
+          "helperAllocationCeiling": 402653184,
+          "helperCpuSeconds": 3,
+          "deadlineSeconds": 15,
+          "helperSignal": "SIGKILL"
+        },
+        {
+          "event": "TOTAL",
+          "passed": 81,
+          "failed": 1,
+          "categories": {
+            "privileged-broker-dac": {
+              "passed": 30,
+              "failed": 0
+            },
+            "selinux-mac": {
+              "passed": 2,
+              "failed": 0
+            },
+            "integrated-service": {
+              "passed": 23,
+              "failed": 0
+            },
+            "proxy-loopback": {
+              "passed": 10,
+              "failed": 1
+            },
+            "service-recovery": {
+              "passed": 15,
+              "failed": 0
+            },
+            "integrated-resource": {
+              "passed": 1,
+              "failed": 0
+            }
+          },
+          "productionQualified": false
+        }
+      ]
+    },
+    {
+      "log": "wydgit-i56-integrated-vm-delivery.log",
+      "sha256": "7ed6d08447d1a93872eb28ac9e10ca99908043747c32b578a48cb104d9410a37",
+      "events": [
+        {
+          "event": "install-selinux-module",
+          "module": "wydhosting_worker",
+          "sha256": "f5426c41a82e4aba4788178c5f6d47e50d2397cadc34575bc18f8da6a7384cad"
+        },
+        {
+          "event": "canonical-registry-plan",
+          "revision": 1,
+          "digest": "60258395d4342aad8de559ff85bd897653cf14880cc4cff4917cc4dd8831479d",
+          "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+          "apps": [
+            "i56-a",
+            "i56-b"
+          ]
+        },
+        {
+          "event": "bounded-integrated-memory-pressure",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-7c3d84759d5e4341a44994fd81c6d8e0.service",
+          "cgroupMemoryMax": 268435456,
+          "helperAddressSpaceMax": 536870912,
+          "helperAllocationCeiling": 402653184,
+          "helperCpuSeconds": 3,
+          "deadlineSeconds": 15,
+          "helperSignal": "SIGKILL"
+        },
+        {
+          "event": "TOTAL",
+          "passed": 82,
+          "failed": 0,
+          "categories": {
+            "privileged-broker-dac": {
+              "passed": 30,
+              "failed": 0
+            },
+            "selinux-mac": {
+              "passed": 2,
+              "failed": 0
+            },
+            "integrated-service": {
+              "passed": 23,
+              "failed": 0
+            },
+            "proxy-loopback": {
+              "passed": 11,
+              "failed": 0
+            },
+            "service-recovery": {
+              "passed": 15,
+              "failed": 0
+            },
+            "integrated-resource": {
+              "passed": 1,
+              "failed": 0
+            }
+          },
+          "productionQualified": false
+        }
+      ]
+    },
+    {
+      "log": "wydgit-i56-integrated-vm-reviewed.log",
+      "sha256": "fb58d33c6f33db211b894ffd8961c07649a099e7243d8f609e49d4090f507175",
+      "events": [
+        {
+          "event": "baseline",
+          "kernel": "6.12.0-211.65.1.el10_2.x86_64",
+          "boot": "c77a65af-95bc-480d-bbe3-47f613b6b005",
+          "selinux": "enforcing"
+        },
+        {
+          "event": "mkdir",
+          "path": "/opt/wydhosting",
+          "mode": "0o755",
+          "uid": 0
+        },
+        {
+          "event": "copy-release",
+          "path": "/opt/wydhosting/release",
+          "manifestSHA256": "43016f8ce8a1ecd78c05432aa18fd5f7ebd97292978892b90f62d95bb4d97d8a"
+        },
+        {
+          "event": "mkdir",
+          "path": "/var/lib/wydhosting",
+          "mode": "0o755",
+          "uid": 0
+        },
+        {
+          "event": "mkdir",
+          "path": "/etc/wydhosting",
+          "mode": "0o755",
+          "uid": 0
+        },
+        {
+          "event": "mkdir",
+          "path": "/run/wydhosting",
+          "mode": "0o755",
+          "uid": 0
+        },
+        {
+          "event": "mkdir",
+          "path": "/var/lib/wydhosting/accounts",
+          "mode": "0o755",
+          "uid": 0
+        },
+        {
+          "event": "mkdir",
+          "path": "/var/lib/wydhosting/uploads",
+          "mode": "0o755",
+          "uid": 0
+        },
+        {
+          "event": "mkdir",
+          "path": "/var/lib/wydhosting/pools",
+          "mode": "0o755",
+          "uid": 0
+        },
+        {
+          "event": "mkdir",
+          "path": "/var/lib/wydhosting/broker",
+          "mode": "0o700",
+          "uid": 0
+        },
+        {
+          "event": "mkdir",
+          "path": "/var/lib/wydhosting/provider",
+          "mode": "0o700",
+          "uid": 0
+        },
+        {
+          "event": "mkdir",
+          "path": "/run/wydhosting/workers",
+          "mode": "0o711",
+          "uid": 0
+        },
+        {
+          "event": "create-provider",
+          "name": "wyd-i56-provider",
+          "uid": 61050,
+          "gid": 61050,
+          "shell": "/usr/sbin/nologin",
+          "password": "locked"
+        },
+        {
+          "event": "mkdir",
+          "path": "/var/lib/wydhosting/uploads/i56-a",
+          "mode": "0o755",
+          "uid": 0
+        },
+        {
+          "event": "mkdir",
+          "path": "/var/lib/wydhosting/uploads/i56-b",
+          "mode": "0o755",
+          "uid": 0
+        },
+        {
+          "event": "install-selinux-module",
+          "module": "wydhosting_worker",
+          "sha256": "f5426c41a82e4aba4788178c5f6d47e50d2397cadc34575bc18f8da6a7384cad"
+        },
+        {
+          "event": "canonical-registry-plan",
+          "revision": 1,
+          "digest": "60258395d4342aad8de559ff85bd897653cf14880cc4cff4917cc4dd8831479d",
+          "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+          "apps": [
+            "i56-a",
+            "i56-b"
+          ]
+        },
+        {
+          "event": "install-unit",
+          "path": "/run/systemd/system/wydhosting-broker.socket"
+        },
+        {
+          "event": "install-unit",
+          "path": "/run/systemd/system/wydhosting-broker@.service"
+        },
+        {
+          "event": "install-unit",
+          "path": "/run/systemd/system/wydhosting-broker.slice"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "real broker ensure-account i56-a",
+          "evidence": {
+            "ok": true,
+            "state": "verification-required"
+          }
+        },
+        {
+          "event": "broker-created-account",
+          "name": "wyd-69816689df4526f12832",
+          "uid": 61051
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "real broker stage i56-a",
+          "evidence": {
+            "ok": true,
+            "state": "verification-required"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "real broker ensure-account i56-b",
+          "evidence": {
+            "ok": true,
+            "state": "verification-required"
+          }
+        },
+        {
+          "event": "broker-created-account",
+          "name": "wyd-08f155da2e286dcb3a87",
+          "uid": 61052
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "real broker stage i56-b",
+          "evidence": {
+            "ok": true,
+            "state": "verification-required"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "same UID wrong primary GID kernel authorization",
+          "evidence": {
+            "ok": false,
+            "code": "BROKER.UNAUTHORIZED"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "wrong UID rejected using actual SO_PEERCRED",
+          "evidence": {
+            "ok": false,
+            "code": "BROKER.UNAUTHORIZED"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "tenant 61051 broker socket DAC denial",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "tenant 61052 broker socket DAC denial",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "broker rejects retire {}",
+          "evidence": {
+            "ok": false,
+            "code": "BROKER.UNAUTHORIZED"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "broker rejects cleanup {}",
+          "evidence": {
+            "ok": false,
+            "code": "BROKER.UNAUTHORIZED"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "broker rejects stage {'path': '/etc'}",
+          "evidence": {
+            "ok": false,
+            "code": "BROKER.INVALID"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "broker rejects reconcile {'unit': 'sshd.service'}",
+          "evidence": {
+            "ok": false,
+            "code": "BROKER.INVALID"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "broker rejects foreign pool/traversal",
+          "evidence": {
+            "ok": false,
+            "code": "BROKER.UNAUTHORIZED"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "broker malformed {\"a\":1,\"a\":2}",
+          "evidence": {
+            "ok": false,
+            "code": "BROKER.INVALID"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "broker malformed {",
+          "evidence": {
+            "ok": false,
+            "code": "BROKER.INVALID"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "broker malformed {\"constructor\":{}}",
+          "evidence": {
+            "ok": false,
+            "code": "BROKER.INVALID"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "B authorized file read/write",
+          "evidence": "exit 0"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "A cannot read B private file",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "A cannot modify B private file",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "tenant 61051 cannot read approval",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "tenant 61051 cannot write sealed code",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "tenant 61052 cannot read approval",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "tenant 61052 cannot write sealed code",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "A symlink to B denied by kernel",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "A traversal to B denied by kernel",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "broker rejects symlinked approved source",
+          "evidence": {
+            "ok": false,
+            "code": "BROKER.PATH"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "selinux-mac",
+          "name": "enforcing broker refuses a legacy unconfined launch",
+          "evidence": {
+            "ok": false,
+            "code": "BROKER.SELINUX_POLICY"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "B authorized private socket connect",
+          "evidence": "exit 0"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "A cannot connect B private socket",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "A cannot signal B process",
+          "evidence": "EPERM"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "B authorized process signal 0",
+          "evidence": "exit 0"
+        },
+        {
+          "event": "create-edge",
+          "uid": 61053,
+          "gid": 61053
+        },
+        {
+          "event": "install-unit",
+          "path": "/run/systemd/system/wydhosting-provider.service"
+        },
+        {
+          "event": "edge-socket-group",
+          "uid": 61050,
+          "gid": 61053,
+          "mode": "0o660"
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "installed canonical provider service starts",
+          "evidence": {
+            "pid": "27406",
+            "context": "system_u:system_r:wydhosting_provider_t:s0"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "edge -> canonical provider -> worker tenant a",
+          "evidence": {
+            "status": 200,
+            "tenantMarker": "Qualification tenant i56-a"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "edge -> canonical provider -> worker tenant b",
+          "evidence": {
+            "status": 200,
+            "tenantMarker": "Qualification tenant i56-b"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "provider rejects unknown hostname",
+          "evidence": {
+            "status": 421,
+            "tenantMarker": null
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "provider rejects spoofed headers Forwarded",
+          "evidence": {
+            "status": 400,
+            "tenantMarker": null
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "provider rejects spoofed headers X-Forwarded-For",
+          "evidence": {
+            "status": 400,
+            "tenantMarker": null
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "provider rejects spoofed headers X-Forwarded-Port",
+          "evidence": {
+            "status": 400,
+            "tenantMarker": null
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "provider rejects spoofed headers X-Forwarded-Host",
+          "evidence": {
+            "status": 400,
+            "tenantMarker": null
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "provider rejects spoofed headers X-Forwarded-Proto",
+          "evidence": {
+            "status": 400,
+            "tenantMarker": null
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "provider rejects spoofed headers Connection",
+          "evidence": {
+            "status": 400,
+            "tenantMarker": null
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "HEAD status and empty response",
+          "evidence": {
+            "status": 200,
+            "tenantMarker": null
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "unknown application route preserves 404",
+          "evidence": {
+            "status": 404,
+            "tenantMarker": null
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "unauthorized local identity cannot reach provider socket",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "integrated service identity wydhosting-pool-69816689df4526f1283221607d19e1fb-3f56bafa936f44cfb5fa3ba5f0810b41.service",
+          "evidence": {
+            "worker": {
+              "CapabilityBoundingSet": "",
+              "ProtectControlGroups": "yes",
+              "ProtectSystem": "strict",
+              "NoNewPrivileges": "yes",
+              "RestrictSUIDSGID": "yes",
+              "RestrictNamespaces": "yes"
+            },
+            "broker": {
+              "CapabilityBoundingSet": "cap_chown cap_dac_override cap_fowner cap_setgid cap_setuid cap_audit_write",
+              "ProtectControlGroups": "yes",
+              "ProtectSystem": "strict",
+              "NoNewPrivileges": "yes",
+              "RestrictSUIDSGID": "no",
+              "RestrictNamespaces": "yes"
+            },
+            "workerSELinux": "system_u:system_r:wydhosting_worker_t:s0:c51"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "integrated cgroup limits i56-a",
+          "evidence": {
+            "memory.max": "268435456",
+            "memory.swap.max": "0",
+            "cpu.max": "25000 100000",
+            "pids.max": "32",
+            "cgroup.procs": "27476"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "inherited control descriptor and no leaked regular files i56-a",
+          "evidence": {
+            "control": 3,
+            "openDescriptors": 20,
+            "leakedRegularFiles": 0
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "worker has no TCP listener i56-a",
+          "evidence": true
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "edge UID cannot bypass provider to worker i56-a",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "integrated-worker",
+          "state": "running",
+          "epoch": 1,
+          "generation": "3f56bafa-936f-44cf-b5fa-3ba5f0810b41",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-3f56bafa936f44cfb5fa3ba5f0810b41.service",
+          "base": "/var/lib/wydhosting/pools/i56-a/generations/1",
+          "invocation": "6fb74492f22546789955022959ceb2c4",
+          "cgroup": "/system.slice/wydhosting-pool-69816689df4526f1283221607d19e1fb-3f56bafa936f44cfb5fa3ba5f0810b41.service",
+          "unitHash": "2be595ce168e616c62a4b1539148c9a22d93fdd99da35578162361d372929f77",
+          "pid": 27476,
+          "startTime": "3036330"
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "integrated service identity wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-e54ece4e07804f82a6e3ebb85ef37de8.service",
+          "evidence": {
+            "worker": {
+              "CapabilityBoundingSet": "",
+              "ProtectControlGroups": "yes",
+              "ProtectSystem": "strict",
+              "NoNewPrivileges": "yes",
+              "RestrictSUIDSGID": "yes",
+              "RestrictNamespaces": "yes"
+            },
+            "broker": {
+              "CapabilityBoundingSet": "cap_chown cap_dac_override cap_fowner cap_setgid cap_setuid cap_audit_write",
+              "ProtectControlGroups": "yes",
+              "ProtectSystem": "strict",
+              "NoNewPrivileges": "yes",
+              "RestrictSUIDSGID": "no",
+              "RestrictNamespaces": "yes"
+            },
+            "workerSELinux": "system_u:system_r:wydhosting_worker_t:s0:c52"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "integrated cgroup limits i56-b",
+          "evidence": {
+            "memory.max": "268435456",
+            "memory.swap.max": "0",
+            "cpu.max": "25000 100000",
+            "pids.max": "32",
+            "cgroup.procs": "27566"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "inherited control descriptor and no leaked regular files i56-b",
+          "evidence": {
+            "control": 3,
+            "openDescriptors": 20,
+            "leakedRegularFiles": 0
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "worker has no TCP listener i56-b",
+          "evidence": true
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "edge UID cannot bypass provider to worker i56-b",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "integrated-worker",
+          "state": "running",
+          "epoch": 1,
+          "generation": "e54ece4e-0780-4f82-a6e3-ebb85ef37de8",
+          "unit": "wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-e54ece4e07804f82a6e3ebb85ef37de8.service",
+          "base": "/var/lib/wydhosting/pools/i56-b/generations/1",
+          "invocation": "24893323cdb94338bc7d685e9527984d",
+          "cgroup": "/system.slice/wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-e54ece4e07804f82a6e3ebb85ef37de8.service",
+          "unitHash": "0680501e4f4873dfce1b7b5381484c0064f6befa78d38d90afa6fb47afda94cf",
+          "pid": 27566,
+          "startTime": "3036562"
+        },
+        {
+          "event": "MAC-audit",
+          "lines": [
+            "type=AVC msg=audit(10/16/26 09:23:44.345:13081) : avc:  denied  { ioctl } for  pid=27566 comm=python3 path=/opt/wydhosting/release/node_modules/wydhosting/broker/worker.py dev=\"dm-0\" ino=101146452 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c52 tcontext=system_u:object_r:wydhosting_runtime_t:s0 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 09:23:44.430:13082) : avc:  denied  { ioctl } for  pid=27566 comm=python3 path=/opt/wydhosting/release/node_modules/wydhosting/broker/security.py dev=\"dm-0\" ino=101146451 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c52 tcontext=system_u:object_r:wydhosting_runtime_t:s0 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 09:23:44.449:13083) : avc:  denied  { search } for  pid=27566 comm=MainThread name=/ dev=\"cgroup2\" ino=1 scontext=system_u:system_r:wydhosting_worker_t:s0:c52 tcontext=system_u:object_r:cgroup_t:s0 tclass=dir permissive=0 ",
+            "type=AVC msg=audit(10/16/26 09:23:44.450:13084) : avc:  denied  { search } for  pid=27566 comm=MainThread name=/ dev=\"cgroup2\" ino=1 scontext=system_u:system_r:wydhosting_worker_t:s0:c52 tcontext=system_u:object_r:cgroup_t:s0 tclass=dir permissive=0 ",
+            "type=AVC msg=audit(10/16/26 09:23:56.733:13090) : avc:  denied  { read write } for  pid=27630 comm=python3 path=socket:[159606] dev=\"sockfs\" ino=159606 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:system_r:init_t:s0 tclass=unix_stream_socket permissive=0 ",
+            "type=AVC msg=audit(10/16/26 09:23:56.733:13090) : avc:  denied  { read write } for  pid=27630 comm=python3 path=socket:[159606] dev=\"sockfs\" ino=159606 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:system_r:init_t:s0 tclass=unix_stream_socket permissive=0 ",
+            "type=AVC msg=audit(10/16/26 09:23:56.833:13092) : avc:  denied  { ioctl } for  pid=27630 comm=python3 path=/var/lib/wydhosting/mac-canary/own dev=\"dm-0\" ino=101147815 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 09:23:56.833:13093) : avc:  denied  { ioctl } for  pid=27630 comm=python3 path=/var/lib/wydhosting/mac-canary/own dev=\"dm-0\" ino=101147815 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 09:23:56.833:13094) : avc:  denied  { read } for  pid=27630 comm=python3 name=foreign dev=\"dm-0\" ino=101147816 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 09:23:56.833:13095) : avc:  denied  { write } for  pid=27630 comm=python3 name=foreign dev=\"dm-0\" ino=101147816 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 09:23:56.833:13096) : avc:  denied  { relabelfrom } for  pid=27630 comm=python3 name=foreign dev=\"dm-0\" ino=101147816 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 09:23:56.833:13097) : avc:  denied  { ioctl } for  pid=27630 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=101147777 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 "
+          ]
+        },
+        {
+          "event": "PASS",
+          "category": "selinux-mac",
+          "name": "MAC same UID DAC-readable foreign category denied",
+          "evidence": {
+            "context": "system_u:system_r:wydhosting_worker_t:s0:c51",
+            "own": "read/write",
+            "read": "EACCES",
+            "write": "EACCES",
+            "relabel": "EACCES"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "proxy-loopback",
+          "name": "Caddy generated configuration validates",
+          "evidence": true
+        },
+        {
+          "event": "PASS",
+          "category": "proxy-loopback",
+          "name": "Caddy TLS -> provider -> confined worker a 127.0.0.1",
+          "evidence": {
+            "status": 200,
+            "address": "127.0.0.1",
+            "tenant": "a"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "proxy-loopback",
+          "name": "Caddy TLS -> provider -> confined worker a ::1",
+          "evidence": {
+            "status": 200,
+            "address": "::1",
+            "tenant": "a"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "proxy-loopback",
+          "name": "Caddy TLS -> provider -> confined worker b 127.0.0.1",
+          "evidence": {
+            "status": 200,
+            "address": "127.0.0.1",
+            "tenant": "b"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "proxy-loopback",
+          "name": "Caddy TLS -> provider -> confined worker b ::1",
+          "evidence": {
+            "status": 200,
+            "address": "::1",
+            "tenant": "b"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "proxy-loopback",
+          "name": "Caddy overwrites/strips forged forwarding headers",
+          "evidence": true
+        },
+        {
+          "event": "PASS",
+          "category": "proxy-loopback",
+          "name": "Caddy rejects unknown HTTP hostname",
+          "evidence": true
+        },
+        {
+          "event": "PASS",
+          "category": "proxy-loopback",
+          "name": "Caddy preserves HEAD and 404 status",
+          "evidence": true
+        },
+        {
+          "event": "PASS",
+          "category": "proxy-loopback",
+          "name": "Caddy forwards bounded bodies and preserves application method rejection",
+          "evidence": {
+            "HEAD": 200,
+            "headBytes": 0,
+            "POST": 405,
+            "PUT": 405,
+            "postBodyBytes": 26
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "proxy-loopback",
+          "name": "proxy retirement leaves canonical provider healthy",
+          "evidence": {
+            "status": 200,
+            "tenantMarker": null
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "proxy-loopback",
+          "name": "Caddy restart restores private routing",
+          "evidence": true
+        },
+        {
+          "event": "PASS",
+          "category": "service-recovery",
+          "name": "integrated worker SIGKILL replacement uses a fresh authorized lifetime",
+          "evidence": true
+        },
+        {
+          "event": "PASS",
+          "category": "service-recovery",
+          "name": "healthy canonical sibling survives SIGKILL",
+          "evidence": {
+            "status": 200,
+            "tenantMarker": "Qualification tenant i56-b"
+          }
+        },
+        {
+          "event": "bounded-integrated-memory-pressure",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-1cb6272b661341cfb66fd04d141b0ba3.service",
+          "cgroupMemoryMax": 268435456,
+          "helperAddressSpaceMax": 536870912,
+          "helperAllocationCeiling": 402653184,
+          "helperCpuSeconds": 3,
+          "deadlineSeconds": 15,
+          "helperSignal": "SIGKILL"
+        },
+        {
+          "event": "PASS",
+          "category": "service-recovery",
+          "name": "integrated worker OOM replacement uses a fresh authorized lifetime",
+          "evidence": true
+        },
+        {
+          "event": "PASS",
+          "category": "service-recovery",
+          "name": "healthy canonical sibling survives OOM",
+          "evidence": {
+            "status": 200,
+            "tenantMarker": "Qualification tenant i56-b"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-resource",
+          "name": "actual worker service records oom-kill",
+          "evidence": true
+        },
+        {
+          "event": "PASS",
+          "category": "service-recovery",
+          "name": "manager daemon-reload preserves active routing",
+          "evidence": {
+            "status": 200,
+            "tenantMarker": null
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "service-recovery",
+          "name": "provider graceful stop empties both worker cgroups",
+          "evidence": true
+        },
+        {
+          "event": "edge-socket-group",
+          "uid": 61050,
+          "gid": 61053,
+          "mode": "0o660"
+        },
+        {
+          "event": "PASS",
+          "category": "service-recovery",
+          "name": "provider restart from durable stopped leases",
+          "evidence": {
+            "pid": "27990",
+            "context": "system_u:system_r:wydhosting_provider_t:s0"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "service-recovery",
+          "name": "provider restart restores correct tenant response",
+          "evidence": {
+            "status": 200,
+            "tenantMarker": "Qualification tenant i56-b"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "service-recovery",
+          "name": "confined worker reaped independently after broker SIGKILL",
+          "evidence": true
+        },
+        {
+          "event": "PASS",
+          "category": "service-recovery",
+          "name": "sibling canonical route survives broker SIGKILL",
+          "evidence": {
+            "status": 200,
+            "tenantMarker": "Qualification tenant i56-b"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "service-recovery",
+          "name": "lost broker authority refuses stale route",
+          "evidence": {
+            "status": 503,
+            "tenantMarker": null
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "service-recovery",
+          "name": "explicit interrupted confined lease reconciliation",
+          "evidence": {
+            "ok": true,
+            "state": "verification-required"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "service-recovery",
+          "name": "provider SIGKILL independently retires both workers",
+          "evidence": true
+        },
+        {
+          "event": "PASS",
+          "category": "service-recovery",
+          "name": "provider refuses stale supervisor ownership after SIGKILL",
+          "evidence": true
+        },
+        {
+          "event": "integrated-limitations",
+          "caddy": "loopback-only",
+          "externalNetwork": "not-executed",
+          "reboot": "not-executed",
+          "mac": "provider-and-worker-MCS; broker-and-edge-unconfined",
+          "recovery": "stale-lock-requires-operator-review"
+        },
+        {
+          "event": "PASS",
+          "category": "service-recovery",
+          "name": "SELinux remains enforcing",
+          "evidence": true
+        },
+        {
+          "event": "remove-unit",
+          "unit": "wydhosting-provider.service"
+        },
+        {
+          "event": "remove-unit",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-3f56bafa936f44cfb5fa3ba5f0810b41.service"
+        },
+        {
+          "event": "remove-unit",
+          "unit": "wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-e54ece4e07804f82a6e3ebb85ef37de8.service"
+        },
+        {
+          "event": "remove-unit",
+          "unit": "wyd-i56-edge.service"
+        },
+        {
+          "event": "remove-unit",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-1cb6272b661341cfb66fd04d141b0ba3.service"
+        },
+        {
+          "event": "remove-unit",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-b637381d9e7a4a958458b9014bec4638.service"
+        },
+        {
+          "event": "remove-unit",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-31f31b1a010f46c291a81f1578d2d0d7.service"
+        },
+        {
+          "event": "remove-unit",
+          "unit": "wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-a1a8f7ae19274c1cb55a312dc06c0161.service"
+        },
+        {
+          "event": "unlink",
+          "path": "/run/systemd/system/wydhosting-broker.slice"
+        },
+        {
+          "event": "unlink",
+          "path": "/run/systemd/system/wydhosting-broker@.service"
+        },
+        {
+          "event": "unlink",
+          "path": "/run/systemd/system/wydhosting-broker.socket"
+        },
+        {
+          "event": "delete-user",
+          "name": "wyd-i56-edge",
+          "uid": 61053
+        },
+        {
+          "event": "delete-user",
+          "name": "wyd-08f155da2e286dcb3a87",
+          "uid": 61052
+        },
+        {
+          "event": "delete-user",
+          "name": "wyd-69816689df4526f12832",
+          "uid": 61051
+        },
+        {
+          "event": "delete-user",
+          "name": "wyd-i56-provider",
+          "uid": 61050
+        },
+        {
+          "event": "remove-disposable-tree",
+          "path": "/run/wydhosting"
+        },
+        {
+          "event": "remove-disposable-tree",
+          "path": "/etc/wydhosting"
+        },
+        {
+          "event": "remove-disposable-tree",
+          "path": "/var/lib/wydhosting"
+        },
+        {
+          "event": "remove-disposable-tree",
+          "path": "/opt/wydhosting"
+        },
+        {
+          "event": "TOTAL",
+          "passed": 82,
+          "failed": 0,
+          "categories": {
+            "privileged-broker-dac": {
+              "passed": 30,
+              "failed": 0
+            },
+            "selinux-mac": {
+              "passed": 2,
+              "failed": 0
+            },
+            "integrated-service": {
+              "passed": 23,
+              "failed": 0
+            },
+            "proxy-loopback": {
+              "passed": 11,
+              "failed": 0
+            },
+            "service-recovery": {
+              "passed": 15,
+              "failed": 0
+            },
+            "integrated-resource": {
+              "passed": 1,
+              "failed": 0
+            }
+          },
+          "productionQualified": false
+        }
+      ]
+    },
+    {
+      "log": "wydgit-i56-integrated-kernel.log",
+      "sha256": "0fd22ba8dcf6e642d1e0e8d6544f7f4b8322aa95ae73446d96b9b68e8f329a12",
+      "events": [
+        {
+          "event": "mkdir",
+          "path": "/var/lib/wyd-i56-kernel",
+          "mode": "0755"
+        },
+        {
+          "event": "mkdir",
+          "path": "/opt/wyd-i56-kernel",
+          "mode": "0755"
+        },
+        {
+          "event": "create-kernel-fixture-user",
+          "name": "wyd-i56-k61061",
+          "uid": 61061,
+          "password": "locked",
+          "shell": "/usr/sbin/nologin"
+        },
+        {
+          "event": "create-kernel-fixture-user",
+          "name": "wyd-i56-k61062",
+          "uid": 61062,
+          "password": "locked",
+          "shell": "/usr/sbin/nologin"
+        },
+        {
+          "event": "start-kernel-fixture",
+          "unit": "wyd-i56-kernel-a.service",
+          "uid": 61061,
+          "mode": "normal",
+          "properties": [
+            "User=61061",
+            "Group=61061",
+            "SupplementaryGroups=",
+            "NoNewPrivileges=yes",
+            "CapabilityBoundingSet=",
+            "AmbientCapabilities=",
+            "ProtectSystem=strict",
+            "ProtectHome=yes",
+            "ProtectControlGroups=yes",
+            "PrivateDevices=yes",
+            "PrivateTmp=yes",
+            "RestrictNamespaces=yes",
+            "RestrictSUIDSGID=yes",
+            "RestrictAddressFamilies=AF_UNIX",
+            "IPAddressDeny=any",
+            "ProtectProc=invisible",
+            "ProcSubset=pid",
+            "KillMode=control-group",
+            "TimeoutStopSec=2s",
+            "RuntimeMaxSec=45s",
+            "MemoryMax=64M",
+            "MemorySwapMax=0",
+            "CPUQuota=25%",
+            "TasksMax=16",
+            "LimitNOFILE=64",
+            "LimitCORE=0",
+            "OOMPolicy=stop",
+            "ReadWritePaths=/var/lib/wyd-i56-kernel/a",
+            "TemporaryFileSystem=/tmp:rw,nosuid,nodev,noexec,size=1048576"
+          ]
+        },
+        {
+          "event": "start-kernel-fixture",
+          "unit": "wyd-i56-kernel-b.service",
+          "uid": 61062,
+          "mode": "normal",
+          "properties": [
+            "User=61062",
+            "Group=61062",
+            "SupplementaryGroups=",
+            "NoNewPrivileges=yes",
+            "CapabilityBoundingSet=",
+            "AmbientCapabilities=",
+            "ProtectSystem=strict",
+            "ProtectHome=yes",
+            "ProtectControlGroups=yes",
+            "PrivateDevices=yes",
+            "PrivateTmp=yes",
+            "RestrictNamespaces=yes",
+            "RestrictSUIDSGID=yes",
+            "RestrictAddressFamilies=AF_UNIX",
+            "IPAddressDeny=any",
+            "ProtectProc=invisible",
+            "ProcSubset=pid",
+            "KillMode=control-group",
+            "TimeoutStopSec=2s",
+            "RuntimeMaxSec=45s",
+            "MemoryMax=64M",
+            "MemorySwapMax=0",
+            "CPUQuota=25%",
+            "TasksMax=16",
+            "LimitNOFILE=64",
+            "LimitCORE=0",
+            "OOMPolicy=stop",
+            "ReadWritePaths=/var/lib/wyd-i56-kernel/b",
+            "TemporaryFileSystem=/tmp:rw,nosuid,nodev,noexec,size=1048576"
+          ]
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "kernel fixture 61061 same-tenant file/socket",
+          "evidence": "same-tenant socket OK"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "kernel fixture 61061 sandbox forbidden operations",
+          "evidence": {
+            "system": "EROFS",
+            "sibling": "EACCES",
+            "network": "EAFNOSUPPORT",
+            "cgroup": "EROFS",
+            "namespace": "EPERM"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "kernel fixture 61061 numeric identity/no capabilities",
+          "evidence": {
+            "uid": 61061,
+            "gid": 61061,
+            "noNewPrivileges": true,
+            "capabilities": "empty",
+            "selinux": "system_u:system_r:unconfined_service_t:s0\u0000"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "kernel fixture 61061 setsid child stays in cgroup",
+          "evidence": true
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "kernel fixture 61062 same-tenant file/socket",
+          "evidence": "same-tenant socket OK"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "kernel fixture 61062 sandbox forbidden operations",
+          "evidence": {
+            "system": "EROFS",
+            "sibling": "EACCES",
+            "network": "EAFNOSUPPORT",
+            "cgroup": "EROFS",
+            "namespace": "EPERM"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "kernel fixture 61062 numeric identity/no capabilities",
+          "evidence": {
+            "uid": 61062,
+            "gid": 61062,
+            "noNewPrivileges": true,
+            "capabilities": "empty",
+            "selinux": "system_u:system_r:unconfined_service_t:s0\u0000"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "kernel fixture 61062 setsid child stays in cgroup",
+          "evidence": true
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "kernel cross-UID read denied",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "kernel cross-UID write denied",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "kernel cross-UID socket denied",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "kernel cross-UID signal denied",
+          "evidence": "EPERM"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "kernel cross-UID proc-memory denied",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "kernel cross-UID symlink denied",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "kernel cross-UID traversal denied",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "kernel same-tenant private file write",
+          "evidence": "exit 0"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "kernel cross-UID concurrent symlink replacement",
+          "evidence": "{\"denied\": 1424, \"authorized\": 577, \"foreignReads\": 0}"
+        },
+        {
+          "event": "start-kernel-fixture",
+          "unit": "wyd-i56-kernel-tasks.service",
+          "uid": 61061,
+          "mode": "tasks",
+          "properties": [
+            "User=61061",
+            "Group=61061",
+            "SupplementaryGroups=",
+            "NoNewPrivileges=yes",
+            "CapabilityBoundingSet=",
+            "AmbientCapabilities=",
+            "ProtectSystem=strict",
+            "ProtectHome=yes",
+            "ProtectControlGroups=yes",
+            "PrivateDevices=yes",
+            "PrivateTmp=yes",
+            "RestrictNamespaces=yes",
+            "RestrictSUIDSGID=yes",
+            "RestrictAddressFamilies=AF_UNIX",
+            "IPAddressDeny=any",
+            "ProtectProc=invisible",
+            "ProcSubset=pid",
+            "KillMode=control-group",
+            "TimeoutStopSec=2s",
+            "RuntimeMaxSec=45s",
+            "MemoryMax=64M",
+            "MemorySwapMax=0",
+            "CPUQuota=25%",
+            "TasksMax=16",
+            "LimitNOFILE=64",
+            "LimitCORE=0",
+            "OOMPolicy=stop",
+            "ReadWritePaths=/var/lib/wyd-i56-kernel/tasks",
+            "TemporaryFileSystem=/tmp:rw,nosuid,nodev,noexec,size=1048576"
+          ]
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "kernel TasksMax causes EAGAIN and pids.events max",
+          "evidence": {
+            "errno": "EAGAIN",
+            "children": 15
+          }
+        },
+        {
+          "event": "cgroup-enforcement",
+          "unit": "wyd-i56-kernel-tasks.service",
+          "limits": {
+            "memory.max": "67108864",
+            "pids.max": "16",
+            "cpu.max": "25000 100000"
+          },
+          "result": "success"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "tasks exhaustion healthy sibling",
+          "evidence": "same-tenant socket OK"
+        },
+        {
+          "event": "start-kernel-fixture",
+          "unit": "wyd-i56-kernel-cpu.service",
+          "uid": 61061,
+          "mode": "cpu",
+          "properties": [
+            "User=61061",
+            "Group=61061",
+            "SupplementaryGroups=",
+            "NoNewPrivileges=yes",
+            "CapabilityBoundingSet=",
+            "AmbientCapabilities=",
+            "ProtectSystem=strict",
+            "ProtectHome=yes",
+            "ProtectControlGroups=yes",
+            "PrivateDevices=yes",
+            "PrivateTmp=yes",
+            "RestrictNamespaces=yes",
+            "RestrictSUIDSGID=yes",
+            "RestrictAddressFamilies=AF_UNIX",
+            "IPAddressDeny=any",
+            "ProtectProc=invisible",
+            "ProcSubset=pid",
+            "KillMode=control-group",
+            "TimeoutStopSec=2s",
+            "RuntimeMaxSec=45s",
+            "MemoryMax=64M",
+            "MemorySwapMax=0",
+            "CPUQuota=25%",
+            "TasksMax=16",
+            "LimitNOFILE=64",
+            "LimitCORE=0",
+            "OOMPolicy=stop",
+            "ReadWritePaths=/var/lib/wyd-i56-kernel/cpu",
+            "TemporaryFileSystem=/tmp:rw,nosuid,nodev,noexec,size=1048576"
+          ]
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "kernel CPUQuota actually throttles",
+          "evidence": {
+            "usage_usec": "1081467",
+            "user_usec": "1060286",
+            "system_usec": "21181",
+            "nice_usec": "0",
+            "core_sched.force_idle_usec": "0",
+            "nr_periods": "44",
+            "nr_throttled": "43",
+            "throttled_usec": "3159298",
+            "nr_bursts": "0",
+            "burst_usec": "0"
+          }
+        },
+        {
+          "event": "cgroup-enforcement",
+          "unit": "wyd-i56-kernel-cpu.service",
+          "limits": {
+            "memory.max": "67108864",
+            "pids.max": "16",
+            "cpu.max": "25000 100000"
+          },
+          "result": "success"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "cpu exhaustion healthy sibling",
+          "evidence": "same-tenant socket OK"
+        },
+        {
+          "event": "start-kernel-fixture",
+          "unit": "wyd-i56-kernel-memory.service",
+          "uid": 61061,
+          "mode": "memory",
+          "properties": [
+            "User=61061",
+            "Group=61061",
+            "SupplementaryGroups=",
+            "NoNewPrivileges=yes",
+            "CapabilityBoundingSet=",
+            "AmbientCapabilities=",
+            "ProtectSystem=strict",
+            "ProtectHome=yes",
+            "ProtectControlGroups=yes",
+            "PrivateDevices=yes",
+            "PrivateTmp=yes",
+            "RestrictNamespaces=yes",
+            "RestrictSUIDSGID=yes",
+            "RestrictAddressFamilies=AF_UNIX",
+            "IPAddressDeny=any",
+            "ProtectProc=invisible",
+            "ProcSubset=pid",
+            "KillMode=control-group",
+            "TimeoutStopSec=2s",
+            "RuntimeMaxSec=45s",
+            "MemoryMax=64M",
+            "MemorySwapMax=0",
+            "CPUQuota=25%",
+            "TasksMax=16",
+            "LimitNOFILE=64",
+            "LimitCORE=0",
+            "OOMPolicy=stop",
+            "ReadWritePaths=/var/lib/wyd-i56-kernel/memory",
+            "TemporaryFileSystem=/tmp:rw,nosuid,nodev,noexec,size=1048576"
+          ]
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "kernel MemoryMax OOM contains allocation",
+          "evidence": true
+        },
+        {
+          "event": "cgroup-enforcement",
+          "unit": "wyd-i56-kernel-memory.service",
+          "limits": {
+            "memory.max": "67108864",
+            "pids.max": "16",
+            "cpu.max": "25000 100000"
+          },
+          "result": "oom-kill"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "memory exhaustion healthy sibling",
+          "evidence": "same-tenant socket OK"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "kernel stopped frozen main and setsid child reaped",
+          "evidence": true
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "kernel healthy sibling after frozen service stop",
+          "evidence": "same-tenant socket OK"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "kernel SELinux enforcing throughout",
+          "evidence": true
+        },
+        {
+          "event": "remove-kernel-unit",
+          "unit": "wyd-i56-kernel-memory.service"
+        },
+        {
+          "event": "remove-kernel-unit",
+          "unit": "wyd-i56-kernel-cpu.service"
+        },
+        {
+          "event": "remove-kernel-unit",
+          "unit": "wyd-i56-kernel-tasks.service"
+        },
+        {
+          "event": "remove-kernel-unit",
+          "unit": "wyd-i56-kernel-b.service"
+        },
+        {
+          "event": "remove-kernel-unit",
+          "unit": "wyd-i56-kernel-a.service"
+        },
+        {
+          "event": "delete-kernel-user",
+          "name": "wyd-i56-k61062",
+          "uid": 61062
+        },
+        {
+          "event": "delete-kernel-user",
+          "name": "wyd-i56-k61061",
+          "uid": 61061
+        },
+        {
+          "event": "remove-kernel-tree",
+          "path": "/opt/wyd-i56-kernel"
+        },
+        {
+          "event": "remove-kernel-tree",
+          "path": "/var/lib/wyd-i56-kernel"
+        },
+        {
+          "event": "KERNEL-TOTAL",
+          "passed": 26,
+          "failed": 0,
+          "productionBroker": false
+        }
+      ]
+    },
+    {
+      "log": "wydgit-i56-integrated-firewall.log",
+      "sha256": "c468d22af3597056aa7626ef3565ed875ff83b2d3db5f25a19920bf7cee182e2",
+      "events": [
+        {
+          "state": "applied",
+          "zone": "block",
+          "timer": "wydhosting-firewall-probe-b36bb6890aa841de9f18ba1c000d9f5c.timer",
+          "intent": "/run/wydhosting-firewall-probe-b36bb6890aa841de9f18ba1c000d9f5c.json"
+        },
+        {
+          "state": "independently-rolled-back",
+          "zone": "block",
+          "runtimeRestored": true,
+          "permanentUnchanged": true,
+          "hostingActivation": false
+        },
+        {
+          "event": "PASS",
+          "name": "independent rollback armed before apply",
+          "state": "applied",
+          "zone": "block",
+          "timer": "wydhosting-firewall-probe-23fe8af0be7e456eb4dff5cd0d6faf0e.timer",
+          "intent": "/run/wydhosting-firewall-probe-23fe8af0be7e456eb4dff5cd0d6faf0e.json"
+        },
+        {
+          "event": "PASS",
+          "name": "runtime rule present; inactive zone does not affect active nft rules"
+        },
+        {
+          "event": "killed-only-applying-process",
+          "pid": 26976
+        },
+        {
+          "event": "PASS",
+          "name": "independent timer restores runtime after SIGKILL; permanent unchanged"
+        },
+        {
+          "event": "cleanup",
+          "intent": "/run/wydhosting-firewall-probe-23fe8af0be7e456eb4dff5cd0d6faf0e.json",
+          "timer": "wydhosting-firewall-probe-23fe8af0be7e456eb4dff5cd0d6faf0e.timer"
+        },
+        {
+          "event": "TOTAL",
+          "passed": 3,
+          "failed": 0,
+          "packetEnforcement": "not-tested"
+        }
+      ]
+    },
+    {
+      "log": "wydgit-i56-integrated-cleanup.log",
+      "sha256": "b45a0c62506706d9af1268c6b8806eaa0b45800d433ac30d414a3ab33aedc18e",
+      "events": [
+        {
+          "event": "remove-owned-transfer",
+          "path": "/var/tmp/qualify.py"
+        },
+        {
+          "event": "remove-owned-transfer",
+          "path": "/var/tmp/qualify-integrated.py"
+        },
+        {
+          "event": "remove-owned-transfer",
+          "path": "/var/tmp/qualification-registry.mjs"
+        },
+        {
+          "event": "remove-owned-transfer",
+          "path": "/var/tmp/verify.py"
+        },
+        {
+          "event": "remove-owned-transfer",
+          "path": "/var/tmp/verify_firewalld_guards.py"
+        },
+        {
+          "event": "remove-owned-transfer",
+          "path": "/var/tmp/broker.py"
+        },
+        {
+          "event": "remove-owned-transfer",
+          "path": "/var/tmp/provider.js"
+        },
+        {
+          "event": "remove-owned-transfer",
+          "path": "/var/tmp/Caddyfile"
+        },
+        {
+          "event": "remove-owned-transfer",
+          "path": "/var/tmp/wydhosting-provider.service"
+        },
+        {
+          "event": "remove-owned-transfer",
+          "path": "/var/tmp/wydhosting_worker.cil"
+        },
+        {
+          "event": "remove-owned-transfer",
+          "path": "/var/tmp/caddy"
+        },
+        {
+          "event": "remove-owned-transfer",
+          "path": "/var/tmp/edge.crt"
+        },
+        {
+          "event": "remove-owned-transfer",
+          "path": "/var/tmp/edge.key"
+        },
+        {
+          "event": "remove-owned-transfer",
+          "path": "/var/tmp/wydgit-i56-integrated-mac.tgz"
+        },
+        {
+          "event": "remove-owned-transfer",
+          "path": "/var/tmp/wydgit-i56-integrated-final-build.tgz"
+        },
+        {
+          "event": "remove-owned-transfer",
+          "path": "/var/tmp/wydgit-i56-integrated-delivery-build.tgz"
+        },
+        {
+          "event": "remove-owned-transfer",
+          "path": "/var/tmp/wydgit-i56-integrated-reviewed-build.tgz"
+        },
+        {
+          "event": "remove-owned-staging",
+          "path": "/var/tmp/wyd-i56-integrated"
+        },
+        {
+          "event": "final-security",
+          "selinux": "Enforcing",
+          "services": [
+            "active",
+            "active"
+          ],
+          "defaultZone": "public",
+          "activeZones": "public (default)\n  interfaces: enp1s0",
+          "listeners": "LISTEN 0      128    0.0.0.0:22 0.0.0.0:* users:((\"sshd\",pid=908,fd=7))\nLISTEN 0      128       [::]:22    [::]:* users:((\"sshd\",pid=908,fd=8))",
+          "boot": "c77a65af-95bc-480d-bbe3-47f613b6b005",
+          "testIdentitiesAbsent": true,
+          "testUnitsAbsent": true,
+          "hostingTreesAbsent": true,
+          "moduleRemoved": true,
+          "normalDontauditRestored": true
+        }
+      ]
+    }
+  ],
+  "ordinaryEvidenceLogs": [
+    {
+      "log": "wydgit-i56-integrated-full.log",
+      "sha256": "bff7c8185e99431b04503c224823b6ed2dae4745afb630bc4ab67f043cb4a54e",
+      "counts": {
+        "tests": 931,
+        "pass": 928,
+        "fail": 3,
+        "cancelled": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "log": "wydgit-i56-integrated-full-diagnostics.log",
+      "sha256": "59e5d32ed4cd8c7c4fc1d910e362367f68da9996dc03c561cbc56f59b0747fab",
+      "counts": {
+        "tests": 932,
+        "pass": 932,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "log": "wydgit-i56-integrated-full-reviewed.log",
+      "sha256": "e4e89a9744199620d1efcfdcc3256be0b42dc6c857fec36b79de7802a60a47d4",
+      "counts": {
+        "tests": 932,
+        "pass": 931,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "log": "wydgit-i56-integrated-packed.log",
+      "sha256": "06740192c3a0a9022f54fddff4c07adc1762c66e7820c2ed0016d45fa7a9764c",
+      "counts": {}
+    },
+    {
+      "log": "wydgit-i56-integrated-packed-rerun.log",
+      "sha256": "01d11b72b507e9bbbeea62a6837ac61dd2949abf8431f1f3f260ca3c433ee622",
+      "counts": {}
+    },
+    {
+      "log": "wydgit-i56-integrated-packed-delivery.log",
+      "sha256": "42037bede95f487a3996885eaf7a4ff36912f60beb2cde6b49616780145295e3",
+      "counts": {}
+    },
+    {
+      "log": "wydgit-i56-integrated-focused-final.log",
+      "sha256": "ebebb8a401f0420ba4d680ef83f42277650d2232699eae91a12ef1526c54eb1c",
+      "counts": {
+        "tests": 34,
+        "pass": 34,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "log": "wydgit-i56-integrated-files-focused.log",
+      "sha256": "3efc07bb0b87e82a4f1cd6b5f89a4e007bbb953e4f431dc12a460fa4fc86f0e4",
+      "counts": {
+        "tests": 33,
+        "pass": 33,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "log": "wydgit-i56-integrated-python-vm.log",
+      "sha256": "82f999cb1e32e15cd8efcda11802d7d36a926b38f7ea3474c0f1105a39d01e45",
+      "counts": {}
+    },
+    {
+      "log": "wydgit-i56-integrated-check.log",
+      "sha256": "4e437bb4ebff45ddb9678e543f256b37dfaa0f4bca6969731a24c5ab84a7d1cd",
+      "counts": {}
+    },
+    {
+      "log": "wydgit-i56-integrated-fresh-ssh.log",
+      "sha256": "e2226b3b3a81ce8b8a6f96bac073f7aa98857d059322bd71ed9903c42f6e6e33",
+      "counts": {}
+    },
+    {
+      "log": "wydgit-i56-integrated-contact-1.log",
+      "sha256": "3c8de2dd07db1417ec2aeee4ed0066099a0c88cda757a41366b6a693ef88a662",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "log": "wydgit-i56-integrated-contact-2.log",
+      "sha256": "a8778c54d77b4cf75ea128f4b806a00a00b5b7ff7ac0c778bfc489a6a03ac2bd",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "log": "wydgit-i56-integrated-contact-3.log",
+      "sha256": "4bbc0888fdde9774b7ffd28f0cfd0f612a335f112832d8527c07838a281c97c4",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "log": "wydgit-i56-integrated-contact-4.log",
+      "sha256": "d077545e4ba7c584a6722ad17a094c71ca9d4f3229fbf00371ebd1b3cffa06ec",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "log": "wydgit-i56-integrated-contact-5.log",
+      "sha256": "0ce777cb87d00e5273121139f507072b58b69e1c386addb074e79bd2fadd0378",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      }
+    }
+  ],
+  "installedPackageResults": {
+    "evidenceDirectory": "/tmp/wyd-i54-packed-ev3jaz",
+    "canonical": 149,
+    "provider": 35,
+    "supervisor": 20,
+    "linux": 20,
+    "repositoryImportsRefused": true
+  },
+  "separateVmOrdinaryTests": {
+    "pythonBoundary": 33,
+    "mockedFirewallGuards": 6,
+    "privilegedOperationsProved": false
+  },
+  "finalChecks": "Required checks are rerun after completed documentation synchronization; see final handoff."
+}

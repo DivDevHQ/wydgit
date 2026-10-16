@@ -1,5 +1,14 @@
 # Services, cgroups and disposable VM procedure
 
+The [integrated follow-up](verification.md#integrated-enterprise-campaign--2026-10-16)
+now exercises installed provider startup, two confined Apps, worker SIGKILL and
+bounded pressure in the actual 256 MiB worker cgroup, healthy sibling serving,
+broker/provider death, graceful restart, manager reload and fail-closed stale locks.
+One intermittent broker retirement failure remains unresolved despite a passing
+repeat. Reboot is deferred pending independently verified backup/console recovery.
+The original status table/walkthrough below is historical; current MAC installation
+and category approval requirements are in [selinux.md](selinux.md).
+
 **Actual AlmaLinux broker-managed service/lifetime checks and separate bounded
 cgroup stress fixtures passed; full production integration remains unqualified.**
 See [verification](verification.md). Syntax/contract review and ordinary-user child
@@ -48,7 +57,8 @@ case; the broker does not guess/adopt a service name after interruption.
 | Outbound networking | AF_UNIX only plus IPAddressDeny=any | Not manager-tested; remote S3/TCP profile unavailable |
 
 No CPU/memory guarantee is inferred from I2 logical request quotas. No persistent
-storage quota, I/O throttle, inode quota or AppArmor/SELinux profile is implemented.
+storage quota, I/O throttle or inode quota is implemented. A provider/worker SELinux
+candidate now exists; dedicated broker/edge MAC and complete qualification remain open.
 A pool can still fill its permitted persistent filesystem without an independently
 configured quota; this is a qualification/implementation limitation, not a passing
 resource-isolation claim. Do not disable system MAC to make the candidate work.

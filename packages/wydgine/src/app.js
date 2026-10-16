@@ -8,7 +8,7 @@ import { initializeHost } from './engine/host.js';
 
 export function createApp({ root = process.cwd(), logger = console, libraries, execution = {}, lifecycle, admit, guard, contextPolicy, onStop, parking, governance } = {}) {
   const renderer = createRenderer({ root, verifiedPackages:execution.verifiedPackages });
-  const pipeline = createPipeline({ root, libraries, execution, lifecycle, guard, contextPolicy, parking, governance });
+  const pipeline = createPipeline({ root, libraries, execution, lifecycle, guard, contextPolicy, parking, governance, diagnostic:event=>{try{logger.error(JSON.stringify(event));}catch{}} });
   const app = createTransport({ root, projectRoot: fileURLToPath(new URL('../runtime/',import.meta.url)), renderer, pipeline, logger, admit, onStop, governance });
   return app;
 }

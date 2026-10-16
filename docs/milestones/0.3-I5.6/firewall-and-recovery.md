@@ -1,5 +1,11 @@
 # Firewall, SSH and recovery status
 
+The integrated campaign preserves the existing firewalld and SSH/default-zone policy.
+Its Caddy TLS tests bind only VM loopback and provide **no external packet evidence**.
+No production apply adapter was enabled. Installed-service crash/OOM/restart and
+stale-lock evidence are recorded in the [latest verification](verification.md#integrated-enterprise-campaign--2026-10-16);
+reboot remains deferred until backup and independent console recovery are verified.
+
 **Public hosting firewall application remains unimplemented and unqualified.**
 A bounded administrator-only unused-zone firewalld transaction/rollback probe now
 exists and passed on AlmaLinux, including caller-death recovery. It never activates

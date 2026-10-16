@@ -1,8 +1,9 @@
 #!/usr/bin/python3
 """Opt-in destructive fixture, ONLY on the disposable almond-lab guest.
 
-Run after prepare-qualification.mjs. No mocks, package manager, firewall change,
-SELinux policy change or host provisioning. Each mutation is logged as JSON.
+Run after prepare-qualification.mjs. No mocks, package manager, firewall change
+or host provisioning. --integrated explicitly installs/removes the experimental
+SELinux policy and optionally runs loopback-only Caddy. Mutations are JSON events.
 """
 import errno
 import hashlib
@@ -27,11 +28,15 @@ RELEASE = Path('/opt/wydhosting/release')
 RUN = Path('/run/wydhosting')
 ETC = Path('/etc/wydhosting')
 passed = failed = 0
+categories = {}
+default_category = 'privileged-broker-dac'
 created = []
 users = []
 units = []
 connections = []
 processes = []
+finalizers = []
+BUILD = None
 
 
 def log(event, **values):
@@ -46,16 +51,20 @@ def command(args, check=True, **kwargs):
     return r
 
 
-def check(name, function):
+def check(name, function, category=None):
     global passed, failed
+    category = category or default_category
+    totals = categories.setdefault(category, {'passed':0, 'failed':0})
     try:
         result = function()
         assert result is not False, 'false result'
         passed += 1
-        log('PASS', name=name, evidence=result)
+        totals['passed'] += 1
+        log('PASS', category=category, name=name, evidence=result)
     except Exception as e:
         failed += 1
-        log('FAIL', name=name, error=str(e))
+        totals['failed'] += 1
+        log('FAIL', category=category, name=name, error=str(e))
 
 
 def wait(predicate, seconds=15):
@@ -188,7 +197,9 @@ while True:
     return child, reply, b
 
 
-def main(build):
+def main(build, integrated=False):
+    global BUILD
+    BUILD = build
     assert sys.argv[1] == '--target=almond-lab' and socket.gethostname() == 'almond-lab'
     assert os.geteuid() == 0 and 'ID="almalinux"' in Path('/etc/os-release').read_text()
     assert Path('/sys/fs/selinux/enforce').read_text().strip() == '1'
@@ -224,7 +235,10 @@ def main(build):
         for name in files:
             p = Path(current) / name
             assert not p.is_symlink() and p.stat().st_nlink == 1
-            p.chmod(0o755 if p == RELEASE / 'bin/node' else 0o644)
+            p.chmod(0o755 if p in (RELEASE / 'bin/node', RELEASE / 'bin/caddy') else 0o644)
+    # copytree preserves source xattrs. Never execute a transferred user_tmp_t
+    # binary as an installed service; restore the guest's existing path policy.
+    command(['/usr/sbin/restorecon', '-RF', str(RELEASE.parent)])
     mkdir(ROOT); mkdir(ETC); mkdir(RUN)
     for name in ('accounts', 'uploads', 'pools', 'broker', 'provider'):
         mkdir(ROOT / name, 0o700 if name in ('broker', 'provider') else 0o755)
@@ -254,6 +268,11 @@ def main(build):
             limits=dict(memoryBytes=268435456, cpuPercent=25, tasks=32, fileDescriptors=128, temporaryBytes=1048576), execution={}, optional=[]))
     policy = dict(schema='wydhosting.linux-approval/1', providerId='i56', registryRevision=1, registryDigest='a'*64,
                   providerUid=PROVIDER, providerGid=PROVIDER, pools=pools, qualification='unqualified', activation='manual-review-required')
+    if integrated:
+        spec = importlib.util.spec_from_file_location('integrated', Path(__file__).with_name('qualify-integrated.py'))
+        integration = importlib.util.module_from_spec(spec); spec.loader.exec_module(integration)
+        policy = integration.prepare(sys.modules[__name__], pools)
+        pools = policy['pools']
     write_policy(policy)
     spec = importlib.util.spec_from_file_location('broker', RELEASE / 'node_modules/wydhosting/broker/broker.py')
     broker = importlib.util.module_from_spec(spec); spec.loader.exec_module(broker)
@@ -272,6 +291,8 @@ def main(build):
     command(['/usr/bin/systemd-analyze', 'verify', '/run/systemd/system/wydhosting-broker.socket', '/run/systemd/system/wydhosting-broker@.service'])
     command(['/usr/bin/systemctl', 'daemon-reload'])
     command(['/usr/bin/systemctl', 'start', 'wydhosting-broker.socket'])
+    if integrated:
+        command(['/usr/sbin/restorecon', '-F', str(RUN/'broker.sock')])
     for pool in pools:
         users.append((broker.account_name(pool['account']), pool['account']['uid']))
         check('real broker ensure-account ' + pool['poolId'], lambda p=pool: accepted(request(policy, 'ensure-account', p['poolId'])))
@@ -308,13 +329,19 @@ def main(build):
     check('A symlink to B denied by kernel', lambda: denied(A, "open(sys.argv[1]).read()", link))
     check('A traversal to B denied by kernel', lambda: denied(A, "open(sys.argv[1]).read()", home_a / '../i56-b/private'))
     # Approved path swapped to attacker symlink; production stage must reject before copying.
-    source = ROOT / 'uploads/i56-a/deployment'
+    source = Path(pools[0]['deployments'][0]['source'])
     source.rename(source.with_name('saved'))
-    source.symlink_to(ROOT / 'uploads/i56-b/deployment')
+    source.symlink_to(Path(pools[1]['deployments'][0]['source']))
     pools[0]['generation'] = 2; pools[0]['base'] = str(ROOT / 'pools/i56-a/generations/2'); write_policy(policy)
     check('broker rejects symlinked approved source', lambda: refused(request(policy, 'stage')))
     source.unlink(); source.with_name('saved').rename(source)
     pools[0]['generation'] = 1; pools[0]['base'] = str(ROOT / 'pools/i56-a/generations/1'); write_policy(policy)
+    if integrated:
+        saved_categories = [p.pop('selinuxCategory') for p in pools]
+        write_policy(policy)
+        check('enforcing broker refuses a legacy unconfined launch', lambda: refused(request(policy, 'launch'), 'BROKER.SELINUX_POLICY'), category='selinux-mac')
+        for pool, category in zip(pools, saved_categories): pool['selinuxCategory'] = category
+        write_policy(policy)
     # Separate same-tenant private Unix socket and live process under B.
     server = subprocess.Popen(['/usr/bin/python3', '-I', '-c', "import socket,sys,time;s=socket.socket(socket.AF_UNIX);s.bind(sys.argv[1]);s.listen();time.sleep(90)", str(home_b / 'private.sock')], user=B, group=B, extra_groups=[])
     processes.append(server); wait(lambda: (home_b / 'private.sock').exists())
@@ -322,6 +349,10 @@ def main(build):
     check('A cannot connect B private socket', lambda: denied(A, "socket.socket(socket.AF_UNIX).connect(sys.argv[1])", home_b / 'private.sock'))
     check('A cannot signal B process', lambda: denied(A, "os.kill(int(sys.argv[1]),15)", server.pid))
     check('B authorized process signal 0', lambda: must_ok(as_uid(B, "import os,sys;os.kill(int(sys.argv[1]),0)", server.pid)))
+    if integrated:
+        integration.run(sys.modules[__name__], policy, broker)
+        check('SELinux remains enforcing', lambda: Path('/sys/fs/selinux/enforce').read_text().strip() == '1')
+        return
     live = []
     for pool in pools:
         try:
@@ -422,6 +453,7 @@ def cleanup():
         if path.exists(): path.unlink(); log('remove-unit', unit=unit)
     if RUN in created:
         command(['/usr/bin/systemctl', 'stop', 'wydhosting-broker.socket', 'wydhosting-broker.slice', 'wydhosting.slice'], check=False)
+        command(['/usr/bin/systemctl', 'reset-failed', 'wydhosting-broker.socket'], check=False)
     for path in reversed(created):
         if path.is_file(): path.unlink(); log('unlink', path=str(path))
     command(['/usr/bin/systemctl', 'daemon-reload'])
@@ -440,18 +472,20 @@ def cleanup():
         if path in created and path.exists():
             assert path.is_dir() and not path.is_symlink() and path.stat().st_uid == 0
             shutil.rmtree(path); log('remove-disposable-tree', path=str(path))
+    for finalize in reversed(finalizers):
+        finalize()
 
 
 if __name__ == '__main__':
-    armed = len(sys.argv) == 3 and sys.argv[1] == '--target=almond-lab' and socket.gethostname() == 'almond-lab' and os.geteuid() == 0
+    armed = len(sys.argv) in (3, 4) and sys.argv[1] == '--target=almond-lab' and (len(sys.argv) == 3 or sys.argv[3] == '--integrated') and socket.gethostname() == 'almond-lab' and os.geteuid() == 0
     if not armed: sys.exit('Refusing: explicit almond-lab root invocation required')
     try:
-        main(Path(sys.argv[2]))
+        main(Path(sys.argv[2]), integrated=len(sys.argv) == 4)
     except Exception as error:
         failed += 1; log('FATAL', error=str(error))
     finally:
         if created:
             try: cleanup()
             except Exception as error: failed += 1; log('CLEANUP-FAIL', error=str(error))
-        log('TOTAL', passed=passed, failed=failed)
+        log('TOTAL', passed=passed, failed=failed, categories=categories, productionQualified=False)
     sys.exit(bool(failed))

@@ -1,5 +1,11 @@
 # Immutable execution staging
 
+The integrated [SELinux candidate](selinux.md) labels freshly staged execution and
+fixed writable subtrees through held descriptors, verifies/fsyncs labels, and reserves
+category/account ownership before mutation. Nested code directories named `data`
+remain immutable code. Dynamic category labels must not be overwritten by a generic
+recursive restorecon. Power-loss and interrupted-publication qualification remain open.
+
 **Real unprivileged primitives and AlmaLinux root/cross-UID broker staging passed.
 Hostile mount attacks and power-loss durability remain unqualified.** See
 [verification](verification.md). No claim that Node

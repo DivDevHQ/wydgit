@@ -1,5 +1,9 @@
 # I5.6 verification and qualification record
 
+**Latest campaign:** [integrated AlmaLinux qualification](#integrated-enterprise-campaign--2026-10-16)
+and [SELinux policy](selinux.md). Earlier sections retain their original failures,
+counts and limitations; they are historical evidence, not the current gate decision.
+
 Branch **develop/0.3**, starting SHA
 **35d7b54c43e98b8d78e0e2cf15826b997639ca66**, clean. Fetch confirmed exact
 `origin/develop/0.3` equality; no intervening commit/history was removed. Read local
@@ -19,6 +23,240 @@ No root/sudo/account/systemd/cgroup/firewall/SSH/network/DNS/certificate provisi
 was performed on the operator's machine. Sandboxed test restrictions were bypassed
 only for explicitly authorized ordinary-user subprocess/socket/browser/npm/Git work,
 not by running customer code or provisioning as root.
+
+## Integrated Enterprise campaign — 2026-10-16
+
+Started clean on **develop/0.3**, HEAD and remote both
+**d08eda8897f0e26111e570a68e26434cfb56eb35**, version **0.3.0-alpha.15**.
+No unrelated local changes existed. No version/dependency/protocol change is made:
+this continues the experimental alpha.15 milestone rather than completing it.
+
+Guest identity: `almond-lab`, libvirt UUID
+`a70c1f77-4f87-4042-a773-f17064524e4c`, disk
+`/var/lib/libvirt/images/almond-lab.qcow2`, 4 vCPUs / 8 GiB, AlmaLinux **10.2**,
+kernel **6.12.0-211.65.1.el10_2.x86_64**, systemd **257**, Python **3.12.15**.
+SELinux was enforcing; firewalld and SSH were active. No hosting installation,
+test account or unit was assumed to survive the previous campaign. The VM lacked
+Node, Caddy, OpenSSL CLI, auditctl, SELinux development tooling and filesystem quotas.
+XFS remained mounted `noquota`. Installed Node is the independently prepared
+**24.21.0** binary; no root npm or VM system-package installation was performed.
+
+Read-only hypervisor inspection found console endpoint `/dev/pts/2`, but console
+login/recovery and the baseline backup's location/integrity could not be independently
+verified. Backup details were requested while independent work continued. No backup
+was opened for writing, and **no reboot/power/storage interruption was attempted**.
+The Mint host received no privileged service/network/account/policy mutation.
+
+### Newly implemented and actually exercised
+
+The existing `qualify.py` fixture now has `--integrated`; it retains the existing
+account, staging, caller/operation/JSON and cross-UID attacks, then constructs the
+**real canonical registry journal**, uses `createLinuxPlan` to derive its actual
+digest/approval, and starts the **installed provider service**. Independent canonical
+App IDs/titles identify tenants A/B; this is the Wydgine sample App, not a synthetic
+socket responder. There are no mocked broker, service, HTTP or credential operations.
+
+The path exercised is provider service → authenticated root broker → restricted
+61051/61052 tenant → sealed categorized deployment → systemd-managed Python/Node
+worker → private credential-checked Unix socket → provider ingress → separate-UID
+Caddy → real TLS HTTP. UID 61050 is the provider; 61053 is the edge. Worker accounts
+remain locked/nologin with restricted group membership. Effective capabilities,
+NNP, RestrictSUIDSGID and other established restrictions are inspected unchanged.
+FD 3 is a live socket after exec; both workers had 20 open descriptors and no leaked
+regular files. Configured memory/swap/tasks/CPU limits are read from actual cgroups.
+
+The packaged experimental `wydhosting_worker` CIL module confines the provider to
+`wydhosting_provider_t:s0` and workers to `wydhosting_worker_t:s0:c51` / `s0:c52`.
+Execution/data/runtime labels are applied through broker-held descriptors and pinned
+to root-approved, nonrecyclable category/account ownership records. Enforcing systems
+refuse a legacy launch without a category; provider startup verifies its domain and
+enforcing mode. Full design, exact contexts, labels, residual privileges, installation
+commands and category threat-model reasoning are in [selinux.md](selinux.md).
+
+The same-UID canary deliberately permits DAC access to both files. Under the real
+confined worker domain, same-category reads/writes succeed and foreign-category
+read/write/relabel attempts return **EACCES**. Actual AVCs record c51 → c52 with
+`permissive=0`. This establishes independent MAC for the tested file boundary;
+cross-category socket/process/load and broader canonical-service closures remain
+unqualified. Broker and edge are still `unconfined_service_t`, explicitly **not a
+complete production MAC qualification**.
+
+Caddy **2.11.7** was downloaded from the [official release](https://github.com/caddyserver/caddy/releases/tag/v2.11.7) and verified against its
+GitHub SHA-256 asset digest and the release's SHA-512 checksum list. Archive SHA-256:
+`727b91701a392de6ebc5027509f548bf39979e5216340d0faed8fa5e69c84f8b`.
+Ephemeral self-signed certificates are generated unprivileged in the build and
+verified by the TLS client. The generated shipped template validates and serves
+both tenants over **127.0.0.1 and ::1 only**; admin API and redirect listeners are
+disabled. Header spoofing is stripped/overwritten, unknown authorities receive 421,
+and status/HEAD/method/body and proxy restart checks are separate cases. Worker TCP
+listeners are checked absent. **These are loopback tests, not external IPv4/IPv6
+vantage or public packet enforcement.** No interface/default-zone/SSH change occurred.
+
+Real worker SIGKILL and cgroup-contained OOM produce a fresh authorized replacement
+while the sibling canonical App continues serving. The root-owned hostile memory
+helper joins only the recorded 256 MiB worker cgroup; its independent address-space
+ceiling is 512 MiB, allocation ceiling 384 MiB, CPU ceiling 3 seconds and wall deadline
+15 seconds. It adds no App capability. The real service reports `oom-kill`.
+Graceful provider restart reuses stopped durable leases; daemon reload preserves
+routing. Broker SIGKILL independently reaps its confined worker, refuses the stale
+route, preserves the sibling and permits explicit exact-lease reconciliation.
+Provider SIGKILL independently terminates both cgroups; restart refuses stale
+supervisor ownership rather than adopting/resurrecting workers.
+
+### Intermediate failures and unresolved observations
+
+- The first registry fixture used a deployment ID inconsistent with its source
+  basename; corrected the fixture to create unique canonical deployment IDs.
+- Transferred Node retained `user_tmp_t`; systemd correctly refused it with
+  `203/EXEC`. Installation now restores guest path labels before execution.
+- Initial policy iterations correctly failed on new-type manager mountpoints,
+  NNP domain transitions, OpenSSL configuration reads, broker socket labels and
+  provider runtime cleanup. Only corresponding typed requirements were added;
+  no permissive domain, system write, worker capability or network allowance was used.
+- An automatic approval review rejected an experimental automatic transition to
+  `unconfined_service_t`. That command did not execute. The safer implementation
+  removes that transition and explicitly confines provider and workers.
+- The first diagnostic attempt found auditctl absent; no audit rule was installed.
+  The canary instead briefly exposes suppressed AVCs with `semodule -DB`, restoring
+  normal logging with `-B` immediately. Access enforcement is unchanged throughout.
+- Missing guest OpenSSL and a hard-coded `/usr/bin/ss` were fixture assumptions;
+  certificates now come from the unprivileged builder and `ss` is discovered.
+- Caddy returned an empty **HTTP 200** for unknown Host. The shipped configuration
+  now has an explicit 421 reject site. The real proxy test verifies the correction.
+- One expanded stress run passed SIGKILL/OOM replacement and sibling survival, then
+  a sibling broker returned **BROKER.INTERNAL during graceful shutdown**; provider
+  cleanup/restart refused ownership. The next unchanged-path run passed. Its root
+  cause is **unresolved**, not declared fixed by a passing repetition. New broker
+  diagnostics retain a closed failure-kind/phase vocabulary without exception text,
+  paths, payloads or credentials. This is an additional reliability qualification gap.
+- One installed-package run passed **147/148** canonical tests: an unchanged S3
+  deadline fixture expected two calls but observed one under load. The full focused
+  file passed afterward. No deadline, assertion, retry or concurrency policy changed.
+  Preserve both logs; this is distinct from the historical Contact HTTP500 class.
+
+The historical Contact/Guestbook/Taskboard HTTP500 remains **undiagnosed**. Five
+bounded ordinary-user repetitions of the unchanged JSON/SQLite Contact concurrency/
+restart suite passed **4/4 each**. A later full run reproduced JSON Contact POST
+**500 instead of 200**, the shared held-request **500 instead of 200**, and the S3
+call-count failure: **928/931**. These are retained as real failures, not dismissed
+because independent runs passed. Inspection found that `executePage` returned
+structured Page/cleanup errors which the HTTP pipeline silently discarded. The
+trusted logger now receives at most two bounded phase/code events per request;
+exception messages/details, request bodies, cookies, paths and credentials are
+excluded. The Contact/held-request assertions retain up to eight such events for a
+future failure. A real HTTP regression verifies 500 semantics and private-data
+redaction. No time/resource budget or assertion was weakened.
+
+The next normal full run passed **932/932**, including that added diagnostic test.
+This does not establish a root cause or a fix for the intermittent 500. Worker
+embedding still uses its existing silent logger unless a trusted logger is supplied;
+per-App diagnostic forwarding over the worker protocol is not added here. MAC,
+ingress, OOM/generation and broker-retirement observations remain separate boundaries.
+
+### Qualification decision and gates still open
+
+**Implementation complete: NO. Tested on AlmaLinux 10.2: the specific observations
+above. Production security qualified: NO. I5.6 remains experimental.** No other
+distribution is qualified and no I5.7 work is started.
+
+Remaining gates include dedicated broker/edge MAC; cross-category socket/process
+adversarial tests; actual external IPv4/IPv6 ingress/bypass tests; controlled live
+production firewall integration/reconciliation; FD/tmp exhaustion and disk quotas;
+interrupted staging/publication/cleanup and mount attacks; independently verified
+backup/console plus reboot; automatic resource retirement; the intermittent broker
+retirement failure and historical App HTTP500. Public firewall apply still fails
+closed. The existing unused-zone probe is not upgraded into production enforcement.
+
+No current/default/public zone or SSH rule was changed. No rule requiring separate
+public-policy authorization was attempted. Reboot remains deferred until backup and
+console recovery can be verified. Do not relabel a localhost check as external proof.
+
+### Reproduction and disposable changes
+
+Use fresh tarballs and an ordinary-user builder (verify the Caddy binary against
+official release metadata/checksums before supplying it):
+
+```sh
+npm pack --workspace wydgine --workspace wydhosting --pack-destination /tmp/NEW-TARBALLS
+node test-support/linux/prepare-qualification.mjs /tmp/NEW-BUILD /tmp/NEW-TARBALLS/wydgine-0.3.0-alpha.15.tgz /tmp/NEW-TARBALLS/wydhosting-0.3.0-alpha.15.tgz /path/to/verified/caddy
+```
+
+Transfer the build archive and `qualify.py`, `qualify-integrated.py`,
+`qualification-registry.mjs` to a new protected VM staging directory. After root
+ownership/mode review, extract the build and run only on the intended guest:
+
+```sh
+ssh almond-lab 'sudo -n timeout 300s python3 -B /var/tmp/NEW-STAGING/qualify.py --target=almond-lab /var/tmp/NEW-STAGING/build --integrated'
+```
+
+The fixture extends the original exclusive-installation guards and owns only new
+`/opt/wydhosting`, `/etc/wydhosting`, `/var/lib/wydhosting`, `/run/wydhosting`, exact
+generated units, the 61050–61053 disposable identities, the category module and
+category canaries. It tracks worker unit names immediately on startup, including
+later-failure paths. Two units left by an earlier fixture exception were independently
+verified stopped/cgroup-absent and removed by exact recorded names; no wildcard
+process/account deletion was used. The root memory helper is tracked and reaped.
+
+All generated service/account/runtime/module resources are removed after each run;
+the transfer/build directories are removed after final evidence collection. Standard
+account-tool DB backup/lock side effects, audit and systemd journals remain retained
+under the guest's existing policies. The baseline VM backup is never modified.
+Sanitized campaign events and exact per-category results are retained under
+`test-support/linux/evidence/2026-10-16-integrated.json`; raw logs use
+`/tmp/wydgit-i56-integrated-*`. Final validation/cleanup results follow below.
+
+### Final evidence by category
+
+The reviewed freshly packed VM run and its predecessor both passed. The fixture's
+82 total is only a runner summary, **not a combined security-qualification score**.
+Its separate final categories are:
+
+| Actual check category | Passing checks | Scope |
+| --- | --- | --- |
+| Privileged broker/accounts/staging/DAC | 30/30 | Actual installed broker operations, two identities and hostile selectors/filesystem access |
+| Integrated installed services | 23/23 | Canonical registry/provider, confined identities, real responses, limits, FD inheritance, no worker TCP listener, edge-to-worker bypass denial |
+| Real SELinux MAC | 2/2 | Enforcing legacy-launch refusal; same-UID categorized file canary with three denied operations and actual AVCs |
+| Actual Caddy TLS proxy | 11/11 | VM loopback IPv4/IPv6, generated shipped config, routing, headers, explicit unknown-Host 421, method/body/status, retirement/restart |
+| Service recovery and guards | 15/15 | Worker SIGKILL/OOM replacement, sibling survival, reload, graceful restart, broker/provider death, reconciliation and stale-lock refusal; includes final enforcing guard |
+| Integrated resource outcome | 1/1 | Actual worker unit `oom-kill`, with independently bounded injected helper |
+| Separate privileged kernel fixture | 26/26 | Existing bounded hostile kernel/resource campaign, separately repeated; not a confined production-App stress count |
+| Limited firewalld recovery | Normal transaction + 3/3 caller-death checks | Exact inactive-zone rule rolled back; runtime/permanent policy restored; active packet enforcement not tested |
+| External network / reboot | 0 executed | No external-vantage or reboot qualification inferred |
+
+Ordinary-user regression/contract evidence remains separate:
+
+| Check | Actual result |
+| --- | --- |
+| Complete normal repository suite with diagnostic addition | 932/932 passed, no failures/skips/cancellations in the successful run |
+| Focused HTTP diagnostic/hostname/Linux suites | 34/34 passed |
+| `npm run check` | 3 pages / 42 internal links / unique anchors passed |
+| Fresh independent canonical-library consumer | 149/149 passed, repository imports refused |
+| Fresh independent provider consumer | 35/35 passed |
+| Installed real subprocess supervisor | 20/20 passed |
+| Installed ordinary-user Linux boundaries | 20/20 passed; Python 33 cases and 6 mocked firewall guards are nested inside these fixtures |
+| Ordinary VM user, actual packed Python boundary suite | 33/33 passed, no skips; explicitly mocked administrative cases remain labelled |
+| Ordinary VM user, mocked firewall guard suite | 6/6 passed; no live firewall authority proved |
+| Focused unchanged Files suite after timing failure | 33/33 passed |
+| Historical browser distributions | All 23 tracked blobs byte-identical to starting commit |
+
+Final independent consumer evidence is `/tmp/wyd-i54-packed-ev3jaz`. All three
+consumers, including service-free CLI/HTTP, passed. A documentation-mirror assertion
+also caught an intermediate documentation edit before its package mirror had been
+resynchronized; final sync and required checks follow the completed edits. Browser/
+client source and historical bundles are unchanged; no separate actual-browser
+campaign was repeated. Versions and lockfiles remain alpha.15 with no dependency
+change. No package publication, release, deployment or I5.7 advancement occurred.
+
+Final VM cleanup independently proved absent test units, PIDs under all six disposable
+UIDs, accounts/groups, hosting/kernel roots and the `wydhosting_worker` module. Every
+transferred file was matched against its known hash or protected campaign source
+before deletion, then `/var/tmp/wyd-i56-integrated` was removed. Normal dontaudit
+logging was restored. SELinux remained **Enforcing**, firewalld/sshd **active**, with
+default/active `public` on `enp1s0`. Only SSH TCP/22 remained listening on IPv4/IPv6.
+A fresh nonmultiplexed SSH connection succeeded after cleanup. Boot ID stayed
+`c77a65af-95bc-480d-bbe3-47f613b6b005`; no guest or host reboot occurred. The backup
+was untouched. Logs retain original failures, passing repetitions and cleanup events;
+the last required checks are rerun after final documentation synchronization.
 
 ## Actual environment
 

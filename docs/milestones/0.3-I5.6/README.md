@@ -10,6 +10,13 @@ conflict. The real broker/worker matrix now passes 56 checks with worker hardeni
 There is no production
 activation certification or supported production Linux distribution.
 
+The latest integrated campaign adds real canonical provider/journal → broker → two
+confined Wydgine workers → private ingress → Caddy loopback TLS execution, independent
+file-category MAC denials and bounded worker crash/OOM recovery. Dedicated broker/edge
+MAC, external ingress, production firewall, reboot/storage and reliability gates remain
+open. See the [latest evidence](verification.md#integrated-enterprise-campaign--2026-10-16)
+and [SELinux policy](selinux.md). Earlier gate tables below describe original delivery.
+
 Wydgine runs Apps. WydHosting manages infrastructure. Linux enforces OS boundaries.
 SEAM enforces application authority. Wydgine does not import WydHosting. One approved
 registry, one engine implementation, one SEAM graph per worker and the sixteen-App
@@ -94,12 +101,13 @@ it can read another UID's private files. Worker and broker verify execution inpu
 
 OS policy is separate from I2 request quotas. The initial service lane deliberately
 allows AF_UNIX only: approved remote S3/TCP dependencies cannot run in it. Do not expand
-network access silently. Storage quotas and MAC profiles are not implemented. New
+network access silently. Storage quotas remain absent; the experimental provider/worker
+MAC candidate is described in [selinux.md](selinux.md), with root broker MAC pending. New
 snapshot roots cannot be activated over a previous lease without I5.7 data ownership
 work; staging preserves old generations and replacement workers reuse the same base.
 
-The I4 UFW transaction proposal remains unimplemented and disabled. The Caddy asset is
-a candidate, not a qualified reverse-proxy deployment. I5.7 still owns stopped data
+The I4 UFW transaction proposal remains unimplemented and disabled. The Caddy asset has
+real loopback TLS evidence, not external or production qualification. I5.7 still owns stopped data
 migration/cutover; I5.8 owns combined release qualification. Neither is delivered here.
 
 Managed workers explicitly resolve approved native libraries from the immutable

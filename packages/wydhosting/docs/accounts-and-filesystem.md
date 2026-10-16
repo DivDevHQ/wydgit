@@ -5,6 +5,11 @@ on AlmaLinux 10.2.** See [verification](verification.md) for the 53-case campaig
 remaining hostile-mount, MAC and recovery gaps. No development-host account, group,
 sudo, SSH or home directory changed.
 
+The latest [SELinux candidate](selinux.md) adds independent account categories to
+sealed code and fixed writable subtrees. Same-UID, DAC-permitted foreign-category
+file reads/writes/relabel attempts were denied by actual MAC on AlmaLinux. Shared
+accounts still share a UID/category; broader socket/process MAC gates remain open.
+
 ## Identities
 
 The canonical registry still distinguishes customer, account, pool, App, domain,

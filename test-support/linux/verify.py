@@ -315,8 +315,62 @@ os.execve(sys.executable,[sys.executable,'-I','-c',"import os;assert os.read(3,5
         active = [line for line in (broker_path.parent/'templates/wydhosting-broker@.service').read_text().splitlines() if not line.startswith('#')]
         self.assertNotIn('RestrictSUIDSGID=yes', active)
         self.assertIn('NoNewPrivileges=yes', active)
+        pool['selinuxCategory'] = 51
+        _, confined = broker.service_text(pool, '12345678-1234-1234-1234-123456789abc','wydhosting-broker@one.service','/run/wydhosting/job-'+'1'*32+'.json')
+        self.assertIn('SELinuxContext=system_u:system_r:wydhosting_worker_t:s0:c51\n', confined)
+        self.assertNotIn('unconfined', confined)
+        for category in (True, 0, 1024, '51\nUser=root'):
+            pool['selinuxCategory'] = category
+            with self.assertRaises(s.Refused): broker.service_text(pool, '12345678-1234-1234-1234-123456789abc','wydhosting-broker@one.service','/run/wydhosting/job-'+'1'*32+'.json')
+        pool['selinuxCategory'] = 51
         pool['deployments'][0]['directory'] = 'app\nUser=root'
         with self.assertRaises(s.Refused): broker.service_text(pool,'1'*32,'wydhosting-broker@one.service','job')
+
+    def test_selinux_label_walk_keeps_nested_content_data_read_only(self):
+        (self.target/'app/content/data').mkdir(parents=True)
+        (self.target/'app/content/data/file').write_text('sealed')
+        (self.target/'app/data').mkdir()
+        (self.target/'app/data/file').write_text('mutable')
+        seen = {}
+        def observe(fd, kind, category):
+            seen[os.readlink('/proc/self/fd/'+str(fd))] = (kind, category)
+        fd = os.open(self.target, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            with patch.object(broker, 'label', side_effect=observe):
+                broker.label_staged_tree(fd, 51, ('app/data',))
+            self.assertEqual(seen[str(self.target/'app/data/file')], ('data',51))
+            self.assertEqual(seen[str(self.target/'app/content/data/file')], ('code',51))
+            (self.target/'link').symlink_to(self.source)
+            with patch.object(broker, 'label'), self.assertRaises(s.Refused):
+                broker.label_staged_tree(fd, 51)
+        finally:
+            os.close(fd)
+
+    def test_selinux_category_reservation_never_adopts_another_owner_or_category(self):
+        pool = {'selinuxCategory':51, 'account':{'accountId':'a','uid':61051,'gid':61051}}
+        records = {}
+        def read(fd, name):
+            if name not in records: raise FileNotFoundError(name)
+            return records[name]
+        def write(fd, name, value):
+            self.assertNotIn(name, records)
+            records[name] = value
+        with patch.object(s, 'read_file', side_effect=read), patch.object(s, 'atomic_file', side_effect=write):
+            broker.reserve_category(pool, -1)
+            broker.reserve_category(pool, -1)
+            self.assertEqual(len(records), 2)
+            with self.assertRaises(s.Refused):
+                broker.reserve_category({'selinuxCategory':51,'account':{'accountId':'b','uid':61052,'gid':61052}}, -1)
+            with self.assertRaises(s.Refused):
+                broker.reserve_category({**pool,'selinuxCategory':52}, -1)
+
+    def test_enforcing_launch_refuses_missing_category_before_any_os_mutation(self):
+        with patch('builtins.open', return_value=io.StringIO('1')), patch.object(broker, 'validate_bootstrap') as validate, patch.object(broker, 'ensure_account') as ensure:
+            with self.assertRaises(s.Refused) as denied:
+                broker.launch(None, {}, {}, {}, -1)
+            self.assertEqual(denied.exception.code, 'BROKER.SELINUX_POLICY')
+            validate.assert_not_called()
+            ensure.assert_not_called()
 
 
 if __name__ == '__main__':

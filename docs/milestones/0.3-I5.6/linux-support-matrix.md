@@ -3,6 +3,13 @@
 **No WydHosting Linux lane is security qualified.** Wydgine's existing independent
 standalone profile is unaffected. Package engine minimum remains Node **24.21.0**.
 
+Latest AlmaLinux 10.2 evidence adds real canonical provider integration, confined
+provider and independently categorized workers, same-UID MAC denials, loopback Caddy
+TLS and actual worker crash/OOM recovery. Broker/edge MAC, external network, production
+firewall, reboot/storage and reliability gates remain open; no other OS is qualified.
+See [verification](verification.md#integrated-enterprise-campaign--2026-10-16) and
+[SELinux policy](selinux.md). Earlier environment observations remain historical.
+
 | Environment | Status | Actual evidence |
 | --- | --- | --- |
 | Ubuntu Server 24.04 LTS amd64 | Experimental candidate | systemd/cgroup-v2 assets and contract tests only; privileged VM not executed |

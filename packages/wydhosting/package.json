@@ -20,6 +20,7 @@
     "src",
     "broker",
     "templates",
+    "selinux",
     "README.md",
     "LICENSE",
     "docs"

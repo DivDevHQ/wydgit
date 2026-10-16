@@ -59,9 +59,10 @@ test('same installed WBasic Taskboard executes through shared hostnames with ind
 });
 test('shared dispatch drains accepted requests and isolates shutdown, asset validators and failed parking',async t=>{
  let enter,release;const entered=new Promise(r=>enter=r),pause=new Promise(r=>release=r);const f=await fixture(t);
- const {host,server,tokens}=await f.start({execution:{'app-alpha':{handlers:[{type:'Page.Load',owner:'home',run:async function(){enter();await pause;}}]}}});
+ const diagnostics=[];
+ const {host,server,tokens}=await f.start({logger:{error:value=>{if(typeof value==='string'&&value.startsWith('{"schema":"wydgine.http-event/1"')){diagnostics.push(JSON.parse(value));if(diagnostics.length>8)diagnostics.shift();}}},execution:{'app-alpha':{handlers:[{type:'Page.Load',owner:'home',run:async function(){enter();await pause;}}]}}});
  const pending=get(server,'alpha.localhost');await entered;const stopping=host.stop(tokens[0]);assert.equal((await get(server,'alpha.localhost')).status,503);
- const responses=await Promise.all(Array.from({length:12},()=>get(server,'beta.localhost')));assert.ok(responses.every(r=>r.status===200));release();assert.equal((await pending).status,200);await stopping;
+ const responses=await Promise.all(Array.from({length:12},()=>get(server,'beta.localhost')));assert.ok(responses.every(r=>r.status===200),JSON.stringify(diagnostics));release();assert.equal((await pending).status,200,JSON.stringify(diagnostics));await stopping;
  const a=await get(server,'beta.localhost','/css/site.css'),park=await get(server,'soon.localhost','/css/site.css',{headers:{'If-None-Match':a.headers.etag}});assert.equal(park.status,200);assert.notEqual(a.headers.etag,park.headers.etag);
  assert.equal((await get(server,'beta.localhost','/css/%2e%2e%2fwydgit.config.json')).status,404);
  await host.stop(tokens[2]);assert.equal((await get(server,'soon.localhost')).status,503);assert.equal((await get(server,'x.sites.example.localhost')).status,503);assert.equal((await get(server,'beta.localhost')).status,200);

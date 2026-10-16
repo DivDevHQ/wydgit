@@ -19,11 +19,13 @@ export async function describeDeployment(root) {
  for(const relative of ['content','prototypes','public','wydgit.config.json'])await walk(relative);
  return sealed({directories,files});
 }
-export async function createLinuxPlan(input,{providerUid,providerGid,limits,execution={},optional={}}={}) {
+export async function createLinuxPlan(input,{providerUid,providerGid,limits,execution={},optional={},selinuxCategories={}}={}) {
  const registry=validateRegistry(input);check(integer(providerUid,1000,2147483647)&&integer(providerGid,1000,2147483647),'HOSTING.LINUX_IDENTITY');
  shape(limits,['memoryBytes','cpuPercent','tasks','fileDescriptors','temporaryBytes']);
  for(const [key,min,max]of [['memoryBytes',64*1024*1024,64*1024**3],['cpuPercent',1,6400],['tasks',16,4096],['fileDescriptors',64,65536],['temporaryBytes',1024*1024,1024**3]])check(integer(limits[key],min,max),'HOSTING.LINUX_LIMIT');
- const pools=[];
+ check(selinuxCategories&&typeof selinuxCategories==='object'&&!Array.isArray(selinuxCategories),'HOSTING.SELINUX_POLICY');
+ const categories=new Set();for(const [accountId,category]of Object.entries(selinuxCategories)){check(registry.accounts.some(a=>a.accountId===accountId)&&integer(category,1,1023)&&!categories.has(category),'HOSTING.SELINUX_POLICY');categories.add(category);}
+ const mac=categories.size>0,pools=[];
  for(const pool of registry.pools.filter(p=>p.state==='active')) {
   const account=registry.accounts.find(a=>a.accountId===pool.accountId);
   check(account&&account.uid>=60000&&account.gid===account.uid&&![providerUid,providerGid].includes(account.uid),'HOSTING.LINUX_IDENTITY');
@@ -41,7 +43,8 @@ export async function createLinuxPlan(input,{providerUid,providerGid,limits,exec
    deployments.push({appId:app.appId,source:app.source,directory:app.placement.directory,snapshot:app.snapshot,descriptor});
   }
   const privateInventory=structuredClone(inventory);privateInventory.routing.transport={mode:'private-unix',uid:providerUid};
-  pools.push({poolId:pool.poolId,account,base:pool.base,generation:pool.generation,inventory:privateInventory,deployments,limits,execution:execution[pool.poolId]??{},optional:optional[pool.poolId]??[]});
+  if(mac)check(Object.hasOwn(selinuxCategories,account.accountId),'HOSTING.SELINUX_POLICY');
+  pools.push({poolId:pool.poolId,account,base:pool.base,generation:pool.generation,inventory:privateInventory,deployments,limits,execution:execution[pool.poolId]??{},optional:optional[pool.poolId]??[],...(mac?{selinuxCategory:selinuxCategories[account.accountId]}:{})});
  }
  check(pools.length>0,'HOSTING.EMPTY_POOL');
  const body={schema:'wydhosting.linux-approval/1',providerId:registry.providerId,registryRevision:registry.revision,registryDigest:digest(registry),providerUid,providerGid,pools};

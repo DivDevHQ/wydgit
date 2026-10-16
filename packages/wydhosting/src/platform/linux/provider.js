@@ -17,6 +17,10 @@ export async function startLinuxProvider(filename){
  check(process.platform==='linux'&&process.getuid()!==0,'HOSTING.LINUX_IDENTITY');
  const config=await readProtectedJson(filename);shape(config,['schema','registryDirectory','approval','edgeUid']);check(config.schema==='wydhosting.linux-provider/1'&&integer(config.edgeUid,1)&&config.registryDirectory==='/var/lib/wydhosting/provider'&&config.approval==='/etc/wydhosting/provider-approval.json','HOSTING.LINUX_CONFIG');
  const approval=await readProtectedJson(config.approval);check(approval.providerUid===process.getuid()&&approval.providerGid===process.getgid(),'HOSTING.LINUX_IDENTITY');
+ const enforcing=(await fs.readFile('/sys/fs/selinux/enforce','utf8').catch(()=>'' )).trim()==='1';
+ if(enforcing||approval.pools?.some(p=>Object.hasOwn(p,'selinuxCategory'))){
+  check(enforcing&&approval.pools.length>0&&approval.pools.every(p=>integer(p.selinuxCategory,1,1023))&&(await fs.readFile('/proc/self/attr/current','utf8')).replace(/[\0\n]+$/,'')==='system_u:system_r:wydhosting_provider_t:s0','HOSTING.SELINUX_POLICY');
+ }
  const credentialHelper='/opt/wydhosting/release/lib/peercred.node',backend=createLinuxBackend({approval,credentialHelper});
  const registry=createLinuxRegistry({directory:config.registryDirectory});
  const supervisor=await createSupervisor({registry,directory:registry.supervisorStateDirectory,linuxBackend:backend});
