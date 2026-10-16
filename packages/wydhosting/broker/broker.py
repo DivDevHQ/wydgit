@@ -702,6 +702,13 @@ def verify_platform():
         except OSError:
             enforcing = False
         s.require(enforcing, 'BROKER.SELINUX')
+    return lane['selinuxRequired']
+
+
+def verify_broker_context():
+    with open('/proc/self/attr/current', encoding='ascii') as stream:
+        context = stream.read(256).strip('\0\n')
+    s.require(context == 'system_u:system_r:wydhosting_broker_t:s0', 'BROKER.SELINUX_DOMAIN')
 
 
 def main():
@@ -709,7 +716,9 @@ def main():
     s.require(os.geteuid() == 0 and sys.argv == [sys.argv[0]], 'BROKER.PRIVILEGE')
     os.umask(0o077)
     STARTUP_PHASE = 'platform'
-    verify_platform()
+    if verify_platform():
+        STARTUP_PHASE = 'selinux-domain'
+        verify_broker_context()
     STARTUP_PHASE = 'release'
     release_fd = s.open_directory(RELEASE)
     try:

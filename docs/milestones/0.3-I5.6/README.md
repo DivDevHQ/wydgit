@@ -15,9 +15,13 @@ confined Wydgine workers → private ingress → Caddy loopback TLS execution, i
 file-category MAC denials and bounded worker crash/OOM recovery. The continuation
 confines Caddy, fixes reproduced relay retirement/process-observation faults and the
 ineffective private temporary-byte limit, and extends actual category denials.
-Broker MAC, external ingress, production firewall, reboot/storage, automatic retirement
-and historical HTTP500 gates remain open. See the
-[latest evidence](verification.md#reliability-and-confinement-continuation--2026-10-16)
+The current campaign adds direct broker MAC, same-UID hostile probes and bounded
+FD/task/CPU/simultaneous-tmpfs pressure. Indirect broker manager/account authority,
+external ingress, production firewall, reboot/storage, automatic retirement and
+historical HTTP500 attribution remain open. Controlled Page-budget waits reproduce
+Contact/held-request 500 and late storage completion without claiming a historical
+fix. See the
+[latest evidence](verification.md#reliability-diagnosis-and-broker-domain-campaign--2026-10-16)
 and [SELinux policy](selinux.md). Earlier gate tables below describe original delivery.
 
 Wydgine runs Apps. WydHosting manages infrastructure. Linux enforces OS boundaries.
@@ -105,7 +109,8 @@ it can read another UID's private files. Worker and broker verify execution inpu
 OS policy is separate from I2 request quotas. The initial service lane deliberately
 allows AF_UNIX only: approved remote S3/TCP dependencies cannot run in it. Do not expand
 network access silently. Storage quotas remain absent; the experimental provider/worker
-MAC candidate is described in [selinux.md](selinux.md), with root broker MAC pending. New
+MAC candidate is described in [selinux.md](selinux.md), with experimental direct
+root-broker MAC and residual manager/account authority. New
 snapshot roots cannot be activated over a previous lease without I5.7 data ownership
 work; staging preserves old generations and replacement workers reuse the same base.
 

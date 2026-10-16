@@ -22,6 +22,7 @@ def prepare(q, pools):
     q.command(['/usr/bin/chcon', '-R', '-t', 'wydhosting_runtime_t', str(q.RELEASE)])
     for path in (q.ROOT, q.ROOT/'pools'):
         q.command(['/usr/bin/chcon', '-t', 'wydhosting_root_t', str(path)])
+    q.command(['/usr/sbin/restorecon', '-RF', str(q.ROOT/'broker'), str(q.ROOT/'uploads'), str(q.ROOT/'accounts')])
     q.command(['/usr/bin/chcon', '-t', 'wydhosting_provider_state_t', str(q.ROOT/'provider')])
     q.command(['/usr/bin/chcon', '-t', 'wydhosting_control_t', str(q.RUN)])
     q.command(['/usr/bin/chcon', '-t', 'wydhosting_run_t', str(q.RUN/'workers')])
@@ -118,6 +119,7 @@ print(json.dumps(dict(status=r.status,body=b.decode(),headers=dict(r.getheaders(
         if kwargs.get('method') == 'HEAD': assert result['body'] == ''
         return dict(status=result['status'], tenantMarker=marker)
 
+    q.check('unconfined broker invocation refuses before release and socket', lambda: broker_unconfined_refusal(q), category='selinux-broker-mac')
     q.check('installed canonical provider service starts', start)
     if not endpoint.exists():
         for file in (q.RUN/'broker.sock', q.RUN, q.RUN/'provider', q.ROOT/'provider/supervisor'):
@@ -144,10 +146,20 @@ print(json.dumps(dict(status=r.status,body=b.decode(),headers=dict(r.getheaders(
         q.check('worker has no TCP listener '+pool['poolId'], lambda r=r: 'pid='+str(r['pid'])+',' not in q.command([shutil.which('ss'), '-lntpH']).stdout)
         q.check('edge UID cannot bypass provider to worker '+pool['poolId'], lambda r=r: q.denied(EDGE, 'socket.socket(socket.AF_UNIX).connect(sys.argv[1])', q.RUN/'workers'/r['generation']/'http.sock'))
         q.log('integrated-worker', **r)
+    for field in ('unitHash', 'invocation'):
+        lease = q.ROOT/'broker'/('lease-'+broker.key(policy['pools'][0]['poolId'])+'.json')
+        original = lease.read_bytes()
+        try:
+            stale = json.loads(original); stale[field] = '0'*len(stale[field]); lease.write_text(json.dumps(stale))
+            q.check('broker refuses conflicting durable '+field, lambda: q.refused(q.request(policy, 'status'), 'BROKER.OWNERSHIP'), category='broker-ownership')
+        finally: lease.write_bytes(original)
+    q.check('broker actual confined hostile boundaries', lambda: broker_mac_probe(q), category='selinux-broker-mac')
     q.check('MAC same UID hostile category boundaries', lambda: mac_probe(q), category='selinux-mac')
     if (q.RELEASE/'bin/caddy').exists():
         proxy(q, response)
     q.check('actual worker private tmpfs ENOSPC and sibling survival', lambda: temporary_exhaustion(q, *leases(), response), category='integrated-resource')
+    for resource in ('fd', 'tasks', 'cpu'):
+        q.check('bounded worker cgroup native '+resource+' pressure and sibling survival', lambda resource=resource: bounded_resource_probe(q, *leases(), response, resource), category='integrated-resource')
     for mode in ('SIGKILL', 'OOM'):
         q.default_category = 'service-recovery'
         before = leases()
@@ -211,7 +223,7 @@ print(json.dumps(dict(status=r.status,body=b.decode(),headers=dict(r.getheaders(
     q.command(['/usr/bin/systemctl', 'start', name], check=False)
     q.wait(lambda: show('ActiveState') == 'failed', 15)
     q.check('provider refuses stale supervisor ownership after SIGKILL', lambda: show('ExecMainStatus') == '1' and all(broker.cgroup_empty(r) for r in live))
-    q.log('integrated-limitations', caddy='loopback-only' if (q.RELEASE/'bin/caddy').exists() else 'not-executed', externalNetwork='not-executed', reboot='not-executed', mac='provider-and-worker-MCS; edge-confined; broker-unconfined', recovery='stale-lock-requires-operator-review')
+    q.log('integrated-limitations', caddy='loopback-only' if (q.RELEASE/'bin/caddy').exists() else 'not-executed', externalNetwork='not-executed', reboot='not-executed', mac='provider-and-worker-MCS; edge-and-broker-confined; qualification-incomplete', recovery='stale-lock-requires-operator-review')
 
 
 def descriptors(pid):
@@ -250,6 +262,81 @@ raise RuntimeError('memory enforcement failed')
         if child.poll() is None: child.kill(); child.wait(timeout=5)
 
 
+def bounded_resource_probe(q, record, sibling, response, mode):
+    """Native administrator injection into an exact live worker cgroup, never host."""
+    import subprocess
+    assert mode in ('fd', 'tasks', 'cpu')
+    proc = Path('/proc/'+str(record['pid']))
+    assert proc.joinpath('stat').read_text().rsplit(') ',1)[1].split()[19] == record['startTime']
+    assert Path('/proc/'+str(sibling['pid'])+'/stat').read_text().rsplit(') ',1)[1].split()[19] == sibling['startTime']
+    uid = proc.stat().st_uid
+    assert uid in (q.A, q.B)
+    cgroup = Path('/sys/fs/cgroup'+record['cgroup'])
+    assert (cgroup/'pids.max').read_text().strip() == '32'
+    assert (cgroup/'memory.max').read_text().strip() == '268435456'
+    assert (cgroup/'cpu.max').read_text().strip() == '25000 100000'
+    assert next(line.split()[3:5] for line in proc.joinpath('limits').read_text().splitlines() if line.startswith('Max open files')) == ['128', '128']
+    def counters(name): return dict(line.split() for line in (cgroup/name).read_text().splitlines())
+    before_tasks = int(counters('pids.events')['max'])
+    before_cpu = int(counters('cpu.stat')['nr_throttled'])
+    code = '''import errno,json,os,resource,signal,sys,time
+resource.setrlimit(resource.RLIMIT_AS,(67108864,67108864))
+resource.setrlimit(resource.RLIMIT_CPU,(2,2))
+resource.setrlimit(resource.RLIMIT_NOFILE,(128,128))
+os.kill(os.getpid(),signal.SIGSTOP)
+mode=sys.argv[1];value={}
+if mode=='fd':
+ handles=[]
+ try:
+  for _ in range(160):
+   try: handles.append(os.open('/dev/null',os.O_RDONLY))
+   except OSError as error:
+    assert error.errno==errno.EMFILE;value=dict(result='EMFILE',opened=len(handles));break
+  assert value
+ finally:
+  for fd in handles:os.close(fd)
+elif mode=='tasks':
+ children=[]
+ try:
+  for _ in range(40):
+   try: pid=os.fork()
+   except OSError as error:
+    assert error.errno==errno.EAGAIN;value=dict(result='EAGAIN',children=len(children));break
+   if pid==0:time.sleep(2);os._exit(0)
+   children.append(pid)
+  assert value
+ finally:
+  for pid in children:os.waitpid(pid,0)
+else:
+ end=time.process_time()+.3
+ while time.process_time()<end:pass
+ value=dict(result='bounded CPU work',cpuSeconds=.3)
+print(json.dumps(value))
+'''
+    child = subprocess.Popen(['/usr/bin/python3','-I','-c',code,mode],user=uid,group=uid,extra_groups=[],stdin=subprocess.DEVNULL,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+    q.processes.append(child)
+    try:
+        q.wait(lambda: '\nState:\tT' in Path('/proc/'+str(child.pid)+'/status').read_text(),5)
+        (cgroup/'cgroup.procs').write_text(str(child.pid))
+        assert Path('/proc/'+str(child.pid)+'/cgroup').read_text() == '0::'+record['cgroup']+'\n'
+        child.send_signal(signal.SIGCONT)
+        response(host='b.localhost')
+        out, err = child.communicate(timeout=10)
+        assert child.returncode == 0, err
+        value = json.loads(out)
+        if mode=='tasks': assert int(counters('pids.events')['max']) > before_tasks
+        if mode=='cpu': assert int(counters('cpu.stat')['nr_throttled']) > before_cpu
+        response(); response(host='b.localhost')
+        assert not (cgroup/'pids.current').read_text().strip() == '32'
+        return dict(injection='administrator-native-helper', unit=record['unit'], **value,
+            pidsDeniedDelta=int(counters('pids.events')['max'])-before_tasks,
+            throttledPeriodsDelta=int(counters('cpu.stat')['nr_throttled'])-before_cpu,
+            helperMemoryMax=67108864, helperCpuSeconds=2, helperDescriptorMax=128,
+            helperForkCeiling=40, deadlineSeconds=10, sibling='HTTP 200', recovery='HTTP 200')
+    finally:
+        if child.poll() is None: child.kill(); child.wait(timeout=5)
+
+
 def temporary_exhaustion(q, record, sibling, response):
     # Administrator fault injection into the actual private worker mount, not a
     # portable filesystem capability or a claim about confined library tmp use.
@@ -259,7 +346,7 @@ def temporary_exhaustion(q, record, sibling, response):
         assert Path('/proc/'+str(item['pid'])+'/stat').read_text().rsplit(') ',1)[1].split()[19] == item['startTime']
     descriptors = []
     name = '.wyd-i56-capacity-'+q.uuid.uuid4().hex
-    created = False
+    created = []
     try:
         for item in (record, sibling):
             descriptors.append(os.open('/proc/'+str(item['pid'])+'/root/tmp', os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW|os.O_CLOEXEC))
@@ -292,20 +379,105 @@ finally:os.close(fd)
 assert denied=='ENOSPC' and written<=size
 print(json.dumps(dict(bytesWritten=written,result=denied)))
 '''
-        created = True
+        created.append((0, name))
         value = json.loads(q.command(['/usr/bin/python3','-I','-c',code,str(descriptors[0]),name,str(capacities[0])],pass_fds=(descriptors[0],),timeout=10).stdout)
         assert os.fstatvfs(descriptors[1]).f_bavail == before[1]
         try: os.stat(name, dir_fd=descriptors[1], follow_symlinks=False)
         except FileNotFoundError: pass
         else: raise AssertionError('sibling saw foreign temporary file')
         response(); response(host='b.localhost')
-        return dict(injection='administrator-held-private-mount', capacityBytes=capacities[0], **value, helperMemoryMax=67108864, helperCpuSeconds=2, helperDeadlineSeconds=10, sibling='HTTP 200; separate mount unchanged')
+        other_name = name+'-sibling'; created.append((1, other_name))
+        second = json.loads(q.command(['/usr/bin/python3','-I','-c',code,str(descriptors[1]),other_name,str(capacities[1])],pass_fds=(descriptors[1],),timeout=10).stdout)
+        assert second['result'] == 'ENOSPC' and os.fstatvfs(descriptors[0]).f_bavail == 0
+        response(); response(host='b.localhost')
+        return dict(simultaneouslyExhaustedTenants=2, secondTenant=second, injection='administrator-held-private-mount', capacityBytes=capacities[0], **value, helperMemoryMax=67108864, helperCpuSeconds=2, helperDeadlineSeconds=10, sibling='HTTP 200; separate mount unchanged')
     finally:
-        if created:
-            try: os.unlink(name, dir_fd=descriptors[0])
-            except FileNotFoundError: pass
-            assert os.fstatvfs(descriptors[0]).f_bavail == before[0], 'temporary allocation not reclaimed'
-        for fd in descriptors: os.close(fd)
+        try:
+            for index, filename in created:
+                try: os.unlink(filename, dir_fd=descriptors[index])
+                except FileNotFoundError: pass
+                assert os.fstatvfs(descriptors[index]).f_bavail == before[index], 'temporary allocation not reclaimed'
+        finally:
+            for fd in descriptors: os.close(fd)
+
+
+def broker_unconfined_refusal(q):
+    result = q.command(['/usr/bin/python3', '-I', str(q.RELEASE/'node_modules/wydhosting/broker/broker.py')], check=False)
+    assert result.returncode == 70, result.returncode
+    event = json.loads(result.stderr)
+    assert event == dict(schema='wydhosting.startup-event/1',outcome='refused',phase='selinux-domain',code='BROKER.SELINUX_DOMAIN'), event
+    return event
+
+
+def broker_mac_probe(q):
+    """Root-reviewed hostile canary; no publisher/broker operation exposes this."""
+    result = q.ROOT/'broker'/'mac-result.json'
+    foreign = q.ROOT/'provider'/'broker-mac-canary'
+    foreign.write_text('public qualification canary'); foreign.chmod(0o666)
+    foreign_unit = 'wyd-i56-broker-foreign.service'; q.units.append(foreign_unit)
+    foreign_dir = q.RUN/'broker-mac-socket'; q.mkdir(foreign_dir, 0o700)
+    q.command(['/usr/bin/chcon', '-t', 'wydhosting_provider_run_t', str(foreign_dir)])
+    q.command(['/usr/bin/systemd-run', '--quiet', '--unit='+foreign_unit,
+        '--property=Type=exec', '--property=User=root', '--property=SELinuxContext=system_u:system_r:wydhosting_provider_t:s0',
+        '--property=NoNewPrivileges=yes', '--property=CapabilityBoundingSet=', '--property=MemoryMax=64M',
+        '--property=MemorySwapMax=0', '--property=TasksMax=16', '--property=CPUQuota=25%',
+        '--property=RuntimeMaxSec=15s', '--property=TimeoutStopSec=2s',
+        str(q.RELEASE/'bin/node'), '-e', "require('node:net').createServer().listen('/run/wydhosting/broker-mac-socket/foreign.sock');setTimeout(()=>process.exit(0),12000)"])
+    q.wait(lambda: (foreign_dir/'foreign.sock').exists(), 5)
+    os.rename(foreign_dir/'foreign.sock', q.RUN/'broker-foreign.sock')
+    q.command(['/usr/bin/chcon', '-t', 'wydhosting_control_t', str(q.RUN/'broker-foreign.sock')])
+    pid = int(q.command(['/usr/bin/systemctl', 'show', foreign_unit, '-p', 'MainPID', '--value']).stdout)
+    assert pid > 0 and Path('/proc/'+str(pid)).stat().st_uid == 0
+    assert Path('/proc/'+str(pid)+'/attr/current').read_text().strip('\0\n') == 'system_u:system_r:wydhosting_provider_t:s0'
+    script = q.RELEASE/'broker-mac-canary.py'
+    script.write_text('''import errno,json,os,socket,subprocess,sys
+from pathlib import Path
+context=Path('/proc/self/attr/current').read_text().strip('\\0\\n')
+assert context=='system_u:system_r:wydhosting_broker_t:s0',context
+outcomes={}
+def denied(name,operation):
+ try: operation()
+ except OSError as error:
+  assert error.errno in (errno.EACCES,errno.EPERM), (name,error.errno)
+  outcomes[name]=errno.errorcode[error.errno]
+ else: raise AssertionError(name+' unexpectedly allowed')
+denied('foreign-provider-file',lambda:Path(sys.argv[2]).read_bytes())
+denied('system-file-write',lambda:os.open('/etc/hostname',os.O_WRONLY))
+denied('arbitrary-shell',lambda:subprocess.run(['/bin/sh','-c','exit 0'],check=True,timeout=2))
+denied('generic-executable',lambda:subprocess.run(['/usr/bin/true'],check=True,timeout=2))
+denied('tcp-socket',lambda:socket.socket(socket.AF_INET))
+denied('provider-signal',lambda:os.kill(int(sys.argv[3]),18))
+s=socket.socket(socket.AF_UNIX)
+denied('provider-socket',lambda:s.connect('/run/wydhosting/broker-foreign.sock'))
+p=Path(sys.argv[1]);p.write_text('{}')
+denied('foreign-relabel',lambda:os.setxattr(p,'security.selinux',b'system_u:object_r:etc_t:s0'))
+attempt=subprocess.run(['/usr/bin/systemctl','start','wyd-i56-broker-foreign.service'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=2)
+assert attempt.returncode!=0,'foreign service unexpectedly authorized'
+outcomes['foreign-service']='refused'
+p.write_text(json.dumps(dict(pid=os.getpid(),context=context,outcomes=outcomes)))
+''')
+    q.command(['/usr/sbin/restorecon', '-F', str(script)])
+    unit = 'wyd-i56-broker-mac-probe.service'; q.units.append(unit)
+    properties = ['SELinuxContext=system_u:system_r:wydhosting_broker_t:s0', 'NoNewPrivileges=yes',
+        'CapabilityBoundingSet=CAP_CHOWN CAP_DAC_OVERRIDE CAP_FOWNER CAP_SETUID CAP_SETGID CAP_AUDIT_WRITE',
+        'MemoryMax=64M', 'MemorySwapMax=0', 'TasksMax=8', 'CPUQuota=25%', 'RuntimeMaxSec=10s',
+        'TimeoutStopSec=2s', 'LimitNOFILE=64', 'RestrictAddressFamilies=AF_UNIX AF_INET']
+    # AF_INET deliberately permitted by the fixture's syscall filter, so its socket
+    # denial measures MAC. Normal broker systemd restrictions remain unchanged.
+    audit_offset = Path('/var/log/audit/audit.log').stat().st_size
+    attempt = q.command(['/usr/bin/systemd-run', '--quiet', '--wait', '--unit='+unit,
+        *['--property='+p for p in properties], '/usr/bin/python3', '-I', str(script), str(result), str(foreign), str(pid)], check=False)
+    assert attempt.returncode == 0, q.command(['/usr/bin/journalctl', '-u', unit, '-n', '20', '--no-pager', '-o', 'cat']).stdout
+    value = json.loads(result.read_text())
+    assert len(value['outcomes']) == 9, value
+    with open('/var/log/audit/audit.log') as audit:
+        audit.seek(audit_offset); lines = audit.readlines()
+    evidence = [line.strip() for line in lines if 'avc:' in line and 'denied' in line and 'scontext=system_u:system_r:wydhosting_broker_t:s0 ' in line and 'permissive=0' in line]
+    for kind in ('file','process','tcp_socket','unix_stream_socket'):
+        assert any('tclass='+kind in line and 'pid='+str(value['pid'])+' ' in line for line in evidence), (kind,evidence)
+    for permission, target in (('execute_no_trans','bin_t'),('execute','shell_exec_t'),('start','init_t'),('relabelfrom','wydhosting_broker_state_t')):
+        assert any('{ '+permission+' }' in line and ':'+target+':' in line for line in evidence), (permission,evidence)
+    return dict(**value, avcs=evidence)
 
 
 def mac_probe(q):

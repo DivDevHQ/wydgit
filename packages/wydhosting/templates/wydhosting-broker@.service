@@ -5,6 +5,7 @@ Slice=wydhosting-broker.slice
 Type=exec
 User=root
 Group=root
+SELinuxContext=system_u:system_r:wydhosting_broker_t:s0
 ExecStart=/usr/bin/python3 -I /opt/wydhosting/release/node_modules/wydhosting/broker/broker.py
 StandardInput=socket
 StandardOutput=null
@@ -31,6 +32,7 @@ LockPersonality=yes
 RestrictNamespaces=yes
 RestrictAddressFamilies=AF_UNIX AF_NETLINK
 ReadWritePaths=/var/lib/wydhosting /run/wydhosting /run/systemd/system /etc
+ReadOnlyPaths=/etc/systemd /etc/wydhosting
 # account tools use atomic renames and locks in /etc; the executable contract,
 # not a pretend read-only /etc mount, limits those administrative writes.
 InaccessiblePaths=/root /home

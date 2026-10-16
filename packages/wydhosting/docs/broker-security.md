@@ -16,8 +16,10 @@ The [integrated follow-up](verification.md#integrated-enterprise-campaign--2026-
 adds root-approved account SELinux categories, descriptor-applied deployment/runtime
 labels, nonrecyclable category markers and actual domain verification before launch.
 On an enforcing guest a missing category refuses execution. Provider/workers now have
-an experimental confined policy; the root broker still uses the distro unconfined
-service domain and is **not production MAC qualified**. See [SELinux](selinux.md).
+an experimental confined policy; the root broker now has the experimental
+`wydhosting_broker_t` domain. Actual direct-access denials pass; shared account and
+managed-unit/manager authority remain **not production compromise qualified**.
+See [SELinux](selinux.md).
 
 ## Installation trust
 
@@ -43,7 +45,9 @@ limits retained capabilities, address families, memory/tasks/descriptors, host w
 core dumps and inherited environment. Account tools need atomic writes/locks in `/etc`;
 the template honestly permits that directory rather than claiming file-only writes
 would safely support `useradd`. NoNewPrivileges prevents acquired privilege. Dedicated
-broker MAC and a fully capability-split account/service helper are not delivered.
+experimental broker MAC is delivered, with verified startup context and
+read-only approval/systemd configuration mounts. A capability-split account/service
+helper and containment of indirect manager execution remain undelivered.
 
 ## Closed protocol
 

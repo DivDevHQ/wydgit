@@ -28,7 +28,7 @@ async function privateHost(t,uid=process.getuid()){
  const host=await createOperationalHost({schema:'wydgit.operations/0.1',inventory,optional:[]},{root:base,peerCredentials:credentials});const socketPath=path.join(base,'http.sock');await host.start(socketPath);t.after(()=>host.shutdown());return {host,socketPath,base};
 }
 test('Linux primitive attack suite: actual current-UID filesystem and Unix sockets; no administrative commands',()=>{
- const result=spawnSync('python3',['test-support/linux/verify.py',fileURLToPath(new URL('./broker',import.meta.resolve('wydhosting/package.json')))],{encoding:'utf8',timeout:15000});assert.equal(result.status,0,result.stdout+result.stderr);assert.match(result.stderr,/Ran 35 tests/);
+ const result=spawnSync('python3',['test-support/linux/verify.py',fileURLToPath(new URL('./broker',import.meta.resolve('wydhosting/package.json')))],{encoding:'utf8',timeout:15000});assert.equal(result.status,0,result.stdout+result.stderr);assert.match(result.stderr,/Ran 36 tests/);
 });
 test('firewalld probe mocked guards refuse management zones, existing resources and nonroot mutation',()=>{
  const result=spawnSync('python3',['test-support/linux/verify_firewalld_guards.py',fileURLToPath(new URL('./broker',import.meta.resolve('wydhosting/package.json')))],{encoding:'utf8',timeout:5000});assert.equal(result.status,0,result.stdout+result.stderr);assert.match(result.stderr,/Ran 6 tests/);

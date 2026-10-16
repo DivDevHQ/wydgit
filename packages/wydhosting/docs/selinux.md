@@ -1,28 +1,31 @@
-# Experimental SELinux provider, worker and edge confinement
+# Experimental SELinux provider, worker, edge and broker confinement
 
 This is an I5.6 qualification candidate, not a production security certification.
 The installed provider, two real Wydgine workers and separate Caddy edge have executed
 on AlmaLinux 10.2 in enforcing, distinct confined domains/categories. The privileged
-Python broker still uses the distribution's `unconfined_service_t` domain.
-Its dedicated MAC policy, reboot installation and a broader hostile-access matrix
-remain gates. Do not infer RHEL, Rocky Linux or Oracle Linux qualification.
+Python broker now executes in `wydhosting_broker_t`, with actual direct-access
+denials. Its unit-writing/manager and shared account-database authority still prevents
+a claim of full broker-compromise containment. Reboot installation and the remaining
+hostile interruption matrix remain gates. Do not infer RHEL, Rocky Linux or Oracle
+Linux qualification.
 
 ## Authority and domains
 
 The reviewed module is `selinux/wydhosting_worker.cil` inside the WydHosting package.
 It installs no permissive domain, boolean, unconfined-domain attribute, worker
-capability, worker TCP/UDP permission, ptrace, worker relabel permission or system-file write.
+capability, worker TCP/UDP permission, ptrace, worker relabel permission or worker system-file write.
 It grants systemd access only to the new hosting object types needed to build its
 existing mount sandbox and service runtime directories. NoNewPrivileges remains on;
 the explicit `nnp_transition` rules permit init to enter the confined provider,
-worker and edge domains. There is no automatic transition to an unconfined worker.
+worker, edge and broker domains. There is no automatic transition to an unconfined
+worker.
 
 | Subject | Actual candidate context | Scope |
 | --- | --- | --- |
 | Provider, UID/GID 61050 | `system_u:system_r:wydhosting_provider_t:s0` | Own journal/state and edge socket; root-reviewed configuration read; authenticated broker/worker connections and lifetime metadata read |
 | Tenant A, UID/GID 61051 | `system_u:system_r:wydhosting_worker_t:s0:c51` | Approved code read, own categorized data/runtime access, root-broker Unix control |
 | Tenant B, UID/GID 61052 | `system_u:system_r:wydhosting_worker_t:s0:c52` | Same permissions, independently categorized resources |
-| Root broker | `system_u:system_r:unconfined_service_t:s0` | Existing closed root operations, unchanged capabilities and worker lifetime authentication |
+| Root broker | `system_u:system_r:wydhosting_broker_t:s0` | Typed managed resources, fixed account/systemctl executables, verified context and existing closed operations; six capabilities retained |
 | Separate edge, UID/GID 61053 | `system_u:system_r:wydhosting_edge_t:s0` | Own executable/config/state, provider Unix endpoint and HTTP-port-type TCP ingress; no worker/broker socket or tenant-data access |
 
 Identity and SELinux labels do not grant SEAM capabilities. No raw process or file API
@@ -82,11 +85,12 @@ information side channels and all native-library closures remain unqualified.
 
 The trusted provider is intentionally not MCS constrained: it must route to all
 approved tenants. It cannot relabel their files or write sealed code/root state.
-Its exposure remains part of the trusted computing base. Root and the unconfined
-broker can bypass tenant MAC; a dedicated broker policy is still required by the
-full production qualification mission.
+Its exposure remains part of the trusted computing base. The trusted broker is
+intentionally allowed cross-category staging/labeling over
+managed resources. Root administration remains outside these tenant boundaries;
+broker indirect service-manager authority still requires a narrower architecture.
 
-## Confined edge and remaining privileged broker
+## Confined edge and privileged broker
 
 The same module defines `wydhosting_edge_exec_t` for
 `/opt/wydhosting/edge/caddy`, `wydhosting_edge_config_t` for the exact Caddyfile,
@@ -111,15 +115,59 @@ requests to any provider-approved route. Header hygiene, credential checks, prov
 authorization and firewalld remain independent boundaries. Its runtime reads procfs
 and distro files; there is no claim of eliminating all host information side channels.
 
-The broker remains unconfined with CHOWN, DAC_OVERRIDE, FOWNER, SETUID, SETGID and
-AUDIT_WRITE. Account tools need shared account-database writes; service operations
-need manager access, and staging requires fixed cross-category labeling. A dedicated
-policy must narrowly type those operations and retain ownership checks; granting all
-`file_type`, arbitrary transitions or generic process access is not acceptable. No
-such shortcut is installed. Broker confinement/possible privilege separation remains
-an implementation and qualification gate, not a request to weaken global policy.
-Even a future confined broker retains authority over managed tenants and account
-databases; confinement does not make compromised root code harmless.
+## Dedicated broker domain and its limits
+
+The broker service explicitly selects `system_u:system_r:wydhosting_broker_t:s0`.
+On SELinux-required lanes, broker startup independently verifies that exact current
+context before release/approval/socket access. An actual root invocation in an
+unconfined domain refuses `BROKER.SELINUX_DOMAIN`; a mocked test also refuses a wrong
+category. No automatic/unconfined fallback, permissive domain or capability expansion
+exists. Provider/worker connections now target the dedicated broker type.
+
+| Object type | Intended resources | Broker access |
+| --- | --- | --- |
+| `wydhosting_broker_approval_t` | Exact `/etc/wydhosting/approval.json` | Read only |
+| `wydhosting_broker_state_t` | Root broker leases, locks and reservation markers | Durable atomic updates; no host-type relabel |
+| `wydhosting_upload_t` | Reviewed upload tree | Descriptor-held reads only |
+| `wydhosting_account_t` | Managed account directories | Create/own directories; no general home-file access |
+| `wydhosting_code_t`, `wydhosting_data_t`, `wydhosting_run_t` | Approved generated tenant resources | Stage, seal, label and authenticate categorized ingress |
+| `wydhosting_broker_unit_t` | Broker-created unit files, including atomic temporary files | Create/publish/read; manager start/stop/status for this type |
+| `passwd_file_t`, `shadow_t`, `wydhosting_account_temp_t` | Shared account databases and atomic account-tool replacements | Fixed account tools require updates; not per-account MAC |
+
+Python's distro `bin_t` entrypoint needs `execute` during init's explicit transition,
+but lacks `execute_no_trans`. Actual `/usr/bin/true` fails the latter; `/bin/sh` fails
+`shell_exec_t` execution. Only existing `systemctl`, `useradd` and `groupadd` executable
+types can execute in-domain. Their arguments remain generated by the unchanged closed
+broker implementation; no publisher command, script, path or shell surface is added.
+Read-only loader/Python/OpenSSL/platform/SELinux-label resources and init/worker process
+metadata support the existing checks. Optional ioctl/NSS/syslog/nologin-check denials
+are retained rather than allowed merely to silence audit.
+
+Actual root same-UID canaries prove `signal` and Unix `connectto` denials against a
+provider-domain process/socket. Host-file write, foreign provider-tree read, generic
+exec, shell exec, TCP socket creation, host-type relabel and foreign-service start
+also fail with current-probe AVCs, `permissive=0`. AF_INET is deliberately admitted by
+the probe's syscall filter, and writable host mounts/DAC permissions avoid crediting
+systemd sandboxing or distinct UIDs for those MAC results. The normal broker keeps its
+stricter systemd restrictions. `/etc/systemd` and `/etc/wydhosting` are additionally
+read-only inside it. The broker-only RestrictSUIDSGID exception and NNP/capability
+bounds are unchanged.
+
+**This does not contain every consequence of a broker compromise.** The retained
+CHOWN, DAC_OVERRIDE, FOWNER, SETUID, SETGID and AUDIT_WRITE are residual privileges.
+Shared account databases confer host-wide account authority. The combination of
+managed-unit byte writes, managed-unit starts and manager reload may permit indirect
+privileged execution through systemd. Direct shell/foreign-unit denial does not prove
+otherwise. Type-based directory access is not a filename/content validation mechanism;
+the broker's ownership/approval checks remain essential TCB code.
+
+Do not add generic service/unit/filesystem/process permissions to work around this
+gate. The narrower proposed architecture is a separately confined publisher/launcher
+that independently validates immutable root approval and durable generation ownership,
+uses administrator-installed fixed worker templates and accepts closed parameters.
+The session broker must then lose unit-writing/reload authority. A separately approved
+account provisioner should hold shared database rights. That split is **not implemented**;
+current direct broker confinement is experimental, not production compromise containment.
 
 ## Reproducible installation and limits
 
@@ -128,6 +176,8 @@ On the authorized disposable guest, after installing the reviewed immutable clos
 ```sh
 sudo semodule -i /opt/wydhosting/release/node_modules/wydhosting/selinux/wydhosting_worker.cil
 sudo restorecon -RF /opt/wydhosting/release /var/lib/wydhosting/provider
+sudo restorecon -RF /var/lib/wydhosting/broker /var/lib/wydhosting/uploads /var/lib/wydhosting/accounts
+sudo restorecon -F /etc/wydhosting/approval.json
 sudo restorecon -F /var/lib/wydhosting /var/lib/wydhosting/pools /run/wydhosting /run/wydhosting/workers
 sudo restorecon -F /etc/wydhosting/provider.json /etc/wydhosting/provider-approval.json
 # After starting the broker socket, restore its exact published inode label:

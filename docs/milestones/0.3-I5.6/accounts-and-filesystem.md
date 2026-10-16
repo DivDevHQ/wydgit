@@ -95,3 +95,13 @@ than falling back to path checks. This rejects same-device bind mounts as well a
 ordinary device changes. The upload root itself must have protected root-owned
 ancestry. Local tests exercise real openat2 symlink and existing proc-mount refusal;
 privileged concurrent mount substitution remains unexecuted.
+
+## Broker domain campaign approval checks
+
+Actual enforcing broker operations now refuse changing an existing account's category,
+adopting the marker left by a partial reservation, and changing its approved UID/GID.
+A failed category-change attempt can conservatively reserve an extra marker; it is
+not recycled or reassigned. Current category exhaustion/crash recovery remains
+unqualified. Uploads are separately typed read-only to the broker; account directories
+and broker markers have their own types. Shared passwd/group/shadow authority remains
+a production TCB gate; see [SELinux](selinux.md) for the proposed separate provisioner.

@@ -1,6 +1,6 @@
 # I5.6 verification and qualification record
 
-**Latest campaign:** [reliability and confinement continuation](#reliability-and-confinement-continuation--2026-10-16)
+**Latest campaign:** [reliability diagnosis and broker domain](#reliability-diagnosis-and-broker-domain-campaign--2026-10-16)
 and [SELinux policy](selinux.md). Earlier sections retain their original failures,
 counts and limitations; they are historical evidence, not the current gate decision.
 
@@ -23,6 +23,226 @@ No root/sudo/account/systemd/cgroup/firewall/SSH/network/DNS/certificate provisi
 was performed on the operator's machine. Sandboxed test restrictions were bypassed
 only for explicitly authorized ordinary-user subprocess/socket/browser/npm/Git work,
 not by running customer code or provisioning as root.
+
+## Reliability diagnosis and broker domain campaign — 2026-10-16
+
+Started clean at **14291e7d6a616643c7148bfbbcf2c94c85d517d9** on
+`develop/0.3`, equal to freshly fetched `origin/develop/0.3`. Version remains
+**0.3.0-alpha.15**. Reviewed that commit's actual relay/process-observation,
+Caddy and private-tmpfs changes; none was reverted or credited with explaining an
+older incident. Guest hostname `almond-lab`, machine ID
+`97512ddd78234e5a97d2bb8ce8f446fe`, VM UUID
+`a70c1f77-4f87-4042-a773-f17064524e4c` and boot ID
+`c77a65af-95bc-480d-bbe3-47f613b6b005` matched the intended AlmaLinux 10.2 guest.
+Initial hosting roots, units, module and four fixture identities were absent;
+SELinux was enforcing and firewalld/sshd active. No Mint service, firewall, mount,
+account or resource-pressure test was changed or run.
+
+### HTTP500: a deterministic cause, historical attribution still unknown
+
+The unchanged normal-policy baseline passed **932/932**. Inspection followed the
+HTTP dispatch, returned `executePage` failures, shared Page/event/SEWN ledger,
+Session authorization and drain, JSON's process queue/exclusive lock/atomic rename,
+SQLite's synchronous transactions and asynchronous file inspection, response cleanup,
+and worker/provider forwarding. No storage corruption, lock race or relay defect
+was demonstrated as the cause of the historical Contact/held-request failures.
+
+The new opt-in `test-support/http-budget-probe.mjs` instead pauses at precise trusted
+boundaries: JSON document `open`, SQLite database `lstat`, and a held `Page.Load`
+during shared-host drain. The real adapters, HTTP transport and existing one-second
+Page budget remain unchanged. Each 1,100 ms bounded pause reproduces **HTTP 500** with
+exactly `page/SEWN.LIMIT` and `cleanup/SEWN.LIMIT`; a subsequent request returns 200.
+The held case retains twelve sibling requests and verifies sibling service during
+and after the failure. **3/3 diagnostic cases passed** means the expected failures
+were reproduced, not that three formerly failing application requests were fixed.
+
+Causal sequence: Page execution creates one wall-clock ledger; an awaited handler or
+service remains subject to it; elapsed time invalidates execution (SEWN's timer may
+win its Promise race while storage is still pending); cleanup uses that same expired
+ledger; the structured Page error becomes 500. This is distinct from transport EOF,
+stream truncation, broker relay retirement and application shutdown ownership loss.
+
+Both storage probes additionally observed **HTTP completion before barrier release
+and the submitted record visible afterward**. An already admitted storage operation
+can therefore commit after this Page has returned a timeout failure. There is no
+claim that a 500 means rollback or that retry is safe. No cancellation/idempotency
+contract or transaction behavior was silently changed to hide this observation.
+
+The historical uninstrumented failures remain **unattributed and not fixed**. Their
+missing error code/elapsed phase cannot be reconstructed. Narrow remaining hypotheses
+are the demonstrated wall-clock budget path under I/O/scheduling delay versus an
+independent storage/service or lifecycle failure; future genuine incidents must be
+compared with the existing bounded phase/code diagnostic. No assertions, deadlines,
+retry policy, suite concurrency or application resource allowance were relaxed.
+
+### Dedicated broker MAC: demonstrated direct boundaries and residual authority
+
+The installed socket-activated root broker now enters
+`system_u:system_r:wydhosting_broker_t:s0` with NNP. Startup independently checks its
+actual domain before reading the release/approval or using a control socket on an
+EL lane. An actual unconfined invocation exits 70 with only the fixed
+`selinux-domain/BROKER.SELINUX_DOMAIN` startup event; there is no fallback.
+Actual active broker contexts and unchanged capability/hardening fields are recorded
+alongside each worker's real context.
+
+The policy introduces typed read-only approval/uploads, protected broker state,
+managed account directories and generated unit files. New unit files (including
+atomic temporary files) receive the managed unit type at creation. Existing host unit
+files, provider state/configuration, installed runtime code and host files are not
+writable by the broker. Account tools retain narrowly typed shared passwd/group/shadow
+updates; the broker is intentionally not MCS constrained because approved staging
+must label several tenant categories. Only fixed `systemctl`, `useradd` and `groupadd`
+executable types have in-domain execution permission. Distro Python is an entrypoint;
+`bin_t` has no `execute_no_trans`. No permissive/unconfined attribute, broad
+`file_type` rule, TCP/UDP permission, generic process signaling/ptrace or new capability
+was added. Optional NSS userdb, terminal ioctl, account-tool syslog and nologin
+executable-check denials remain denied, rather than becoming indiscriminate allows.
+
+The broker-only RestrictSUIDSGID exception and six-capability bound remain unchanged.
+The service additionally mounts `/etc/systemd` and `/etc/wydhosting` read-only while
+preserving account-tool atomic updates elsewhere in `/etc`. Workers retain their
+original restrictions, categories and bounded private tmpfs.
+
+A root-reviewed canary uses the broker domain with a DAC-readable foreign file,
+a same-UID root process/socket in the provider domain, writable host mounts and
+AF_INET permitted by its syscall filter. Its nine attempts fail: provider-tree read,
+hostname write, shell exec, generic `/usr/bin/true` exec, TCP socket creation,
+SIGCONT to the same-UID foreign process, foreign Unix socket connect, host-type
+relabel, and start of a foreign disposable service. Current-probe AVCs show
+`permissive=0`, including `execute_no_trans`, `signal`, `connectto`, `relabelfrom`
+and the manager's userspace **system/start** denial. Process/socket conclusions are
+therefore independent of different UIDs, CAP_KILL absence or AF_INET filtering.
+The foreign socket inode is moved/retyped by the administrator solely for this test;
+no such operation is exposed to an App or the broker protocol.
+
+**Residual TCB authority is substantial.** Shared account-database access is not a
+per-account MAC rule. More seriously, the broker can write new managed unit bytes
+and request their start plus manager reload. A compromised broker could potentially
+turn that combination into privileged execution through systemd; denying direct
+shell execution does not prove containment of that route. No escape exploit or
+qualified defense against it is claimed. The current domain is an experimental
+direct-access improvement, **not complete containment of a malicious root broker**.
+Production needs a separately confined, root-approved service publisher/launcher:
+fixed administrator-installed templates, closed independently validated parameters,
+independent durable ownership, and removal of unit-write/reload authority from the
+session broker. Account creation should likewise move to a separate approved
+provisioner. Do not resolve this architectural gate by granting generic unit/service,
+filesystem, process or unconfined-transition permissions.
+
+### Actual integrated, hostile and resource results
+
+The fresh installed run and expanded repetition retain separate categories:
+
+| Evidence category | Expanded run | Scope |
+| --- | --- | --- |
+| Real broker/accounts/staging/DAC | **30/30** | Closed operations, kernel credentials, sealed staging, foreign files and symlink/path refusals |
+| Provider/worker services | **23/23** | Two tenants, real domains, inherited FD, cgroups and authenticated private HTTP |
+| Worker/provider/edge MAC | **4/4** | Actual enforcing/category checks and retained same-UID hostile cases |
+| Broker MAC/category approval | **5/5** | Nine hostile canary attempts nested in one case; actual no-fallback startup; category change, partial reservation adoption and incorrect UID refusals |
+| Durable broker ownership | **2/2** | Conflicting unit hash and invocation refused by actual status; original bytes restored in finally |
+| Loopback TLS proxy | **11/11** | Confined Caddy to provider to two tenants; no external network inference |
+| Service recovery | **15/15** | Real SIGKILL/OOM/provider restart and stale ownership refusal |
+| Retirement overlaps | **12/12** | Existing four concurrent replacements/retirements and successful audit completion; no new automatic deletion |
+| Integrated resource probes | **5/5** | OOM; simultaneous private tmpfs ENOSPC; FD EMFILE; task EAGAIN; measured CPU throttling |
+
+Resource injection is explicitly a trusted native administrator helper, not newly
+exposed App code. Helpers join only the verified recorded guest worker cgroup and
+are additionally bounded: 64 MiB address space, two CPU seconds, ten-second parent
+deadline, 128 descriptors, at most forty forks; worker cgroup remains 256 MiB,
+32 tasks and 25% CPU. EMFILE occurred after 125 extra opens; task pressure reached
+EAGAIN with twenty children in the reviewed run. CPU counters prove throttling.
+Both tenant 1 MiB tmpfs mounts were independently verified before writing and held
+full together, then exact files were unlinked and original free-block counts restored.
+The FD helper explicitly applies the main worker's verified 128-FD ceiling; it is not
+a test of an ordinary App FD API or every native library under pressure.
+Sibling HTTP and post-pressure recovery remained 200. Existing OOM limits are retained
+separately. No host exhaustion, persistent storage quota or unbounded stress occurred.
+
+Initial policy runs are retained, including fail-closed socket creation/interpreter
+entry, read-only platform/label-database access, typed staging parent, systemd private
+socket, new-type sandbox mountpoint and authenticated ingress socket denials. Only
+necessary corresponding operations were permitted. One canary initially asserted a
+process context before Type=exec completed; correcting that fixture race and using
+same-UID controls did not relax the policy. Runs 10, 11 and 12 passed their respective
+expanded matrices; earlier failures are not replaced with those successful totals.
+
+An independent package campaign retained **148/149** canonical passes with an existing
+`FILES.TIMEOUT` in `bounded transfer timeout and operation limits`. Its unchanged full
+installed Files file then passed **33/33**. This is separate from Contact/held HTTP500;
+no deadline, retry or assertion was changed. Final independent and required repository
+results are retained in the campaign evidence; a passing repetition does not explain
+the earlier timeout.
+
+Final independent consumers in `/tmp/wyd-i54-packed-RSqrVO` passed canonical
+**149/149**, provider **35/35**, real subprocess supervisor **20/20** and ordinary
+Linux boundaries **20/20**, with one installed engine per consumer and repository
+imports rejected. The three bounded HTTP probes also reproduced against that
+installed five-library consumer. The first installed held probe used the wrong
+TMPDIR and failed HOST.STARTUP before HTTP; using the same consumer-local fixture
+TMPDIR as the canonical runner passed **3/3** without runtime changes. Ordinary guest
+Python boundaries passed **36/36** from the packed broker; mocked firewall guards
+passed **6/6** separately. Normal-policy repository checks passed **932/932** and
+content validation **3 pages / 42 links**; required checks are repeated after this
+final evidence sync. Normal broker/SELinux/unit bytes match both the reviewed
+independent consumer and the final VM artifact. Final VM categories matched the
+table above, with current-probe PID/interval AVC assertions.
+
+Independent cleanup verified no fixture units/unit files, processes, four fixture
+users/groups, hosting roots or policy module. Three staged build trees were verified
+against pinned manifests and only the two exact newly owned staging roots were
+removed. The first cleanup inspection stopped at systemctl's empty no-match exit 1
+before deletion; corrected only that result handling, retaining strict empty-output
+and ownership/hash checks. SELinux remains Enforcing, firewalld/sshd active; runtime
+public zone remains enp1s0 with cockpit/dhcpv6-client/ssh, no extra ports/rich rules.
+Only SSH/22 listens on IPv4/IPv6 TCP; existing loopback chronyd UDP remains. A fresh
+nonmultiplexed SSH connection succeeded and boot ID is unchanged. Normal audit
+suppression was restored. Account-tool standard backup/lock side effects and existing
+journal/audit records remain under guest retention, as in earlier campaigns.
+
+### Recovery gate and reproduction
+
+Read-only inspection of the operator-supplied **Mint-host** backup
+`/mnt/data/VM-Backups/almond-lab/baseline-0.1/` found parseable matching-UUID VM XML,
+a standalone 40 GiB virtual qcow2 disk (42,956,488,704-byte file), and 540,672-byte
+UEFI NVRAM. `qemu-img check` reported zero check errors and no repair was requested.
+Fresh SHA-256 digests of all three are retained. A read-only hypervisor screenshot
+also confirms display access (kernel policy-unload messages were visible), with no
+console input or login. This establishes readability/current
+structural disk integrity, not authentication against an earlier trusted digest or
+proof that XML/disk/NVRAM were captured at one stopped checkpoint. An independent
+console login/recovery path is still unverified. **No guest or host reboot occurred.**
+External firewalld and disposable-filesystem quota proposals remain approval-gated;
+see [firewall/recovery](firewall-and-recovery.md).
+
+```sh
+node --test test-support/http-budget-probe.mjs
+npm test
+npm run check
+node scripts/verify-packed-packages.js
+# Fresh ordinary-user tarball build, reusing the previously verified Caddy asset:
+node test-support/linux/prepare-qualification.mjs /tmp/wyd-i56-new-build \
+  /tmp/artifacts/wydgine-0.3.0-alpha.15.tgz /tmp/artifacts/wydhosting-0.3.0-alpha.15.tgz \
+  /path/to/reviewed/caddy
+# Transfer build and existing qualify*.py/qualification-registry.mjs into a new
+# exclusively owned guest staging root; protect it as root, then on almond-lab:
+sudo -n timeout 420s python3 -B /var/tmp/wyd-i56-new/qualify.py \
+  --target=almond-lab /var/tmp/wyd-i56-new/build --integrated
+```
+
+Evidence: `test-support/linux/evidence/2026-10-16-broker-mac.json`; raw campaign logs
+use `/tmp/wydgit-i56-rootcause-*`. Fresh candidate build/manifest and failed runs
+remain retained. Fixture cleanup stops only owned units, checks stopped services,
+removes only exclusively created trees/accounts/module and leaves audit/journal
+retention untouched. No wildcard deletion, category recycling or cleanup based on
+guessed generation names was added.
+
+**Implementation complete: NO. Production security qualified: NO.** Remaining gates
+include historical HTTP500 attribution and timeout/write completion semantics;
+indirect broker manager/account authority; interrupted staging/publication/reconciliation
+and durable cleanup recovery; automatic exact-resource retirement; reservation exhaustion;
+persistent quotas; approved external packet paths; independently verified console and
+backup consistency plus reboot. No I5.7, version bump, publication, release or inference
+about RHEL/Rocky/Oracle/other distributions.
 
 ## Reliability and confinement continuation — 2026-10-16
 

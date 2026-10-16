@@ -122,3 +122,46 @@ migration. Code rollback uses normal revert commits; deployment/data rollback re
 known ownership and compatible state. Restore the disposable VM snapshot if ambiguity
 cannot be safely resolved. I5.7 must supply stopped data transfer and cutover recovery;
 I5.8 must rerun the integrated Linux/release matrix.
+
+## Current approval-gated proposals — broker domain campaign
+
+No external firewall, quota or reboot action below was performed.
+
+For the proposed external **private bridge** TLS test, the guest interface is
+`enp1s0`, active zone `public`, source only Mint bridge `192.168.122.1/32`, destination
+only guest `192.168.122.225/32`, TCP/443. After independent recovery and a verified
+15-second rollback timer, the proposed additional **runtime-only, 60-second** rule is:
+
+```sh
+sudo firewall-cmd --zone=public --add-rich-rule='rule family="ipv4" source address="192.168.122.1/32" destination address="192.168.122.225/32" port port="443" protocol="tcp" accept' --timeout=60s
+# Exact immediate rollback, also used by the independent timer:
+sudo firewall-cmd --zone=public --remove-rich-rule='rule family="ipv4" source address="192.168.122.1/32" destination address="192.168.122.225/32" port port="443" protocol="tcp" accept'
+```
+
+This permits that bridge source to a test Caddy listener bound only to the guest's
+private IPv4 address. It does not establish public-internet or external IPv6 evidence.
+SSH/22, existing services/rules, interface assignment and permanent policy must remain
+unchanged; compare complete before/after runtime/permanent zone listings and a fresh
+SSH connection. Approval must cover this exact rule, listener scope and timed rollback;
+it is not authorization for a zone reload, permanent rule or host firewall change.
+
+The smallest proposed quota experiment is a **separate disposable guest-only image**
+with a fixed 512 MiB file ceiling, a new empty owned mountpoint, a dedicated loop device
+and an explicitly quota-enabled filesystem. Use two new test projects with small
+(e.g. 8 MiB) limits, hard process/time/write ceilings and sibling/read/recovery checks.
+Record exact image/loop/mount identities before use; unmount and detach only those
+owned resources, then remove only the new image/mountpoint. No existing mount option,
+fstab, partition, disk, hosting data or Mint filesystem is changed. Creating/formatting/
+mounting/enabling quotas is **not authorized** yet; this proposal requires separate
+approval after rechecking guest free space and support. Existing XFS noquota results
+remain unchanged.
+
+The Mint-host backup path is now confirmed readable:
+`/mnt/data/VM-Backups/almond-lab/baseline-0.1/`. XML UUID matches the running guest;
+disk, XML and UEFI NVRAM exist and fresh hashes are retained in the campaign evidence.
+Read-only `qemu-img check` reports zero errors. An earlier trusted digest or stopped
+checkpoint manifest is absent, so capture consistency/authentication is not proved.
+Read-only hypervisor screenshot capture confirms display access but no input/login
+was performed. Independent console login/recovery is still unverified; display
+access and known SPICE/serial endpoints are insufficient. Reboot remains deferred pending that precise
+missing evidence; neither Mint nor the guest was rebooted.

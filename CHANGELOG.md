@@ -1,5 +1,16 @@
 ## Unreleased
 
+- Add an experimental enforcing broker SELinux domain, typed state/approval/staging/
+  units, verified startup context and read-only approval/systemd mounts; retain fixed
+  operations, capability bounds and the broker-only openat2 exception.
+- Exercise actual same-UID broker file/socket/process/exec/relabel/service denials,
+  category/UID and durable ownership refusals, bounded FD/tasks/CPU pressure and
+  simultaneous tenant tmpfs exhaustion with sibling recovery.
+- Preserve deterministic JSON/SQLite Contact and held-drain Page-deadline HTTP500
+  reproductions, including writes completing after a timeout response. Historical
+  incidents remain unattributed; broker manager/account authority and recovery gates
+  still prevent I5.6 production qualification. No version or deadline changes.
+
 - Fix reproduced Linux relay retirement resets and the process-exit observation race;
   require successful broker audit completion during bounded real shutdown overlaps.
 - Correct systemd PrivateTmp shadowing of the declared temporary-byte limit; qualify

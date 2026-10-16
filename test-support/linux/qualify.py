@@ -37,6 +37,8 @@ connections = []
 processes = []
 finalizers = []
 BUILD = None
+AUDIT_OFFSET = 0
+CAMPAIGN_SINCE = 0
 
 
 def log(event, **values):
@@ -198,7 +200,9 @@ while True:
 
 
 def main(build, integrated=False):
-    global BUILD
+    global BUILD, AUDIT_OFFSET, CAMPAIGN_SINCE
+    AUDIT_OFFSET = Path('/var/log/audit/audit.log').stat().st_size
+    CAMPAIGN_SINCE = int(time.time())
     BUILD = build
     assert sys.argv[1] == '--target=almond-lab' and socket.gethostname() == 'almond-lab'
     assert os.geteuid() == 0 and 'ID="almalinux"' in Path('/etc/os-release').read_text()
@@ -274,6 +278,8 @@ def main(build, integrated=False):
         policy = integration.prepare(sys.modules[__name__], pools)
         pools = policy['pools']
     write_policy(policy)
+    if integrated:
+        command(['/usr/sbin/restorecon', '-F', str(ETC/'approval.json')])
     spec = importlib.util.spec_from_file_location('broker', RELEASE / 'node_modules/wydhosting/broker/broker.py')
     broker = importlib.util.module_from_spec(spec); spec.loader.exec_module(broker)
     broker.validate_policy(policy); broker.verify_platform()
@@ -341,6 +347,18 @@ def main(build, integrated=False):
         write_policy(policy)
         check('enforcing broker refuses a legacy unconfined launch', lambda: refused(request(policy, 'launch'), 'BROKER.SELINUX_POLICY'), category='selinux-mac')
         for pool, category in zip(pools, saved_categories): pool['selinuxCategory'] = category
+        # Reservation writes are deliberately nonrecyclable, even after a failed
+        # attempt to change an account's approved category. No account is created.
+        pools[0]['selinuxCategory'] = 53; write_policy(policy)
+        check('existing account category cannot change', lambda: refused(request(policy, 'ensure-account'), 'BROKER.SELINUX_POLICY'), category='selinux-broker-mac')
+        pools[0]['selinuxCategory'] = saved_categories[0]
+        pools[1]['selinuxCategory'] = 53; write_policy(policy)
+        check('partially reserved category cannot be adopted by another account', lambda: refused(request(policy, 'ensure-account', pools[1]['poolId']), 'BROKER.SELINUX_POLICY'), category='selinux-broker-mac')
+        pools[1]['selinuxCategory'] = saved_categories[1]
+        saved_uid = pools[0]['account']['uid']; saved_gid = pools[0]['account']['gid']
+        pools[0]['account']['uid'] = pools[0]['account']['gid'] = 61054; write_policy(policy)
+        check('incorrect account UID category approval refuses before account tools', lambda: refused(request(policy, 'ensure-account'), 'BROKER.SELINUX_POLICY'), category='selinux-broker-mac')
+        pools[0]['account']['uid'] = saved_uid; pools[0]['account']['gid'] = saved_gid
         write_policy(policy)
     # Separate same-tenant private Unix socket and live process under B.
     server = subprocess.Popen(['/usr/bin/python3', '-I', '-c', "import socket,sys,time;s=socket.socket(socket.AF_UNIX);s.bind(sys.argv[1]);s.listen();time.sleep(90)", str(home_b / 'private.sock')], user=B, group=B, extra_groups=[])
@@ -414,7 +432,13 @@ def effective_hardening(reply):
     broker = show(session)
     assert broker['RestrictSUIDSGID'] == 'no' and all(broker[k] == worker[k] for k in ('NoNewPrivileges', 'ProtectSystem', 'ProtectControlGroups', 'RestrictNamespaces'))
     assert set(broker['CapabilityBoundingSet'].split()) == {'cap_chown', 'cap_dac_override', 'cap_fowner', 'cap_setuid', 'cap_setgid', 'cap_audit_write'}
-    return dict(worker=worker, broker=broker, workerSELinux=Path('/proc/'+str(reply['pid'])+'/attr/current').read_text().strip('\0\n'))
+    readonly = command(['/usr/bin/systemctl', 'show', session, '-p', 'ReadOnlyPaths', '--value']).stdout.split()
+    assert {'/etc/systemd', '/etc/wydhosting'} <= set(readonly), readonly
+    broker['ReadOnlyPaths'] = readonly
+    broker_pid = int(command(['/usr/bin/systemctl', 'show', session, '-p', 'MainPID', '--value']).stdout)
+    broker_context = Path('/proc/'+str(broker_pid)+'/attr/current').read_text().strip('\0\n')
+    assert broker_context == 'system_u:system_r:wydhosting_broker_t:s0', broker_context
+    return dict(worker=worker, broker=broker, brokerSELinux=broker_context, workerSELinux=Path('/proc/'+str(reply['pid'])+'/attr/current').read_text().strip('\0\n'))
 
 
 def bound_session(reply):
@@ -485,6 +509,19 @@ if __name__ == '__main__':
         failed += 1; log('FATAL', error=str(error))
     finally:
         if created:
+            try:
+                with open('/var/log/audit/audit.log') as audit:
+                    audit.seek(AUDIT_OFFSET)
+                    denials = [line.strip() for line in audit if 'avc:' in line and 'denied' in line and 'wydhosting_' in line]
+                seen = set(); distinct = []
+                for line in denials:
+                    signature = tuple(__import__('re').findall(r'\{[^}]+\}|comm=\"[^\"]+\"|tcontext=\S+|tclass=\S+', line))
+                    if signature not in seen: seen.add(signature); distinct.append(line)
+                log('campaign-avcs', count=len(denials), distinct=len(distinct), denials=distinct[:128], truncated=len(distinct)>128)
+                journal = command(['/usr/bin/journalctl', '--since=@'+str(CAMPAIGN_SINCE), '--no-pager', '-o', 'cat', '-u', 'wydhosting-broker@*']).stdout
+                events = [json.loads(line) for line in journal.splitlines() if line.startswith('{"schema":"wydhosting.')]
+                log('broker-diagnostics', events=events[-64:])
+            except Exception as error: log('diagnostic-failure', error=type(error).__name__)
             try: cleanup()
             except Exception as error: failed += 1; log('CLEANUP-FAIL', error=str(error))
         log('TOTAL', passed=passed, failed=failed, categories=categories, productionQualified=False)

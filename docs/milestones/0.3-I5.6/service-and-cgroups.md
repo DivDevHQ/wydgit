@@ -248,3 +248,30 @@ old files remain. For an ambiguous pre-invocation lease, inspect the exact gener
 unit and cgroup through the console; no automated adoption is supported. Restore the
 VM snapshot or destroy the VM after collecting evidence. Code rollback is an ordinary
 revert; filesystem/data rollback is not assumed safe across schema/writer changes.
+
+## Broker domain campaign resource evidence
+
+The installed broker now uses `wydhosting_broker_t`, verifies its actual context and
+adds read-only `/etc/systemd` and `/etc/wydhosting` mounts. NNP, the six-capability bound,
+worker hardening and the authorized broker-only openat2 exception remain unchanged.
+See [SELinux](selinux.md) for direct denials and the remaining indirect manager/account
+TCB authority; direct confinement is not production compromise containment.
+
+The expanded real guest run retains 15 service-recovery and 12 retirement-overlap
+checks, plus five resource cases. Native administrator helpers join only an exact
+recorded worker cgroup after checking process start-time and kernel limits. FD pressure
+observes EMFILE (125 extra opens at LimitNOFILE=128); bounded forks observe EAGAIN and
+increased pids.events under TasksMax=32; bounded CPU work increments throttling counters
+under 25% CPU. Helpers additionally have 64 MiB address space, two CPU seconds,
+128 FDs, at most forty fork attempts and a ten-second parent deadline. These are
+trusted injections, not ordinary Wydgit raw-process capabilities. The Mint host is
+never the pressure target.
+
+Both independently verified 1 MiB worker tmpfs mounts are held at ENOSPC together,
+with both routes still serving. Exact temporary files are unlinked and original free
+blocks verified. Sibling HTTP and recovery remain 200 after FD/task/CPU tests. Existing
+bounded OOM/SIGKILL outcomes are retained. Conflicting durable unit hash and invocation
+status checks refuse without stopping/adopting the service; exact original lease bytes
+are restored in finally. This does not qualify interrupted reconciliation/publication,
+power loss, persistent quotas or automatic retirement. No wildcard cleanup/category
+recycling/new deletion API is implemented.

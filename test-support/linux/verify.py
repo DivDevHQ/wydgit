@@ -69,6 +69,15 @@ os.execve(sys.executable,[sys.executable,'-I','-c',"import os;assert os.read(3,5
             with self.assertRaises(s.Refused): broker.verify_platform()
             command.assert_not_called()
 
+    def test_mocked_broker_context_refuses_unconfined_or_wrong_category_without_fallback(self):
+        for context in ('system_u:system_r:wydhosting_broker_t:s0', 'system_u:system_r:unconfined_service_t:s0', 'system_u:system_r:wydhosting_broker_t:s0:c51', ''):
+            with patch('builtins.open', return_value=io.StringIO(context)):
+                if context == 'system_u:system_r:wydhosting_broker_t:s0':
+                    broker.verify_broker_context()
+                else:
+                    with self.assertRaises(s.Refused) as error: broker.verify_broker_context()
+                    self.assertEqual(error.exception.code, 'BROKER.SELINUX_DOMAIN')
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(prefix='wyd-i56-primitives-')
         self.root = Path(self.temporary.name)
