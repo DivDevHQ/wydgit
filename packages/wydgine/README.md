@@ -1,13 +1,13 @@
 # Wydgine
 
-Wydgine runs canonical Wydgit Apps. Version 0.3.0-alpha.14 is a private,
+Wydgine runs canonical Wydgit Apps. Version 0.3.0-alpha.15 is a private,
 locally packed development artifact; it has not been published to npm.
 Requires Node >=24.21.0. No WydHosting or Linux hosting installation is required.
 
 Install a verified local tarball in a consumer directory:
 
 ```sh
-npm install /verified/path/wydgine-0.3.0-alpha.14.tgz
+npm install /verified/path/wydgine-0.3.0-alpha.15.tgz
 ./node_modules/.bin/wydgine setup
 npm start
 ```
@@ -41,3 +41,10 @@ are unqualified for publication. Nothing installs providers during HTTP executio
 
 MPL-2.0; see LICENSE. Future public-registry installation is intended to use
 `npm install wydgine`, after separate publication authorization and qualification.
+
+Linux service mode uses worker protocol `wydgine.worker/2`, an inherited authenticated
+stream, and a credential-checked private Unix HTTP profile. `native/peercred.c` must
+be built explicitly and installed as a reviewed immutable artifact; no install hook
+runs. Standalone and same-UID fork modes require no native helper. Trusted exports
+`trusted/stream-peer` and `trusted/unix-peer` are host integration, never portable
+capabilities. This experimental lane has no privileged Linux qualification evidence.

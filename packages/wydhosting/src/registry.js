@@ -18,13 +18,13 @@ function validateEnvelope(input){
  check(e.registry.revision===revision,'HOSTING.RECOVERY_REQUIRED');const last=e.journal.at(-1);if(last?.state==='committed')check(digest(last.plan.proposed)===digest(e.registry),'HOSTING.RECOVERY_REQUIRED');
  return sealed(e);
 }
-export function createRegistry({directory,fixtureRoot,authorize,checkpoint=async()=>{}}){
+export function createRegistry({directory,fixtureRoot,authorize,checkpoint=async()=>{},deploymentInspection=inspectRegistry}){
  check(typeof directory==='string'&&path.resolve(directory)===directory,'HOSTING.ROOT');
  const file=path.join(directory,'state.json'),lockFile=path.join(directory,'writer.lock');
  async function boundary(){await safePath(directory);const s=await fs.stat(directory);check(s.isDirectory()&&s.uid===process.getuid()&&(s.mode&0o077)===0,'HOSTING.PERMISSIONS');}
  async function read(){
   await boundary();let handle;try{
-   handle=await fs.open(file,constants.O_RDONLY|constants.O_NOFOLLOW);const s=await handle.stat();check(s.isFile()&&s.nlink===1&&s.uid===process.getuid()&&(s.mode&0o077)===0&&s.size<=4*1024*1024,'HOSTING.CORRUPT');const e=validateEnvelope(await handle.readFile('utf8'));await inspectRegistry(e.registry,{stateDirectory:directory,fixtureRoot});return e;
+   handle=await fs.open(file,constants.O_RDONLY|constants.O_NOFOLLOW);const s=await handle.stat();check(s.isFile()&&s.nlink===1&&s.uid===process.getuid()&&(s.mode&0o077)===0&&s.size<=4*1024*1024,'HOSTING.CORRUPT');const e=validateEnvelope(await handle.readFile('utf8'));await deploymentInspection(e.registry,{stateDirectory:directory,fixtureRoot});return e;
   }catch(e){throw e.code?.startsWith('HOSTING.')?e:fail('HOSTING.CORRUPT');}finally{await handle?.close();}
  }
  async function syncDirectory(){const h=await fs.open(directory,'r');try{await h.sync();}finally{await h.close();}}
@@ -42,8 +42,8 @@ export function createRegistry({directory,fixtureRoot,authorize,checkpoint=async
   supervisorStateDirectory:path.join(directory,'supervisor'),
   async initialize(providerId){const request=sealed({schema:'wydhosting.initialize/1',operationId:'initialize',expectedRevision:null,providerId});await approve(request);return exclusive(async()=>{try{await fs.lstat(file);throw fail('HOSTING.CONFLICT');}catch(e){if(e.code!=='ENOENT')throw e;}const e={schema:'wydhosting.state/1',generation:randomUUID(),registry:emptyRegistry(providerId),journal:[]};await replace(e);return sealed(e.registry);});},
   async inspect(){const e=await read();return sealed({registry:e.registry,generation:e.generation,adapter:'local-fixture/1',productionReady:false});},
-  async validate(){const e=await read();return inspectRegistry(e.registry,{stateDirectory:directory,fixtureRoot});},
-  async plan(request,options={}){const e=await read();check(!e.journal.some(j=>j.state==='prepared'),'HOSTING.RECOVERY_REQUIRED');return plan(e.registry,request,{...options,stateDirectory:directory,fixtureRoot});},
+  async validate(){const e=await read();return deploymentInspection(e.registry,{stateDirectory:directory,fixtureRoot});},
+  async plan(request,options={}){const e=await read();check(!e.journal.some(j=>j.state==='prepared'),'HOSTING.RECOVERY_REQUIRED');return plan(e.registry,request,{...options,stateDirectory:directory,fixtureRoot,deploymentInspection});},
   async apply(input,{now=Date.now()}={}){
    const p=validatePlan(input),actor=await approve(p);
    return exclusive(async()=>{
@@ -52,7 +52,7 @@ export function createRegistry({directory,fixtureRoot,authorize,checkpoint=async
     else {check(!e.journal.some(j=>j.state==='prepared'),'HOSTING.RECOVERY_REQUIRED');check(e.journal.length<1024,'HOSTING.JOURNAL_FULL');}
     // Expiration limits starting work. A durable prepare may be finished after
     // expiry only with fresh authorization and the same revision/content.
-    await verifyPlan(e.registry,p,{now:j?Math.min(now,p.expiresAt-1):now,stateDirectory:directory,fixtureRoot});check(p.applicable,'HOSTING.QUALIFICATION_REQUIRED');
+    await verifyPlan(e.registry,p,{now:j?Math.min(now,p.expiresAt-1):now,stateDirectory:directory,fixtureRoot,deploymentInspection});check(p.applicable,'HOSTING.QUALIFICATION_REQUIRED');
     if(!j){j={operationId:p.operationId,actor,plan:p,state:'prepared',resultRevision:p.proposed.revision};e={...e,generation:randomUUID(),journal:[...e.journal,j]};await replace(e);await checkpoint('prepared');}
     // No OS actions are run. This commit approves registry intent only.
     const committed={...j,state:'committed'};e={...e,generation:randomUUID(),registry:p.proposed,journal:e.journal.map(v=>v.operationId===p.operationId?committed:v)};await replace(e);await checkpoint('committed');
@@ -61,7 +61,7 @@ export function createRegistry({directory,fixtureRoot,authorize,checkpoint=async
   },
   async reconcile(input=null,{now=Date.now()}={}){
    const e=await read(),last=e.journal.at(-1);let locked=false;try{await fs.lstat(lockFile);locked=true;}catch(e){if(e.code!=='ENOENT')throw fail('HOSTING.RECOVERY_REQUIRED');}let state=last?.state==='prepared'?'recovery-required':last?'applied-registry-verified':'no-change';
-   if(input){const p=validatePlan(input),j=e.journal.find(j=>j.operationId===p.operationId);if(j){state=digest(j.plan)!==digest(p)?'stale-or-conflicting':j.state==='prepared'?'recovery-required':'applied-registry-verified';}else{try{await verifyPlan(e.registry,p,{now,stateDirectory:directory,fixtureRoot});state=p.applicable?'planned-not-authorized':'awaiting-unsupported-provisioning';}catch{state='stale-or-conflicting';}}}
+   if(input){const p=validatePlan(input),j=e.journal.find(j=>j.operationId===p.operationId);if(j){state=digest(j.plan)!==digest(p)?'stale-or-conflicting':j.state==='prepared'?'recovery-required':'applied-registry-verified';}else{try{await verifyPlan(e.registry,p,{now,stateDirectory:directory,fixtureRoot,deploymentInspection});state=p.applicable?'planned-not-authorized':'awaiting-unsupported-provisioning';}catch{state='stale-or-conflicting';}}}
    if(locked||last?.state==='prepared')state='recovery-required';
    return sealed({state,revision:e.registry.revision,productionReady:false,osStatus:'unsupported',awaitingOperations:last?.plan.requiredOperations??[],code:state==='recovery-required'?'HOSTING.RECOVERY_REQUIRED':'HOSTING.RECONCILED'});
   }

@@ -1,6 +1,6 @@
 {
   "name": "wydgine",
-  "version": "0.3.0-alpha.14",
+  "version": "0.3.0-alpha.15",
   "private": true,
   "type": "module",
   "license": "MPL-2.0",
@@ -16,7 +16,8 @@
     "src",
     "README.md",
     "LICENSE",
-    "runtime"
+    "runtime",
+    "native"
   ],
   "exports": {
     "./package.json": "./package.json",
@@ -25,6 +26,8 @@
     "./trusted/provider": "./src/trusted/provider.js",
     "./trusted/services": "./src/trusted/services.js",
     "./trusted/protocol": "./src/trusted/protocol.js",
+    "./trusted/stream-peer": "./src/trusted/stream-peer.js",
+    "./trusted/unix-peer": "./src/trusted/unix-peer.js",
     "./trusted/worker-entry": "./bin/wydgine-worker.js"
   },
   "dependencies": {

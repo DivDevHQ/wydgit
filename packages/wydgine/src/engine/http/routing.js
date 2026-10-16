@@ -26,10 +26,12 @@ const hostName=value=>{const result=canonicalAuthority(value);requireRoute(resul
 export function validateRouting(input,apps){
  const config=clean(input);shape(config,['schema','transport','routes'],['unknown']);
  requireRoute(config.schema==='wydgit.routing/0.1'&&Buffer.byteLength(JSON.stringify(config))<=65536&&Array.isArray(config.routes)&&config.routes.length>0&&config.routes.length<=256);
- shape(config.transport,['mode'],['peers','port']);const transport=config.transport;
- requireRoute(['local-http','trusted-proxy'].includes(transport.mode));
+ shape(config.transport,['mode'],['peers','port','uid']);const transport=config.transport;
+ requireRoute(['local-http','trusted-proxy','private-unix'].includes(transport.mode));
+ if(transport.mode==='private-unix')requireRoute(Number.isSafeInteger(transport.uid)&&transport.uid>0&&!Object.hasOwn(transport,'peers'));
+ else requireRoute(!Object.hasOwn(transport,'uid'));
  if(transport.mode==='local-http')requireRoute(!Object.hasOwn(transport,'peers')&&!Object.hasOwn(transport,'port'));
- else {requireRoute(Array.isArray(transport.peers)&&transport.peers.length>0&&transport.peers.length<=16&&transport.peers.every(p=>typeof p==='string'&&isIP(p))&&new Set(transport.peers).size===transport.peers.length);if(transport.port!==undefined)requireRoute(Number.isInteger(transport.port)&&transport.port>0&&transport.port<=65535);}
+ else {if(transport.mode==='trusted-proxy')requireRoute(Array.isArray(transport.peers)&&transport.peers.length>0&&transport.peers.length<=16&&transport.peers.every(p=>typeof p==='string'&&isIP(p))&&new Set(transport.peers).size===transport.peers.length);if(transport.port!==undefined)requireRoute(Number.isInteger(transport.port)&&transport.port>0&&transport.port<=65535);}
  const seen=new Set();const routes=config.routes.map(entry=>{
   shape(entry,['hostname','app','state','approval']);requireRoute(apps.includes(entry.app)&&['active','parked','coming-soon','under-construction','unavailable'].includes(entry.state)&&['operator-domain','platform-domain','local-development'].includes(entry.approval));
   const hostname=hostName(entry.hostname);requireRoute(entry.approval!=='local-development'||local(hostname));requireRoute(!seen.has(hostname));seen.add(hostname);
@@ -56,7 +58,7 @@ export function resolveRoute(config,request){
  const forwarded=['forwarded','x-forwarded-host','x-forwarded-proto','x-forwarded-port','x-forwarded-for'];
  if(config.transport.mode==='local-http')requireRoute(forwarded.every(name=>values(name).length===0)&&!request.socket.encrypted);
  else{
-  requireRoute(config.transport.peers.includes(request.socket.remoteAddress)&&!values('forwarded').length&&!values('x-forwarded-port').length&&!values('x-forwarded-for').length);
+  requireRoute((config.transport.mode==='private-unix'?unixPeers.get(request.socket)?.uid===config.transport.uid:config.transport.peers.includes(request.socket.remoteAddress))&&!values('forwarded').length&&!values('x-forwarded-port').length&&!values('x-forwarded-for').length);
   const hosts=values('x-forwarded-host'),protocols=values('x-forwarded-proto');requireRoute(hosts.length===1&&/^[\x21-\x7e]+$/.test(hosts[0])&&protocols.length===1&&protocols[0]==='https');
   effective=canonicalAuthority(hosts[0]);scheme='https';requireRoute((effective.port??443)===(config.transport.port??443));
  }
@@ -75,5 +77,8 @@ export function resolveRoute(config,request){
 }
 
 const bindings=new WeakMap();
+const unixPeers=new WeakMap();
+// Native host composition only; never derived from headers or portable objects.
+export function bindUnixPeer(socket,peer){unixPeers.set(socket,Object.freeze({...peer}));}
 export function bindRequestRoute(request,route){bindings.set(request,route);}
 export function requestRoute(request){return bindings.get(request);}

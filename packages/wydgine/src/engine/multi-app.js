@@ -2,7 +2,7 @@
 import {snapshotStoppedApp} from './relocation.js';
 import {createGovernance} from './governance.js';
 import {createServer} from 'node:http';
-import {resolveRoute,bindRequestRoute} from './http/routing.js';
+import {resolveRoute,bindRequestRoute,bindUnixPeer} from './http/routing.js';
 import {createHostApp} from '../app.js';
 import {validateAppInventory,snapshotAppConfiguration as snapshot,executionLimits as limits} from './inventory.js';
 import {ExecutionContext,checkContext} from './seam/context.js';
@@ -66,7 +66,7 @@ export async function createMultiAppHost(input,options={}){
     const contextPolicy=context=>{checkContext(context);check(context.app===id,'HOST.OWNER','Wrong App context');return new ExecutionContext({...context,limits:{...context.limits,...Object.fromEntries(Object.entries(e.limits).map(([k,v])=>[k,Math.min(v,context.limits[k]??v)]))}});};
     execution.lifecycleContext=contextPolicy(execution.lifecycleContext??new ExecutionContext({publisher:'wydgit.core',self:id,app:id}));
     check(Date.now()<deadline,'HOST.TIMEOUT','App startup deadline');
-    const pending=createHostApp({root:e.root,appId:id,execution,contextPolicy,parking:inventory.routing?.parking.includes(id)??false,libraryAdapters:adapters(id),guard:()=>guard(e),strictStartup:true,logger:options.logger??{error(){}},admit:()=>admit(e),governance:e.meter});
+    const pending=createHostApp({root:e.root,implementationRoot:options.implementationRoot,appId:id,execution,contextPolicy,parking:inventory.routing?.parking.includes(id)??false,libraryAdapters:adapters(id),guard:()=>guard(e),strictStartup:true,logger:options.logger??{error(){}},admit:()=>admit(e),governance:e.meter});
     pending.then(app=>{if(e.retired)app.stop().catch(()=>{});},()=>{});
     e.app=await bounded(pending,Math.max(1,deadline-Date.now()));check(Date.now()<deadline,'HOST.TIMEOUT','App startup deadline');
     e.activationMs=Math.floor(performance.now()-activating);setState(e,'active');e.token=Object.freeze(Object.create(null));tokens.set(e.token,e);return e.token;
@@ -85,6 +85,8 @@ export async function createMultiAppHost(input,options={}){
   },
   async listenShared(...args){
    check(!disposed&&inventory.routing&&!sharedServers.size,'HOST.STATE','Shared routing unavailable');
+   const unix=inventory.routing.transport.mode==='private-unix';
+   check(!unix||(typeof options.peerCredentials==='function'&&args.length===1&&typeof args[0]==='string'&&args[0].startsWith('/')),'HOST.LISTEN','Private Unix transport unavailable');
    // Strict host policy runs on the original native request before App adaptation.
    const server=createServer({maxHeaderSize:inventory.http.headerBytes},(req,res)=>{
     const reject=status=>{res.statusCode=status;res.setHeader('Cache-Control','no-store');res.setHeader('Content-Type','text/plain; charset=utf-8');res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Connection','close');res.end(status===503?'Application unavailable':'Request rejected');};
@@ -97,6 +99,7 @@ export async function createMultiAppHost(input,options={}){
     e.responses.add(res);const release=()=>e.responses.delete(res);res.once('finish',release);res.once('close',release);
     e.app.handle(req,res);
    });
+   if(unix)server.on('connection',socket=>{try{const peer=options.peerCredentials(socket);check(peer.uid===inventory.routing.transport.uid,'HOST.PEER','Unauthorized ingress');bindUnixPeer(socket,peer);}catch{socket.destroy();}});
    server.requestTimeout=inventory.http.requestMs;server.headersTimeout=Math.min(15000,inventory.http.requestMs);server.maxHeadersCount=0;
    sharedServers.add(server);server.once('close',()=>sharedServers.delete(server));
    try{await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(...args,resolve);});return server;}

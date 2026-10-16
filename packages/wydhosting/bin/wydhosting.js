@@ -5,9 +5,23 @@ import {fileURLToPath} from 'node:url';
 import {createRegistry} from '../src/registry.js';
 import {safePath} from '../src/adapter.js';
 import {check,fail,validateRegistry} from '../src/contracts.js';
+import {linuxPreflight,createLinuxPlan} from '../src/platform/linux/plan.js';
+import {startLinuxProvider} from '../src/platform/linux/provider.js';
 
 export async function run(args){
- const [command,...rest]=args;check(['inspect','validate','plan','apply','reconcile'].includes(command),'HOSTING.USAGE');const options={};
+ const [command,...rest]=args;
+ if(command==='setup'){
+  check(rest.length===0||(rest.length===2&&rest[0]==='--input'&&rest[1]),'HOSTING.USAGE');
+  const preflight=await linuxPreflight();if(!rest.length)return {preflight,state:'inspected',mutations:[],productionReady:false};
+  const filename=path.resolve(rest[1]);await safePath(filename);check((await fs.stat(filename)).size<=4*1024*1024,'HOSTING.USAGE');const input=JSON.parse(await fs.readFile(filename,'utf8'));check(input&&Object.keys(input).length===2&&input.registry&&input.options,'HOSTING.USAGE');
+  return {preflight,plan:await createLinuxPlan(input.registry,input.options),state:'planned-not-authorized',mutations:[],productionReady:false};
+ }
+ if(command==='serve'){
+  check(rest.length===2&&rest[0]==='--config'&&rest[1],'HOSTING.USAGE');const provider=await startLinuxProvider(path.resolve(rest[1]));let stopping=false;
+  const stop=()=>{if(stopping)return;stopping=true;const timer=setTimeout(()=>process.exit(1),30000);provider.shutdown().then(()=>{clearTimeout(timer);process.exitCode=0;},()=>{clearTimeout(timer);process.exitCode=1;});};process.once('SIGINT',stop);process.once('SIGTERM',stop);
+  return {state:'serving-experimental',productionReady:false};
+ }
+ check(['inspect','validate','plan','apply','reconcile'].includes(command),'HOSTING.USAGE');const options={};
  for(let i=0;i<rest.length;i+=2){check(['--directory','--fixture-root','--input','--plan','--approve'].includes(rest[i])&&rest[i+1]&&!rest[i+1].startsWith('--')&&!Object.hasOwn(options,rest[i]),'HOSTING.USAGE');options[rest[i]]=rest[i+1];}
  check(options['--directory'],'HOSTING.USAGE');
  const allowed=command==='apply'?['--directory','--fixture-root','--input','--plan','--approve']:['plan','reconcile'].includes(command)?['--directory','--fixture-root','--input']:[ '--directory','--fixture-root'];check(Object.keys(options).every(k=>allowed.includes(k)),'HOSTING.USAGE');

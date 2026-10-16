@@ -1,0 +1,40 @@
+[Unit]
+Description=WydHosting administrative session
+[Service]
+Slice=wydhosting-broker.slice
+Type=exec
+User=root
+Group=root
+ExecStart=/usr/bin/python3 -I /opt/wydhosting/release/node_modules/wydhosting/broker/broker.py
+StandardInput=socket
+StandardOutput=null
+StandardError=journal
+Environment=LANG=C
+UnsetEnvironment=NODE_OPTIONS NODE_PATH PYTHONPATH PYTHONHOME LD_PRELOAD LD_LIBRARY_PATH
+UMask=0077
+NoNewPrivileges=yes
+CapabilityBoundingSet=CAP_CHOWN CAP_DAC_OVERRIDE CAP_FOWNER CAP_SETUID CAP_SETGID CAP_AUDIT_WRITE
+AmbientCapabilities=
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+LockPersonality=yes
+RestrictNamespaces=yes
+RestrictAddressFamilies=AF_UNIX AF_NETLINK
+ReadWritePaths=/var/lib/wydhosting /run/wydhosting /run/systemd/system /etc
+# account tools use atomic renames and locks in /etc; the executable contract,
+# not a pretend read-only /etc mount, limits those administrative writes.
+InaccessiblePaths=/root /home
+LimitCORE=0
+TasksMax=64
+MemoryMax=256M
+LimitNOFILE=256
+TimeoutStopSec=15s
+KillMode=control-group

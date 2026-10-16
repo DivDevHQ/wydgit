@@ -96,6 +96,9 @@ WBasic source → shared definition IR → canonical prototypes + SEWN
 | WydGate | Local identity, sessions, App membership, recovery and server browser-auth flows; identity is not SEAM authority |
 | Canonical services | WydStore, WydSearch, WydFiles and WydStream through approved server library bindings |
 
+See [I5.6 Linux isolation candidate](docs/milestones/0.3-I5.6/README.md) for the
+experimental broker, sealed staging and private ingress, with privileged qualification
+and live firewall work explicitly pending.
 See [I5.5 disposable process supervision](docs/milestones/0.3-I5.5/README.md) for
 real worker lifecycle, bounded recovery and explicit I5.6 security gates.
 See [I5.4 independent local packages](docs/milestones/0.3-I5.4/README.md) for
@@ -103,7 +106,7 @@ verified tarball installation, trusted exports and packaging boundaries.
 
 ## Current capabilities and boundaries
 
-Current versions are **Wydgine/platform 0.3.0-alpha.14**, **WydClient 0.1.0-alpha.8**
+Current versions are **Wydgine/WydHosting/platform 0.3.0-alpha.15**, **WydClient 0.1.0-alpha.8**
 and **WydSUB 0.1**. WBasic/component contracts are implemented through 0.20;
 the language reference also contains clearly marked future proposals. These are
 separate version axes. Historical browser artifacts remain immutable.

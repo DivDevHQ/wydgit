@@ -12,10 +12,10 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "file-type": "21.0.0"
+    "file-type": "21.3.4"
   },
   "peerDependencies": {
-    "wydgine": "0.3.0-alpha.13 || 0.3.0-alpha.14"
+    "wydgine": "0.3.0-alpha.13 || 0.3.0-alpha.14 || 0.3.0-alpha.15"
   },
   "files": [
     "src",

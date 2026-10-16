@@ -271,3 +271,13 @@ records the [incremental I5 plan](../milestones/0.3-I4/I5-plan.md). I3's stopped
 JSON relocation is implemented; installable engine/provider packages, process/OS
 isolation and provisioning remain future work. The preceding strategic snapshot
 is preserved; it is not evidence that those capabilities already exist.
+
+## I5.6 implementation status
+
+I5.4/I5.5 delivered independent packed packages and actual same-UID supervision.
+The [I5.6 candidate](../milestones/0.3-I5.6/README.md) adds executable Linux
+broker/staging/service/private-ingress boundaries, but has **no privileged Linux
+qualification** and is **not implementation complete**. Live firewall transactions,
+automatic retirement and the VM attack matrix remain. I5.7 migration/cutover and
+I5.8 integrated release qualification are still separate work. The earlier strategic
+snapshot and I4 design remain historical; they are not current certification claims.

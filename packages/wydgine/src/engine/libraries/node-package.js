@@ -1,5 +1,5 @@
 import { createRequire } from 'node:module';
-import { readFile } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { ensure, version, satisfies } from './contracts.js';
@@ -11,6 +11,7 @@ export async function importNodePackage(entry, root) {
   const require = createRequire(resolve(root, 'package.json'));
   let metadataPath, entryPath;
   try {
+    if (!(await stat(root)).isDirectory()) throw new Error();
     metadataPath = require.resolve(`${entry.package}/package.json`);
     entryPath = require.resolve(entry.package);
   } catch {

@@ -1,0 +1,15 @@
+# Candidate only. Replace hostnames/certificate paths with reviewed literal values.
+# Caddy runs as a separate restricted edge UID, never a customer UID.
+@HOSTNAME@ {
+    tls @CERTIFICATE@ @PRIVATE_KEY@
+    reverse_proxy unix//run/wydhosting/provider/edge.sock {
+        transport http {
+            versions 1.1
+        }
+        header_up -Forwarded
+        header_up -X-Forwarded-For
+        header_up -X-Forwarded-Port
+        header_up X-Forwarded-Host {http.request.host}
+        header_up X-Forwarded-Proto https
+    }
+}

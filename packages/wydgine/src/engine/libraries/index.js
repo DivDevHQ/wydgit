@@ -9,7 +9,7 @@ const emptyRequirements = () => ({ schema: 'wydgit.requirements/0.1', libraries:
 
 // The registry is published only after every enabled library and requirement
 // succeeds. Package functions and registry mutation never cross into Wydgits.
-export async function loadLibraries({ config: input, requirements: requested = emptyRequirements(), platformVersion, root, lifecycle = async () => {}, adapters = {}, app = null, guard = () => {}, observe }) {
+export async function loadLibraries({ config: input, requirements: requested = emptyRequirements(), platformVersion, root, implementationRoot=root, lifecycle = async () => {}, adapters = {}, app = null, guard = () => {}, observe }) {
   let live=true,closing;const stops=[];
   const assertLive=context=>{ensure(live,'SEAM.DENIED','Application binding retired');guard();if(context){checkContext(context);ensure(app===null||context.app===app,'SEAM.DENIED','Wrong application binding');}};
   const guarded=(record,context)=>record&&{...record,authorize:async(...args)=>{assertLive(context);const result=await record.authorize?.(...args);assertLive(context);return result;},handler:async(...args)=>{assertLive(context);const result=await record.handler(...args);assertLive(context);return result;}};
@@ -29,7 +29,7 @@ export async function loadLibraries({ config: input, requirements: requested = e
   requiredEnabled(requirements);
   const staged = new Map(), capabilityOwners = new Map();
   for (const entry of config.libraries.filter(entry => entry.enabled)) {
-    const { module, packageVersion } = await importNodePackage(entry, root);
+    const { module, packageVersion } = await importNodePackage(entry, implementationRoot);
     let manifest, register;
     try {
       // Never execute descriptor getters on a module's arbitrary exports.

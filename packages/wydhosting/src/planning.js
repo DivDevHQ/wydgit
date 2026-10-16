@@ -25,9 +25,9 @@ function propose(registry,request){
  }
  r.revision++;check(integer(r.revision),'HOSTING.CONFLICT');return {registry:validateRegistry(r),required:[...new Set(required)].sort(),blocked};
 }
-export async function plan(input,request,{now=Date.now(),stateDirectory,fixtureRoot}={}){
+export async function plan(input,request,{now=Date.now(),stateDirectory,fixtureRoot,deploymentInspection=inspectRegistry}={}){
  const r=validateRegistry(input),q=validateRequest(request);check(q.expectedRevision===r.revision,'HOSTING.STALE');check(q.expiresAt>now&&q.expiresAt<=now+60*60*1000,'HOSTING.EXPIRED');
- const next=propose(r,q),inspection=await inspectRegistry(next.registry,{stateDirectory,fixtureRoot});
+ const next=propose(r,q),inspection=await deploymentInspection(next.registry,{stateDirectory,fixtureRoot});
  const body={schema:'wydhosting.plan/1',operationId:q.operationId,expectedRevision:r.revision,baseDigest:digest(r),request:q,proposed:next.registry,requiredOperations:next.required,approvals:['EXACT_PLAN_OPERATOR_APPROVAL'],warnings:['FIXTURE_ONLY','OS_PROVISIONING_UNSUPPORTED',...(inspection.pendingPools.length?['STAGING_REQUIRED']:[])],applicable:!next.blocked,expiresAt:q.expiresAt};
  return sealed({...body,digest:digest(body)});
 }

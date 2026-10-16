@@ -1,0 +1,39 @@
+# Reviewed candidate. The provider account and runtime group are administrator-owned.
+[Unit]
+Description=WydHosting nonroot provider
+Requires=wydhosting-broker.socket
+After=wydhosting-broker.socket
+[Service]
+Type=exec
+User=@PROVIDER_UID@
+Group=@PROVIDER_GID@
+ExecStart=/opt/wydhosting/release/bin/node /opt/wydhosting/release/node_modules/wydhosting/bin/wydhosting.js serve --config /etc/wydhosting/provider.json
+Environment=LANG=C.UTF-8
+UnsetEnvironment=NODE_OPTIONS NODE_PATH LD_PRELOAD LD_LIBRARY_PATH
+WorkingDirectory=/opt/wydhosting/release
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+PrivateTmp=yes
+PrivateDevices=yes
+RestrictSUIDSGID=yes
+RestrictNamespaces=yes
+RestrictAddressFamilies=AF_UNIX
+UMask=0077
+Restart=no
+KillMode=control-group
+TimeoutStopSec=40s
+RuntimeDirectory=wydhosting/provider
+RuntimeDirectoryMode=0750
+ReadWritePaths=/var/lib/wydhosting/provider /run/wydhosting/provider
+MemoryMax=512M
+TasksMax=128
+LimitNOFILE=1024
+LimitCORE=0
+[Install]
+WantedBy=multi-user.target

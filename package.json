@@ -1,6 +1,6 @@
 {
   "name": "wydgit",
-  "version": "0.3.0-alpha.14",
+  "version": "0.3.0-alpha.15",
   "description": "A portable, capability-safe application platform for the open web",
   "license": "MPL-2.0",
   "private": true,
@@ -31,7 +31,7 @@
   "devDependencies": {
     "cheerio": "1.0.0",
     "esbuild": "0.25.12",
-    "happy-dom": "20.8.4"
+    "happy-dom": "20.8.9"
   },
   "workspaces": [
     "packages/*"

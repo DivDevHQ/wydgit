@@ -7,7 +7,7 @@ import {check,overlap,absolute,validateRegistry,sealed} from './contracts.js';
 
 export {safePath,fingerprintApprovedApp} from 'wydgine/trusted/provider';
 import {safePath,fingerprintApprovedApp} from 'wydgine/trusted/provider';
-function inventory(r,p,{all=false}={}){
+export function poolInventory(r,p,{all=false}={}){
  const apps=r.apps.filter(a=>a.placement.poolId===p.poolId&&(all||a.state==='active'));
  check(apps.length>0,'HOSTING.EMPTY_POOL');
  const input={schema:'wydgit.multi-host/0.1',apps:apps.map(a=>({id:a.appId,root:a.placement.directory,limits:a.limits,resources:a.resources}))};
@@ -18,7 +18,7 @@ function inventory(r,p,{all=false}={}){
 export async function compilePool(input,poolId,options={}){
  const r=validateRegistry(input);await inspectRegistry(r,options);const p=r.pools.find(p=>p.poolId===poolId);check(p&&p.state==='active','HOSTING.PLACEMENT');
  check(r.apps.filter(a=>a.placement.poolId===poolId&&a.state==='active').every(a=>r.customers.find(c=>c.customerId===a.customerId)?.state==='active'),'HOSTING.PLACEMENT');
- const result=inventory(r,p);await validateAppInventory(result,{root:p.base});return sealed(result);
+ const result=poolInventory(r,p);await validateAppInventory(result,{root:p.base});return sealed(result);
 }
 export async function inspectRegistry(input,{stateDirectory,fixtureRoot}={}){
  const r=validateRegistry(input),pending=[],remote=[];
@@ -30,7 +30,7 @@ export async function inspectRegistry(input,{stateDirectory,fixtureRoot}={}){
  for(const a of r.apps)await safePath(a.source,{missing:true});
  for(const p of r.pools){
   const apps=r.apps.filter(a=>a.placement.poolId===p.poolId);if(!apps.length){await safePath(p.base,{missing:true});continue;}
-  const proposal=inventory(r,p,{all:true});if(proposal.routing)validateRouting(proposal.routing,apps.map(a=>a.appId));
+  const proposal=poolInventory(r,p,{all:true});if(proposal.routing)validateRouting(proposal.routing,apps.map(a=>a.appId));
   if(!await safePath(p.base,{missing:true})){pending.push(p.poolId);continue;}
   let incomplete=false;
   for(const a of apps)if(!await safePath(path.join(p.base,a.placement.directory),{missing:true}))incomplete=true;

@@ -1,6 +1,6 @@
 // Trusted Node IPC only. Never registered with SEAM or served over HTTP.
 import {createHash} from 'node:crypto';
-export const schema='wydgine.worker/1';
+export const schema='wydgine.worker/2';
 export const bounds=Object.freeze({messageBytes:262144,outstanding:32,queueBytes:1048576,depth:16});
 export const protocolError=(code='WORKER.PROTOCOL')=>Object.assign(new Error('Worker control operation failed'),{code});
 const check=v=>{if(!v)throw protocolError();};
@@ -36,7 +36,8 @@ export function validateBootstrap(v){
  closed(v,['providerId','poolId','workerId','generation','epoch','registryRevision','configurationRevision','root','inventory','snapshots','execution','optional','listener','startupMs','shutdownMs']);
  check([v.providerId,v.poolId,v.workerId,v.generation].every(identifier)&&Number.isSafeInteger(v.epoch)&&v.epoch>0&&Number.isSafeInteger(v.registryRevision)&&v.registryRevision>=0);
  check(typeof v.root==='string'&&v.root.startsWith('/')&&v.root.length<=4096&&!/[\x00-\x1f]/.test(v.root));
- closed(v.listener,['host','port']);check(v.listener.host==='127.0.0.1'&&Number.isInteger(v.listener.port)&&v.listener.port>=0&&v.listener.port<=65535);
+ if(v.listener?.mode==='private-unix'){closed(v.listener,['mode','path','uid']);check(typeof v.listener.path==='string'&&/^\/run\/wydhosting\/workers\/[a-z0-9-]{1,64}\/http.sock$/.test(v.listener.path)&&Number.isSafeInteger(v.listener.uid)&&v.listener.uid>0&&v.inventory?.routing?.transport?.mode==='private-unix'&&v.inventory.routing.transport.uid===v.listener.uid);}
+ else {closed(v.listener,['host','port']);check(v.listener.host==='127.0.0.1'&&Number.isInteger(v.listener.port)&&v.listener.port>=0&&v.listener.port<=65535&&v.inventory?.routing?.transport?.mode!=='private-unix');}
  check([v.startupMs,v.shutdownMs].every(n=>Number.isInteger(n)&&n>=100&&n<=120000));
  check(Array.isArray(v.optional)&&v.optional.length<=16&&v.optional.every(appIdentifier)&&new Set(v.optional).size===v.optional.length);
  check(record(v.snapshots)&&Object.keys(v.snapshots).length===v.inventory?.apps?.length&&v.inventory.apps.every(a=>/^[a-f0-9]{64}$/.test(v.snapshots[a.id])));check(record(v.execution));const apps=v.inventory?.apps;check(Array.isArray(apps)&&apps.length>0&&apps.length<=16);

@@ -1,0 +1,15 @@
+# Reviewed candidate. Administrator replaces the numeric provider IDs explicitly.
+[Unit]
+Description=WydHosting administrative broker socket
+[Socket]
+ListenStream=/run/wydhosting/broker.sock
+Accept=yes
+SocketUser=@PROVIDER_UID@
+SocketGroup=@PROVIDER_GID@
+SocketMode=0600
+DirectoryMode=0755
+MaxConnections=8
+MaxConnectionsPerSource=8
+RemoveOnStop=yes
+[Install]
+WantedBy=sockets.target

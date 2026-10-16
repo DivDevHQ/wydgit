@@ -4,6 +4,8 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {snapshotAppConfiguration} from '../engine/inventory.js';
 import {clean} from '../engine/object-model/validation.js';
+import {loadRepository} from '../engine/repository.js';
+import {validateConfig,validateRequirements} from '../engine/libraries/contracts.js';
 const fail=code=>Object.assign(new Error('Provider operation refused'),{code});
 const check=(ok,code)=>{if(!ok)throw fail(code);};
 const absolute=v=>typeof v==='string'&&path.isAbsolute(v)&&path.resolve(v)===v&&v!=='/'&&!/[\x00-\x1f\x7f\\]/.test(v)&&!v.split('/').includes('..');
@@ -27,4 +29,11 @@ export async function fingerprintApprovedApp(root){
  }
  for(const relative of ['content','prototypes','public','wydgit.config.json'])await walk(relative);
  return digest({configuration:snapshotAppConfiguration(root),entries});
+}
+export async function validateApprovedSource(root,appId,execution={}){
+ await safePath(root);
+ validateConfig(await fs.readFile(path.join(root,'wydgit.config.json'),'utf8'));
+ validateRequirements(await fs.readFile(path.join(root,'content/requirements.json'),'utf8'));
+ check(loadRepository(root,{verifiedPackages:execution.verifiedPackages}).runtime.rootId===appId,'HOSTING.SNAPSHOT');
+ return fingerprintApprovedApp(root);
 }

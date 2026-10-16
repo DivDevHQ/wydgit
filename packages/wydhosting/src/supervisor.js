@@ -1,4 +1,5 @@
-// Disposable same-UID process supervision; no production isolation claim.
+// Existing lifecycle supervision with an explicitly selected experimental Linux backend.
+// No production qualification claim.
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {fork} from 'node:child_process';
@@ -15,7 +16,8 @@ function placementRevision(r,poolId){
  const customers=r.customers.filter(c=>apps.some(a=>a.customerId===c.customerId));
  return revision({providerId:r.providerId,pool,apps,domains:r.domains.filter(d=>apps.some(a=>a.appId===d.appId)),customers,plans:r.plans.filter(p=>customers.some(c=>c.planId===p.planId&&c.planRevision===p.revision)),accounts:r.accounts.filter(a=>a.accountId===pool?.accountId)});
 }
-export async function createSupervisor({registry,directory,fixtureRoot,startupMs=30000,shutdownMs=10000,controlMs=2000,healthMs=2000,maxRestarts=5,backoffMs=1000}={}){
+export async function createSupervisor({registry,directory,fixtureRoot,linuxBackend,startupMs=30000,shutdownMs=10000,controlMs=2000,healthMs=2000,maxRestarts=5,backoffMs=1000}={}){
+ check(!linuxBackend||linuxBackend.kind==='linux-systemd/1','HOSTING.SUPERVISOR');
  check(registry&&typeof registry.inspect==='function'&&typeof registry.reconcile==='function'&&path.isAbsolute(directory)&&directory===registry.supervisorStateDirectory,'HOSTING.SUPERVISOR');
  for(const v of [startupMs,shutdownMs])check(integer(v,100,120000),'HOSTING.SUPERVISOR');
  check(integer(controlMs,100,10000)&&integer(healthMs,100,10000)&&integer(maxRestarts,0,5)&&integer(backoffMs,100,30000),'HOSTING.SUPERVISOR');
@@ -31,10 +33,10 @@ export async function createSupervisor({registry,directory,fixtureRoot,startupMs
  }catch(e){await lock.close();await fs.unlink(lockPath);throw e;}
  function policy(poolId){check(id(poolId),'HOSTING.INVALID');let p=durable.pools.find(p=>p.poolId===poolId);if(!p){check(durable.pools.length<128,'HOSTING.CAPACITY');p={poolId,epoch:0,attempts:0,desired:'stopped',worker:null};durable.pools.push(p);}return p;}
  function invalidate(e,state,code){e.ready=false;e.snapshot=null;e.port=null;e.state=state;e.code=code;clearInterval(e.heartbeat);clearTimeout(e.drainTimer);}
- function view(e){const fresh=e.initialized===true&&e.ready&&!e.expected&&!e.dead&&!closing&&policy(e.poolId).desired==='running'&&performance.now()-(e.observedAt??0)<=healthMs+controlMs;return sealed({poolId:e.poolId,generation:e.generation,epoch:e.epoch,pid:e.child?.pid??null,desired:policy(e.poolId).desired,state:e.ready&&!fresh?'unavailable':e.state,ready:fresh&&e.child?.exitCode===null&&e.child?.signalCode===null,attempts:policy(e.poolId).attempts,registryRevision:e.registryRevision,code:e.code,health:fresh?e.snapshot:null,port:fresh?e.port:null,productionReady:false});}
+ function view(e){const fresh=e.initialized===true&&e.ready&&!e.expected&&!e.dead&&!closing&&policy(e.poolId).desired==='running'&&performance.now()-(e.observedAt??0)<=healthMs+controlMs;return sealed({poolId:e.poolId,generation:e.generation,epoch:e.epoch,pid:e.child?.pid??null,desired:policy(e.poolId).desired,state:e.ready&&!fresh?'unavailable':e.state,ready:fresh&&e.child?.exitCode===null&&e.child?.signalCode===null,attempts:policy(e.poolId).attempts,registryRevision:e.registryRevision,code:e.code,health:fresh?e.snapshot:null,port:fresh?e.port:null,endpoint:fresh?e.child?.endpoint??null:null,service:e.child?.service??null,serviceResult:e.child?.serviceResult??null,productionReady:false});}
  function serial(poolId,fn){check(!closing,'HOSTING.CLOSED');check(!operations.has(poolId),'HOSTING.BUSY');const p=fn().finally(()=>operations.delete(poolId));operations.set(poolId,p);return p;}
  async function readRegistry(reconcile=false,budget=()=>startupMs){return deadline((async()=>{if(reconcile)check((await registry.reconcile()).state!=='recovery-required','HOSTING.RECOVERY_REQUIRED');return validateRegistry((await registry.inspect()).registry);})(),budget(),'HOSTING.REGISTRY_TIMEOUT');}
- async function approved(poolId,budget=()=>startupMs){const r=await readRegistry(true,budget);const inventory=await deadline(compilePool(r,poolId,{fixtureRoot,stateDirectory:directory}),budget(),'HOSTING.VALIDATION_TIMEOUT');check(inventory.routing,'HOSTING.ROUTING_REQUIRED');return {r,inventory,pool:r.pools.find(p=>p.poolId===poolId)};}
+ async function approved(poolId,budget=()=>startupMs){const r=await readRegistry(true,budget);if(linuxBackend)return linuxBackend.prepare(r,poolId);const inventory=await deadline(compilePool(r,poolId,{fixtureRoot,stateDirectory:directory}),budget(),'HOSTING.VALIDATION_TIMEOUT');check(inventory.routing,'HOSTING.ROUTING_REQUIRED');return {r,inventory,pool:r.pools.find(p=>p.poolId===poolId)};}
  async function killAndWait(e){
   if(e.dead)return;invalidate(e,'stopping',e.code);e.channel?.close();e.child.kill('SIGTERM');
   await awaitExit(e,shutdownMs);if(!e.dead){e.child.kill('SIGKILL');await awaitExit(e,5000);}
@@ -47,10 +49,12 @@ export async function createSupervisor({registry,directory,fixtureRoot,startupMs
   const {r,inventory,pool}=await approved(poolId,remaining);check(!closing,'HOSTING.CLOSED');
   const p=policy(poolId);check(p.epoch<Number.MAX_SAFE_INTEGER,'HOSTING.GENERATION_EXHAUSTED');p.epoch++;p.desired='running';await save(remaining());check(!closing&&p.desired==='running','HOSTING.CLOSED');
   const snapshots=Object.fromEntries(r.apps.filter(a=>inventory.apps.some(x=>x.id===a.appId)).map(a=>[a.appId,a.snapshot]));
-  const execution=structuredClone(options.execution??{}),optional=structuredClone(options.optional??[]),listener={host:'127.0.0.1',port:options.port??0};
-  const b={providerId:r.providerId,poolId,workerId:randomUUID(),generation:randomUUID(),epoch:p.epoch,registryRevision:r.revision,configurationRevision:revision({root:pool.base,inventory,snapshots,execution,optional,listener}),root:pool.base,inventory,snapshots,execution,optional,listener,startupMs:remaining(),shutdownMs};validateBootstrap(b);
+  const generation=randomUUID();
+  const execution=structuredClone(options.execution??{}),optional=structuredClone(options.optional??[]),listener=linuxBackend?linuxBackend.listener(generation):{host:'127.0.0.1',port:options.port??0};
+  check(!linuxBackend||options.port===undefined,'HOSTING.SUPERVISOR');
+  const b={providerId:r.providerId,poolId,workerId:randomUUID(),generation,epoch:p.epoch,registryRevision:r.revision,configurationRevision:revision({root:pool.base,inventory,snapshots,execution,optional,listener}),root:pool.base,inventory,snapshots,execution,optional,listener,startupMs:remaining(),shutdownMs};validateBootstrap(b);
   const e={poolId,generation:b.generation,epoch:p.epoch,registryRevision:r.revision,state:'starting',ready:false,snapshot:null,port:null,code:null,dead:false,expected:false,pending:new Map(),count:0,options:{execution,optional,port:listener.port},registryDigest:placementRevision(r,poolId)};entries.set(poolId,e);
-  let child;try{child=e.child=fork(workerEntry,[],{stdio:['ignore','ignore','ignore','ipc'],serialization:'json',execArgv:[],env:{PATH:process.env.PATH,LANG:'C.UTF-8'}});}catch{e.dead=true;invalidate(e,'failed','WORKER.SPAWN');throw protocolError('WORKER.SPAWN');}
+  let child;try{child=e.child=linuxBackend?await linuxBackend.launch(b):fork(workerEntry,[],{stdio:['ignore','ignore','ignore','ipc'],serialization:'json',execArgv:[],env:{PATH:process.env.PATH,LANG:'C.UTF-8'}});}catch{e.dead=!linuxBackend;invalidate(e,'failed',linuxBackend?'HOSTING.OWNERSHIP_UNKNOWN':'WORKER.SPAWN');throw protocolError(e.code);}
   let resolveExit;e.exit=new Promise(r=>resolveExit=r);
   function rejectPending(code){for(const q of e.pending.values()){clearTimeout(q.timer);q.reject(protocolError(code));}e.pending.clear();}
   function fail(code){invalidate(e,'unavailable',code);rejectPending(code);if(!e.dead&&!e.expected)killAndWait(e).catch(()=>invalidate(e,'failed','HOSTING.OWNERSHIP_UNKNOWN'));}
@@ -62,7 +66,7 @@ export async function createSupervisor({registry,directory,fixtureRoot,startupMs
    if(['accepted','starting','draining'].includes(m.type))return;
    if(['failure','rejected'].includes(m.type)){clearTimeout(q.timer);e.pending.delete(m.requestId);q.reject(protocolError(m.body.code));return;}
    if(m.type!=='stopped'){
-    if(m.body.ready&&(m.body.state!=='ready'||m.body.port===0||m.body.apps.some(a=>!optional.includes(a.id)&&!a.ready)))throw protocolError();
+    if(m.body.ready&&(m.body.state!=='ready'||(!linuxBackend&&m.body.port===0)||m.body.apps.some(a=>!optional.includes(a.id)&&!a.ready)))throw protocolError();
     if(m.body.capacity.ready!==m.body.apps.filter(a=>a.ready).length||m.body.capacity.saturated!==m.body.apps.filter(a=>a.saturated).length)throw protocolError();
     if(m.body.configurationRevision!==b.configurationRevision||m.body.apps.some(a=>!inventory.apps.some(x=>x.id===a.id))||m.body.apps.length!==inventory.apps.length||new Set(m.body.apps.map(a=>a.id)).size!==inventory.apps.length||m.body.capacity.configured!==inventory.apps.length||listener.port&&m.body.port!==listener.port)throw protocolError();
     e.observedAt=performance.now();e.snapshot=m.body;e.ready=m.body.ready&&!e.expected;e.state=m.body.state;e.port=m.body.port;
@@ -77,7 +81,7 @@ export async function createSupervisor({registry,directory,fixtureRoot,startupMs
   };
   child.once('error',()=>{if(!child.pid){e.dead=true;resolveExit({code:null,signal:null});}fail('WORKER.SPAWN');});
   child.once('exit',(code,signal)=>{
-   e.dead=true;if(p.worker?.generation===e.generation){p.worker=null;save().catch(()=>{});}invalidate(e,e.expected?'stopped':'unavailable',e.expected?null:e.code??'WORKER.EXIT');rejectPending('WORKER.CLOSED');e.channel.close();resolveExit({code,signal});
+   e.dead=true;if(p.worker?.generation===e.generation){p.worker=null;save().catch(()=>{});}invalidate(e,e.expected?'stopped':'unavailable',e.expected?null:e.code??(e.child.serviceResult?.result==='oom-kill'?'WORKER.OOM':'WORKER.EXIT'));rejectPending('WORKER.CLOSED');e.channel.close();resolveExit({code,signal});
    if(entries.get(poolId)!==e||e.expected||closing)return;
    // Wait for startup or explicit operator operation to finish before recovery.
    void (async()=>{await operations.get(poolId)?.catch(()=>{});if(e.permanent)return;await retry(e);})().catch(()=>invalidate(e,'failed','HOSTING.RECOVERY_REQUIRED'));

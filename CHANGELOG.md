@@ -1,5 +1,23 @@
 ## Unreleased
 
+### Wydgit 0.3-I5.6 — Experimental Linux isolation boundaries (alpha.15)
+
+- Add a root-reviewed, socket-activated Linux broker with kernel caller credentials,
+  restricted identities, typed systemd operations and durable service ownership.
+- Add descriptor-relative/openat2 byte-verified deployment staging, sealed execution
+  generations and separate mutable data, with no active-snapshot replacement.
+- Integrate a Linux service backend with existing supervisor restart/generation fencing;
+  render cgroup limits and independent worker lifetime binding without PID adoption.
+- Add worker protocol /2 inherited Unix control, native Linux peer credentials,
+  private Unix HTTP routing and a reviewed-candidate Caddy/provider ingress path.
+- Add read-only setup/firewall planning, packaged deployment assets/operator guides
+  and adversarial unprivileged filesystem/credential/ingress tests.
+- Patch file-type to 21.3.4 and development-only happy-dom to 20.8.9; preserve client,
+  canonical library version axes and all historical browser distributions.
+- Explicitly leave privileged Linux qualification, live firewall transactions,
+  automatic resource retirement and integrated VM recovery incomplete; no production
+  security or deployment claim. I5.7/I5.8 remain separate gates.
+
 ### Wydgit 0.3-I5.5 — Disposable worker process supervision (alpha.14)
 
 - Add a trusted Wydgine worker executable using the existing I3 operational host,

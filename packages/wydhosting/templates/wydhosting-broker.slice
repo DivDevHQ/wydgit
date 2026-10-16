@@ -1,0 +1,6 @@
+[Unit]
+Description=WydHosting aggregate administrative resource boundary
+[Slice]
+MemoryMax=512M
+CPUQuota=100%
+TasksMax=256

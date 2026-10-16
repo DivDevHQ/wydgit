@@ -19,7 +19,7 @@ export async function createHostApp(options = {}) {
   const root=options.root===undefined?process.cwd():options.root;
   let lifecycle,libraries,app;
   try {
-    libraries=await initializeHost({root,app:options.appId,guard:options.guard,adapters:options.libraryAdapters,observe:options.governance? id=>options.governance.service(id):undefined,lifecycle:async(id,event)=>{if(id==='wydgate'&&lifecycle)await lifecycle.session(event);}});
+    libraries=await initializeHost({root,implementationRoot:options.implementationRoot,app:options.appId,guard:options.guard,adapters:options.libraryAdapters,observe:options.governance? id=>options.governance.service(id):undefined,lifecycle:async(id,event)=>{if(id==='wydgate'&&lifecycle)await lifecycle.session(event);}});
     const appId=loadRepository(root,{verifiedPackages:options.execution?.verifiedPackages}).runtime.rootId;
     if(options.appId!==undefined&&options.appId!==appId)throw new Error('App binding mismatch');
     lifecycle=createLifecycle({app:appId,handlers:options.execution?.lifecycleHandlers,context:options.execution?.lifecycleContext,instances:options.execution?.lifecycleInstances});

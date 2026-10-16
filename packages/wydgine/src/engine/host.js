@@ -6,7 +6,7 @@ import { loadLibraries } from './libraries/index.js';
 import { WydgitError } from './object-model/validation.js';
 import { checkInstallationRecovery } from './packages/state.js';
 
-export async function initializeHost({ root, lifecycle, adapters, app, guard, observe }) {
+export async function initializeHost({ root, implementationRoot=root, lifecycle, adapters, app, guard, observe }) {
   checkInstallationRecovery(root);
   const read = async (relative, code) => {
     try { return await readFile(path.join(root, relative), 'utf8'); }
@@ -15,5 +15,5 @@ export async function initializeHost({ root, lifecycle, adapters, app, guard, ob
   const config = await read('wydgit.config.json', 'LIBRARY.INVALID_CONFIG');
   const requirements = await read('content/requirements.json', 'LIBRARY.INVALID_REQUIREMENTS');
   validateConfig(config);
-  return loadLibraries({config,requirements,root,platformVersion:platform.version,lifecycle,adapters,app,guard,observe});
+  return loadLibraries({config,requirements,root,implementationRoot,platformVersion:platform.version,lifecycle,adapters,app,guard,observe});
 }
