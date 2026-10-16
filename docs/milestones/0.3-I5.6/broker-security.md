@@ -1,6 +1,11 @@
 # Privileged broker security contract
 
-**Implemented candidate, privileged execution not tested.** Python 3 standard library;
+**Implemented candidate, privileged startup tested and blocked before dispatch.**
+On AlmaLinux 10.2/systemd 257 the shipped RestrictSUIDSGID filter returns ENOSYS for
+mandatory openat2 calls. Startup fails closed. The directive remains unchanged pending
+review of the hardening tradeoff; production authorization/launch are unqualified.
+Sanitized startup events now record a fixed phase/code without paths or exception text.
+See [verification](verification.md). Python 3 standard library;
 no package installer, JavaScript evaluation, submitted executable, shell command,
 arbitrary path operation or portable capability. Files ship under WydHosting `broker/`;
 reviewed service/socket assets ship under `templates/`.

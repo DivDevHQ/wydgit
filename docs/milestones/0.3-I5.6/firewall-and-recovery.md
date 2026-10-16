@@ -1,31 +1,52 @@
 # Firewall, SSH and recovery status
 
-**Live firewall adapter/transaction/rollback is NOT implemented or executed.**
-`planFirewall` is pure validation and preview. `applyFirewall` always refuses
+**Public hosting firewall application remains unimplemented and unqualified.**
+A bounded administrator-only unused-zone firewalld transaction/rollback probe now
+exists and passed on AlmaLinux, including caller-death recovery. It never activates
+a zone or public policy. `planFirewall` is pure validation and preview for UFW and
+firewalld. `applyFirewall` always refuses
 `HOSTING.FIREWALL_UNQUALIFIED`; broker exposes no firewall operation. No firewall,
 SSH, route, network interface, DNS, TLS certificate or sudo setting changed on the
 development host. This is a deliberately unmet acceptance item, not a passing mock.
 
 ## Implemented preview
 
-The current closed preview input requires UFW as its manager, a nonempty bounded list of explicit
+The current closed preview input requires UFW or firewalld as its manager, a nonempty bounded list of explicit
 administrator IP addresses and actual ports, allowed public 80/443 and independently
 verified VM-console recovery. It does not assume SSH port 22, infer all administration
 paths from the current connection, flush unrelated rules or certify current rules.
 
 AlmaLinux/RHEL candidates declare **firewalld** in their shared platform matrix.
-That declaration does not enable this UFW-specific preview or supply a firewalld
-adapter: firewalld input and all live apply operations still refuse. Preserve the
+Firewalld preview is now accepted, but all public live apply operations still refuse. Preserve the
 guest's active firewalld, zones, SELinux policy and administrative access while a
 separate managed transaction/rollback implementation is developed and qualified.
 Output identifies Unix-only worker listeners and the mandatory missing verification
 steps. A boolean input saying a console is verified is **not actual console evidence**.
 It is a plan prerequisite, not authentication or permission to mutate the machine.
 
-No rule text/command from an App is accepted. Firewalld/nftables/control-panel managers
+No rule text/command from an App is accepted. Nftables/control-panel managers
 are unsupported by this preview. Detecting conflicting effective host/cloud/panel rules,
 real UFW syntax validation and transactional apply still require implementation and VM
 qualification. The preview does not claim those checks have occurred.
+
+## Executed limited firewalld transaction
+
+The packaged `broker/firewalld_probe.py --unused-zone block` is an administrator-only
+qualification utility for a disposable VM. It refuses rootless use, default/bound zones
+and a preexisting exact test rule. It writes an exclusive root-only intent, verifies
+an independent systemd rollback timer **before** mutation, and adds only a fixed
+127.0.0.2 TCP/65431 reject rule with a second native 60-second expiry. The independent
+timer removes that exact rule after 15 seconds. No permanent write, reload, source/
+interface assignment, zone activation or commit operation exists. Run it only through
+an explicitly authorized VM session; it is not a broker or portable capability.
+
+AlmaLinux 10.2 passed a normal rollback and **3/3** caller-death checks. Runtime and
+permanent full zone listings matched their prior values; the applying process was
+SIGKILLed while the separate timer completed. An unbound zone does not populate active
+nft chains. These results establish manager transactions and independent recovery,
+**not packet isolation, public rule application, SSH recovery or production readiness**.
+Six mocked precondition tests are explicitly separate from these real VM observations.
+See [verification](verification.md) for exact commands, failures, mutations and limits.
 
 ## Required future VM transaction
 

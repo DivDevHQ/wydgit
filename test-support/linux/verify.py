@@ -21,6 +21,13 @@ s = broker.s
 
 
 class BoundaryTests(unittest.TestCase):
+    @unittest.skipIf(os.geteuid() == 0, 'requires an ordinary unprivileged test identity')
+    def test_real_nonroot_startup_refusal_has_sanitized_phase_diagnostic(self):
+        import subprocess
+        result = subprocess.run([sys.executable, '-I', str(broker_path / 'broker.py')], capture_output=True, text=True, timeout=5)
+        self.assertEqual(result.returncode, 70)
+        self.assertEqual(json.loads(result.stderr), {'schema': 'wydhosting.startup-event/1', 'outcome': 'refused', 'phase': 'privilege', 'code': 'BROKER.PRIVILEGE'})
+
     def test_platform_matrix_accepts_explicit_el10_candidates_not_lookalikes(self):
         for identity, version in [('almalinux', '10'), ('almalinux', '10.2'), ('rhel', '10.0'), ('ubuntu', '24.04'), ('debian', '13')]:
             self.assertIsNotNone(broker.platform_candidate(identity, version))

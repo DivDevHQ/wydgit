@@ -1,5 +1,12 @@
 ## Unreleased
 
+- Add opt-in, bounded AlmaLinux VM fixtures with real cross-UID denials, symlink
+  races, cgroup task/CPU/memory enforcement and complete disposable-resource logs.
+- Add firewalld preview and an administrator-only unused-zone transaction probe,
+  including independent systemd rollback after caller death; public apply stays disabled.
+- Diagnose real broker startup refusal: systemd RestrictSUIDSGID blocks mandatory
+  openat2. Keep its hardening in place and record production qualification as blocked.
+
 - Add explicit experimental AlmaLinux 10.x/RHEL 10.x broker and preflight lanes,
   a shared packaged release matrix and fail-closed enforcing-SELinux checks.
   Verify the AlmaLinux 10.2 guard and unprivileged boundaries on `almond-lab`;

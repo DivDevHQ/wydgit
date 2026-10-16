@@ -7,7 +7,7 @@ standalone profile is unaffected. Package engine minimum remains Node **24.21.0*
 | --- | --- | --- |
 | Ubuntu Server 24.04 LTS amd64 | Experimental candidate | systemd/cgroup-v2 assets and contract tests only; privileged VM not executed |
 | Debian 13 amd64 | Experimental candidate | Same assets; Python code avoids removed `spwd`; privileged VM not executed |
-| AlmaLinux 10.x amd64 | Experimental candidate | AlmaLinux 10.2 `almond-lab`: actual prerequisite guard and 28 unprivileged Python tests passed; no privileged hosting qualification |
+| AlmaLinux 10.x amd64 | Experimental candidate | AlmaLinux 10.2 `almond-lab`: 26 real kernel fixture checks and unused-zone firewall rollback passed; production broker fails startup; NOT security qualified |
 | Red Hat Enterprise Linux 10.x amd64 | Experimental candidate | Shared platform policy and negative contract tests; no actual RHEL guest tested |
 | Older EL releases, Rocky Linux, Oracle Linux, CentOS Stream, Fedora | Planned/unimplemented | No admission through `ID_LIKE`; require separately reviewed release lanes |
 | Linux Mint 22.2 x86_64 development machine | Unsupported managed hosting target | Actual unprivileged regression, filesystem and peer-credential tests only |
@@ -53,7 +53,14 @@ EL-family candidates additionally require `/sys/fs/selinux/enforce` to report `1
 permissive, disabled or inaccessible SELinux fails closed. No SELinux mode/policy
 change is made automatically and no custom confinement policy is claimed. RHEL
 results cannot be inferred from AlmaLinux results. Older EL releases remain planned.
-Firewalld is recorded as the EL candidate manager; its live adapter is unimplemented.
+Firewalld is recorded as the EL candidate manager. Preview and an administrator-only
+unused-zone transaction probe exist; public policy application remains unimplemented.
+
+The fresh-baseline privileged campaign is recorded in [verification](verification.md).
+The broker's mandatory openat2 calls conflict with its existing systemd
+RestrictSUIDSGID filter. Kernel fixture processes ran in `unconfined_service_t`; no
+per-tenant SELinux policy is qualified. These findings supersede only the earlier
+"unprivileged evidence only" status, not any production or RHEL qualification gate.
 
 `linuxPreflight()` reads OS release, PID1 name, architecture, SELinux enforcement
 and available cgroup controllers. It requires x86_64, real systemd and cpu/memory/pids,

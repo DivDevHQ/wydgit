@@ -15,6 +15,7 @@ import subprocess
 import sys
 import time
 
+sys.dont_write_bytecode = True
 # Python -I intentionally ignores script cwd/PYTHONPATH. Only this protected sibling is loaded.
 import importlib.util
 _spec = importlib.util.spec_from_file_location('wydhosting_security', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'security.py'))
@@ -24,6 +25,7 @@ ROOT = '/var/lib/wydhosting'
 RELEASE = '/opt/wydhosting/release'
 RUN = '/run/wydhosting'
 OPERATIONS = ('ensure-account', 'stage', 'launch', 'status', 'reconcile')
+STARTUP_PHASE = 'privilege'
 
 
 def key(value):
@@ -602,16 +604,21 @@ def verify_platform():
 
 
 def main():
+    global STARTUP_PHASE
     s.require(os.geteuid() == 0 and sys.argv == [sys.argv[0]], 'BROKER.PRIVILEGE')
     os.umask(0o077)
+    STARTUP_PHASE = 'platform'
     verify_platform()
+    STARTUP_PHASE = 'release'
     release_fd = s.open_directory(RELEASE)
     try:
         s.verify_release(release_fd)
     finally:
         os.close(release_fd)
+    STARTUP_PHASE = 'approval'
     policy = load_policy()
     provider = socket.socket(fileno=0)
+    STARTUP_PHASE = 'state'
     state = s.open_directory(ROOT + '/broker')
     request = None
     audit = {'schema': 'wydhosting.admin-event/1', 'operation': 'refused', 'resource': None, 'generation': None, 'policyRevision': policy['policyRevision']}
@@ -640,5 +647,8 @@ def main():
 if __name__ == '__main__':
     try:
         main()
-    except Exception:
+    except Exception as error:
+        # Pre-dispatch failures must be diagnosable without exposing paths/policy.
+        code = error.code if isinstance(error, s.Refused) else 'BROKER.INTERNAL'
+        os.write(2, s.encode({'schema': 'wydhosting.startup-event/1', 'outcome': 'refused', 'phase': STARTUP_PHASE, 'code': code}) + b'\n')
         sys.exit(70)

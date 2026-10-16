@@ -4,6 +4,7 @@ import importlib.util
 import os
 import socket
 import sys
+sys.dont_write_bytecode = True
 _spec = importlib.util.spec_from_file_location('wydhosting_security', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'security.py'))
 s = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(s)

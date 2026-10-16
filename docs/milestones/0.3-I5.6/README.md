@@ -3,7 +3,10 @@
 Platform, Wydgine and WydHosting **0.3.0-alpha.15**. Worker protocol
 **wydgine.worker/2**. Status: **experimental implementation; NOT Linux security
 qualified; NOT implementation complete**. Live firewall transactions, automatic
-resource retirement and VM integration remain incomplete. There is no production
+resource retirement and production VM integration remain incomplete. Real kernel
+fixtures and an unused-zone firewalld rollback probe passed on AlmaLinux 10.2;
+the production broker fails startup because RestrictSUIDSGID blocks openat2.
+There is no production
 activation certification or supported production Linux distribution.
 
 Wydgine runs Apps. WydHosting manages infrastructure. Linux enforces OS boundaries.
@@ -15,7 +18,8 @@ ceiling remain. No broker/control API is registered with SEAM, HTTP, WBasic or C
 
 - Read-only `wydhosting setup` preflight and `setup --input <file>` candidate approval.
 - Shared explicit Ubuntu/Debian/AlmaLinux 10/RHEL 10 candidate matrix; EL lanes require
-  SELinux enforcing. AlmaLinux 10.2 has actual unprivileged primitive evidence only.
+  SELinux enforcing. AlmaLinux 10.2 has real kernel fixture evidence, separately
+  labelled from the still-blocked production broker/worker lane.
   No elevation, install hook, account, service or network mutation on inspection.
 - Separately installed Python socket-activated privileged broker. Closed, versioned
   operations, kernel Unix peer credentials, explicit root-reviewed pool/byte approval,
@@ -30,12 +34,18 @@ ceiling remain. No broker/control API is registered with SEAM, HTTP, WBasic or C
 - Actual Linux N-API `SO_PEERCRED` helper, trusted credential-checked Unix HTTP profile,
   provider routing adapter and Caddy configuration candidate. No Linux worker TCP socket.
 - Firewall preview with explicit administrator ports/addresses and independent recovery;
-  live application refuses `HOSTING.FIREWALL_UNQUALIFIED`.
+  UFW/firewalld preview is supported; public application refuses
+  `HOSTING.FIREWALL_UNQUALIFIED`. A separate administrator-only unused-zone
+  firewalld probe exercises independent rollback without public network changes.
 - Targeted dependency fixes: file-type 21.3.4 and development-only happy-dom 20.8.9.
 
 These are implemented code paths, not a claim that their combined privileged behavior
 has executed successfully. Read the [verification report](verification.md) for counts,
 intermediate failures and the exact missing evidence.
+
+The gate table below describes the original delivery. The fresh-baseline campaign
+adds 26 actual kernel checks and real firewalld manager recovery, while finding a
+production broker startup blocker. It does not close gates B–F.
 
 ## Gates
 

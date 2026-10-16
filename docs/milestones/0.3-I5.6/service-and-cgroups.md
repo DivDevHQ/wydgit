@@ -185,7 +185,9 @@ In the VM use the exact recorded unit/cgroup identities, not numeric PID guesses
   pids.events, CPU throttling/accounting and actual exit reason. Keep a real healthy
   canonical App in another pool serving throughout. Do not add a portable process or
   arbitrary allocation API merely to test the kernel. Tests for this hostile service
-  fixture are not delivered/executed in this checkout.
+  fixture now exist in `test-support/linux/qualify-kernel.py` and passed on AlmaLinux,
+  explicitly separate from the production broker/worker lane. They use a private
+  socket sibling rather than a canonical App; production-lane qualification remains pending.
 - Probe worker sockets as an unauthorized local UID; forge Host/Forwarded/X-Forwarded
   and Origin, route to another pool, retire endpoint and retry. Verify listener PID/UID
   through SO_PEERCRED, exact ready generation and no TCP listener.
