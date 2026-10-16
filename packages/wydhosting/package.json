@@ -1,6 +1,6 @@
 {
   "name": "wydhosting",
-  "version": "0.3.0-alpha.13",
+  "version": "0.3.0-alpha.14",
   "private": true,
   "type": "module",
   "license": "MPL-2.0",
@@ -22,6 +22,6 @@
     "LICENSE"
   ],
   "dependencies": {
-    "wydgine": "0.3.0-alpha.13"
+    "wydgine": "0.3.0-alpha.14"
   }
 }

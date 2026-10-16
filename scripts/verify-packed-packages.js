@@ -32,7 +32,7 @@ for(const name of ['wydgine','wydhosting','wydstore','wydgate','wydsearch','wydf
 }
 async function consumer(name,packages){
  const root=path.join(directory,name);await fs.mkdir(root);
- await fs.writeFile(path.join(root,'package.json'),JSON.stringify({name:'wydgit',version:'0.3.0-alpha.13',private:true,type:'module',scripts:{start:'wydgine start'}}));
+ await fs.writeFile(path.join(root,'package.json'),JSON.stringify({name:'wydgit',version:'0.3.0-alpha.14',private:true,type:'module',scripts:{start:'wydgine start'}}));
  await run('npm',['install','--no-audit','--no-fund',...packages.map(name=>packed[name])],root,{log:name+'-install.log'});
  const graph=await run('npm',['ls','--all','--json'],root,{log:name+'-dependencies.json'});assert.ok(JSON.parse(graph.output).dependencies.wydgine);
  for(const name of packages)assert.equal((await fs.lstat(path.join(root,'node_modules',name.startsWith('wyd')&&!['wydgine','wydhosting'].includes(name)?'@wydgit/'+name.slice(3):name))).isSymbolicLink(),false);
@@ -46,7 +46,7 @@ await fs.copyFile(path.join(repository,'test-support/packed/service-free.mjs'),p
 await run(process.execPath,['--import',path.join(serviceFree,'proof-register.mjs'),'service-free.mjs'],serviceFree,{log:'service-free.log'});
 console.log('PASS service-free installed binary, validation, HTTP/assets, restart, closed configuration');
 const full=await consumer('five-library',['wydgine','wydstore','wydgate','wydsearch','wydfiles','wydstream']);
-const selected=['multi-app','hostname-host','hosting-operations','hardening','guestbook-package','packages','package-infrastructure','wydgate-http','wydstream-http','wydstream-search','wydstream-security','wydsearch-package','wydfiles','wydstore-sqlite'];
+const selected=['multi-app','hostname-host','hosting-operations','hardening','guestbook-package','packages','package-infrastructure','wydgate-http','wydstream-http','wydstream-search','wydstream-security','wydsearch-package','wydfiles','wydstore-sqlite','process-supervision'];
 async function stage(root){
  await fs.copyFile(path.join(repository,'wydgit.config.json'),path.join(root,'wydgit.config.json'));
  await fs.mkdir(path.join(root,'.fixtures'));
@@ -69,7 +69,7 @@ async function stage(root){
  for(const name of ['test','test-support','examples','scripts'])await rewrite(path.join(root,name));
 }
 await stage(full);
-await run(process.execPath,['--import',path.join(full,'proof-register.mjs'),'--test',...selected.map(name=>'test/'+name+'.test.js')],full,{log:'five-library-tests.log',env:{TMPDIR:path.join(full,'.fixtures'),NODE_OPTIONS:'--import '+path.join(full,'proof-register.mjs')}});
+await run(process.execPath,['--import',path.join(full,'proof-register.mjs'),'--test',...selected.filter(name=>name!=='process-supervision').map(name=>'test/'+name+'.test.js')],full,{log:'five-library-tests.log',env:{TMPDIR:path.join(full,'.fixtures'),NODE_OPTIONS:'--import '+path.join(full,'proof-register.mjs')}});
 console.log('PASS installed five-library real-App regression fixtures');
 const provider=await consumer('provider',['wydgine','wydhosting']);
 await fs.copyFile(path.join(repository,'test-support/packed/provider-cli.mjs'),path.join(provider,'provider-cli.mjs'));
@@ -84,6 +84,8 @@ await fs.writeFile(path.join(testDirectory,'provider.test.js'),providerTests);
 const manifest=JSON.parse(await fs.readFile(path.join(provider,'package.json')));manifest.scripts.start='node server.js';await fs.writeFile(path.join(provider,'package.json'),JSON.stringify(manifest));
 await run(process.execPath,['--import',path.join(provider,'proof-register.mjs'),'--test','packages/wydhosting/test/provider.test.js'],provider,{log:'provider-tests.log',env:{TMPDIR:path.join(provider,'.fixtures'),NODE_OPTIONS:'--import '+path.join(provider,'proof-register.mjs')}});
 console.log('PASS installed provider CLI, registry, authorization, replay and inventory fixtures');
+await run(process.execPath,['--import',path.join(provider,'proof-register.mjs'),'--test','test/process-supervision.test.js'],provider,{log:'process-supervision.log',env:{TMPDIR:path.join(provider,'.fixtures'),NODE_OPTIONS:'--import '+path.join(provider,'proof-register.mjs')}});
+console.log('PASS installed provider supervises actual installed Wydgine worker processes');
 for(const root of [serviceFree,full,provider]){
  const paths=(await fs.readFile(path.join(root,'resolved-paths.log'),'utf8')).trim().split('\n');assert.ok(paths.some(file=>file.startsWith(path.join(root,'node_modules/wydgine/src/'))));assert.ok(!paths.some(file=>file.startsWith(repository+'/')));
  // npm must not nest a second, incompatible engine beneath any dependency.

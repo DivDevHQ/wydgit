@@ -1,5 +1,20 @@
 ## Unreleased
 
+### Wydgit 0.3-I5.5 — Disposable worker process supervision (alpha.14)
+
+- Add a trusted Wydgine worker executable using the existing I3 operational host,
+  canonical inventory validation and shared approved-deployment fingerprints.
+- Add closed versioned Node IPC with bounded queues, correlations, deadlines,
+  sanitized health, immutable bootstrap and generation fencing.
+- Add WydHosting approved-pool lifecycle, durable ownership epochs/restart budgets,
+  finite crash recovery, health expiry, drain and confirmed child-process cleanup.
+- Exercise real shared/dedicated canonical Apps, Taskboards, service persistence,
+  HTTP saturation/drain, signals/EOF and independent installed tarball workers.
+- Retain development-only same-UID/loopback qualification; Linux isolation,
+  authenticated private ingress and independently enforced orphan cleanup remain I5.6.
+- Keep canonical library/client versions and all historical browser bytes unchanged;
+  extend Search/Stream engine peer compatibility explicitly through alpha.14.
+
 ### Wydgit 0.3-I5.4 — Independent local packages (alpha.13)
 
 - Move the single engine implementation into packages/wydgine/src, retaining

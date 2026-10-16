@@ -1,6 +1,6 @@
 {
   "name": "wydgine",
-  "version": "0.3.0-alpha.13",
+  "version": "0.3.0-alpha.14",
   "private": true,
   "type": "module",
   "license": "MPL-2.0",
@@ -8,7 +8,8 @@
     "node": ">=24.21.0"
   },
   "bin": {
-    "wydgine": "./bin/wydgine.js"
+    "wydgine": "./bin/wydgine.js",
+    "wydgine-worker": "./bin/wydgine-worker.js"
   },
   "files": [
     "bin",
@@ -22,7 +23,9 @@
     ".": "./src/app.js",
     "./trusted/worker": "./src/trusted/worker.js",
     "./trusted/provider": "./src/trusted/provider.js",
-    "./trusted/services": "./src/trusted/services.js"
+    "./trusted/services": "./src/trusted/services.js",
+    "./trusted/protocol": "./src/trusted/protocol.js",
+    "./trusted/worker-entry": "./bin/wydgine-worker.js"
   },
   "dependencies": {
     "@hono/node-server": "2.1.4",

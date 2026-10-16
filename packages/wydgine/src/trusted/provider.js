@@ -5,3 +5,4 @@ export {validateRouting,canonicalAuthority} from '../engine/http/routing.js';
 export {clean,freeze,record} from '../engine/object-model/validation.js';
 export {validId} from '../engine/object-model/schema.js';
 export {resourcePolicy} from '../engine/governance.js';
+export {safePath,fingerprintApprovedApp} from './deployment.js';

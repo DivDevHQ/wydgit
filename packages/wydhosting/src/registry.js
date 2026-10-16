@@ -39,6 +39,7 @@ export function createRegistry({directory,fixtureRoot,authorize,checkpoint=async
  async function approve(p){check(typeof authorize==='function','HOSTING.UNAUTHORIZED');const actor=await authorize(sealed(p));check(id(actor),'HOSTING.UNAUTHORIZED');return actor;}
  const result=(e,j,replayed=false)=>sealed({ok:true,operationId:j.operationId,revision:j.resultRevision,generation:e.generation,state:'applied-registry-only',code:'HOSTING.REGISTRY_VERIFIED',replayed,productionReady:false,osStatus:'unsupported',requiredOperations:j.plan.requiredOperations});
  return Object.freeze({
+  supervisorStateDirectory:path.join(directory,'supervisor'),
   async initialize(providerId){const request=sealed({schema:'wydhosting.initialize/1',operationId:'initialize',expectedRevision:null,providerId});await approve(request);return exclusive(async()=>{try{await fs.lstat(file);throw fail('HOSTING.CONFLICT');}catch(e){if(e.code!=='ENOENT')throw e;}const e={schema:'wydhosting.state/1',generation:randomUUID(),registry:emptyRegistry(providerId),journal:[]};await replace(e);return sealed(e.registry);});},
   async inspect(){const e=await read();return sealed({registry:e.registry,generation:e.generation,adapter:'local-fixture/1',productionReady:false});},
   async validate(){const e=await read();return inspectRegistry(e.registry,{stateDirectory:directory,fixtureRoot});},

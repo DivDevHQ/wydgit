@@ -3,3 +3,4 @@ export {createRegistry} from './registry.js';
 export {validateRegistry,emptyRegistry} from './contracts.js';
 export {plan,validateRequest,validatePlan} from './planning.js';
 export {compilePool,inspectRegistry,fingerprintApprovedApp} from './adapter.js';
+export {createSupervisor} from './supervisor.js';
