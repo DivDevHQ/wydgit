@@ -1,21 +1,21 @@
-# Experimental SELinux provider and worker confinement
+# Experimental SELinux provider, worker and edge confinement
 
 This is an I5.6 qualification candidate, not a production security certification.
-The installed provider and two real Wydgine workers have executed on AlmaLinux 10.2
-in enforcing, distinct confined domains/categories. The privileged Python broker and
-the disposable Caddy edge still use the distribution's `unconfined_service_t` domain.
-Their dedicated MAC policies, reboot installation and a broader hostile-access matrix
+The installed provider, two real Wydgine workers and separate Caddy edge have executed
+on AlmaLinux 10.2 in enforcing, distinct confined domains/categories. The privileged
+Python broker still uses the distribution's `unconfined_service_t` domain.
+Its dedicated MAC policy, reboot installation and a broader hostile-access matrix
 remain gates. Do not infer RHEL, Rocky Linux or Oracle Linux qualification.
 
 ## Authority and domains
 
 The reviewed module is `selinux/wydhosting_worker.cil` inside the WydHosting package.
 It installs no permissive domain, boolean, unconfined-domain attribute, worker
-capability, network socket permission, ptrace, relabel permission or system-file write.
+capability, worker TCP/UDP permission, ptrace, worker relabel permission or system-file write.
 It grants systemd access only to the new hosting object types needed to build its
 existing mount sandbox and service runtime directories. NoNewPrivileges remains on;
-the two explicit `nnp_transition` rules permit init to enter the confined provider
-and worker domains. There is no automatic transition to an unconfined worker.
+the explicit `nnp_transition` rules permit init to enter the confined provider,
+worker and edge domains. There is no automatic transition to an unconfined worker.
 
 | Subject | Actual candidate context | Scope |
 | --- | --- | --- |
@@ -23,11 +23,13 @@ and worker domains. There is no automatic transition to an unconfined worker.
 | Tenant A, UID/GID 61051 | `system_u:system_r:wydhosting_worker_t:s0:c51` | Approved code read, own categorized data/runtime access, root-broker Unix control |
 | Tenant B, UID/GID 61052 | `system_u:system_r:wydhosting_worker_t:s0:c52` | Same permissions, independently categorized resources |
 | Root broker | `system_u:system_r:unconfined_service_t:s0` | Existing closed root operations, unchanged capabilities and worker lifetime authentication |
-| Separate edge, UID/GID 61053 | Distribution unconfined service context | Disposable loopback TLS proxy; no broker socket access |
+| Separate edge, UID/GID 61053 | `system_u:system_r:wydhosting_edge_t:s0` | Own executable/config/state, provider Unix endpoint and HTTP-port-type TCP ingress; no worker/broker socket or tenant-data access |
 
 Identity and SELinux labels do not grant SEAM capabilities. No raw process or file API
 has been added to ordinary Wydgits. Workers retain RestrictSUIDSGID, empty capabilities,
-NNP, mount/network/namespace restrictions and the existing cgroup limits. The previously
+NNP, mount/network/namespace restrictions and the existing cgroup limits. Its explicit
+bounded private tmpfs supplies `/tmp` isolation; PrivateTmp=yes previously shadowed
+that mount on the actual guest. `/var/tmp` remains inaccessible. The previously
 authorized broker-only RestrictSUIDSGID decision is preserved.
 
 ## Category allocation and sealing
@@ -71,13 +73,53 @@ The VM canary deliberately gives the **same UID**, ordinary read/write mode and 
 same data type to own/foreign files. Own-category access succeeds; foreign-category
 read/write and relabel attempts return EACCES. Actual AVCs identify c51 → c52 and
 `permissive=0`. This proves independent MAC for that tested file boundary, not a
-complete cross-tenant socket/process/load qualification.
+complete cross-tenant/load qualification. The continuation also verifies same-UID
+c51 → c52 **sock_file write**, **process signal**, **proc-directory search** and
+**runtime-file execute** denials, with successful same-category execution/SIGCONT.
+These are actual AVC-backed category checks. Relabel denial is TE across all
+categories. Proc inspection is denied before ptrace; abstract sockets, process
+information side channels and all native-library closures remain unqualified.
 
 The trusted provider is intentionally not MCS constrained: it must route to all
 approved tenants. It cannot relabel their files or write sealed code/root state.
 Its exposure remains part of the trusted computing base. Root and the unconfined
 broker can bypass tenant MAC; a dedicated broker policy is still required by the
 full production qualification mission.
+
+## Confined edge and remaining privileged broker
+
+The same module defines `wydhosting_edge_exec_t` for
+`/opt/wydhosting/edge/caddy`, `wydhosting_edge_config_t` for the exact Caddyfile,
+certificate and key, and `wydhosting_edge_state_t` for its dedicated state tree.
+The fixture selects `SELinuxContext=system_u:system_r:wydhosting_edge_t:s0` explicitly
+and verifies the actual process context before TLS requests. There is no automatic
+transition or production installer/edge-service manager implied by the fixture.
+
+The edge can read its typed configuration/key, execute its own binary, maintain its
+typed state and connect to the provider's typed Unix endpoint. It cannot read tenant
+code/data, connect to worker/broker endpoints, relabel files, execute arbitrary bin_t
+programs, write system files or initiate outbound TCP/DNS/UDP. Its only capability is
+NET_BIND_SERVICE. An actual DAC-readable valid config relabeled `wydhosting_data_t:c52`
+validates outside confinement, then fails in edge_t with a read AVC (`permissive=0`).
+Both configured tenant routes and proxy restart pass in the real confined service.
+
+Residual edge trust is explicit: `http_port_t` may contain several distribution-defined
+ports, and `node_t` bind permission is not a loopback-only MAC rule. The tested Caddy
+configuration binds loopback, but a compromised edge can use its allowed TCP listener
+rights more broadly. It terminates TLS, holds test keys and can send authenticated
+requests to any provider-approved route. Header hygiene, credential checks, provider
+authorization and firewalld remain independent boundaries. Its runtime reads procfs
+and distro files; there is no claim of eliminating all host information side channels.
+
+The broker remains unconfined with CHOWN, DAC_OVERRIDE, FOWNER, SETUID, SETGID and
+AUDIT_WRITE. Account tools need shared account-database writes; service operations
+need manager access, and staging requires fixed cross-category labeling. A dedicated
+policy must narrowly type those operations and retain ownership checks; granting all
+`file_type`, arbitrary transitions or generic process access is not acceptable. No
+such shortcut is installed. Broker confinement/possible privilege separation remains
+an implementation and qualification gate, not a request to weaken global policy.
+Even a future confined broker retains authority over managed tenants and account
+databases; confinement does not make compromised root code harmless.
 
 ## Reproducible installation and limits
 
@@ -90,6 +132,9 @@ sudo restorecon -F /var/lib/wydhosting /var/lib/wydhosting/pools /run/wydhosting
 sudo restorecon -F /etc/wydhosting/provider.json /etc/wydhosting/provider-approval.json
 # After starting the broker socket, restore its exact published inode label:
 sudo restorecon -F /run/wydhosting/broker.sock
+# If installing the separately reviewed edge executable/unit/configuration:
+sudo restorecon -RF /opt/wydhosting/edge /var/lib/wydhosting/edge
+sudo restorecon -F /etc/wydhosting/Caddyfile /etc/wydhosting/edge.crt /etc/wydhosting/edge.key
 ```
 
 Do **not** recursively restore generic labels over categorized pool generations or

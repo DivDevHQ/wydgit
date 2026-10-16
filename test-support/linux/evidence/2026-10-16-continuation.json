@@ -1,0 +1,4080 @@
+{
+  "schema": "wydhosting.integrated-qualification-evidence/1",
+  "date": "2026-10-16",
+  "base": "852ee722bfefd3aa0b3f250d1c0603de22e21a25",
+  "branch": "develop/0.3",
+  "version": "0.3.0-alpha.15",
+  "target": "almond-lab",
+  "implementationComplete": false,
+  "productionQualified": false,
+  "externalNetworkTests": 0,
+  "rebootTests": 0,
+  "environment": {
+    "os": "AlmaLinux 10.2",
+    "kernel": "6.12.0-211.65.1.el10_2.x86_64",
+    "systemd": "257-23.el10_2.2.alma.1",
+    "node": "24.21.0",
+    "python": "3.12.15",
+    "caddy": "2.11.7",
+    "selinux": "Enforcing",
+    "filesystem": "XFS noquota",
+    "bootId": "c77a65af-95bc-480d-bbe3-47f613b6b005"
+  },
+  "sourceSHA256": {
+    "packages/wydhosting/broker/broker.py": "81c02050a97d1fa7f3e78496df6df9144dd731c553f6535759d8b8d15f27f3d0",
+    "packages/wydhosting/selinux/wydhosting_worker.cil": "a2f6c13a0cb5ce4b789acfc71957c813d15e16776d73a5519e748220f76d7737",
+    "packages/wydhosting/broker/worker.py": "bd54fcbf3a203ae6b058b72abb28df60289efab8f69ef746a62efb5d65392073",
+    "packages/wydhosting/broker/firewalld_probe.py": "28d742398e94033e896f291deb963017601b0157f6481e878136095807b3748b",
+    "packages/wydhosting/templates/wydhosting-broker@.service": "0c27d0fdb334e41c8a1aa384a72d7f8a751e0c6aca5d417e10d442c593ac15d1",
+    "packages/wydhosting/templates/Caddyfile": "b873f99e390509eb842acb387040fdc4993d2b6bb3239b9b7dcc8acf75e22146",
+    "test-support/linux/qualify.py": "a9f1885ebf529a0dbd72f82f6ccc44a3134e9c8df28aecad9c0b1be51a8683f4",
+    "test-support/linux/qualify-integrated.py": "503cea72904ea4ce7cf0d99610eb21a397eeb55ea207da026dbfe7fe7fabf815",
+    "test-support/linux/verify.py": "47fa516d4ef806a1d89168025d2a26da348f8d3da3c74cfccb921011af607371",
+    "test-support/linux/qualification-registry.mjs": "ef10eca4822e6ff7b8aebfbe9e5b4490f67970092fa15a5551c1ccc060aec19d",
+    "test-support/linux/qualify-kernel.py": "016a9d193f96a52708a7edf5d9ed45ea669ad921975d7ad2e04136a3dc304d7c",
+    "test-support/linux/verify-firewalld.py": "2dd1d2d5dddb86b3c53789ad1b1318007759152a4d6b09da2f56adaf5f883dad"
+  },
+  "artifactManifestSHA256": "95e1f5b615ff2c3a7796f558da4c448bc10ec05fbb1ade9f2f269f6865411082",
+  "archiveSHA256": "d33fe752d5b01af59fbde982aa07494001c78bf863d5fb7003c02c2e5435b810",
+  "testedFixtureSHA256": "dc022f97d2fba79b4ed8d4ccf4d87a178b2307fcb4b746c49bee9266ae94a029",
+  "postRunFixtureOnlyChange": "Corrected the stale integrated-limitations mac label to include edge confinement. No executed operation, assertion, limit, policy or production code changed. Raw prior labels remain preserved; actual edge contexts and AVCs establish confinement.",
+  "interpretation": {
+    "categories": {
+      "privileged-broker-dac": {
+        "passed": 30,
+        "failed": 0
+      },
+      "selinux-mac": {
+        "passed": 4,
+        "failed": 0
+      },
+      "integrated-service": {
+        "passed": 23,
+        "failed": 0
+      },
+      "proxy-loopback": {
+        "passed": 11,
+        "failed": 0
+      },
+      "integrated-resource": {
+        "passed": 2,
+        "failed": 0
+      },
+      "service-recovery": {
+        "passed": 15,
+        "failed": 0
+      },
+      "retirement-race": {
+        "passed": 12,
+        "failed": 0
+      }
+    },
+    "selinux": "4 checks: missing-category gate, actual edge domain, AVC-backed worker hostile matrix and AVC-backed edge data denial; not four separate MAC attack campaigns",
+    "kernel": "separate hostile fixture, not confined production App stress",
+    "ordinary": "nested Python cases include explicitly simulated administration; not privileged proof",
+    "retirement": "fix proven for reproduced relay reset and deterministic process disappearance; old uninstrumented failure cannot be retroactively attributed",
+    "temporary": "actual worker mount capacity via bounded administrator helper; confined library tmp-file access unqualified"
+  },
+  "initialInsufficientAssertions": {
+    "reportedPassingChecks": 95,
+    "actualUnexpectedBrokerErrors": [
+      {
+        "schema": "wydhosting.admin-event/1",
+        "operation": "launch",
+        "resource": "i56-b",
+        "generation": "8291a8e7-b521-4c99-a696-0d570e927886",
+        "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+        "principal": "uid:61050",
+        "failureKind": "os",
+        "failurePhase": "relay",
+        "outcome": "refused",
+        "code": "BROKER.INTERNAL"
+      },
+      {
+        "schema": "wydhosting.admin-event/1",
+        "operation": "launch",
+        "resource": "i56-b",
+        "generation": "ad0877a2-1a11-472e-a146-7862d0b26b4b",
+        "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+        "principal": "uid:61050",
+        "failureKind": "os",
+        "failurePhase": "relay",
+        "outcome": "refused",
+        "code": "BROKER.INTERNAL"
+      },
+      {
+        "schema": "wydhosting.admin-event/1",
+        "operation": "launch",
+        "resource": "i56-b",
+        "generation": "af34aa12-29d3-405d-abe9-2917f2e9e807",
+        "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+        "principal": "uid:61050",
+        "failureKind": "os",
+        "failurePhase": "relay",
+        "outcome": "refused",
+        "code": "BROKER.INTERNAL"
+      }
+    ]
+  },
+  "temporaryMountCausal": [
+    {
+      "privateTmp": "yes",
+      "status": 0,
+      "output": "{\"magic\": \"0x58465342\", \"bytes\": 35806773248, \"mounts\": [\"390 321 253:0 /tmp/systemd-private-c77a65af95bc480dbbe347f613b6b005-wyd-i56-tmp-causal-0.service-5qgCX7/tmp /tmp rw,relatime shared:323 master:1 - xfs /dev/mapper/almalinux-root rw,seclabel,attr2,inode64,logbufs=8,logbsize=32k,noquota\"]}\n",
+      "diagnostic": "Running as unit: wyd-i56-tmp-causal-0.service; invocation ID: df2944cd8fe548059d6c25c3192dfe52\nFinished with result: success\nMain processes terminated with: code=exited, status=0/SUCCESS\nService runtime: 43ms\nCPU time consumed: 30ms\nMemory peak: 5.2M (swap: 0B)\n"
+    },
+    {
+      "privateTmp": "no",
+      "status": 0,
+      "output": "{\"magic\": \"0x1021994\", \"bytes\": 1048576, \"mounts\": [\"390 321 0:50 / /tmp rw,nosuid,nodev,noexec shared:323 - tmpfs tmpfs rw,seclabel,size=1024k,nr_inodes=409600,mode=700,inode64\"]}\n",
+      "diagnostic": "Running as unit: wyd-i56-tmp-causal-1.service\nFinished with result: success\nMain processes terminated with: code=exited, status=0/SUCCESS\nService runtime: 31ms\nCPU time consumed: 29ms\nMemory peak: 5.4M (swap: 0B)\n"
+    },
+    {
+      "privateTmp": "disconnected",
+      "status": 1,
+      "output": "",
+      "diagnostic": "Failed to parse PrivateTmp: disconnected\n"
+    },
+    {
+      "privateTmp": "yes",
+      "status": 0,
+      "output": "{\"magic\": \"0x58465342\", \"bytes\": 35806773248, \"mounts\": [\"390 321 253:0 /tmp/systemd-private-c77a65af95bc480dbbe347f613b6b005-wyd-i56-tmp-causal-3.service-hlgR73/tmp /tmp rw,relatime shared:323 master:1 - xfs /dev/mapper/almalinux-root rw,seclabel,attr2,inode64,logbufs=8,logbsize=32k,noquota\"]}\n",
+      "diagnostic": "Running as unit: wyd-i56-tmp-causal-3.service\nFinished with result: success\nMain processes terminated with: code=exited, status=0/SUCCESS\nService runtime: 56ms\nCPU time consumed: 28ms\nMemory peak: 5.3M (swap: 0B)\n"
+    }
+  ],
+  "runs": [
+    {
+      "log": "/tmp/wydgit-i56-continued-vm-first.log",
+      "sha256": "4bc26b42b006346f3607df14deb82616930f351cad94de538348bea84ed540e0",
+      "events": [
+        {
+          "event": "baseline",
+          "kernel": "6.12.0-211.65.1.el10_2.x86_64",
+          "boot": "c77a65af-95bc-480d-bbe3-47f613b6b005",
+          "selinux": "enforcing"
+        },
+        {
+          "event": "copy-release",
+          "path": "/opt/wydhosting/release",
+          "manifestSHA256": "7dc397ab877611aa5bf2ad0896778d2c588e7ea23b99d7c2b46c8d48f83c4804"
+        },
+        {
+          "event": "install-selinux-module",
+          "module": "wydhosting_worker",
+          "sha256": "14e4331d23eb77eb8692a2bbeadeb00a38d6fb92d02dc9a64593811bfebd0bf6"
+        },
+        {
+          "event": "canonical-registry-plan",
+          "revision": 1,
+          "digest": "60258395d4342aad8de559ff85bd897653cf14880cc4cff4917cc4dd8831479d",
+          "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+          "apps": [
+            "i56-a",
+            "i56-b"
+          ]
+        },
+        {
+          "event": "integrated-worker",
+          "state": "running",
+          "epoch": 1,
+          "generation": "14cd844a-f929-4683-ac18-64f793084a2e",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-14cd844af9294683ac1864f793084a2e.service",
+          "base": "/var/lib/wydhosting/pools/i56-a/generations/1",
+          "invocation": "9295b322e8e045808f61a76dbbe328ab",
+          "cgroup": "/system.slice/wydhosting-pool-69816689df4526f1283221607d19e1fb-14cd844af9294683ac1864f793084a2e.service",
+          "unitHash": "5e3f69769b7d8138facd97afb5fb7c67b71735883983cd8b6d68a6e982a80909",
+          "pid": 29525,
+          "startTime": "4543844"
+        },
+        {
+          "event": "integrated-worker",
+          "state": "running",
+          "epoch": 1,
+          "generation": "c98b7206-7512-4f5f-a001-e86bdba8f392",
+          "unit": "wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-c98b720675124f5fa001e86bdba8f392.service",
+          "base": "/var/lib/wydhosting/pools/i56-b/generations/1",
+          "invocation": "c9e4171e488e4601b7a67d2c8a8a8d95",
+          "cgroup": "/system.slice/wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-c98b720675124f5fa001e86bdba8f392.service",
+          "unitHash": "170d8ea5246b466542c845d7523ade5cddc794c91884ec0253c37aae00d503cf",
+          "pid": 29610,
+          "startTime": "4544030"
+        },
+        {
+          "event": "MAC-audit",
+          "lines": [
+            "type=AVC msg=audit(10/16/26 13:34:59.045:13971) : avc:  denied  { ioctl } for  pid=29610 comm=python3 path=/opt/wydhosting/release/node_modules/wydhosting/broker/worker.py dev=\"dm-0\" ino=35741 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c52 tcontext=system_u:object_r:wydhosting_runtime_t:s0 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:34:59.052:13972) : avc:  denied  { ioctl } for  pid=29610 comm=python3 path=/opt/wydhosting/release/node_modules/wydhosting/broker/security.py dev=\"dm-0\" ino=35740 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c52 tcontext=system_u:object_r:wydhosting_runtime_t:s0 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:34:59.146:13973) : avc:  denied  { search } for  pid=29610 comm=MainThread name=/ dev=\"cgroup2\" ino=1 scontext=system_u:system_r:wydhosting_worker_t:s0:c52 tcontext=system_u:object_r:cgroup_t:s0 tclass=dir permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:34:59.146:13974) : avc:  denied  { search } for  pid=29610 comm=MainThread name=/ dev=\"cgroup2\" ino=1 scontext=system_u:system_r:wydhosting_worker_t:s0:c52 tcontext=system_u:object_r:cgroup_t:s0 tclass=dir permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:35:12.232:13980) : avc:  denied  { read write } for  pid=29674 comm=python3 path=socket:[173425] dev=\"sockfs\" ino=173425 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:system_r:init_t:s0 tclass=unix_stream_socket permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:35:12.232:13980) : avc:  denied  { read write } for  pid=29674 comm=python3 path=socket:[173425] dev=\"sockfs\" ino=173425 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:system_r:init_t:s0 tclass=unix_stream_socket permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:35:12.337:13982) : avc:  denied  { ioctl } for  pid=29674 comm=python3 path=/var/lib/wydhosting/mac-canary/own dev=\"dm-0\" ino=67241797 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:35:12.337:13983) : avc:  denied  { ioctl } for  pid=29674 comm=python3 path=/var/lib/wydhosting/mac-canary/own dev=\"dm-0\" ino=67241797 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:35:12.337:13984) : avc:  denied  { read } for  pid=29674 comm=python3 name=foreign dev=\"dm-0\" ino=67241807 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:35:12.338:13985) : avc:  denied  { write } for  pid=29674 comm=python3 name=foreign dev=\"dm-0\" ino=67241807 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:35:12.338:13986) : avc:  denied  { relabelfrom } for  pid=29674 comm=python3 name=foreign dev=\"dm-0\" ino=67241807 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:35:12.338:13987) : avc:  denied  { ioctl } for  pid=29674 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=67362179 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 "
+          ]
+        },
+        {
+          "event": "bounded-integrated-memory-pressure",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-3536bd801730441d932efa63cd968ca7.service",
+          "cgroupMemoryMax": 268435456,
+          "helperAddressSpaceMax": 536870912,
+          "helperAllocationCeiling": 402653184,
+          "helperCpuSeconds": 3,
+          "deadlineSeconds": 15,
+          "helperSignal": "SIGKILL"
+        },
+        {
+          "event": "retirement-overlap",
+          "cycle": 0,
+          "states": [
+            "stopped",
+            "stopped"
+          ],
+          "workerKillResults": [
+            0,
+            0
+          ]
+        },
+        {
+          "event": "retirement-overlap",
+          "cycle": 1,
+          "states": [
+            "stopped",
+            "stopped"
+          ],
+          "workerKillResults": [
+            0,
+            0
+          ]
+        },
+        {
+          "event": "retirement-overlap",
+          "cycle": 2,
+          "states": [
+            "stopped",
+            "stopped"
+          ],
+          "workerKillResults": [
+            0,
+            0
+          ]
+        },
+        {
+          "event": "retirement-overlap",
+          "cycle": 3,
+          "states": [
+            "stopped",
+            "stopped"
+          ],
+          "workerKillResults": [
+            0,
+            0
+          ]
+        },
+        {
+          "event": "integrated-limitations",
+          "caddy": "loopback-only",
+          "externalNetwork": "not-executed",
+          "reboot": "not-executed",
+          "mac": "provider-and-worker-MCS; broker-and-edge-unconfined",
+          "recovery": "stale-lock-requires-operator-review"
+        },
+        {
+          "event": "TOTAL",
+          "passed": 95,
+          "failed": 0,
+          "categories": {
+            "privileged-broker-dac": {
+              "passed": 30,
+              "failed": 0
+            },
+            "selinux-mac": {
+              "passed": 3,
+              "failed": 0
+            },
+            "integrated-service": {
+              "passed": 23,
+              "failed": 0
+            },
+            "proxy-loopback": {
+              "passed": 11,
+              "failed": 0
+            },
+            "service-recovery": {
+              "passed": 15,
+              "failed": 0
+            },
+            "integrated-resource": {
+              "passed": 1,
+              "failed": 0
+            },
+            "retirement-race": {
+              "passed": 12,
+              "failed": 0
+            }
+          },
+          "productionQualified": false
+        }
+      ]
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-vm-diagnose.log",
+      "sha256": "4734033badc42879972dbc502117ee69a5614cfd140c60168f40c8d44793ab25",
+      "events": [
+        {
+          "event": "baseline",
+          "kernel": "6.12.0-211.65.1.el10_2.x86_64",
+          "boot": "c77a65af-95bc-480d-bbe3-47f613b6b005",
+          "selinux": "enforcing"
+        },
+        {
+          "event": "copy-release",
+          "path": "/opt/wydhosting/release",
+          "manifestSHA256": "0690f34049a2b109780cb01d35cf2acc11b71fcdb87a28f0308b73a8b2783165"
+        },
+        {
+          "event": "install-selinux-module",
+          "module": "wydhosting_worker",
+          "sha256": "a2f6c13a0cb5ce4b789acfc71957c813d15e16776d73a5519e748220f76d7737"
+        },
+        {
+          "event": "canonical-registry-plan",
+          "revision": 1,
+          "digest": "60258395d4342aad8de559ff85bd897653cf14880cc4cff4917cc4dd8831479d",
+          "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+          "apps": [
+            "i56-a",
+            "i56-b"
+          ]
+        },
+        {
+          "event": "integrated-worker",
+          "state": "running",
+          "epoch": 1,
+          "generation": "2606b696-2240-4c3e-bf72-baec687f29d6",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-2606b69622404c3ebf72baec687f29d6.service",
+          "base": "/var/lib/wydhosting/pools/i56-a/generations/1",
+          "invocation": "22b6fd3e343c44659180959bed049c37",
+          "cgroup": "/system.slice/wydhosting-pool-69816689df4526f1283221607d19e1fb-2606b69622404c3ebf72baec687f29d6.service",
+          "unitHash": "5cd321f887dc9f2b5afab4efc1ac8bce59e366a7f57a5cad5e72d0e050b5b1b9",
+          "pid": 31775,
+          "startTime": "4565135"
+        },
+        {
+          "event": "integrated-worker",
+          "state": "running",
+          "epoch": 1,
+          "generation": "cc370153-3cee-451b-839f-a708f0467ae6",
+          "unit": "wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-cc3701533cee451b839fa708f0467ae6.service",
+          "base": "/var/lib/wydhosting/pools/i56-b/generations/1",
+          "invocation": "20eb386769124bcbac1ee95a04fffc1e",
+          "cgroup": "/system.slice/wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-cc3701533cee451b839fa708f0467ae6.service",
+          "unitHash": "141c5ac92a4e199e75214d2ca0db5588de867f1229ac92e4f252a23c9f97a202",
+          "pid": 31861,
+          "startTime": "4565322"
+        },
+        {
+          "event": "MAC-sibling",
+          "uid": 61051,
+          "context": "system_u:system_r:wydhosting_worker_t:s0:c52",
+          "socketContext": "system_u:object_r:wydhosting_run_t:s0"
+        },
+        {
+          "event": "FATAL",
+          "error": "['/usr/bin/systemd-run', '--unit=wyd-i56-mac-probe.service', '--wait']: 1: Running as unit: wyd-i56-mac-probe.service; invocation ID: be8b102fae6245d99c4db90d2f5d1653\nFinished with result: exit-code\nMain processes terminated with: code=exited, status=1/FAILURE\nService runtime: 125ms\nCPU time consumed: 47ms\nMemory peak: 6.6M (swap: 0B)\n"
+        },
+        {
+          "event": "TOTAL",
+          "passed": 54,
+          "failed": 1,
+          "categories": {
+            "privileged-broker-dac": {
+              "passed": 30,
+              "failed": 0
+            },
+            "selinux-mac": {
+              "passed": 1,
+              "failed": 0
+            },
+            "integrated-service": {
+              "passed": 23,
+              "failed": 0
+            }
+          },
+          "productionQualified": false
+        }
+      ]
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-vm-diagnose-second.log",
+      "sha256": "bc20f63469fe6a35b3f2ef5f80a8d9d1e286b24476946e993b2d850ec0971bc4",
+      "events": [
+        {
+          "event": "baseline",
+          "kernel": "6.12.0-211.65.1.el10_2.x86_64",
+          "boot": "c77a65af-95bc-480d-bbe3-47f613b6b005",
+          "selinux": "enforcing"
+        },
+        {
+          "event": "copy-release",
+          "path": "/opt/wydhosting/release",
+          "manifestSHA256": "0690f34049a2b109780cb01d35cf2acc11b71fcdb87a28f0308b73a8b2783165"
+        },
+        {
+          "event": "install-selinux-module",
+          "module": "wydhosting_worker",
+          "sha256": "a2f6c13a0cb5ce4b789acfc71957c813d15e16776d73a5519e748220f76d7737"
+        },
+        {
+          "event": "canonical-registry-plan",
+          "revision": 1,
+          "digest": "60258395d4342aad8de559ff85bd897653cf14880cc4cff4917cc4dd8831479d",
+          "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+          "apps": [
+            "i56-a",
+            "i56-b"
+          ]
+        },
+        {
+          "event": "integrated-worker",
+          "state": "running",
+          "epoch": 1,
+          "generation": "99f4dbcc-301e-43a9-8c3f-f5d148a037b8",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-99f4dbcc301e43a98c3ff5d148a037b8.service",
+          "base": "/var/lib/wydhosting/pools/i56-a/generations/1",
+          "invocation": "5339aeae33334e0882dcf2b289da5a30",
+          "cgroup": "/system.slice/wydhosting-pool-69816689df4526f1283221607d19e1fb-99f4dbcc301e43a98c3ff5d148a037b8.service",
+          "unitHash": "ea26c0cc7e16faa5e5ae0a239ff20f0710818cc896fcc68c73af499db8892706",
+          "pid": 32496,
+          "startTime": "4574240"
+        },
+        {
+          "event": "integrated-worker",
+          "state": "running",
+          "epoch": 1,
+          "generation": "e968f603-04da-4507-94ef-16a500758951",
+          "unit": "wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-e968f60304da450794ef16a500758951.service",
+          "base": "/var/lib/wydhosting/pools/i56-b/generations/1",
+          "invocation": "46eaedc90faf4f08b9f54c124d47d664",
+          "cgroup": "/system.slice/wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-e968f60304da450794ef16a500758951.service",
+          "unitHash": "23d6cacbfa9ec22ce018313fa96371d1d6238c3952f9e52e7ae6166ed8a3c91f",
+          "pid": 32580,
+          "startTime": "4574418"
+        },
+        {
+          "event": "MAC-sibling",
+          "uid": 61051,
+          "context": "system_u:system_r:wydhosting_worker_t:s0:c52",
+          "socketContext": "system_u:object_r:wydhosting_run_t:s0:c52"
+        },
+        {
+          "event": "MAC-progress",
+          "context": "system_u:system_r:wydhosting_worker_t:s0:c51",
+          "stage": "complete",
+          "own": "read/write",
+          "ownExecute": "success",
+          "ownSignal": "success",
+          "read": "EACCES",
+          "write": "EACCES",
+          "relabel": "EACCES",
+          "socket": "EACCES",
+          "signal": "EACCES",
+          "inspect": "EACCES",
+          "execute": "EACCES"
+        },
+        {
+          "event": "MAC-audit",
+          "lines": [
+            "type=AVC msg=audit(10/16/26 13:40:02.968:15720) : avc:  denied  { search } for  pid=32580 comm=MainThread name=/ dev=\"cgroup2\" ino=1 scontext=system_u:system_r:wydhosting_worker_t:s0:c52 tcontext=system_u:object_r:cgroup_t:s0 tclass=dir permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:40:02.968:15721) : avc:  denied  { search } for  pid=32580 comm=MainThread name=/ dev=\"cgroup2\" ino=1 scontext=system_u:system_r:wydhosting_worker_t:s0:c52 tcontext=system_u:object_r:cgroup_t:s0 tclass=dir permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:40:10.963:15729) : avc:  denied  { read write } for  pid=32649 comm=python3 path=socket:[191648] dev=\"sockfs\" ino=191648 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:system_r:init_t:s0 tclass=unix_stream_socket permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:40:10.963:15729) : avc:  denied  { read write } for  pid=32649 comm=python3 path=socket:[191648] dev=\"sockfs\" ino=191648 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:system_r:init_t:s0 tclass=unix_stream_socket permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:40:11.020:15731) : avc:  denied  { ioctl } for  pid=32649 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37998 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:40:11.021:15732) : avc:  denied  { ioctl } for  pid=32649 comm=python3 path=/var/lib/wydhosting/mac-canary/own dev=\"dm-0\" ino=37951 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:40:11.021:15733) : avc:  denied  { ioctl } for  pid=32649 comm=python3 path=/var/lib/wydhosting/mac-canary/own dev=\"dm-0\" ino=37951 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:40:11.021:15734) : avc:  denied  { ioctl } for  pid=32649 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37998 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:40:11.022:15735) : avc:  denied  { ioctl } for  pid=32649 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37998 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:40:11.023:15736) : avc:  denied  { ioctl } for  pid=32649 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37998 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:40:11.023:15737) : avc:  denied  { read } for  pid=32649 comm=python3 name=foreign dev=\"dm-0\" ino=37997 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:40:11.024:15738) : avc:  denied  { ioctl } for  pid=32649 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37998 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:40:11.024:15739) : avc:  denied  { write } for  pid=32649 comm=python3 name=foreign dev=\"dm-0\" ino=37997 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:40:11.024:15740) : avc:  denied  { ioctl } for  pid=32649 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37998 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:40:11.024:15741) : avc:  denied  { relabelfrom } for  pid=32649 comm=python3 name=foreign dev=\"dm-0\" ino=37997 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:40:11.024:15742) : avc:  denied  { ioctl } for  pid=32649 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37998 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:40:11.024:15743) : avc:  denied  { write } for  pid=32649 comm=python3 name=foreign.sock dev=\"dm-0\" ino=38001 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:object_r:wydhosting_run_t:s0:c52 tclass=sock_file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:40:11.024:15744) : avc:  denied  { ioctl } for  pid=32649 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37998 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:40:11.025:15745) : avc:  denied  { signal } for  pid=32649 comm=python3 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:system_r:wydhosting_worker_t:s0:c52 tclass=process permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:40:11.035:15746) : avc:  denied  { ioctl } for  pid=32649 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37998 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:40:11.036:15747) : avc:  denied  { search } for  pid=32649 comm=python3 name=32638 dev=\"proc\" ino=189428 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:system_r:wydhosting_worker_t:s0:c52 tclass=dir permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:40:11.036:15748) : avc:  denied  { ioctl } for  pid=32649 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37998 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:40:11.037:15749) : avc:  denied  { execute } for  pid=32652 comm=python3 name=foreign-exec dev=\"dm-0\" ino=38000 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_runtime_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:40:11.037:15750) : avc:  denied  { ioctl } for  pid=32649 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37998 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 "
+          ]
+        },
+        {
+          "event": "bounded-integrated-memory-pressure",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-69dfd3c42c4a4ef98f2fbbd6e8ae403e.service",
+          "cgroupMemoryMax": 268435456,
+          "helperAddressSpaceMax": 536870912,
+          "helperAllocationCeiling": 402653184,
+          "helperCpuSeconds": 3,
+          "deadlineSeconds": 15,
+          "helperSignal": "SIGKILL"
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 0,
+          "session": "wydhosting-broker@19-32427-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "6f3c2901-1f0e-4d89-9746-6f1df12344fb",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "6f3c2901-1f0e-4d89-9746-6f1df12344fb",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 0,
+          "session": "wydhosting-broker@17-32427-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "e968f603-04da-4507-94ef-16a500758951",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "e968f603-04da-4507-94ef-16a500758951",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-overlap",
+          "cycle": 0,
+          "states": [
+            "stopped",
+            "stopped"
+          ],
+          "workerKillResults": [
+            0,
+            0
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 1,
+          "session": "wydhosting-broker@20-33011-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "eaea7d58-6821-4951-b2c4-fb87db208e07",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "eaea7d58-6821-4951-b2c4-fb87db208e07",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 1,
+          "session": "wydhosting-broker@21-33011-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "ad85540a-5d92-4ba9-9fcc-6de2d93586eb",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "ad85540a-5d92-4ba9-9fcc-6de2d93586eb",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "failureKind": "os",
+              "failureOs": "reset",
+              "failurePhase": "relay",
+              "outcome": "refused",
+              "code": "BROKER.INTERNAL"
+            }
+          ]
+        },
+        {
+          "event": "FAIL",
+          "category": "retirement-race",
+          "name": "concurrent sibling termination and provider retirement 1",
+          "error": "broker did not complete retirement"
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 2,
+          "session": "wydhosting-broker@22-33225-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "36c661f7-ea91-4e08-af94-df1301946a82",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "36c661f7-ea91-4e08-af94-df1301946a82",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 2,
+          "session": "wydhosting-broker@23-33225-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "2368beb5-b242-4ceb-b59c-77b25ce54d52",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "2368beb5-b242-4ceb-b59c-77b25ce54d52",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-overlap",
+          "cycle": 2,
+          "states": [
+            "stopped",
+            "stopped"
+          ],
+          "workerKillResults": [
+            0,
+            0
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 3,
+          "session": "wydhosting-broker@24-33441-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "5cd78abb-9726-4aba-a72d-98d36339d10d",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "5cd78abb-9726-4aba-a72d-98d36339d10d",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 3,
+          "session": "wydhosting-broker@25-33441-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "08b52b70-6740-408d-b71d-307e50da9a76",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "08b52b70-6740-408d-b71d-307e50da9a76",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "failureKind": "os",
+              "failureOs": "reset",
+              "failurePhase": "relay",
+              "outcome": "refused",
+              "code": "BROKER.INTERNAL"
+            }
+          ]
+        },
+        {
+          "event": "FAIL",
+          "category": "retirement-race",
+          "name": "concurrent sibling termination and provider retirement 3",
+          "error": "broker did not complete retirement"
+        },
+        {
+          "event": "integrated-limitations",
+          "caddy": "loopback-only",
+          "externalNetwork": "not-executed",
+          "reboot": "not-executed",
+          "mac": "provider-and-worker-MCS; broker-and-edge-unconfined",
+          "recovery": "stale-lock-requires-operator-review"
+        },
+        {
+          "event": "TOTAL",
+          "passed": 93,
+          "failed": 2,
+          "categories": {
+            "privileged-broker-dac": {
+              "passed": 30,
+              "failed": 0
+            },
+            "selinux-mac": {
+              "passed": 3,
+              "failed": 0
+            },
+            "integrated-service": {
+              "passed": 23,
+              "failed": 0
+            },
+            "proxy-loopback": {
+              "passed": 11,
+              "failed": 0
+            },
+            "service-recovery": {
+              "passed": 15,
+              "failed": 0
+            },
+            "integrated-resource": {
+              "passed": 1,
+              "failed": 0
+            },
+            "retirement-race": {
+              "passed": 10,
+              "failed": 2
+            }
+          },
+          "productionQualified": false
+        }
+      ]
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-vm-fixed-first.log",
+      "sha256": "604ddf7dc7dae76402b0ca3b24180537a57a6931049c0081b0b131b6fc4a59b0",
+      "events": [
+        {
+          "event": "baseline",
+          "kernel": "6.12.0-211.65.1.el10_2.x86_64",
+          "boot": "c77a65af-95bc-480d-bbe3-47f613b6b005",
+          "selinux": "enforcing"
+        },
+        {
+          "event": "copy-release",
+          "path": "/opt/wydhosting/release",
+          "manifestSHA256": "e8ff554ea46deb54d96d1bd82dcbb337f9a7e48d9ed5f98417691f9811269210"
+        },
+        {
+          "event": "install-selinux-module",
+          "module": "wydhosting_worker",
+          "sha256": "a2f6c13a0cb5ce4b789acfc71957c813d15e16776d73a5519e748220f76d7737"
+        },
+        {
+          "event": "canonical-registry-plan",
+          "revision": 1,
+          "digest": "60258395d4342aad8de559ff85bd897653cf14880cc4cff4917cc4dd8831479d",
+          "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+          "apps": [
+            "i56-a",
+            "i56-b"
+          ]
+        },
+        {
+          "event": "integrated-worker",
+          "state": "running",
+          "epoch": 1,
+          "generation": "a11ea7a1-3f2d-439b-8939-5df8a12c2d40",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-a11ea7a13f2d439b89395df8a12c2d40.service",
+          "base": "/var/lib/wydhosting/pools/i56-a/generations/1",
+          "invocation": "42137a9318aa4b33994cc08554614160",
+          "cgroup": "/system.slice/wydhosting-pool-69816689df4526f1283221607d19e1fb-a11ea7a13f2d439b89395df8a12c2d40.service",
+          "unitHash": "7de369cd8196608a370c1530076d53b0166ff7959440ebda4887833e8a1dba91",
+          "pid": 34714,
+          "startTime": "4584396"
+        },
+        {
+          "event": "integrated-worker",
+          "state": "running",
+          "epoch": 1,
+          "generation": "c4283b08-c346-46ac-9cce-9741f9ec41d6",
+          "unit": "wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-c4283b08c34646ac9cce9741f9ec41d6.service",
+          "base": "/var/lib/wydhosting/pools/i56-b/generations/1",
+          "invocation": "e148a17ede3e4559bc219c310854d94e",
+          "cgroup": "/system.slice/wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-c4283b08c34646ac9cce9741f9ec41d6.service",
+          "unitHash": "9448cd68d932fab8a1b6c818de3bab1afb1b1aadb24f29dbd95793538ec2c2af",
+          "pid": 34799,
+          "startTime": "4584584"
+        },
+        {
+          "event": "MAC-sibling",
+          "uid": 61051,
+          "context": "system_u:system_r:wydhosting_worker_t:s0:c52",
+          "socketContext": "system_u:object_r:wydhosting_run_t:s0:c52"
+        },
+        {
+          "event": "MAC-progress",
+          "context": "system_u:system_r:wydhosting_worker_t:s0:c51",
+          "stage": "complete",
+          "own": "read/write",
+          "ownExecute": "success",
+          "ownSignal": "success",
+          "read": "EACCES",
+          "write": "EACCES",
+          "relabel": "EACCES",
+          "socket": "EACCES",
+          "signal": "EACCES",
+          "inspect": "EACCES",
+          "execute": "EACCES"
+        },
+        {
+          "event": "MAC-audit",
+          "lines": [
+            "type=AVC msg=audit(10/16/26 13:41:44.621:17018) : avc:  denied  { search } for  pid=34799 comm=MainThread name=/ dev=\"cgroup2\" ino=1 scontext=system_u:system_r:wydhosting_worker_t:s0:c52 tcontext=system_u:object_r:cgroup_t:s0 tclass=dir permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:41:44.621:17019) : avc:  denied  { search } for  pid=34799 comm=MainThread name=/ dev=\"cgroup2\" ino=1 scontext=system_u:system_r:wydhosting_worker_t:s0:c52 tcontext=system_u:object_r:cgroup_t:s0 tclass=dir permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:41:52.585:17027) : avc:  denied  { read write } for  pid=34869 comm=python3 path=socket:[204819] dev=\"sockfs\" ino=204819 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:system_r:init_t:s0 tclass=unix_stream_socket permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:41:52.585:17027) : avc:  denied  { read write } for  pid=34869 comm=python3 path=socket:[204819] dev=\"sockfs\" ino=204819 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:system_r:init_t:s0 tclass=unix_stream_socket permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:41:52.609:17029) : avc:  denied  { ioctl } for  pid=34869 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37934 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:41:52.609:17030) : avc:  denied  { ioctl } for  pid=34869 comm=python3 path=/var/lib/wydhosting/mac-canary/own dev=\"dm-0\" ino=37888 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:41:52.609:17031) : avc:  denied  { ioctl } for  pid=34869 comm=python3 path=/var/lib/wydhosting/mac-canary/own dev=\"dm-0\" ino=37888 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:41:52.609:17032) : avc:  denied  { ioctl } for  pid=34869 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37934 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:41:52.611:17033) : avc:  denied  { ioctl } for  pid=34869 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37934 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:41:52.621:17034) : avc:  denied  { ioctl } for  pid=34869 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37934 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:41:52.621:17035) : avc:  denied  { read } for  pid=34869 comm=python3 name=foreign dev=\"dm-0\" ino=37933 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:41:52.622:17036) : avc:  denied  { ioctl } for  pid=34869 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37934 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:41:52.622:17037) : avc:  denied  { write } for  pid=34869 comm=python3 name=foreign dev=\"dm-0\" ino=37933 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:41:52.622:17038) : avc:  denied  { ioctl } for  pid=34869 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37934 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:41:52.622:17039) : avc:  denied  { relabelfrom } for  pid=34869 comm=python3 name=foreign dev=\"dm-0\" ino=37933 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:41:52.622:17040) : avc:  denied  { ioctl } for  pid=34869 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37934 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:41:52.623:17041) : avc:  denied  { write } for  pid=34869 comm=python3 name=foreign.sock dev=\"dm-0\" ino=37937 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:object_r:wydhosting_run_t:s0:c52 tclass=sock_file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:41:52.623:17042) : avc:  denied  { ioctl } for  pid=34869 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37934 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:41:52.623:17043) : avc:  denied  { signal } for  pid=34869 comm=python3 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:system_r:wydhosting_worker_t:s0:c52 tclass=process permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:41:52.623:17044) : avc:  denied  { ioctl } for  pid=34869 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37934 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:41:52.623:17045) : avc:  denied  { search } for  pid=34869 comm=python3 name=34858 dev=\"proc\" ino=201611 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:system_r:wydhosting_worker_t:s0:c52 tclass=dir permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:41:52.623:17046) : avc:  denied  { ioctl } for  pid=34869 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37934 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:41:52.624:17047) : avc:  denied  { execute } for  pid=34872 comm=python3 name=foreign-exec dev=\"dm-0\" ino=37936 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_runtime_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:41:52.624:17048) : avc:  denied  { ioctl } for  pid=34869 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37934 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 "
+          ]
+        },
+        {
+          "event": "edge-MAC-audit",
+          "lines": [
+            "type=AVC msg=audit(10/16/26 13:41:58.857:17118) : avc:  denied  { read } for  pid=34958 comm=caddy name=edge-denied dev=\"dm-0\" ino=101134027 scontext=system_u:system_r:wydhosting_edge_t:s0 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 "
+          ]
+        },
+        {
+          "event": "bounded-integrated-memory-pressure",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-fc4665652f1640448fb13576fbcc7f64.service",
+          "cgroupMemoryMax": 268435456,
+          "helperAddressSpaceMax": 536870912,
+          "helperAllocationCeiling": 402653184,
+          "helperCpuSeconds": 3,
+          "deadlineSeconds": 15,
+          "helperSignal": "SIGKILL"
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 0,
+          "session": "wydhosting-broker@19-34645-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "3b6fa23c-3fc4-4cd2-a2e4-ca158dd40098",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "3b6fa23c-3fc4-4cd2-a2e4-ca158dd40098",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 0,
+          "session": "wydhosting-broker@17-34645-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "c4283b08-c346-46ac-9cce-9741f9ec41d6",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "c4283b08-c346-46ac-9cce-9741f9ec41d6",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-overlap",
+          "cycle": 0,
+          "states": [
+            "stopped",
+            "stopped"
+          ],
+          "workerKillResults": [
+            0,
+            0
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 1,
+          "session": "wydhosting-broker@20-35246-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "8862c1b8-715a-4afd-9f8b-4704dfb5de0b",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "8862c1b8-715a-4afd-9f8b-4704dfb5de0b",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 1,
+          "session": "wydhosting-broker@21-35246-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "e3d02460-e756-405b-a0a2-f4f5e4e19d41",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "e3d02460-e756-405b-a0a2-f4f5e4e19d41",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-overlap",
+          "cycle": 1,
+          "states": [
+            "stopped",
+            "stopped"
+          ],
+          "workerKillResults": [
+            0,
+            0
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 2,
+          "session": "wydhosting-broker@22-35460-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "4513f77a-47ad-4d88-81f3-78b36d021dd6",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "4513f77a-47ad-4d88-81f3-78b36d021dd6",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 2,
+          "session": "wydhosting-broker@23-35460-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "570ed630-ab23-4a8b-af1c-88f6b87c3537",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "570ed630-ab23-4a8b-af1c-88f6b87c3537",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-overlap",
+          "cycle": 2,
+          "states": [
+            "stopped",
+            "stopped"
+          ],
+          "workerKillResults": [
+            0,
+            0
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 3,
+          "session": "wydhosting-broker@24-35675-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "ed079e04-6a0e-4569-8335-45221afe84a3",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "ed079e04-6a0e-4569-8335-45221afe84a3",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 3,
+          "session": "wydhosting-broker@25-35675-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "b8d5a942-edb1-46ed-a931-cf028dfb3b40",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "b8d5a942-edb1-46ed-a931-cf028dfb3b40",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-overlap",
+          "cycle": 3,
+          "states": [
+            "stopped",
+            "stopped"
+          ],
+          "workerKillResults": [
+            0,
+            0
+          ]
+        },
+        {
+          "event": "integrated-limitations",
+          "caddy": "loopback-only",
+          "externalNetwork": "not-executed",
+          "reboot": "not-executed",
+          "mac": "provider-and-worker-MCS; broker-and-edge-unconfined",
+          "recovery": "stale-lock-requires-operator-review"
+        },
+        {
+          "event": "TOTAL",
+          "passed": 96,
+          "failed": 0,
+          "categories": {
+            "privileged-broker-dac": {
+              "passed": 30,
+              "failed": 0
+            },
+            "selinux-mac": {
+              "passed": 4,
+              "failed": 0
+            },
+            "integrated-service": {
+              "passed": 23,
+              "failed": 0
+            },
+            "proxy-loopback": {
+              "passed": 11,
+              "failed": 0
+            },
+            "service-recovery": {
+              "passed": 15,
+              "failed": 0
+            },
+            "integrated-resource": {
+              "passed": 1,
+              "failed": 0
+            },
+            "retirement-race": {
+              "passed": 12,
+              "failed": 0
+            }
+          },
+          "productionQualified": false
+        }
+      ]
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-vm-resource.log",
+      "sha256": "42e5f02521b64577a8e7f1b76fb63c260a7f2b55725d02d635eab41e9bd7f05f",
+      "events": [
+        {
+          "event": "baseline",
+          "kernel": "6.12.0-211.65.1.el10_2.x86_64",
+          "boot": "c77a65af-95bc-480d-bbe3-47f613b6b005",
+          "selinux": "enforcing"
+        },
+        {
+          "event": "copy-release",
+          "path": "/opt/wydhosting/release",
+          "manifestSHA256": "e8ff554ea46deb54d96d1bd82dcbb337f9a7e48d9ed5f98417691f9811269210"
+        },
+        {
+          "event": "install-selinux-module",
+          "module": "wydhosting_worker",
+          "sha256": "a2f6c13a0cb5ce4b789acfc71957c813d15e16776d73a5519e748220f76d7737"
+        },
+        {
+          "event": "canonical-registry-plan",
+          "revision": 1,
+          "digest": "60258395d4342aad8de559ff85bd897653cf14880cc4cff4917cc4dd8831479d",
+          "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+          "apps": [
+            "i56-a",
+            "i56-b"
+          ]
+        },
+        {
+          "event": "integrated-worker",
+          "state": "running",
+          "epoch": 1,
+          "generation": "6e0d3177-d3d5-4455-9631-656504aed44e",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-6e0d3177d3d544559631656504aed44e.service",
+          "base": "/var/lib/wydhosting/pools/i56-a/generations/1",
+          "invocation": "7c19466a1aae4775a3a58e04dd3eaec8",
+          "cgroup": "/system.slice/wydhosting-pool-69816689df4526f1283221607d19e1fb-6e0d3177d3d544559631656504aed44e.service",
+          "unitHash": "06c91046cd6771af107d995f649c3e4636d60779536922766dfde7154f2f43b4",
+          "pid": 36881,
+          "startTime": "4599539"
+        },
+        {
+          "event": "integrated-worker",
+          "state": "running",
+          "epoch": 1,
+          "generation": "59048c18-6ac3-43e2-ac35-d12c37d052b7",
+          "unit": "wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-59048c186ac343e2ac35d12c37d052b7.service",
+          "base": "/var/lib/wydhosting/pools/i56-b/generations/1",
+          "invocation": "d86212f501744851a10328e09b9f4c2f",
+          "cgroup": "/system.slice/wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-59048c186ac343e2ac35d12c37d052b7.service",
+          "unitHash": "f8197f4b686e98a17d2d879d8bf4f9ce759fcbcded6f716d8dc406d0d83ccae7",
+          "pid": 36966,
+          "startTime": "4599721"
+        },
+        {
+          "event": "MAC-sibling",
+          "uid": 61051,
+          "context": "system_u:system_r:wydhosting_worker_t:s0:c52",
+          "socketContext": "system_u:object_r:wydhosting_run_t:s0:c52"
+        },
+        {
+          "event": "MAC-progress",
+          "context": "system_u:system_r:wydhosting_worker_t:s0:c51",
+          "stage": "complete",
+          "own": "read/write",
+          "ownExecute": "success",
+          "ownSignal": "success",
+          "read": "EACCES",
+          "write": "EACCES",
+          "relabel": "EACCES",
+          "socket": "EACCES",
+          "signal": "EACCES",
+          "inspect": "EACCES",
+          "execute": "EACCES"
+        },
+        {
+          "event": "MAC-audit",
+          "lines": [
+            "type=AVC msg=audit(10/16/26 13:44:16.072:18342) : avc:  denied  { search } for  pid=36966 comm=MainThread name=/ dev=\"cgroup2\" ino=1 scontext=system_u:system_r:wydhosting_worker_t:s0:c52 tcontext=system_u:object_r:cgroup_t:s0 tclass=dir permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:16.072:18343) : avc:  denied  { search } for  pid=36966 comm=MainThread name=/ dev=\"cgroup2\" ino=1 scontext=system_u:system_r:wydhosting_worker_t:s0:c52 tcontext=system_u:object_r:cgroup_t:s0 tclass=dir permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:23.950:18351) : avc:  denied  { read write } for  pid=37036 comm=python3 path=socket:[212762] dev=\"sockfs\" ino=212762 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:system_r:init_t:s0 tclass=unix_stream_socket permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:23.950:18351) : avc:  denied  { read write } for  pid=37036 comm=python3 path=socket:[212762] dev=\"sockfs\" ino=212762 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:system_r:init_t:s0 tclass=unix_stream_socket permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:24.003:18353) : avc:  denied  { ioctl } for  pid=37036 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37678 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:24.003:18354) : avc:  denied  { ioctl } for  pid=37036 comm=python3 path=/var/lib/wydhosting/mac-canary/own dev=\"dm-0\" ino=37759 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:24.004:18355) : avc:  denied  { ioctl } for  pid=37036 comm=python3 path=/var/lib/wydhosting/mac-canary/own dev=\"dm-0\" ino=37759 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:24.004:18356) : avc:  denied  { ioctl } for  pid=37036 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37678 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:24.005:18357) : avc:  denied  { ioctl } for  pid=37036 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37678 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:24.005:18358) : avc:  denied  { ioctl } for  pid=37036 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37678 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:24.005:18359) : avc:  denied  { read } for  pid=37036 comm=python3 name=foreign dev=\"dm-0\" ino=37677 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:24.005:18360) : avc:  denied  { ioctl } for  pid=37036 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37678 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:24.005:18361) : avc:  denied  { write } for  pid=37036 comm=python3 name=foreign dev=\"dm-0\" ino=37677 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:24.005:18362) : avc:  denied  { ioctl } for  pid=37036 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37678 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:24.006:18363) : avc:  denied  { relabelfrom } for  pid=37036 comm=python3 name=foreign dev=\"dm-0\" ino=37677 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:24.006:18364) : avc:  denied  { ioctl } for  pid=37036 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37678 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:24.006:18365) : avc:  denied  { write } for  pid=37036 comm=python3 name=foreign.sock dev=\"dm-0\" ino=37681 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:object_r:wydhosting_run_t:s0:c52 tclass=sock_file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:24.006:18366) : avc:  denied  { ioctl } for  pid=37036 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37678 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:24.007:18367) : avc:  denied  { signal } for  pid=37036 comm=python3 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:system_r:wydhosting_worker_t:s0:c52 tclass=process permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:24.007:18368) : avc:  denied  { ioctl } for  pid=37036 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37678 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:24.007:18369) : avc:  denied  { search } for  pid=37036 comm=python3 name=37025 dev=\"proc\" ino=215546 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:system_r:wydhosting_worker_t:s0:c52 tclass=dir permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:24.007:18370) : avc:  denied  { ioctl } for  pid=37036 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37678 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:24.007:18371) : avc:  denied  { execute } for  pid=37039 comm=python3 name=foreign-exec dev=\"dm-0\" ino=37680 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_runtime_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:24.008:18372) : avc:  denied  { ioctl } for  pid=37036 comm=python3 path=/var/lib/wydhosting/mac-canary/result dev=\"dm-0\" ino=37678 ioctlcmd=TCGETS scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c51 tclass=file permissive=0 "
+          ]
+        },
+        {
+          "event": "edge-MAC-audit",
+          "lines": [
+            "type=AVC msg=audit(10/16/26 13:41:58.857:17118) : avc:  denied  { read } for  pid=34958 comm=caddy name=edge-denied dev=\"dm-0\" ino=101134027 scontext=system_u:system_r:wydhosting_edge_t:s0 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:30.020:18442) : avc:  denied  { read } for  pid=37125 comm=caddy name=edge-denied dev=\"dm-0\" ino=101125136 scontext=system_u:system_r:wydhosting_edge_t:s0 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 "
+          ]
+        },
+        {
+          "event": "FAIL",
+          "category": "integrated-resource",
+          "name": "actual worker private tmpfs ENOSPC and sibling survival",
+          "error": "refuse non-tmpfs"
+        },
+        {
+          "event": "bounded-integrated-memory-pressure",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-395f91cf67a24d2d9fabe32e242a6d82.service",
+          "cgroupMemoryMax": 268435456,
+          "helperAddressSpaceMax": 536870912,
+          "helperAllocationCeiling": 402653184,
+          "helperCpuSeconds": 3,
+          "deadlineSeconds": 15,
+          "helperSignal": "SIGKILL"
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 0,
+          "session": "wydhosting-broker@19-36812-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "06151437-010c-4bb9-afc1-c20588e882ff",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "06151437-010c-4bb9-afc1-c20588e882ff",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 0,
+          "session": "wydhosting-broker@17-36812-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "59048c18-6ac3-43e2-ac35-d12c37d052b7",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "59048c18-6ac3-43e2-ac35-d12c37d052b7",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-overlap",
+          "cycle": 0,
+          "states": [
+            "stopped",
+            "stopped"
+          ],
+          "workerKillResults": [
+            0,
+            0
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 1,
+          "session": "wydhosting-broker@20-37412-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "54802e79-b420-42b4-b3e9-e22cc62d1bd6",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "54802e79-b420-42b4-b3e9-e22cc62d1bd6",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 1,
+          "session": "wydhosting-broker@21-37412-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "2696761c-3b66-48fd-a695-078a05766b87",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "2696761c-3b66-48fd-a695-078a05766b87",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-overlap",
+          "cycle": 1,
+          "states": [
+            "stopped",
+            "stopped"
+          ],
+          "workerKillResults": [
+            0,
+            0
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 2,
+          "session": "wydhosting-broker@22-37630-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "71b548d2-4614-47a0-a135-e73c1b9d74d1",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "71b548d2-4614-47a0-a135-e73c1b9d74d1",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 2,
+          "session": "wydhosting-broker@23-37630-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "dac96ce4-60df-432a-b2d5-6fc6af04f9c9",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "dac96ce4-60df-432a-b2d5-6fc6af04f9c9",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-overlap",
+          "cycle": 2,
+          "states": [
+            "stopped",
+            "stopped"
+          ],
+          "workerKillResults": [
+            0,
+            0
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 3,
+          "session": "wydhosting-broker@24-37846-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "19b52a7a-2530-48e1-9fcf-c26fe95fd50a",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "19b52a7a-2530-48e1-9fcf-c26fe95fd50a",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 3,
+          "session": "wydhosting-broker@25-37846-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "38bacec7-f24a-431c-82cd-537683ecc71c",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "38bacec7-f24a-431c-82cd-537683ecc71c",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-overlap",
+          "cycle": 3,
+          "states": [
+            "stopped",
+            "stopped"
+          ],
+          "workerKillResults": [
+            0,
+            0
+          ]
+        },
+        {
+          "event": "integrated-limitations",
+          "caddy": "loopback-only",
+          "externalNetwork": "not-executed",
+          "reboot": "not-executed",
+          "mac": "provider-and-worker-MCS; broker-and-edge-unconfined",
+          "recovery": "stale-lock-requires-operator-review"
+        },
+        {
+          "event": "TOTAL",
+          "passed": 96,
+          "failed": 1,
+          "categories": {
+            "privileged-broker-dac": {
+              "passed": 30,
+              "failed": 0
+            },
+            "selinux-mac": {
+              "passed": 4,
+              "failed": 0
+            },
+            "integrated-service": {
+              "passed": 23,
+              "failed": 0
+            },
+            "proxy-loopback": {
+              "passed": 11,
+              "failed": 0
+            },
+            "integrated-resource": {
+              "passed": 1,
+              "failed": 1
+            },
+            "service-recovery": {
+              "passed": 15,
+              "failed": 0
+            },
+            "retirement-race": {
+              "passed": 12,
+              "failed": 0
+            }
+          },
+          "productionQualified": false
+        }
+      ]
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-vm-mountfix.log",
+      "sha256": "4afdb60f4a3dcd0231c19efd941a4f83b958ad0cb17ed76e92e3b366fe4008bb",
+      "events": [
+        {
+          "event": "baseline",
+          "kernel": "6.12.0-211.65.1.el10_2.x86_64",
+          "boot": "c77a65af-95bc-480d-bbe3-47f613b6b005",
+          "selinux": "enforcing"
+        },
+        {
+          "event": "copy-release",
+          "path": "/opt/wydhosting/release",
+          "manifestSHA256": "012650180372d886bf671c28828debaa549b57245f828ba801b4c754052a733d"
+        },
+        {
+          "event": "install-selinux-module",
+          "module": "wydhosting_worker",
+          "sha256": "a2f6c13a0cb5ce4b789acfc71957c813d15e16776d73a5519e748220f76d7737"
+        },
+        {
+          "event": "canonical-registry-plan",
+          "revision": 1,
+          "digest": "60258395d4342aad8de559ff85bd897653cf14880cc4cff4917cc4dd8831479d",
+          "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+          "apps": [
+            "i56-a",
+            "i56-b"
+          ]
+        },
+        {
+          "event": "integrated-worker",
+          "state": "running",
+          "epoch": 1,
+          "generation": "4353df07-863b-4f5f-911d-0cc0198f276c",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-4353df07863b4f5f911d0cc0198f276c.service",
+          "base": "/var/lib/wydhosting/pools/i56-a/generations/1",
+          "invocation": "71683e4694ad4fa2b1ea3aad692d3d95",
+          "cgroup": "/system.slice/wydhosting-pool-69816689df4526f1283221607d19e1fb-4353df07863b4f5f911d0cc0198f276c.service",
+          "unitHash": "35fde67b4cce4fc423916338739ab989cbdb0e208a224fb0647a7b3606e02da7",
+          "pid": 39196,
+          "startTime": "4618887"
+        },
+        {
+          "event": "integrated-worker",
+          "state": "running",
+          "epoch": 1,
+          "generation": "e54d1f51-5ffd-4bb8-84c3-5ab39e8fceff",
+          "unit": "wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-e54d1f515ffd4bb884c35ab39e8fceff.service",
+          "base": "/var/lib/wydhosting/pools/i56-b/generations/1",
+          "invocation": "18287ce39bba4e95961a4bc8f08861d7",
+          "cgroup": "/system.slice/wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-e54d1f515ffd4bb884c35ab39e8fceff.service",
+          "unitHash": "260c62bf93af86d28e00aeeeb604102ec8aa783181288856995a1498b237ed6d",
+          "pid": 39280,
+          "startTime": "4619061"
+        },
+        {
+          "event": "MAC-sibling",
+          "uid": 61051,
+          "context": "system_u:system_r:wydhosting_worker_t:s0:c52",
+          "socketContext": "system_u:object_r:wydhosting_run_t:s0:c52"
+        },
+        {
+          "event": "MAC-progress",
+          "context": "system_u:system_r:wydhosting_worker_t:s0:c51",
+          "pid": 39351,
+          "stage": "complete",
+          "own": "read/write",
+          "ownExecute": "success",
+          "ownSignal": "success",
+          "read": "EACCES",
+          "write": "EACCES",
+          "relabel": "EACCES",
+          "socket": "EACCES",
+          "signal": "EACCES",
+          "inspect": "EACCES",
+          "execute": "EACCES"
+        },
+        {
+          "event": "MAC-audit",
+          "lines": [
+            "type=AVC msg=audit(10/16/26 13:41:52.623:17045) : avc:  denied  { search } for  pid=34869 comm=python3 name=34858 dev=\"proc\" ino=201611 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:system_r:wydhosting_worker_t:s0:c52 tclass=dir permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:41:52.624:17047) : avc:  denied  { execute } for  pid=34872 comm=python3 name=foreign-exec dev=\"dm-0\" ino=37936 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_runtime_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:24.005:18359) : avc:  denied  { read } for  pid=37036 comm=python3 name=foreign dev=\"dm-0\" ino=37677 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:24.005:18361) : avc:  denied  { write } for  pid=37036 comm=python3 name=foreign dev=\"dm-0\" ino=37677 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:24.006:18363) : avc:  denied  { relabelfrom } for  pid=37036 comm=python3 name=foreign dev=\"dm-0\" ino=37677 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:24.006:18365) : avc:  denied  { write } for  pid=37036 comm=python3 name=foreign.sock dev=\"dm-0\" ino=37681 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:object_r:wydhosting_run_t:s0:c52 tclass=sock_file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:24.007:18367) : avc:  denied  { signal } for  pid=37036 comm=python3 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:system_r:wydhosting_worker_t:s0:c52 tclass=process permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:24.007:18369) : avc:  denied  { search } for  pid=37036 comm=python3 name=37025 dev=\"proc\" ino=215546 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:system_r:wydhosting_worker_t:s0:c52 tclass=dir permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:24.007:18371) : avc:  denied  { execute } for  pid=37039 comm=python3 name=foreign-exec dev=\"dm-0\" ino=37680 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_runtime_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:47:37.340:19911) : avc:  denied  { read } for  pid=39351 comm=python3 name=foreign dev=\"dm-0\" ino=37694 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:47:37.340:19913) : avc:  denied  { write } for  pid=39351 comm=python3 name=foreign dev=\"dm-0\" ino=37694 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:47:37.341:19915) : avc:  denied  { relabelfrom } for  pid=39351 comm=python3 name=foreign dev=\"dm-0\" ino=37694 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:47:37.341:19917) : avc:  denied  { write } for  pid=39351 comm=python3 name=foreign.sock dev=\"dm-0\" ino=37743 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:object_r:wydhosting_run_t:s0:c52 tclass=sock_file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:47:37.341:19919) : avc:  denied  { signal } for  pid=39351 comm=python3 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:system_r:wydhosting_worker_t:s0:c52 tclass=process permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:47:37.341:19921) : avc:  denied  { search } for  pid=39351 comm=python3 name=39339 dev=\"proc\" ino=227163 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:system_r:wydhosting_worker_t:s0:c52 tclass=dir permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:47:37.341:19923) : avc:  denied  { execute } for  pid=39354 comm=python3 name=foreign-exec dev=\"dm-0\" ino=37742 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_runtime_t:s0:c52 tclass=file permissive=0 "
+          ]
+        },
+        {
+          "event": "edge-MAC-audit",
+          "lines": [
+            "type=AVC msg=audit(10/16/26 13:41:58.857:17118) : avc:  denied  { read } for  pid=34958 comm=caddy name=edge-denied dev=\"dm-0\" ino=101134027 scontext=system_u:system_r:wydhosting_edge_t:s0 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:44:30.020:18442) : avc:  denied  { read } for  pid=37125 comm=caddy name=edge-denied dev=\"dm-0\" ino=101125136 scontext=system_u:system_r:wydhosting_edge_t:s0 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:47:43.292:19994) : avc:  denied  { read } for  pid=39440 comm=caddy name=edge-denied dev=\"dm-0\" ino=101124944 scontext=system_u:system_r:wydhosting_edge_t:s0 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 "
+          ]
+        },
+        {
+          "event": "actual-worker-temporary-mount",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-4353df07863b4f5f911d0cc0198f276c.service",
+          "magic": "0x1021994",
+          "mounts": [
+            "581 560 0:59 / /tmp rw,nosuid,nodev,noexec shared:513 - tmpfs tmpfs rw,seclabel,size=1024k,nr_inodes=409600,mode=700,uid=61051,gid=61051,inode64"
+          ]
+        },
+        {
+          "event": "actual-worker-temporary-mount",
+          "unit": "wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-e54d1f515ffd4bb884c35ab39e8fceff.service",
+          "magic": "0x1021994",
+          "mounts": [
+            "668 647 0:64 / /tmp rw,nosuid,nodev,noexec shared:596 - tmpfs tmpfs rw,seclabel,size=1024k,nr_inodes=409600,mode=700,uid=61052,gid=61052,inode64"
+          ]
+        },
+        {
+          "event": "bounded-integrated-memory-pressure",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-3aab7a2329ca43609dac756e0d4cf2d0.service",
+          "cgroupMemoryMax": 268435456,
+          "helperAddressSpaceMax": 536870912,
+          "helperAllocationCeiling": 402653184,
+          "helperCpuSeconds": 3,
+          "deadlineSeconds": 15,
+          "helperSignal": "SIGKILL"
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 0,
+          "session": "wydhosting-broker@19-39127-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "518af868-87ef-4167-b7cf-5ecf194c7223",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "518af868-87ef-4167-b7cf-5ecf194c7223",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 0,
+          "session": "wydhosting-broker@17-39127-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "e54d1f51-5ffd-4bb8-84c3-5ab39e8fceff",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "e54d1f51-5ffd-4bb8-84c3-5ab39e8fceff",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-overlap",
+          "cycle": 0,
+          "states": [
+            "stopped",
+            "stopped"
+          ],
+          "workerKillResults": [
+            0,
+            0
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 1,
+          "session": "wydhosting-broker@20-39725-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "9360073a-ebb8-4856-b130-1b9598558a7c",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "9360073a-ebb8-4856-b130-1b9598558a7c",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 1,
+          "session": "wydhosting-broker@21-39725-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "f13bc4f3-7a8a-4aee-ba92-50871c0fb535",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "f13bc4f3-7a8a-4aee-ba92-50871c0fb535",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-overlap",
+          "cycle": 1,
+          "states": [
+            "stopped",
+            "stopped"
+          ],
+          "workerKillResults": [
+            0,
+            0
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 2,
+          "session": "wydhosting-broker@22-39937-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "a075529d-fe11-4ba0-99c7-5d820981a2a5",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "a075529d-fe11-4ba0-99c7-5d820981a2a5",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 2,
+          "session": "wydhosting-broker@23-39937-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "6dabf7bd-2b30-43f0-9a9c-a34d673f81e3",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "6dabf7bd-2b30-43f0-9a9c-a34d673f81e3",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-overlap",
+          "cycle": 2,
+          "states": [
+            "stopped",
+            "stopped"
+          ],
+          "workerKillResults": [
+            0,
+            0
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 3,
+          "session": "wydhosting-broker@24-40149-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "e15b88da-e31f-482b-99f1-0e95ad865c31",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "e15b88da-e31f-482b-99f1-0e95ad865c31",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 3,
+          "session": "wydhosting-broker@25-40149-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "17f6ebd8-fb5f-4460-aa0c-eaf93de9a4ff",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "17f6ebd8-fb5f-4460-aa0c-eaf93de9a4ff",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-overlap",
+          "cycle": 3,
+          "states": [
+            "stopped",
+            "stopped"
+          ],
+          "workerKillResults": [
+            0,
+            0
+          ]
+        },
+        {
+          "event": "integrated-limitations",
+          "caddy": "loopback-only",
+          "externalNetwork": "not-executed",
+          "reboot": "not-executed",
+          "mac": "provider-and-worker-MCS; broker-and-edge-unconfined",
+          "recovery": "stale-lock-requires-operator-review"
+        },
+        {
+          "event": "TOTAL",
+          "passed": 97,
+          "failed": 0,
+          "categories": {
+            "privileged-broker-dac": {
+              "passed": 30,
+              "failed": 0
+            },
+            "selinux-mac": {
+              "passed": 4,
+              "failed": 0
+            },
+            "integrated-service": {
+              "passed": 23,
+              "failed": 0
+            },
+            "proxy-loopback": {
+              "passed": 11,
+              "failed": 0
+            },
+            "integrated-resource": {
+              "passed": 2,
+              "failed": 0
+            },
+            "service-recovery": {
+              "passed": 15,
+              "failed": 0
+            },
+            "retirement-race": {
+              "passed": 12,
+              "failed": 0
+            }
+          },
+          "productionQualified": false
+        }
+      ]
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-vm-delivery.log",
+      "sha256": "6732b01f10759140faa7443dcca04e896df22ce77bd3363cd8e28ab814d4f4ab",
+      "events": [
+        {
+          "event": "baseline",
+          "kernel": "6.12.0-211.65.1.el10_2.x86_64",
+          "boot": "c77a65af-95bc-480d-bbe3-47f613b6b005",
+          "selinux": "enforcing"
+        },
+        {
+          "event": "mkdir",
+          "path": "/opt/wydhosting",
+          "mode": "0o755",
+          "uid": 0
+        },
+        {
+          "event": "copy-release",
+          "path": "/opt/wydhosting/release",
+          "manifestSHA256": "95e1f5b615ff2c3a7796f558da4c448bc10ec05fbb1ade9f2f269f6865411082"
+        },
+        {
+          "event": "mkdir",
+          "path": "/var/lib/wydhosting",
+          "mode": "0o755",
+          "uid": 0
+        },
+        {
+          "event": "mkdir",
+          "path": "/etc/wydhosting",
+          "mode": "0o755",
+          "uid": 0
+        },
+        {
+          "event": "mkdir",
+          "path": "/run/wydhosting",
+          "mode": "0o755",
+          "uid": 0
+        },
+        {
+          "event": "mkdir",
+          "path": "/var/lib/wydhosting/accounts",
+          "mode": "0o755",
+          "uid": 0
+        },
+        {
+          "event": "mkdir",
+          "path": "/var/lib/wydhosting/uploads",
+          "mode": "0o755",
+          "uid": 0
+        },
+        {
+          "event": "mkdir",
+          "path": "/var/lib/wydhosting/pools",
+          "mode": "0o755",
+          "uid": 0
+        },
+        {
+          "event": "mkdir",
+          "path": "/var/lib/wydhosting/broker",
+          "mode": "0o700",
+          "uid": 0
+        },
+        {
+          "event": "mkdir",
+          "path": "/var/lib/wydhosting/provider",
+          "mode": "0o700",
+          "uid": 0
+        },
+        {
+          "event": "mkdir",
+          "path": "/run/wydhosting/workers",
+          "mode": "0o711",
+          "uid": 0
+        },
+        {
+          "event": "create-provider",
+          "name": "wyd-i56-provider",
+          "uid": 61050,
+          "gid": 61050,
+          "shell": "/usr/sbin/nologin",
+          "password": "locked"
+        },
+        {
+          "event": "mkdir",
+          "path": "/var/lib/wydhosting/uploads/i56-a",
+          "mode": "0o755",
+          "uid": 0
+        },
+        {
+          "event": "mkdir",
+          "path": "/var/lib/wydhosting/uploads/i56-b",
+          "mode": "0o755",
+          "uid": 0
+        },
+        {
+          "event": "install-selinux-module",
+          "module": "wydhosting_worker",
+          "sha256": "a2f6c13a0cb5ce4b789acfc71957c813d15e16776d73a5519e748220f76d7737"
+        },
+        {
+          "event": "canonical-registry-plan",
+          "revision": 1,
+          "digest": "60258395d4342aad8de559ff85bd897653cf14880cc4cff4917cc4dd8831479d",
+          "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+          "apps": [
+            "i56-a",
+            "i56-b"
+          ]
+        },
+        {
+          "event": "install-unit",
+          "path": "/run/systemd/system/wydhosting-broker.socket"
+        },
+        {
+          "event": "install-unit",
+          "path": "/run/systemd/system/wydhosting-broker@.service"
+        },
+        {
+          "event": "install-unit",
+          "path": "/run/systemd/system/wydhosting-broker.slice"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "real broker ensure-account i56-a",
+          "evidence": {
+            "ok": true,
+            "state": "verification-required"
+          }
+        },
+        {
+          "event": "broker-created-account",
+          "name": "wyd-69816689df4526f12832",
+          "uid": 61051
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "real broker stage i56-a",
+          "evidence": {
+            "ok": true,
+            "state": "verification-required"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "real broker ensure-account i56-b",
+          "evidence": {
+            "ok": true,
+            "state": "verification-required"
+          }
+        },
+        {
+          "event": "broker-created-account",
+          "name": "wyd-08f155da2e286dcb3a87",
+          "uid": 61052
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "real broker stage i56-b",
+          "evidence": {
+            "ok": true,
+            "state": "verification-required"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "same UID wrong primary GID kernel authorization",
+          "evidence": {
+            "ok": false,
+            "code": "BROKER.UNAUTHORIZED"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "wrong UID rejected using actual SO_PEERCRED",
+          "evidence": {
+            "ok": false,
+            "code": "BROKER.UNAUTHORIZED"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "tenant 61051 broker socket DAC denial",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "tenant 61052 broker socket DAC denial",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "broker rejects retire {}",
+          "evidence": {
+            "ok": false,
+            "code": "BROKER.UNAUTHORIZED"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "broker rejects cleanup {}",
+          "evidence": {
+            "ok": false,
+            "code": "BROKER.UNAUTHORIZED"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "broker rejects stage {'path': '/etc'}",
+          "evidence": {
+            "ok": false,
+            "code": "BROKER.INVALID"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "broker rejects reconcile {'unit': 'sshd.service'}",
+          "evidence": {
+            "ok": false,
+            "code": "BROKER.INVALID"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "broker rejects foreign pool/traversal",
+          "evidence": {
+            "ok": false,
+            "code": "BROKER.UNAUTHORIZED"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "broker malformed {\"a\":1,\"a\":2}",
+          "evidence": {
+            "ok": false,
+            "code": "BROKER.INVALID"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "broker malformed {",
+          "evidence": {
+            "ok": false,
+            "code": "BROKER.INVALID"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "broker malformed {\"constructor\":{}}",
+          "evidence": {
+            "ok": false,
+            "code": "BROKER.INVALID"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "B authorized file read/write",
+          "evidence": "exit 0"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "A cannot read B private file",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "A cannot modify B private file",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "tenant 61051 cannot read approval",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "tenant 61051 cannot write sealed code",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "tenant 61052 cannot read approval",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "tenant 61052 cannot write sealed code",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "A symlink to B denied by kernel",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "A traversal to B denied by kernel",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "broker rejects symlinked approved source",
+          "evidence": {
+            "ok": false,
+            "code": "BROKER.PATH"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "selinux-mac",
+          "name": "enforcing broker refuses a legacy unconfined launch",
+          "evidence": {
+            "ok": false,
+            "code": "BROKER.SELINUX_POLICY"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "B authorized private socket connect",
+          "evidence": "exit 0"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "A cannot connect B private socket",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "A cannot signal B process",
+          "evidence": "EPERM"
+        },
+        {
+          "event": "PASS",
+          "category": "privileged-broker-dac",
+          "name": "B authorized process signal 0",
+          "evidence": "exit 0"
+        },
+        {
+          "event": "create-edge",
+          "uid": 61053,
+          "gid": 61053
+        },
+        {
+          "event": "install-unit",
+          "path": "/run/systemd/system/wydhosting-provider.service"
+        },
+        {
+          "event": "edge-socket-group",
+          "uid": 61050,
+          "gid": 61053,
+          "mode": "0o660"
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "installed canonical provider service starts",
+          "evidence": {
+            "pid": "41471",
+            "context": "system_u:system_r:wydhosting_provider_t:s0"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "edge -> canonical provider -> worker tenant a",
+          "evidence": {
+            "status": 200,
+            "tenantMarker": "Qualification tenant i56-a"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "edge -> canonical provider -> worker tenant b",
+          "evidence": {
+            "status": 200,
+            "tenantMarker": "Qualification tenant i56-b"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "provider rejects unknown hostname",
+          "evidence": {
+            "status": 421,
+            "tenantMarker": null
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "provider rejects spoofed headers Forwarded",
+          "evidence": {
+            "status": 400,
+            "tenantMarker": null
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "provider rejects spoofed headers X-Forwarded-For",
+          "evidence": {
+            "status": 400,
+            "tenantMarker": null
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "provider rejects spoofed headers X-Forwarded-Port",
+          "evidence": {
+            "status": 400,
+            "tenantMarker": null
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "provider rejects spoofed headers X-Forwarded-Host",
+          "evidence": {
+            "status": 400,
+            "tenantMarker": null
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "provider rejects spoofed headers X-Forwarded-Proto",
+          "evidence": {
+            "status": 400,
+            "tenantMarker": null
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "provider rejects spoofed headers Connection",
+          "evidence": {
+            "status": 400,
+            "tenantMarker": null
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "HEAD status and empty response",
+          "evidence": {
+            "status": 200,
+            "tenantMarker": null
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "unknown application route preserves 404",
+          "evidence": {
+            "status": 404,
+            "tenantMarker": null
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "unauthorized local identity cannot reach provider socket",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "integrated service identity wydhosting-pool-69816689df4526f1283221607d19e1fb-3487ecfc1606461db4a4a4f67274f009.service",
+          "evidence": {
+            "worker": {
+              "CapabilityBoundingSet": "",
+              "ProtectControlGroups": "yes",
+              "ProtectSystem": "strict",
+              "NoNewPrivileges": "yes",
+              "RestrictSUIDSGID": "yes",
+              "RestrictNamespaces": "yes"
+            },
+            "broker": {
+              "CapabilityBoundingSet": "cap_chown cap_dac_override cap_fowner cap_setgid cap_setuid cap_audit_write",
+              "ProtectControlGroups": "yes",
+              "ProtectSystem": "strict",
+              "NoNewPrivileges": "yes",
+              "RestrictSUIDSGID": "no",
+              "RestrictNamespaces": "yes"
+            },
+            "workerSELinux": "system_u:system_r:wydhosting_worker_t:s0:c51"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "integrated cgroup limits i56-a",
+          "evidence": {
+            "memory.max": "268435456",
+            "memory.swap.max": "0",
+            "cpu.max": "25000 100000",
+            "pids.max": "32",
+            "cgroup.procs": "41540"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "inherited control descriptor and no leaked regular files i56-a",
+          "evidence": {
+            "control": 3,
+            "openDescriptors": 20,
+            "leakedRegularFiles": 0
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "worker has no TCP listener i56-a",
+          "evidence": true
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "edge UID cannot bypass provider to worker i56-a",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "integrated-worker",
+          "state": "running",
+          "epoch": 1,
+          "generation": "3487ecfc-1606-461d-b4a4-a4f67274f009",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-3487ecfc1606461db4a4a4f67274f009.service",
+          "base": "/var/lib/wydhosting/pools/i56-a/generations/1",
+          "invocation": "b6eadc578bd94aa5850f28abab38464b",
+          "cgroup": "/system.slice/wydhosting-pool-69816689df4526f1283221607d19e1fb-3487ecfc1606461db4a4a4f67274f009.service",
+          "unitHash": "0c6cfbe2aea625bc39e948f89c292458e237aa3d402614c1a4f6f652830d714f",
+          "pid": 41540,
+          "startTime": "4659770"
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "integrated service identity wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-4510a24ff8374053b03d8cacbe320be7.service",
+          "evidence": {
+            "worker": {
+              "CapabilityBoundingSet": "",
+              "ProtectControlGroups": "yes",
+              "ProtectSystem": "strict",
+              "NoNewPrivileges": "yes",
+              "RestrictSUIDSGID": "yes",
+              "RestrictNamespaces": "yes"
+            },
+            "broker": {
+              "CapabilityBoundingSet": "cap_chown cap_dac_override cap_fowner cap_setgid cap_setuid cap_audit_write",
+              "ProtectControlGroups": "yes",
+              "ProtectSystem": "strict",
+              "NoNewPrivileges": "yes",
+              "RestrictSUIDSGID": "no",
+              "RestrictNamespaces": "yes"
+            },
+            "workerSELinux": "system_u:system_r:wydhosting_worker_t:s0:c52"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "integrated cgroup limits i56-b",
+          "evidence": {
+            "memory.max": "268435456",
+            "memory.swap.max": "0",
+            "cpu.max": "25000 100000",
+            "pids.max": "32",
+            "cgroup.procs": "41624"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "inherited control descriptor and no leaked regular files i56-b",
+          "evidence": {
+            "control": 3,
+            "openDescriptors": 20,
+            "leakedRegularFiles": 0
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "worker has no TCP listener i56-b",
+          "evidence": true
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-service",
+          "name": "edge UID cannot bypass provider to worker i56-b",
+          "evidence": "EACCES"
+        },
+        {
+          "event": "integrated-worker",
+          "state": "running",
+          "epoch": 1,
+          "generation": "4510a24f-f837-4053-b03d-8cacbe320be7",
+          "unit": "wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-4510a24ff8374053b03d8cacbe320be7.service",
+          "base": "/var/lib/wydhosting/pools/i56-b/generations/1",
+          "invocation": "e2ba2abdd0c840ed8d84aec4c6ac2264",
+          "cgroup": "/system.slice/wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-4510a24ff8374053b03d8cacbe320be7.service",
+          "unitHash": "37275b75cdf9239d738d0e3864568093dd1b445fbe17363e5bfd2481e87847c2",
+          "pid": 41624,
+          "startTime": "4659947"
+        },
+        {
+          "event": "MAC-sibling",
+          "uid": 61051,
+          "context": "system_u:system_r:wydhosting_worker_t:s0:c52",
+          "socketContext": "system_u:object_r:wydhosting_run_t:s0:c52"
+        },
+        {
+          "event": "MAC-progress",
+          "context": "system_u:system_r:wydhosting_worker_t:s0:c51",
+          "pid": 41692,
+          "stage": "complete",
+          "own": "read/write",
+          "ownExecute": "success",
+          "ownSignal": "success",
+          "read": "EACCES",
+          "write": "EACCES",
+          "relabel": "EACCES",
+          "socket": "EACCES",
+          "signal": "EACCES",
+          "inspect": "EACCES",
+          "execute": "EACCES"
+        },
+        {
+          "event": "MAC-audit",
+          "lines": [
+            "type=AVC msg=audit(10/16/26 13:47:37.340:19911) : avc:  denied  { read } for  pid=39351 comm=python3 name=foreign dev=\"dm-0\" ino=37694 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:47:37.340:19913) : avc:  denied  { write } for  pid=39351 comm=python3 name=foreign dev=\"dm-0\" ino=37694 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:47:37.341:19915) : avc:  denied  { relabelfrom } for  pid=39351 comm=python3 name=foreign dev=\"dm-0\" ino=37694 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:47:37.341:19917) : avc:  denied  { write } for  pid=39351 comm=python3 name=foreign.sock dev=\"dm-0\" ino=37743 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:object_r:wydhosting_run_t:s0:c52 tclass=sock_file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:47:37.341:19919) : avc:  denied  { signal } for  pid=39351 comm=python3 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:system_r:wydhosting_worker_t:s0:c52 tclass=process permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:47:37.341:19921) : avc:  denied  { search } for  pid=39351 comm=python3 name=39339 dev=\"proc\" ino=227163 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:system_r:wydhosting_worker_t:s0:c52 tclass=dir permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:47:37.341:19923) : avc:  denied  { execute } for  pid=39354 comm=python3 name=foreign-exec dev=\"dm-0\" ino=37742 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_runtime_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:54:26.409:21237) : avc:  denied  { read } for  pid=41692 comm=python3 name=foreign dev=\"dm-0\" ino=33575070 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:54:26.409:21239) : avc:  denied  { write } for  pid=41692 comm=python3 name=foreign dev=\"dm-0\" ino=33575070 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:54:26.409:21241) : avc:  denied  { relabelfrom } for  pid=41692 comm=python3 name=foreign dev=\"dm-0\" ino=33575070 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:54:26.410:21243) : avc:  denied  { write } for  pid=41692 comm=python3 name=foreign.sock dev=\"dm-0\" ino=33575075 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:object_r:wydhosting_run_t:s0:c52 tclass=sock_file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:54:26.410:21245) : avc:  denied  { signal } for  pid=41692 comm=python3 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:system_r:wydhosting_worker_t:s0:c52 tclass=process permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:54:26.410:21247) : avc:  denied  { search } for  pid=41692 comm=python3 name=41681 dev=\"proc\" ino=238356 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=system_u:system_r:wydhosting_worker_t:s0:c52 tclass=dir permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:54:26.411:21249) : avc:  denied  { execute } for  pid=41695 comm=python3 name=foreign-exec dev=\"dm-0\" ino=33575073 scontext=system_u:system_r:wydhosting_worker_t:s0:c51 tcontext=unconfined_u:object_r:wydhosting_runtime_t:s0:c52 tclass=file permissive=0 "
+          ]
+        },
+        {
+          "event": "PASS",
+          "category": "selinux-mac",
+          "name": "MAC same UID hostile category boundaries",
+          "evidence": {
+            "context": "system_u:system_r:wydhosting_worker_t:s0:c51",
+            "pid": 41692,
+            "stage": "complete",
+            "own": "read/write",
+            "ownExecute": "success",
+            "ownSignal": "success",
+            "read": "EACCES",
+            "write": "EACCES",
+            "relabel": "EACCES",
+            "socket": "EACCES",
+            "signal": "EACCES",
+            "inspect": "EACCES",
+            "execute": "EACCES"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "proxy-loopback",
+          "name": "Caddy generated configuration validates",
+          "evidence": true
+        },
+        {
+          "event": "PASS",
+          "category": "selinux-mac",
+          "name": "Caddy actual confined domain",
+          "evidence": {
+            "context": "system_u:system_r:wydhosting_edge_t:s0"
+          }
+        },
+        {
+          "event": "edge-MAC-audit",
+          "lines": [
+            "type=AVC msg=audit(10/16/26 13:47:43.292:19994) : avc:  denied  { read } for  pid=39440 comm=caddy name=edge-denied dev=\"dm-0\" ino=101124944 scontext=system_u:system_r:wydhosting_edge_t:s0 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 ",
+            "type=AVC msg=audit(10/16/26 13:54:32.134:21320) : avc:  denied  { read } for  pid=41782 comm=caddy name=edge-denied dev=\"dm-0\" ino=37691 scontext=system_u:system_r:wydhosting_edge_t:s0 tcontext=unconfined_u:object_r:wydhosting_data_t:s0:c52 tclass=file permissive=0 "
+          ]
+        },
+        {
+          "event": "PASS",
+          "category": "selinux-mac",
+          "name": "confined edge cannot read DAC-readable tenant data",
+          "evidence": {
+            "domain": "wydhosting_edge_t",
+            "tenantData": "EACCES",
+            "sameUidDacControl": "success"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "proxy-loopback",
+          "name": "Caddy TLS -> provider -> confined worker a 127.0.0.1",
+          "evidence": {
+            "status": 200,
+            "address": "127.0.0.1",
+            "tenant": "a"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "proxy-loopback",
+          "name": "Caddy TLS -> provider -> confined worker a ::1",
+          "evidence": {
+            "status": 200,
+            "address": "::1",
+            "tenant": "a"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "proxy-loopback",
+          "name": "Caddy TLS -> provider -> confined worker b 127.0.0.1",
+          "evidence": {
+            "status": 200,
+            "address": "127.0.0.1",
+            "tenant": "b"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "proxy-loopback",
+          "name": "Caddy TLS -> provider -> confined worker b ::1",
+          "evidence": {
+            "status": 200,
+            "address": "::1",
+            "tenant": "b"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "proxy-loopback",
+          "name": "Caddy overwrites/strips forged forwarding headers",
+          "evidence": true
+        },
+        {
+          "event": "PASS",
+          "category": "proxy-loopback",
+          "name": "Caddy rejects unknown HTTP hostname",
+          "evidence": true
+        },
+        {
+          "event": "PASS",
+          "category": "proxy-loopback",
+          "name": "Caddy preserves HEAD and 404 status",
+          "evidence": true
+        },
+        {
+          "event": "PASS",
+          "category": "proxy-loopback",
+          "name": "Caddy forwards bounded bodies and preserves application method rejection",
+          "evidence": {
+            "HEAD": 200,
+            "headBytes": 0,
+            "POST": 405,
+            "PUT": 405,
+            "postBodyBytes": 26
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "proxy-loopback",
+          "name": "proxy retirement leaves canonical provider healthy",
+          "evidence": {
+            "status": 200,
+            "tenantMarker": null
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "proxy-loopback",
+          "name": "Caddy restart restores private routing",
+          "evidence": true
+        },
+        {
+          "event": "actual-worker-temporary-mount",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-3487ecfc1606461db4a4a4f67274f009.service",
+          "magic": "0x1021994",
+          "mounts": [
+            "581 560 0:59 / /tmp rw,nosuid,nodev,noexec shared:513 - tmpfs tmpfs rw,seclabel,size=1024k,nr_inodes=409600,mode=700,uid=61051,gid=61051,inode64"
+          ]
+        },
+        {
+          "event": "actual-worker-temporary-mount",
+          "unit": "wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-4510a24ff8374053b03d8cacbe320be7.service",
+          "magic": "0x1021994",
+          "mounts": [
+            "668 647 0:64 / /tmp rw,nosuid,nodev,noexec shared:596 - tmpfs tmpfs rw,seclabel,size=1024k,nr_inodes=409600,mode=700,uid=61052,gid=61052,inode64"
+          ]
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-resource",
+          "name": "actual worker private tmpfs ENOSPC and sibling survival",
+          "evidence": {
+            "injection": "administrator-held-private-mount",
+            "capacityBytes": 1048576,
+            "bytesWritten": 1048576,
+            "result": "ENOSPC",
+            "helperMemoryMax": 67108864,
+            "helperCpuSeconds": 2,
+            "helperDeadlineSeconds": 10,
+            "sibling": "HTTP 200; separate mount unchanged"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "service-recovery",
+          "name": "integrated worker SIGKILL replacement uses a fresh authorized lifetime",
+          "evidence": true
+        },
+        {
+          "event": "PASS",
+          "category": "service-recovery",
+          "name": "healthy canonical sibling survives SIGKILL",
+          "evidence": {
+            "status": 200,
+            "tenantMarker": "Qualification tenant i56-b"
+          }
+        },
+        {
+          "event": "bounded-integrated-memory-pressure",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-ed94e604389d451d98576e3ad0ebe61a.service",
+          "cgroupMemoryMax": 268435456,
+          "helperAddressSpaceMax": 536870912,
+          "helperAllocationCeiling": 402653184,
+          "helperCpuSeconds": 3,
+          "deadlineSeconds": 15,
+          "helperSignal": "SIGKILL"
+        },
+        {
+          "event": "PASS",
+          "category": "service-recovery",
+          "name": "integrated worker OOM replacement uses a fresh authorized lifetime",
+          "evidence": true
+        },
+        {
+          "event": "PASS",
+          "category": "service-recovery",
+          "name": "healthy canonical sibling survives OOM",
+          "evidence": {
+            "status": 200,
+            "tenantMarker": "Qualification tenant i56-b"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "integrated-resource",
+          "name": "actual worker service records oom-kill",
+          "evidence": true
+        },
+        {
+          "event": "PASS",
+          "category": "service-recovery",
+          "name": "manager daemon-reload preserves active routing",
+          "evidence": {
+            "status": 200,
+            "tenantMarker": null
+          }
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 0,
+          "session": "wydhosting-broker@19-41471-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "6ba996bc-5b20-4c4b-b8aa-4c74e3f113c0",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "6ba996bc-5b20-4c4b-b8aa-4c74e3f113c0",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 0,
+          "session": "wydhosting-broker@17-41471-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "4510a24f-f837-4053-b03d-8cacbe320be7",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "4510a24f-f837-4053-b03d-8cacbe320be7",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-overlap",
+          "cycle": 0,
+          "states": [
+            "stopped",
+            "stopped"
+          ],
+          "workerKillResults": [
+            0,
+            0
+          ]
+        },
+        {
+          "event": "PASS",
+          "category": "retirement-race",
+          "name": "concurrent sibling termination and provider retirement 0",
+          "evidence": true
+        },
+        {
+          "event": "edge-socket-group",
+          "uid": 61050,
+          "gid": 61053,
+          "mode": "0o660"
+        },
+        {
+          "event": "PASS",
+          "category": "retirement-race",
+          "name": "fresh provider lifetime after overlapping retirement 0",
+          "evidence": {
+            "pid": "42066",
+            "context": "system_u:system_r:wydhosting_provider_t:s0"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "retirement-race",
+          "name": "both tenant routes after overlapping retirement 0",
+          "evidence": {
+            "status": 200,
+            "tenantMarker": null
+          }
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 1,
+          "session": "wydhosting-broker@20-42066-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "f478ccc4-5886-4711-8866-8bd94bb3ba0e",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "f478ccc4-5886-4711-8866-8bd94bb3ba0e",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 1,
+          "session": "wydhosting-broker@21-42066-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "9af308f8-8f8c-4c51-a4e2-15d131174786",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "9af308f8-8f8c-4c51-a4e2-15d131174786",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-overlap",
+          "cycle": 1,
+          "states": [
+            "stopped",
+            "stopped"
+          ],
+          "workerKillResults": [
+            0,
+            0
+          ]
+        },
+        {
+          "event": "PASS",
+          "category": "retirement-race",
+          "name": "concurrent sibling termination and provider retirement 1",
+          "evidence": true
+        },
+        {
+          "event": "edge-socket-group",
+          "uid": 61050,
+          "gid": 61053,
+          "mode": "0o660"
+        },
+        {
+          "event": "PASS",
+          "category": "retirement-race",
+          "name": "fresh provider lifetime after overlapping retirement 1",
+          "evidence": {
+            "pid": "42277",
+            "context": "system_u:system_r:wydhosting_provider_t:s0"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "retirement-race",
+          "name": "both tenant routes after overlapping retirement 1",
+          "evidence": {
+            "status": 200,
+            "tenantMarker": null
+          }
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 2,
+          "session": "wydhosting-broker@22-42277-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "9aa54da9-647f-437b-8134-5434ba0a8967",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "9aa54da9-647f-437b-8134-5434ba0a8967",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 2,
+          "session": "wydhosting-broker@23-42277-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "188357a8-597a-42ba-8e52-59dca4b8778b",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "188357a8-597a-42ba-8e52-59dca4b8778b",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-overlap",
+          "cycle": 2,
+          "states": [
+            "stopped",
+            "stopped"
+          ],
+          "workerKillResults": [
+            0,
+            0
+          ]
+        },
+        {
+          "event": "PASS",
+          "category": "retirement-race",
+          "name": "concurrent sibling termination and provider retirement 2",
+          "evidence": true
+        },
+        {
+          "event": "edge-socket-group",
+          "uid": 61050,
+          "gid": 61053,
+          "mode": "0o660"
+        },
+        {
+          "event": "PASS",
+          "category": "retirement-race",
+          "name": "fresh provider lifetime after overlapping retirement 2",
+          "evidence": {
+            "pid": "42488",
+            "context": "system_u:system_r:wydhosting_provider_t:s0"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "retirement-race",
+          "name": "both tenant routes after overlapping retirement 2",
+          "evidence": {
+            "status": 200,
+            "tenantMarker": null
+          }
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 3,
+          "session": "wydhosting-broker@24-42488-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "6c7aa745-4e34-4951-a9f8-f504882ca747",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-a",
+              "generation": "6c7aa745-4e34-4951-a9f8-f504882ca747",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-audit",
+          "cycle": 3,
+          "session": "wydhosting-broker@25-42488-61050.service",
+          "events": [
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "9cb76c71-c57c-4ddb-98cb-4694b388845f",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "started",
+              "code": "BROKER.STARTED"
+            },
+            {
+              "schema": "wydhosting.admin-event/1",
+              "operation": "launch",
+              "resource": "i56-b",
+              "generation": "9cb76c71-c57c-4ddb-98cb-4694b388845f",
+              "policyRevision": "5581748cd27104c607a6c10ede020e107197e8df12b88d5820a7a375f2d70ce1",
+              "principal": "uid:61050",
+              "outcome": "completed",
+              "code": "BROKER.OK"
+            }
+          ]
+        },
+        {
+          "event": "retirement-overlap",
+          "cycle": 3,
+          "states": [
+            "stopped",
+            "stopped"
+          ],
+          "workerKillResults": [
+            0,
+            0
+          ]
+        },
+        {
+          "event": "PASS",
+          "category": "retirement-race",
+          "name": "concurrent sibling termination and provider retirement 3",
+          "evidence": true
+        },
+        {
+          "event": "edge-socket-group",
+          "uid": 61050,
+          "gid": 61053,
+          "mode": "0o660"
+        },
+        {
+          "event": "PASS",
+          "category": "retirement-race",
+          "name": "fresh provider lifetime after overlapping retirement 3",
+          "evidence": {
+            "pid": "42702",
+            "context": "system_u:system_r:wydhosting_provider_t:s0"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "retirement-race",
+          "name": "both tenant routes after overlapping retirement 3",
+          "evidence": {
+            "status": 200,
+            "tenantMarker": null
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "service-recovery",
+          "name": "provider graceful stop empties both worker cgroups",
+          "evidence": true
+        },
+        {
+          "event": "edge-socket-group",
+          "uid": 61050,
+          "gid": 61053,
+          "mode": "0o660"
+        },
+        {
+          "event": "PASS",
+          "category": "service-recovery",
+          "name": "provider restart from durable stopped leases",
+          "evidence": {
+            "pid": "42909",
+            "context": "system_u:system_r:wydhosting_provider_t:s0"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "service-recovery",
+          "name": "provider restart restores correct tenant response",
+          "evidence": {
+            "status": 200,
+            "tenantMarker": "Qualification tenant i56-b"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "service-recovery",
+          "name": "confined worker reaped independently after broker SIGKILL",
+          "evidence": true
+        },
+        {
+          "event": "PASS",
+          "category": "service-recovery",
+          "name": "sibling canonical route survives broker SIGKILL",
+          "evidence": {
+            "status": 200,
+            "tenantMarker": "Qualification tenant i56-b"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "service-recovery",
+          "name": "lost broker authority refuses stale route",
+          "evidence": {
+            "status": 503,
+            "tenantMarker": null
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "service-recovery",
+          "name": "explicit interrupted confined lease reconciliation",
+          "evidence": {
+            "ok": true,
+            "state": "verification-required"
+          }
+        },
+        {
+          "event": "PASS",
+          "category": "service-recovery",
+          "name": "provider SIGKILL independently retires both workers",
+          "evidence": true
+        },
+        {
+          "event": "PASS",
+          "category": "service-recovery",
+          "name": "provider refuses stale supervisor ownership after SIGKILL",
+          "evidence": true
+        },
+        {
+          "event": "integrated-limitations",
+          "caddy": "loopback-only",
+          "externalNetwork": "not-executed",
+          "reboot": "not-executed",
+          "mac": "provider-and-worker-MCS; broker-and-edge-unconfined",
+          "recovery": "stale-lock-requires-operator-review"
+        },
+        {
+          "event": "PASS",
+          "category": "service-recovery",
+          "name": "SELinux remains enforcing",
+          "evidence": true
+        },
+        {
+          "event": "remove-unit",
+          "unit": "wydhosting-provider.service"
+        },
+        {
+          "event": "remove-unit",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-3487ecfc1606461db4a4a4f67274f009.service"
+        },
+        {
+          "event": "remove-unit",
+          "unit": "wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-4510a24ff8374053b03d8cacbe320be7.service"
+        },
+        {
+          "event": "remove-unit",
+          "unit": "wyd-i56-edge.service"
+        },
+        {
+          "event": "remove-unit",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-ed94e604389d451d98576e3ad0ebe61a.service"
+        },
+        {
+          "event": "remove-unit",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-6ba996bc5b204c4bb8aa4c74e3f113c0.service"
+        },
+        {
+          "event": "remove-unit",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-f478ccc45886471188668bd94bb3ba0e.service"
+        },
+        {
+          "event": "remove-unit",
+          "unit": "wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-9af308f88f8c4c51a4e215d131174786.service"
+        },
+        {
+          "event": "remove-unit",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-9aa54da9647f437b81345434ba0a8967.service"
+        },
+        {
+          "event": "remove-unit",
+          "unit": "wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-188357a8597a42ba8e5259dca4b8778b.service"
+        },
+        {
+          "event": "remove-unit",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-6c7aa7454e344951a9f8f504882ca747.service"
+        },
+        {
+          "event": "remove-unit",
+          "unit": "wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-9cb76c71c57c4ddb98cb4694b388845f.service"
+        },
+        {
+          "event": "remove-unit",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-a04ee726ade04ce28cfdc8cfbcfc7cf9.service"
+        },
+        {
+          "event": "remove-unit",
+          "unit": "wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-8ae4864cf4444b73a3a4ea228480cf19.service"
+        },
+        {
+          "event": "remove-unit",
+          "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-568b750e81494cfea2b90dc79d4a34ed.service"
+        },
+        {
+          "event": "remove-unit",
+          "unit": "wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-cebcedb5f0d5440c99610c53f16f9b6f.service"
+        },
+        {
+          "event": "unlink",
+          "path": "/run/systemd/system/wydhosting-broker.slice"
+        },
+        {
+          "event": "unlink",
+          "path": "/run/systemd/system/wydhosting-broker@.service"
+        },
+        {
+          "event": "unlink",
+          "path": "/run/systemd/system/wydhosting-broker.socket"
+        },
+        {
+          "event": "delete-user",
+          "name": "wyd-i56-edge",
+          "uid": 61053
+        },
+        {
+          "event": "delete-user",
+          "name": "wyd-08f155da2e286dcb3a87",
+          "uid": 61052
+        },
+        {
+          "event": "delete-user",
+          "name": "wyd-69816689df4526f12832",
+          "uid": 61051
+        },
+        {
+          "event": "delete-user",
+          "name": "wyd-i56-provider",
+          "uid": 61050
+        },
+        {
+          "event": "remove-disposable-tree",
+          "path": "/run/wydhosting"
+        },
+        {
+          "event": "remove-disposable-tree",
+          "path": "/etc/wydhosting"
+        },
+        {
+          "event": "remove-disposable-tree",
+          "path": "/var/lib/wydhosting"
+        },
+        {
+          "event": "remove-disposable-tree",
+          "path": "/opt/wydhosting"
+        },
+        {
+          "event": "TOTAL",
+          "passed": 97,
+          "failed": 0,
+          "categories": {
+            "privileged-broker-dac": {
+              "passed": 30,
+              "failed": 0
+            },
+            "selinux-mac": {
+              "passed": 4,
+              "failed": 0
+            },
+            "integrated-service": {
+              "passed": 23,
+              "failed": 0
+            },
+            "proxy-loopback": {
+              "passed": 11,
+              "failed": 0
+            },
+            "integrated-resource": {
+              "passed": 2,
+              "failed": 0
+            },
+            "service-recovery": {
+              "passed": 15,
+              "failed": 0
+            },
+            "retirement-race": {
+              "passed": 12,
+              "failed": 0
+            }
+          },
+          "productionQualified": false
+        }
+      ]
+    }
+  ],
+  "ordinaryUserLogs": [
+    {
+      "log": "/tmp/wydgit-i56-continued-baseline.log",
+      "sha256": "26e4d461f26877dec640dda790e320d186dd12fb3c117e00f080b2ee89876ce5",
+      "counts": {
+        "tests": 932,
+        "pass": 932,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-http-first.log",
+      "sha256": "d9cde538225c31bbcef4baa3814ab6d556f8bc41a54be655c0076ed31a47ce51",
+      "counts": {
+        "tests": 14,
+        "pass": 14,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-http-campaign-1.log",
+      "sha256": "a6988c44c915c4c64bbe2a31319374be08e92f73cfe0511fc8ffddb171647413",
+      "counts": {
+        "tests": 932,
+        "pass": 932,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-http-campaign-2.log",
+      "sha256": "8dc6007f2a572883dfcbee730b86eee041d4f5c87924cabceb7890bc95a06d8f",
+      "counts": {
+        "tests": 932,
+        "pass": 932,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-http-campaign-3.log",
+      "sha256": "5f7fbf5004f951c6f17f94c75c161b7b77ccb929cb15b7f626e406b5c91378fb",
+      "counts": {
+        "tests": 932,
+        "pass": 932,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-linux-focused.log",
+      "sha256": "aa3bb8302cf3682fa8964fc20cbbfda2baa48a4731fdd362965f0cb259757948",
+      "counts": {
+        "tests": 20,
+        "pass": 20,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-required-reviewed.log",
+      "sha256": "df63f3b1697958b2fa0bbddca59a7c2d9acdafc03c7995107d1b92cc6ddc6bb1",
+      "counts": {
+        "tests": 932,
+        "pass": 932,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-final-required.log",
+      "sha256": "2ccd966675871c91f93546d3cd73840dfdef3b6c7fa4e05b9be557d0ba683ee4",
+      "counts": {
+        "tests": 932,
+        "pass": 932,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      }
+    }
+  ],
+  "installedPackageResults": {
+    "evidenceDirectory": "/tmp/wyd-i54-packed-gbGHvN",
+    "repositoryImportsRefused": true,
+    "oneEnginePerConsumer": true,
+    "results": {
+      "canonical": {
+        "log": "/tmp/wyd-i54-packed-gbGHvN/five-library-tests.log",
+        "sha256": "ca2fdc008ff87c397d9e0aedbb9d49c5004b871a46be1c29ed86191507d29782",
+        "counts": {
+          "tests": 149,
+          "pass": 149,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0
+        }
+      },
+      "provider": {
+        "log": "/tmp/wyd-i54-packed-gbGHvN/provider-tests.log",
+        "sha256": "27e239b2b316f98dd31e61cd095d39fdfc7ad6f54d46b49ff54882788b30b521",
+        "counts": {
+          "tests": 35,
+          "pass": 35,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0
+        }
+      },
+      "supervisor": {
+        "log": "/tmp/wyd-i54-packed-gbGHvN/process-supervision.log",
+        "sha256": "2284d342b85bb00341012f21357034a99a4b6727dcee82212300cf3136aae5f7",
+        "counts": {
+          "tests": 20,
+          "pass": 20,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0
+        }
+      },
+      "linux": {
+        "log": "/tmp/wyd-i54-packed-gbGHvN/linux-boundaries.log",
+        "sha256": "2564ca38061594d1e5eed884dfb975f2c76700c3da69b680e0fcb45a765f2529",
+        "counts": {
+          "tests": 20,
+          "pass": 20,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0
+        }
+      }
+    }
+  },
+  "separateVmOrdinaryTests": {
+    "log": {
+      "log": "/tmp/wydgit-i56-continued-vm-ordinary-final.log",
+      "sha256": "0af1310a150a6478fad1a0f1672b921cafbbc395413da52cdd71d5a397dee7ec",
+      "counts": {}
+    },
+    "pythonBoundary": 35,
+    "mockedFirewallGuards": 6,
+    "privilegedOperationsProved": false
+  },
+  "separateKernel": {
+    "log": {
+      "log": "/tmp/wydgit-i56-continued-kernel.log",
+      "sha256": "23f9499c64499b077d3c67ab0ae8138d3afa36f2a60b8593083b7196e4772957",
+      "counts": {}
+    },
+    "result": {
+      "event": "KERNEL-TOTAL",
+      "passed": 26,
+      "failed": 0,
+      "productionBroker": false
+    }
+  },
+  "limitedFirewall": {
+    "log": {
+      "log": "/tmp/wydgit-i56-continued-firewall.log",
+      "sha256": "d342c07cba3787b67c9f360a47e0d2740dd7e81be01690ff060d60d68a57b7d0",
+      "counts": {}
+    },
+    "events": [
+      {
+        "state": "applied",
+        "zone": "block",
+        "timer": "wydhosting-firewall-probe-15627b64a64c4966b727d9dcca7f0fbb.timer",
+        "intent": "/run/wydhosting-firewall-probe-15627b64a64c4966b727d9dcca7f0fbb.json"
+      },
+      {
+        "state": "independently-rolled-back",
+        "zone": "block",
+        "runtimeRestored": true,
+        "permanentUnchanged": true,
+        "hostingActivation": false
+      },
+      {
+        "event": "PASS",
+        "name": "independent rollback armed before apply",
+        "state": "applied",
+        "zone": "block",
+        "timer": "wydhosting-firewall-probe-b3b3f4e0031a4095b8193a4a904aa6f6.timer",
+        "intent": "/run/wydhosting-firewall-probe-b3b3f4e0031a4095b8193a4a904aa6f6.json"
+      },
+      {
+        "event": "PASS",
+        "name": "runtime rule present; inactive zone does not affect active nft rules"
+      },
+      {
+        "event": "killed-only-applying-process",
+        "pid": 43588
+      },
+      {
+        "event": "PASS",
+        "name": "independent timer restores runtime after SIGKILL; permanent unchanged"
+      },
+      {
+        "event": "cleanup",
+        "intent": "/run/wydhosting-firewall-probe-b3b3f4e0031a4095b8193a4a904aa6f6.json",
+        "timer": "wydhosting-firewall-probe-b3b3f4e0031a4095b8193a4a904aa6f6.timer"
+      },
+      {
+        "event": "TOTAL",
+        "passed": 3,
+        "failed": 0,
+        "packetEnforcement": "not-tested"
+      }
+    ],
+    "publicPolicyChanged": false,
+    "packetEnforcementProved": false
+  },
+  "preservedAdditionalLogs": [
+    {
+      "log": "/tmp/wydgit-i56-continued-boundaries-final.log",
+      "sha256": "05d554a960e3b4840bac1242324f3886957173564d78a99a274bc528126ece9b",
+      "counts": {}
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-boundaries-mountfix.log",
+      "sha256": "8bc8b06142d0f270e0a4ef7519303b7246b1fea32be3d9c2276356d54afb7cfd",
+      "counts": {}
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-broker-journal-first.log",
+      "sha256": "fd5d2e36a187f45c3d09c3f8f7795e52fbd95a1d4cc52892202c3b11dae8a981",
+      "counts": {}
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-build.log",
+      "sha256": "e6ae92b9b786cb4d4117dd327d7a2b74365a4b8cf1547a106ff8cfc64cd6ae98",
+      "counts": {}
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-cleanup-before-staging.log",
+      "sha256": "49cba97d382aedc41f9b89a3324806a3b891ff0cd3f19cc7ae4b8f824b54d9ca",
+      "counts": {}
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-content-reviewed.log",
+      "sha256": "4e437bb4ebff45ddb9678e543f256b37dfaa0f4bca6969731a24c5ab84a7d1cd",
+      "counts": {}
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-edge-audit-first.log",
+      "sha256": "28e3a3234e64f2943da2a438f75136dd0ee70a4a867bf288eb976907a447075c",
+      "counts": {}
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-final-build.log",
+      "sha256": "b57f88a1c873eacd42fba8a49fee1c0eed6cc5098b6d352ec0f0ae62d3238319",
+      "counts": {}
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-final-content.log",
+      "sha256": "4e437bb4ebff45ddb9678e543f256b37dfaa0f4bca6969731a24c5ab84a7d1cd",
+      "counts": {}
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-final-pack.log",
+      "sha256": "47adcffb57bd8bdf2ba325ea40bb5bb81f68f76cf750a533dbe33a23c53443e1",
+      "counts": {}
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-firewall.log",
+      "sha256": "d342c07cba3787b67c9f360a47e0d2740dd7e81be01690ff060d60d68a57b7d0",
+      "counts": {}
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-fresh-ssh.log",
+      "sha256": "3325197a9a614281dcaa2826c93d68ad65649a5d15a63465521c0fc78bf25bba",
+      "counts": {}
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-kernel.log",
+      "sha256": "23f9499c64499b077d3c67ab0ae8138d3afa36f2a60b8593083b7196e4772957",
+      "counts": {}
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-mac-diagnose.log",
+      "sha256": "999afca3c81d086be7ffcd303e52ac32265e75a9cc68b57ca76f8ada3b31a174",
+      "counts": {}
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-network-baseline.log",
+      "sha256": "1dd1f3f4b6f184875d0a21a4b6fa20bab3b053818f67059bcc08d9a40455ab78",
+      "counts": {}
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-pack.log",
+      "sha256": "31e48eb9c2a0505ed827e265dc3f7b23e979fd09cc09b9fa2529be2516b22e23",
+      "counts": {}
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-packed-reviewed.log",
+      "sha256": "10e3d59b2c34fc18c500381d9abe4c45fea04c327024cf77bae6d1b23679fd1c",
+      "counts": {}
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-recovery-baseline.log",
+      "sha256": "a2019bc14ab0a44c1c7d707f6cbc1e1ec414643737ac4c5daf42cbcd5349a6eb",
+      "counts": {}
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-reset-before.log",
+      "sha256": "bbd33b989d3440303ed523ae2ccb0b007e8da2ae29866310a0e493d15a0008b1",
+      "counts": {}
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-retirement-after.log",
+      "sha256": "d945e1199ddc9b2b08688aa4786eb8db5a29792d776495ad3d667074557beab3",
+      "counts": {}
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-retirement-before-unsandboxed.log",
+      "sha256": "da4d5c9a91cf27cdb8590578d84568a8d9bd261415708431a284597f40dfa97c",
+      "counts": {}
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-retirement-before.log",
+      "sha256": "514a135ee6d587b60298212a45df21b7ace0ec1438a95ceb227ee1b019613a9a",
+      "counts": {}
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-retirement-causal-before.log",
+      "sha256": "9b0f51497bbdd9094364f1a33ac9a0a72c323167f88fc3325aa3caee0fe050d2",
+      "counts": {}
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-staging-cleanup.log",
+      "sha256": "77bce0c4b4344a562ffac22e0625b30e1bbb9e642ee58b870851accd6908178b",
+      "counts": {}
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-tmp-causal.log",
+      "sha256": "bc6edc9a86ab27225b2f840b593b87160d2707247e7b2975773f6d070f9a3971",
+      "counts": {}
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-tmp-mounts.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "counts": {}
+    },
+    {
+      "log": "/tmp/wydgit-i56-continued-vm-ordinary-final.log",
+      "sha256": "0af1310a150a6478fad1a0f1672b921cafbbc395413da52cdd71d5a397dee7ec",
+      "counts": {}
+    }
+  ],
+  "cleanup": {
+    "staging": [
+      {
+        "event": "verified-owned-staging",
+        "path": "/var/tmp/wyd-i56-continued",
+        "archiveSHA256": "977bd01fec22ff90e4c2ba7f70c30fb98aed7bc7e7c3f2c6db2cdf9b30cc20ca",
+        "manifestFiles": 1615,
+        "sourceHashes": {
+          "qualify.py": "a9f1885ebf529a0dbd72f82f6ccc44a3134e9c8df28aecad9c0b1be51a8683f4",
+          "qualification-registry.mjs": "ef10eca4822e6ff7b8aebfbe9e5b4490f67970092fa15a5551c1ccc060aec19d",
+          "verify_firewalld_guards.py": "c44403f2e3e600e30ccfce8926c22d683722f3f9028fdddf6f0ad71789a3c98d",
+          "qualify-integrated.py": "dc022f97d2fba79b4ed8d4ccf4d87a178b2307fcb4b746c49bee9266ae94a029",
+          "verify.py": "7ae787c890122a242c89de2de51871a860626e918594f78c0fced1508679466a",
+          "qualify-kernel.py": "016a9d193f96a52708a7edf5d9ed45ea669ad921975d7ad2e04136a3dc304d7c",
+          "verify-firewalld.py": "2dd1d2d5dddb86b3c53789ad1b1318007759152a4d6b09da2f56adaf5f883dad",
+          "firewalld_probe.py": "28d742398e94033e896f291deb963017601b0157f6481e878136095807b3748b"
+        }
+      },
+      {
+        "event": "verified-owned-staging",
+        "path": "/var/tmp/wyd-i56-continued-final",
+        "archiveSHA256": "d33fe752d5b01af59fbde982aa07494001c78bf863d5fb7003c02c2e5435b810",
+        "manifestFiles": 1615,
+        "sourceHashes": {
+          "qualify.py": "a9f1885ebf529a0dbd72f82f6ccc44a3134e9c8df28aecad9c0b1be51a8683f4",
+          "qualify-integrated.py": "dc022f97d2fba79b4ed8d4ccf4d87a178b2307fcb4b746c49bee9266ae94a029",
+          "qualification-registry.mjs": "ef10eca4822e6ff7b8aebfbe9e5b4490f67970092fa15a5551c1ccc060aec19d",
+          "verify.py": "47fa516d4ef806a1d89168025d2a26da348f8d3da3c74cfccb921011af607371",
+          "verify_firewalld_guards.py": "c44403f2e3e600e30ccfce8926c22d683722f3f9028fdddf6f0ad71789a3c98d"
+        }
+      },
+      {
+        "event": "removed-owned-staging",
+        "path": "/var/tmp/wyd-i56-continued"
+      },
+      {
+        "event": "removed-owned-staging",
+        "path": "/var/tmp/wyd-i56-continued-final"
+      }
+    ],
+    "postCleanupSsh": "almond-lab\nEnforcing\nactive\nactive\nowned-staging-absent\n",
+    "independentResourceCheck": "almond-lab\nEnforcing\nactive\nactive\n  UNIT LOAD ACTIVE SUB DESCRIPTION\n\n0 loaded units listed.\nTo show all installed unit files use 'systemctl list-unit-files'.\nUNIT FILE STATE PRESET\n\n0 unit files listed.\n{\"identities\": {\"61050\": false, \"61051\": false, \"61052\": false, \"61053\": false, \"61061\": false, \"61062\": false}, \"roots\": {\"/opt/wydhosting\": false, \"/etc/wydhosting\": false, \"/var/lib/wydhosting\": false, \"/run/wydhosting\": false, \"/opt/wyd-i56-kernel\": false, \"/var/lib/wyd-i56-kernel\": false}, \"dontauditDisabled\": false, \"firewallIntents\": [], \"boot\": \"c77a65af-95bc-480d-bbe3-47f613b6b005\"}\n{\"fixturePids\": []}\npublic\npublic (default)\n  interfaces: enp1s0\npublic (default, active)\n  target: default\n  ingress-priority: 0\n  egress-priority: 0\n  icmp-block-inversion: no\n  interfaces: enp1s0\n  sources: \n  services: cockpit dhcpv6-client ssh\n  ports: \n  protocols: \n  forward: yes\n  masquerade: no\n  forward-ports: \n  source-ports: \n  icmp-blocks: \n  rich rules: \nLISTEN 0      128    0.0.0.0:22 0.0.0.0:*\nLISTEN 0      128       [::]:22    [::]:*\n",
+    "retained": "standard account-tool DB backups/locks and system journal/audit records; no baseline backup or host privileged mutation"
+  },
+  "limitations": [
+    "historical Contact/Guestbook/Taskboard HTTP500 unresolved; no budgets or assertions relaxed",
+    "privileged broker remains unconfined_service_t; dedicated policy/privilege review incomplete",
+    "external TLS and active packet enforcement untested; exact proposed runtime source/destination/443 rule needs separate approval",
+    "backup disk/XML/NVRAM integrity and independent console login unverified; no reboot",
+    "XFS noquota; mount/quota changes need separate approval; no unbounded storage stress",
+    "automatic authenticated resource retirement and category recycling absent",
+    "integrated FD/task/CPU exhaustion, runtime directory/persistent quota exhaustion, interrupted staging/publication/cleanup and hostile mount matrix remain incomplete",
+    "other operating systems unqualified"
+  ],
+  "finalChecks": "Reviewed post-documentation npm test: 932/932; npm run check: 3 pages/42 links. Required checks are run once more after this evidence file is written; final handoff reports that result. Nine package manifests verified; 23 historical browser blobs unchanged."
+}

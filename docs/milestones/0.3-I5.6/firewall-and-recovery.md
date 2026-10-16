@@ -56,6 +56,33 @@ See [verification](verification.md) for exact commands, failures, mutations and 
 
 ## Required future VM transaction
 
+The continued read-only network inspection found NAT `default` / `virbr0`, Mint bridge
+192.168.122.1 and guest 192.168.122.225; no IPv6 subnet is configured. The guest
+public zone is both active/default on enp1s0, with SSH/cockpit/dhcpv6-client services,
+no HTTPS port and no rich rules. **No active-zone rule was added.** The exact proposed
+additional IPv4 test rule, requiring separate explicit authorization, is:
+
+```text
+rule family="ipv4" source address="192.168.122.1/32" destination address="192.168.122.225/32" port port="443" protocol="tcp" accept
+```
+
+Proposal only: bind the disposable edge solely to that guest private IPv4 address;
+apply this exact runtime rule in public with native 60-second expiry after verifying
+an independent 15-second root rollback timer; test TLS and bypass from the existing
+ordinary host bridge address; remove only the exact rule and compare complete prior
+runtime/permanent listings plus a fresh SSH connection. No permanent write, zone
+reset/reload, SSH rule, host privileged networking or public-internet exposure is
+proposed. Risk is temporary additional reachability from that one bridge address.
+Independent recovery prerequisites and the exact apply plan still need review before
+execution. Existing limited unused-zone rollback is not proof this active packet path
+works. IPv6 external qualification needs a separately authorized suitable network;
+link-local guest IPv6 and ::1 tests do not establish it.
+
+Reboot prerequisites are also unmet: live disk/XML/UEFI NVRAM references and the
+SPICE/serial endpoints are known, but backup location/readability/integrity and an
+actual independent console login/recovery route remain unverified. SSH/sudo and
+enabled services do not close that gap. No guest reboot or backup mutation occurred.
+
 1. Establish an independent hypervisor console and snapshot, verify every approved
    administrator address/port and both address families. Detect other policy managers,
    panels and cloud rules by read-only inspection; refuse ambiguous ownership.

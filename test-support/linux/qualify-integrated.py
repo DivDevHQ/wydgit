@@ -144,9 +144,10 @@ print(json.dumps(dict(status=r.status,body=b.decode(),headers=dict(r.getheaders(
         q.check('worker has no TCP listener '+pool['poolId'], lambda r=r: 'pid='+str(r['pid'])+',' not in q.command([shutil.which('ss'), '-lntpH']).stdout)
         q.check('edge UID cannot bypass provider to worker '+pool['poolId'], lambda r=r: q.denied(EDGE, 'socket.socket(socket.AF_UNIX).connect(sys.argv[1])', q.RUN/'workers'/r['generation']/'http.sock'))
         q.log('integrated-worker', **r)
-    mac_probe(q)
+    q.check('MAC same UID hostile category boundaries', lambda: mac_probe(q), category='selinux-mac')
     if (q.RELEASE/'bin/caddy').exists():
         proxy(q, response)
+    q.check('actual worker private tmpfs ENOSPC and sibling survival', lambda: temporary_exhaustion(q, *leases(), response), category='integrated-resource')
     for mode in ('SIGKILL', 'OOM'):
         q.default_category = 'service-recovery'
         before = leases()
@@ -165,6 +166,32 @@ print(json.dumps(dict(status=r.status,body=b.decode(),headers=dict(r.getheaders(
             q.check('actual worker service records oom-kill', lambda: q.command(['/usr/bin/systemctl', 'show', before[0]['unit'], '-p', 'Result', '--value']).stdout.strip() == 'oom-kill', category='integrated-resource')
     live = leases(); q.units.extend(r['unit'] for r in live if r['unit'] not in q.units)
     q.check('manager daemon-reload preserves active routing', lambda: q.command(['/usr/bin/systemctl', 'daemon-reload']).returncode == 0 and response(host='b.localhost'))
+    # Deliberate overlap, bounded to four fresh provider lifetimes. No retries
+    # around stop/restart failures: every failure remains an individual result.
+    for cycle in range(4):
+        live = leases(); q.units.extend(r['unit'] for r in live if r['unit'] not in q.units)
+        def overlap(records=live, cycle=cycle):
+            import concurrent.futures
+            sessions = [q.bound_session(r) for r in records]
+            with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+                actions = [lambda: q.command(['/usr/bin/systemctl', 'stop', name])]
+                actions.extend(lambda r=r: q.command(['/usr/bin/systemctl', 'kill', '--kill-whom=main', '--signal=KILL', r['unit']], check=False) for r in records)
+                results = list(executor.map(lambda action: action(), actions))
+            assert results[0].returncode == 0
+            assert all(broker.cgroup_empty(r) for r in records)
+            current = leases()
+            assert all(r['state'] == 'stopped' for r in current), [r['state'] for r in current]
+            for session in sessions:
+                journal = q.command(['/usr/bin/journalctl', '-u', session, '-n', '20', '--no-pager', '-o', 'cat']).stdout
+                events = [json.loads(line) for line in journal.splitlines() if line.startswith('{"schema":"wydhosting.admin-event/1"')]
+                q.log('retirement-audit', cycle=cycle, session=session, events=events)
+                assert any(e.get('operation') == 'launch' and e.get('outcome') == 'completed' for e in events), 'broker did not complete retirement'
+            q.log('retirement-overlap', cycle=cycle, states=[r['state'] for r in current], workerKillResults=[r.returncode for r in results[1:]])
+            return True
+        q.check('concurrent sibling termination and provider retirement '+str(cycle), overlap, category='retirement-race')
+        q.check('fresh provider lifetime after overlapping retirement '+str(cycle), start, category='retirement-race')
+        q.check('both tenant routes after overlapping retirement '+str(cycle), lambda: response() and response(host='b.localhost'), category='retirement-race')
+    live = leases(); q.units.extend(r['unit'] for r in live if r['unit'] not in q.units)
     q.command(['/usr/bin/systemctl', 'stop', name])
     q.check('provider graceful stop empties both worker cgroups', lambda: all(broker.cgroup_empty(r) for r in live))
     q.check('provider restart from durable stopped leases', start)
@@ -184,7 +211,7 @@ print(json.dumps(dict(status=r.status,body=b.decode(),headers=dict(r.getheaders(
     q.command(['/usr/bin/systemctl', 'start', name], check=False)
     q.wait(lambda: show('ActiveState') == 'failed', 15)
     q.check('provider refuses stale supervisor ownership after SIGKILL', lambda: show('ExecMainStatus') == '1' and all(broker.cgroup_empty(r) for r in live))
-    q.log('integrated-limitations', caddy='loopback-only' if (q.RELEASE/'bin/caddy').exists() else 'not-executed', externalNetwork='not-executed', reboot='not-executed', mac='provider-and-worker-MCS; broker-and-edge-unconfined', recovery='stale-lock-requires-operator-review')
+    q.log('integrated-limitations', caddy='loopback-only' if (q.RELEASE/'bin/caddy').exists() else 'not-executed', externalNetwork='not-executed', reboot='not-executed', mac='provider-and-worker-MCS; edge-confined; broker-unconfined', recovery='stale-lock-requires-operator-review')
 
 
 def descriptors(pid):
@@ -223,44 +250,137 @@ raise RuntimeError('memory enforcement failed')
         if child.poll() is None: child.kill(); child.wait(timeout=5)
 
 
+def temporary_exhaustion(q, record, sibling, response):
+    # Administrator fault injection into the actual private worker mount, not a
+    # portable filesystem capability or a claim about confined library tmp use.
+    import ctypes
+    import errno
+    for item in (record, sibling):
+        assert Path('/proc/'+str(item['pid'])+'/stat').read_text().rsplit(') ',1)[1].split()[19] == item['startTime']
+    descriptors = []
+    name = '.wyd-i56-capacity-'+q.uuid.uuid4().hex
+    created = False
+    try:
+        for item in (record, sibling):
+            descriptors.append(os.open('/proc/'+str(item['pid'])+'/root/tmp', os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW|os.O_CLOEXEC))
+        capacities = []
+        for index, fd in enumerate(descriptors):
+            buffer = ctypes.create_string_buffer(256)
+            assert ctypes.CDLL(None, use_errno=True).fstatfs(fd, buffer) == 0
+            item = (record,sibling)[index]
+            mounts = [line for line in Path('/proc/'+str(item['pid'])+'/mountinfo').read_text().splitlines() if line.split()[4] == '/tmp']
+            q.log('actual-worker-temporary-mount', unit=item['unit'], magic=hex(ctypes.c_long.from_buffer(buffer).value), mounts=mounts)
+            assert ctypes.c_long.from_buffer(buffer).value == 0x01021994, 'refuse non-tmpfs'
+            assert len(mounts) == 1 and {'nosuid','nodev','noexec'} <= set(mounts[0].split()[5].split(','))
+            assert os.fstat(fd).st_uid == (q.A,q.B)[index] and os.fstat(fd).st_mode & 0o777 == 0o700
+            stat = os.fstatvfs(fd); size = stat.f_blocks*stat.f_frsize
+            assert 0 < size <= 8388608, 'refuse unbounded mount'
+            capacities.append(size)
+        assert os.fstat(descriptors[0]).st_dev != os.fstat(descriptors[1]).st_dev, 'shared temporary filesystem'
+        before = [os.fstatvfs(fd).f_bavail for fd in descriptors]
+        code = '''import errno,json,os,resource,sys
+resource.setrlimit(resource.RLIMIT_CPU,(2,2));resource.setrlimit(resource.RLIMIT_AS,(67108864,67108864));resource.setrlimit(resource.RLIMIT_NOFILE,(32,32))
+parent=int(sys.argv[1]);size=int(sys.argv[3]);resource.setrlimit(resource.RLIMIT_FSIZE,(size+65536,size+65536))
+fd=os.open(sys.argv[2],os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600,dir_fd=parent)
+written=0;denied=None
+try:
+ while written<=size:
+  try:written+=os.write(fd,b'x'*65536)
+  except OSError as error:
+   assert error.errno==errno.ENOSPC;denied='ENOSPC';break
+finally:os.close(fd)
+assert denied=='ENOSPC' and written<=size
+print(json.dumps(dict(bytesWritten=written,result=denied)))
+'''
+        created = True
+        value = json.loads(q.command(['/usr/bin/python3','-I','-c',code,str(descriptors[0]),name,str(capacities[0])],pass_fds=(descriptors[0],),timeout=10).stdout)
+        assert os.fstatvfs(descriptors[1]).f_bavail == before[1]
+        try: os.stat(name, dir_fd=descriptors[1], follow_symlinks=False)
+        except FileNotFoundError: pass
+        else: raise AssertionError('sibling saw foreign temporary file')
+        response(); response(host='b.localhost')
+        return dict(injection='administrator-held-private-mount', capacityBytes=capacities[0], **value, helperMemoryMax=67108864, helperCpuSeconds=2, helperDeadlineSeconds=10, sibling='HTTP 200; separate mount unchanged')
+    finally:
+        if created:
+            try: os.unlink(name, dir_fd=descriptors[0])
+            except FileNotFoundError: pass
+            assert os.fstatvfs(descriptors[0]).f_bavail == before[0], 'temporary allocation not reclaimed'
+        for fd in descriptors: os.close(fd)
+
+
 def mac_probe(q):
     # Deliberately make DAC allow both files to the SAME numeric UID. The denied
     # foreign category therefore demonstrates independent MAC, not UID isolation.
     root = q.ROOT/'mac-canary'
     root.mkdir(mode=0o777); root.chmod(0o777)
-    q.command(['/usr/bin/chcon', '-t', 'wydhosting_data_t', '-l', 's0:c51', str(root)])
+    q.command(['/usr/bin/chcon', '-t', 'wydhosting_run_t', '-l', 's0', str(root)])
     for name, category in (('own',51), ('foreign',52)):
         file = root/name; file.write_text('canary'); file.chmod(0o666); os.chown(file, q.A, q.A)
         q.command(['/usr/bin/chcon', '-t', 'wydhosting_data_t', '-l', 's0:c'+str(category), str(file)])
+    output = root/'result'; output.write_text(''); output.chmod(0o666)
+    q.command(['/usr/bin/chcon', '-t', 'wydhosting_data_t', '-l', 's0:c51', str(output)])
+    for label, category in (('own-exec',51), ('foreign-exec',52)):
+        file = root/label; shutil.copyfile('/usr/bin/true', file); file.chmod(0o755)
+        q.command(['/usr/bin/chcon', '-t', 'wydhosting_runtime_t', '-l', 's0:c'+str(category), str(file)])
     unit = 'wyd-i56-mac-probe.service'; q.units.append(unit)
-    code = '''import errno,json,os,sys
+    code = '''import errno,json,os,signal,socket,subprocess,sys
 from pathlib import Path
 p=Path(sys.argv[1]);result={}
+def mark(stage):
+ result['stage']=stage;(p/'result').write_text(json.dumps(result))
 result['context']=Path('/proc/self/attr/current').read_text().strip('\\0\\n')
+result['pid']=os.getpid()
+mark('own-file')
 assert (p/'own').read_text()=='canary';(p/'own').write_text('same-category');result['own']='read/write'
-for name,operation in [('read',lambda:(p/'foreign').read_text()),('write',lambda:(p/'foreign').write_text('attack')),('relabel',lambda:os.setxattr(p/'foreign','security.selinux',b'system_u:object_r:wydhosting_data_t:s0:c51'))]:
+mark('own-execute')
+assert subprocess.run([str(p/'own-exec')],check=False).returncode==0;result['ownExecute']='success'
+mark('own-signal')
+os.kill(os.getpid(),signal.SIGCONT);result['ownSignal']='success'
+for name,operation in [('read',lambda:(p/'foreign').read_text()),('write',lambda:(p/'foreign').write_text('attack')),('relabel',lambda:os.setxattr(p/'foreign','security.selinux',b'system_u:object_r:wydhosting_data_t:s0:c51')),('socket',lambda:socket.socket(socket.AF_UNIX).connect(str(p/'foreign.sock'))),('signal',lambda:os.kill(int(sys.argv[2]),signal.SIGCONT)),('inspect',lambda:open('/proc/'+sys.argv[2]+'/mem','rb')),('execute',lambda:subprocess.run([str(p/'foreign-exec')],check=False))]:
+ mark(name)
  try:operation()
  except OSError as e:assert e.errno in (errno.EACCES,errno.EPERM);result[name]=errno.errorcode[e.errno]
  else:raise RuntimeError('foreign category permitted')
-(p/'result').write_text(json.dumps(result))
+mark('complete')
 '''
     properties = [f'User={q.A}',f'Group={q.A}','SELinuxContext=system_u:system_r:wydhosting_worker_t:s0:c51','NoNewPrivileges=yes','CapabilityBoundingSet=','RestrictSUIDSGID=yes','RestrictNamespaces=yes','RestrictAddressFamilies=AF_UNIX','ProtectSystem=strict','ProtectHome=yes','PrivateDevices=yes','PrivateTmp=yes','MemoryMax=64M','MemorySwapMax=0','TasksMax=16','CPUQuota=25%','RuntimeMaxSec=15s','TimeoutStopSec=2s','LimitNOFILE=64','ReadWritePaths='+str(root)]
+    server_unit = 'wyd-i56-mac-sibling.service'; q.units.append(server_unit)
+    server_code = '''import os,socket,sys,time
+s=socket.socket(socket.AF_UNIX);s.bind(sys.argv[1]);os.chmod(sys.argv[1],0o666);s.listen(4);time.sleep(90)
+'''
+    server_properties = [p.replace('s0:c51','s0:c52').replace('RuntimeMaxSec=15s','RuntimeMaxSec=90s') for p in properties]
+    q.command(['/usr/bin/systemd-run', '--unit='+server_unit, '--service-type=exec', *['--property='+p for p in server_properties], '/usr/bin/python3', '-I', '-c', server_code, str(root/'foreign.sock')])
+    q.wait(lambda: (root/'foreign.sock').exists(), 5)
+    q.command(['/usr/bin/chcon', '-l', 's0:c52', str(root/'foreign.sock')])
+    q.must_ok(q.as_uid(q.A, 'import socket,sys;s=socket.socket(socket.AF_UNIX);s.connect(sys.argv[1]);s.close()', root/'foreign.sock'))
+    foreign_pid = q.command(['/usr/bin/systemctl','show',server_unit,'-p','MainPID','--value']).stdout.strip()
+    q.log('MAC-sibling', uid=q.A, context=Path('/proc/'+foreign_pid+'/attr/current').read_text().strip('\0\n'), socketContext=os.getxattr(root/'foreign.sock','security.selinux').decode().rstrip('\0'))
     # Temporarily expose policy-suppressed denials. This changes logging only;
     # enforcing mode and all access decisions remain intact. Restore immediately.
     assert not Path('/var/lib/selinux/targeted/active/disable_dontaudit').exists()
     q.command(['/usr/sbin/semodule', '-DB'], timeout=90)
     try:
-        q.command(['/usr/bin/systemd-run', '--unit='+unit, '--wait', '--service-type=exec', *['--property='+p for p in properties], '/usr/bin/python3', '-I', '-c', code, str(root)])
-        audit = q.command(['/usr/sbin/ausearch', '-m', 'AVC,USER_AVC', '-ts', 'recent', '-i'], check=False).stdout
-        q.log('MAC-audit', lines=[line for line in audit.splitlines() if 'avc:' in line and 'wydhosting_worker_t' in line][-12:])
+        q.command(['/usr/bin/systemd-run', '--unit='+unit, '--wait', '--service-type=exec', *['--property='+p for p in properties], '/usr/bin/python3', '-I', '-c', code, str(root), foreign_pid])
     finally:
-        q.command(['/usr/sbin/semodule', '-B'], timeout=90)
+        try:
+            if output.read_text(): q.log('MAC-progress', **json.loads(output.read_text()))
+            audit = q.command(['/usr/sbin/ausearch', '-m', 'AVC,USER_AVC', '-ts', 'recent', '-i'], check=False).stdout
+            evidence = [line for line in audit.splitlines() if 'avc:' in line and 'scontext=system_u:system_r:wydhosting_worker_t:s0:c51 ' in line and ':s0:c52 ' in line and 'permissive=0' in line]
+            q.log('MAC-audit', lines=evidence[-16:])
+            value = json.loads(output.read_text())
+            own = [line for line in evidence if 'pid='+str(value['pid'])+' ' in line]
+            for permission, target in (('read','name=foreign '),('write','name=foreign '),('relabelfrom','name=foreign '),('write','name=foreign.sock '),('signal','tclass=process'),('search','tclass=dir')):
+                assert any('{ '+permission+' }' in line and target in line for line in own), 'missing current-probe AVC: '+permission+' '+target
+            assert any('{ execute }' in line and 'name=foreign-exec ' in line and 'ino='+str((root/'foreign-exec').stat().st_ino)+' ' in line for line in evidence), 'missing execution AVC'
+        finally:
+            q.command(['/usr/sbin/semodule', '-B'], timeout=90)
+            q.command(['/usr/bin/systemctl', 'stop', server_unit], check=False)
     def result():
         value = json.loads((root/'result').read_text())
         assert value['context'] == 'system_u:system_r:wydhosting_worker_t:s0:c51'
         assert (root/'foreign').read_text() == 'canary'
         return value
-    q.check('MAC same UID DAC-readable foreign category denied', result, category='selinux-mac')
+    return result()
 
 
 def proxy(q, response):
@@ -279,13 +399,14 @@ def proxy(q, response):
         block = block.replace(site+' {', site+' {\n    bind 127.0.0.1 ::1')
     config.write_text(block)
     config.chmod(0o640); os.chown(config, 0, EDGE)
-    # Caddy remains under the distro's standard executable/service policy.
+    # Separate explicitly selected confined edge domain; no automatic transition.
     proxy_root = q.RELEASE.parent/'edge'
     proxy_root.mkdir(mode=0o755)
     shutil.copyfile(q.RELEASE/'bin/caddy', proxy_root/'caddy')
     (proxy_root/'caddy').chmod(0o755)
     q.command(['/usr/sbin/restorecon', '-RF', str(proxy_root)])
     state = q.ROOT/'edge'; state.mkdir(mode=0o700); os.chown(state, EDGE, EDGE)
+    q.command(['/usr/sbin/restorecon', '-F', str(cert), str(key), str(config), str(state)])
     binary = str(proxy_root/'caddy')
     check('Caddy generated configuration validates', lambda: q.command([binary, 'validate', '--config', str(config), '--adapter', 'caddyfile'], user=EDGE, group=EDGE, extra_groups=[], env={'HOME':str(state), 'XDG_DATA_HOME':str(state), 'XDG_CONFIG_HOME':str(state)}).returncode == 0)
     unit = 'wyd-i56-edge.service'
@@ -295,8 +416,9 @@ def proxy(q, response):
 Type=exec
 User={EDGE}
 Group={EDGE}
+SELinuxContext=system_u:system_r:wydhosting_edge_t:s0
 ExecStart={binary} run --config {config} --adapter caddyfile
-Environment=HOME={state} XDG_DATA_HOME={state} XDG_CONFIG_HOME={state}
+Environment=HOME={state} XDG_DATA_HOME={state} XDG_CONFIG_HOME={state} GOMAXPROCS=1 GOMEMLIMIT=96MiB
 NoNewPrivileges=yes
 CapabilityBoundingSet=CAP_NET_BIND_SERVICE
 AmbientCapabilities=CAP_NET_BIND_SERVICE
@@ -311,6 +433,8 @@ RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
 ReadWritePaths={state}
 RuntimeMaxSec=180s
 MemoryMax=128M
+MemorySwapMax=0
+CPUQuota=25%
 TasksMax=32
 LimitNOFILE=256
 LimitCORE=0
@@ -320,6 +444,29 @@ KillMode=control-group
     q.created.append(path); q.units.append(unit)
     q.command(['/usr/bin/systemctl', 'daemon-reload'])
     q.command(['/usr/bin/systemctl', 'start', unit])
+    def confined():
+        pid = q.command(['/usr/bin/systemctl', 'show', unit, '-p', 'MainPID', '--value']).stdout.strip()
+        context = Path('/proc/'+pid+'/attr/current').read_text().strip('\0\n')
+        assert context == 'system_u:system_r:wydhosting_edge_t:s0', context
+        return dict(context=context)
+    q.check('Caddy actual confined domain', confined, category='selinux-mac')
+    def edge_denial():
+        # The exact same readable valid config succeeds outside the edge domain.
+        # Under edge_t, a tenant-data label must deny it independently of DAC.
+        canary = q.ETC/'edge-denied'; shutil.copyfile(config, canary); canary.chmod(0o444)
+        q.command(['/usr/bin/chcon','-t','wydhosting_data_t','-l','s0:c52',str(canary)])
+        q.command([binary,'validate','--config',str(canary),'--adapter','caddyfile'], user=EDGE,group=EDGE,extra_groups=[])
+        probe = 'wyd-i56-edge-denial.service'; q.units.append(probe)
+        properties = [f'User={EDGE}',f'Group={EDGE}','SELinuxContext=system_u:system_r:wydhosting_edge_t:s0','NoNewPrivileges=yes','CapabilityBoundingSet=','MemoryMax=64M','MemorySwapMax=0','TasksMax=16','CPUQuota=25%','RuntimeMaxSec=15s','TimeoutStopSec=2s','LimitNOFILE=64','Environment=GOMAXPROCS=1 GOMEMLIMIT=48MiB','RestrictAddressFamilies=AF_UNIX']
+        result = q.command(['/usr/bin/systemd-run','--unit='+probe,'--wait','--service-type=exec',*['--property='+p for p in properties],binary,'validate','--config',str(canary),'--adapter','caddyfile'],check=False)
+        status = q.command(['/usr/bin/systemctl','show',probe,'-p','ExecMainStatus','--value']).stdout.strip()
+        assert result.returncode != 0 and status == '1', status
+        audit = q.command(['/usr/sbin/ausearch','-m','AVC,USER_AVC','-ts','recent','-i'],check=False).stdout
+        evidence = [line for line in audit.splitlines() if 'avc:' in line and 'wydhosting_edge_t' in line and 'wydhosting_data_t' in line and 'permissive=0' in line]
+        q.log('edge-MAC-audit', lines=evidence[-4:])
+        assert evidence, 'edge denial lacks actual AVC evidence'
+        return dict(domain='wydhosting_edge_t', tenantData='EACCES', sameUidDacControl='success')
+    q.check('confined edge cannot read DAC-readable tenant data', edge_denial, category='selinux-mac')
 
     def tls(host='a.localhost', address='127.0.0.1', headers=None, method='GET', path='/', body=None):
         import http.client

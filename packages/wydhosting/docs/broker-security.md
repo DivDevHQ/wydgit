@@ -115,6 +115,16 @@ Snapshot-root changes over a prior lease refuse `BROKER.MIGRATION_REQUIRED`.
 
 ## Audit and errors
 
+The [continued campaign](verification.md#reliability-and-confinement-continuation--2026-10-16)
+reproduced ECONNRESET during concurrent peer shutdown. Reset/broken pipe now follow
+the EOF retirement path; malformed frames and other OS errors remain failures. No
+peer disconnect alone authorizes a successful cleanup acknowledgement. A disappearing
+main PID after an active manager snapshot requires one fresh verified terminal
+snapshot and empty cgroup; changed live ownership or ambiguous states still refuse.
+Unexpected OS errors log only a closed `failureOs` vocabulary alongside phase/kind,
+never exception text or arbitrary errno descriptions. The exact old uninstrumented
+failure cannot be retrospectively attributed to either demonstrated defect.
+
 Bounded JSON events to journald include actual `uid:<n>` principal, approved operation,
 resource, policy revision, generation, started/completed/refused outcome and a fixed
 sanitized code. Denials before validated request selection record `refused`; no raw

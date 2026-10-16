@@ -1,5 +1,13 @@
 ## Unreleased
 
+- Fix reproduced Linux relay retirement resets and the process-exit observation race;
+  require successful broker audit completion during bounded real shutdown overlaps.
+- Correct systemd PrivateTmp shadowing of the declared temporary-byte limit; qualify
+  actual private tmpfs ENOSPC, sibling survival and exact cleanup on AlmaLinux.
+- Confine the tested Caddy edge and extend same-UID category socket, signal, proc and
+  execution denials with actual AVC assertions. Keep I5.6 experimental; broker MAC,
+  intermittent HTTP500, external/firewall/reboot/storage and retirement gates remain.
+
 - Exercise the real canonical provider/broker/two-worker/private-ingress/Caddy chain
   on AlmaLinux, with confined provider/worker SELinux domains and pinned account MCS
   categories; reject unconfined legacy launches on enforcing guests.

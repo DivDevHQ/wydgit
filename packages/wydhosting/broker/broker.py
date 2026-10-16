@@ -262,18 +262,31 @@ def process_start(pid):
 
 
 def owned_status(record):
-    values = show(record['unit'])
-    verify_unit(values, record['unit'])
-    # The protected unit bytes plus invocation/cgroup bind ownership across restart.
-    units = s.open_directory('/run/systemd/system')
-    try:
-        s.require(hashlib.sha256(s.read_file(units, record['unit'])).hexdigest() == record['unitHash'], 'BROKER.OWNERSHIP')
-    finally:
-        os.close(units)
+    def snapshot():
+        values = show(record['unit'])
+        verify_unit(values, record['unit'])
+        # The protected unit bytes plus invocation/cgroup bind ownership across restart.
+        units = s.open_directory('/run/systemd/system')
+        try:
+            s.require(hashlib.sha256(s.read_file(units, record['unit'])).hexdigest() == record['unitHash'], 'BROKER.OWNERSHIP')
+        finally:
+            os.close(units)
+        return values
+    values = snapshot()
     if values.get('ActiveState') in ('inactive', 'failed') and values.get('MainPID') == '0':
         s.require(cgroup_empty(record), 'BROKER.OWNERSHIP_UNKNOWN')
     else:
-        s.require(values.get('InvocationID') == record['invocation'] and values.get('ControlGroup') == record['cgroup'] and values.get('MainPID') == str(record['pid']) and process_start(record['pid']) == record['startTime'], 'BROKER.OWNERSHIP')
+        s.require(values.get('InvocationID') == record['invocation'] and values.get('ControlGroup') == record['cgroup'] and values.get('MainPID') == str(record['pid']), 'BROKER.OWNERSHIP')
+        try:
+            s.require(process_start(record['pid']) == record['startTime'], 'BROKER.OWNERSHIP')
+        except FileNotFoundError:
+            # The manager snapshot and /proc are not atomic. An exited main PID
+            # alone proves nothing: observe the protected unit again and require
+            # terminal state AND death of all descendants. No wait, restart,
+            # ownership adoption or numeric-PID signal is authorized here.
+            values = snapshot()
+            s.require(values.get('ActiveState') in ('inactive', 'failed') and values.get('MainPID') == '0', 'BROKER.OWNERSHIP_UNKNOWN')
+            s.require(cgroup_empty(record), 'BROKER.OWNERSHIP_UNKNOWN')
     return values
 
 
@@ -343,7 +356,10 @@ AmbientCapabilities=
 ProtectSystem=strict
 ProtectHome=yes
 PrivateDevices=yes
-PrivateTmp=yes
+# The explicit per-unit tmpfs below provides private, bounded temporary storage.
+# PrivateTmp=yes shadows it with a host-backed directory on systemd 257.
+# /var/tmp remains inaccessible; no host temporary directory is exposed.
+PrivateTmp=no
 ProtectKernelTunables=yes
 ProtectKernelModules=yes
 ProtectControlGroups=yes
@@ -432,7 +448,13 @@ def relay(provider, worker, binding, on_worker_frame=lambda _: None):
         while True:
             for sock, mask in selector.select(1):
                 if mask & selectors.EVENT_READ:
-                    chunk = sock.fileobj.recv(65536)
+                    try:
+                        chunk = sock.fileobj.recv(65536)
+                    except (ConnectionResetError, BrokenPipeError):
+                        # A peer closing with unread data reports reset, not EOF.
+                        # launch's finally block still proves exact cgroup death
+                        # before issuing its authenticated retirement result.
+                        return
                     if not chunk:
                         return
                     forwarding = bytearray() if sock.fileobj is worker else chunk
@@ -451,7 +473,10 @@ def relay(provider, worker, binding, on_worker_frame=lambda _: None):
                     buffers[target].extend(forwarding)
                     s.require(len(buffers[target]) <= 1048576, 'BROKER.BACKPRESSURE')
                 if mask & selectors.EVENT_WRITE:
-                    sent = sock.fileobj.send(buffers[sock.fileobj])
+                    try:
+                        sent = sock.fileobj.send(buffers[sock.fileobj])
+                    except (ConnectionResetError, BrokenPipeError):
+                        return
                     del buffers[sock.fileobj][:sent]
                 for endpoint in peers:
                     selector.modify(endpoint, selectors.EVENT_READ | (selectors.EVENT_WRITE if buffers[endpoint] else 0))
@@ -711,6 +736,9 @@ def main():
         if not isinstance(error, s.Refused):
             # Closed diagnostic vocabulary; never exception text, paths or data.
             audit['failureKind'] = 'missing' if isinstance(error, FileNotFoundError) else 'permission' if isinstance(error, PermissionError) else 'os' if isinstance(error, OSError) else 'internal'
+            if isinstance(error, OSError):
+                import errno
+                audit['failureOs'] = {errno.ECONNRESET:'reset', errno.EPIPE:'pipe', errno.EAGAIN:'would-block', errno.EBADF:'descriptor', errno.ENOENT:'missing', errno.EACCES:'permission'}.get(error.errno, 'other')
             audit['failurePhase'] = 'dispatch'
             frame = error.__traceback__
             while frame:

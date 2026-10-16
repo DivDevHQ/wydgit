@@ -87,6 +87,14 @@ there is an explicit matching-generation cgroup-stopped acknowledgement.
 
 ## TLS/proxy candidate and remaining gaps
 
+The continuation runs the actual Caddy edge in `wydhosting_edge_t:s0`, with typed
+executable/TLS/config/state and provider-only Unix connection rights. Actual domain
+inspection, restart, A/B routing and an AVC-backed denial of DAC-readable tenant
+data pass. See [SELinux](selinux.md) for the wider `http_port_t`/`node_t` listener
+permissions and remaining edge TCB. These tests remain loopback IPv4/IPv6; the
+existing active/default guest firewall cannot be changed for external ingress without
+separate approval. No localhost result is independent external packet evidence.
+
 The shipped Caddyfile uses explicit host/certificate/key placeholders, HTTP/1.1 backend,
 stripped untrusted forwarding headers and overwritten exact HTTPS host/proto.
 The complete candidate also disables the admin API, persisted config and automatic

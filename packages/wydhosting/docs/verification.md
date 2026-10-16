@@ -1,6 +1,6 @@
 # I5.6 verification and qualification record
 
-**Latest campaign:** [integrated AlmaLinux qualification](#integrated-enterprise-campaign--2026-10-16)
+**Latest campaign:** [reliability and confinement continuation](#reliability-and-confinement-continuation--2026-10-16)
 and [SELinux policy](selinux.md). Earlier sections retain their original failures,
 counts and limitations; they are historical evidence, not the current gate decision.
 
@@ -23,6 +23,192 @@ No root/sudo/account/systemd/cgroup/firewall/SSH/network/DNS/certificate provisi
 was performed on the operator's machine. Sandboxed test restrictions were bypassed
 only for explicitly authorized ordinary-user subprocess/socket/browser/npm/Git work,
 not by running customer code or provisioning as root.
+
+## Reliability and confinement continuation — 2026-10-16
+
+Started clean at **852ee722bfefd3aa0b3f250d1c0603de22e21a25**, equal to
+`origin/develop/0.3`; no intervening work was discarded. Version remains
+**0.3.0-alpha.15**. Read the complete verification/SELinux records, architecture,
+security contracts, actual implementation and retained failure logs before changes.
+The same AlmaLinux **10.2**, kernel **6.12.0-211.65.1.el10_2.x86_64**, systemd
+**257-23.el10_2.2.alma.1**, Node **24.21.0**, Python **3.12.15**, Caddy **2.11.7**
+guest was verified. Previous hosting roots, policy modules, units and all six fixture
+UID/GIDs were absent. Enforcing SELinux, active/enabled firewalld and SSH were verified.
+
+### Demonstrated defects and corrections
+
+**Relay retirement:** four bounded overlaps kill both actual worker main processes
+while stopping their installed provider, then start fresh provider lifetimes and
+verify both canonical App routes. The first expanded run reported 95 passing checks,
+but independent broker journal inspection found three **BROKER.INTERNAL / relay / os**
+events. Those passing assertions were insufficient. The fixture now requires each
+exact broker session's completed administrative event as well as stopped leases and
+empty cgroups. A pre-fix repetition failed **2/12 retirement checks**; its closed
+`failureOs:reset` diagnostic identified **ECONNRESET**. A real socket-pair test also
+failed with ConnectionResetError when a peer closed with unread reply data.
+
+The relay now handles only connection reset/broken pipe as peer disconnects, just
+like EOF. It still validates worker frames and runs the unchanged exact-service
+retirement/final acknowledgement path; no retry, restart, ownership adoption or
+successful cgroup-death claim follows merely from disconnect. Other OS faults and
+malformed/forged frames still fail. Post-fix VM overlaps require successful broker
+audit completion and pass. This fixes the **reproduced reset class**, not proof that
+every earlier uninstrumented BROKER.INTERNAL had the same cause.
+
+**Process observation race:** an actual child exit between a simulated active manager
+snapshot and the real `/proc/<pid>/stat` read deterministically produced uncaught
+FileNotFoundError. The broker now takes one fresh protected-unit snapshot only for
+that disappearance, requiring terminal state, MainPID=0 and an empty recorded cgroup.
+It revalidates unit bytes/path/drop-ins. Live invocation/cgroup/PID/start-time checks
+remain; ambiguous, replaced or still-populated states refuse. This is a separately
+demonstrated defect; the old campaign did not record enough detail to attribute it.
+The fixture explicitly labels its manager snapshots as simulated, not privileged proof.
+
+**Ineffective temporary-byte limit:** the actual integrated worker's `/tmp` was XFS,
+not the advertised bounded tmpfs. The new stress guard refused to write and recorded
+**96 passed / 1 failed**. Four read-only transient probes preserved the cause:
+PrivateTmp=yes → host-backed XFS; no → 1 MiB tmpfs; `disconnected` was rejected by
+this distribution's transient-property parser; yes again → XFS. This corroborates the
+[systemd v257 mount implementation](https://github.com/systemd/systemd/blob/v257/src/core/namespace.c).
+No unbounded filesystem was deliberately filled.
+
+The worker uses `PrivateTmp=no` with its explicit per-unit, UID-owned **0700** tmpfs,
+`nosuid,nodev,noexec,size=<approved temporaryBytes>`. `/var/tmp` stays inaccessible.
+This corrects the conflicting mechanism while preserving private temporary storage;
+NNP, RestrictSUIDSGID=yes, empty capabilities, namespace/network restrictions and
+cgroups remain. Actual mount tables/statfs now prove separate 1 MiB tmpfs instances
+for both workers. An administrator helper fills only A's held private mount to
+**ENOSPC at 1,048,576 bytes**, with 64 MiB address space, 2 CPU seconds, 32 FDs,
+10-second deadline and no spawned descendants. A/B still serve HTTP 200, B's mount
+and capacity stay unchanged, and unlink restores A's free blocks. This proves the
+actual mount capacity and cleanup, **not confined library tmp-file access**. Persistent
+XFS storage remains `noquota`; FD/task/CPU exhaustion inside the integrated App and
+runtime-directory/persistent-storage exhaustion are still separate gaps.
+
+### MAC and ingress observations
+
+The reproducibly installed `wydhosting_worker` CIL module now also defines
+**wydhosting_edge_t:s0** and dedicated edge executable/configuration/state types.
+The actual installed Caddy service enters it explicitly, validates shipped generated
+configuration and serves both tenants over loopback IPv4/IPv6 TLS. Its only capability
+is NET_BIND_SERVICE; it has 128 MiB memory/no swap, 32 tasks, 256 FDs and 25% CPU in
+the bounded fixture. Legitimate creation of directories inside its own typed state
+was added after the first confined run's Caddy log denied that operation. Explicit Go
+runtime bounds avoid relying on denied cgroup auto-detection. A valid world-readable
+config with tenant-data type succeeds outside confinement but fails in edge_t, with
+an actual **edge_t → data_t:c52 read AVC, permissive=0**. No tenant-data read permission
+was granted. See [selinux.md](selinux.md) for privileges and residual TCB.
+
+The same UID 61051 is used for both hostile probe subjects. Same-category file
+read/write, runtime-binary execution and SIGCONT succeed. Foreign-category file
+read/write, Unix socket inode write, SIGCONT, proc-directory traversal and runtime
+execution return EACCES, with current-probe AVC assertions. Relabel is also denied,
+but workers have no relabel permission even within their category: that is TE, not
+independent category proof. Proc inspection is denied at MAC directory traversal
+before ptrace. Socket testing proves the categorized **sock_file boundary**; it does
+not claim abstract-socket/connectto category qualification. The canary makes DAC
+allow access and independently connects to the socket outside confinement. No raw
+execution/socket/process capability is exposed to ordinary Wydgits.
+
+An initial expanded signal-0 canary failed before writing its result; the exact
+failing operation was not retained. The revised probe records bounded progress and
+uses the already permitted SIGCONT with a successful own-category control. The
+initial failure is retained rather than retrospectively diagnosed. Audit suppression is restored in
+finally even if diagnostic collection fails; enforcing never changes.
+
+The root broker remains **unconfined_service_t**. Its account tools modify shared
+account databases and it controls systemd; a narrow policy/possibly privilege split
+still needs design and actual qualification. No blanket filesystem/process allow or
+unconfined transition was added to conceal this gate. A confined root broker would
+still be a high-trust component; the six retained capabilities are unchanged.
+
+### Reliability coverage and deferred authority
+
+The unchanged baseline plus three normal-policy full repetitions each passed
+**932/932**. Focused Contact JSON/SQLite concurrency/restart/cleanup and shared-host
+held-request tests passed **14/14** together. Trusted phase/code capture stayed on.
+The historical Contact/Guestbook/Taskboard HTTP500 **remains unresolved**: no new
+failing request was captured, no application/storage fix is claimed, and no timeout,
+resource allowance, assertion or normal suite concurrency was relaxed.
+
+External TLS remains unexecuted. Read-only libvirt inspection confirms a NAT network,
+host bridge **192.168.122.1**, guest **192.168.122.225**, no configured IPv6 subnet;
+the guest has only link-local IPv6 beyond loopback. Its active/default public zone
+has no HTTPS port/rich rule. No host interface/routing/firewall or guest active/public/
+SSH rule was changed. The exact proposed narrow IPv4 test rule and rollback plan,
+requiring separate operator approval, are in [firewall-and-recovery](firewall-and-recovery.md).
+Loopback TLS is not external evidence. Public apply still refuses.
+
+Reboot remains unexecuted. Read-only metadata confirms live disk
+`/var/lib/libvirt/images/almond-lab.qcow2`, UEFI vars
+`/var/lib/libvirt/qemu/nvram/almond-lab_VARS.fd`, serial `/dev/pts/2` and loopback SPICE
+`spice://127.0.0.1:5900`. These are **live component references, not a verified backup**.
+The backup location/readability/digests and disk/XML/NVRAM consistency are unknown;
+serial getty is disabled and independent console login credentials are unverified.
+SSH key and noninteractive guest sudo work, but do not substitute for console recovery.
+No backup or host power state was changed. Operator recovery information is needed
+before reboot qualification.
+
+Stopped/failed generation units, lease/category markers, snapshots and accounts remain
+retained until exact owned fixture cleanup. Repeated lifetimes demonstrate that these
+can accumulate; automatic authenticated retirement is **not implemented**. Deleting
+unit fragments would break the current lease ownership/status proof without a durable
+retirement/tombstone design. Do not replace that proof with filename-based cleanup or
+recycle categories. Interrupted staging/publication/cleanup, mount substitution,
+category crash recovery and quota-backed storage remain open gates.
+
+### Reproduction, evidence and decision
+
+Use the earlier unprivileged fresh-tarball builder and **the same extended**
+`qualify.py --integrated` fixture, with a fresh protected VM staging root and
+`sudo -n timeout 420s ...`. The fixture automatically runs four retirement overlaps,
+current-probe AVC checks, the confined edge and bounded actual-mount exhaustion.
+It refuses a non-tmpfs or mount larger than 8 MiB before any stress write. No competing
+installation harness or root npm was added. Source/artifact hashes, failed diagnostic
+runs, final events and regression results are retained in
+`test-support/linux/evidence/2026-10-16-continuation.json`; raw logs are
+`/tmp/wydgit-i56-continued-*`. Earlier evidence files remain unchanged.
+
+The reviewed actual VM run has separate results (not a security score): broker/DAC
+**30/30**, installed integrated services **23/23**, SELinux gate/domain/MAC **4/4**
+(two AVC-backed hostile probe cases plus enforcing/domain checks), loopback TLS
+**11/11**, service recovery **15/15**, retirement race/restart/audit **12/12**, and
+integrated resource outcomes **2/2** (OOM and private-mount ENOSPC). Final required
+repository/independently packed/VM regression and cleanup results are recorded in
+the durable evidence after review; no older count is substituted for a new run.
+
+Final freshly packed VM delivery repeated those separate results successfully.
+Fresh independent consumers in `/tmp/wyd-i54-packed-gbGHvN` passed canonical
+**149/149**, provider **35/35**, real subprocess supervisor **20/20** and ordinary
+installed Linux boundaries **20/20**, with repository imports rejected and one engine
+per consumer. The actual packed Python boundary suite also passed **35/35** as the
+ordinary VM user, including its explicitly simulated administrative cases; mocked
+firewall guards passed **6/6** separately. These nested counts are not extra Node or
+privileged tests. The separate kernel fixture repeated **26/26**; unused-zone
+firewalld normal rollback and **3/3** independent caller-death checks passed with
+runtime/permanent policy restored, without active packet-enforcement proof.
+The reviewed required repository run passed **932/932**, and content validation
+passed **3 pages / 42 links**. Final checks are repeated after this evidence sync.
+Nine workspace package dry-runs contain the policy/guides and no keys/Python caches;
+all 23 historical browser distribution blobs remain unchanged. No dependency change.
+
+Independent final cleanup found no fixture units/unit files, tenant/provider/edge/
+kernel users or groups, processes under the six fixture UIDs, hosting/kernel roots,
+policy module or firewall intent/timer resources. Both campaign staging roots,
+`/var/tmp/wyd-i56-continued` and `/var/tmp/wyd-i56-continued-final`, were verified
+against known archives/manifests and their exclusive creation/ownership inventory,
+then removed. Standard account-tool DB backup/lock side effects and existing journal/
+audit records remain under VM retention; the baseline VM backup was untouched.
+Normal dontaudit was restored, SELinux enforcing, firewalld/sshd active, public/SSH
+policy unchanged, and only SSH/22 listening on IPv4/IPv6. A fresh nonmultiplexed
+SSH connection succeeded. Boot ID remains `c77a65af-95bc-480d-bbe3-47f613b6b005`.
+
+**Implementation complete: NO. Production security qualified: NO. I5.6 remains
+experimental.** Broker MAC, the intermittent HTTP500, external ingress/live firewall,
+verified backup/console and reboot, bounded persistent storage, automatic retirement
+and the remaining hostile interruption/resource matrix still prevent qualification.
+Only the exact AlmaLinux observations above are tested; no RHEL, Rocky, Oracle,
+Debian or Ubuntu certification is inferred. No version bump, release or I5.7 work.
 
 ## Integrated Enterprise campaign — 2026-10-16
 

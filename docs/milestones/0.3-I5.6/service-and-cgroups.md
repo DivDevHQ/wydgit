@@ -4,8 +4,12 @@ The [integrated follow-up](verification.md#integrated-enterprise-campaign--2026-
 now exercises installed provider startup, two confined Apps, worker SIGKILL and
 bounded pressure in the actual 256 MiB worker cgroup, healthy sibling serving,
 broker/provider death, graceful restart, manager reload and fail-closed stale locks.
-One intermittent broker retirement failure remains unresolved despite a passing
-repeat. Reboot is deferred pending independently verified backup/console recovery.
+The [continuation](verification.md#reliability-and-confinement-continuation--2026-10-16)
+reproduces and fixes relay ECONNRESET retirement failures, adds strict broker audit
+assertions to four shutdown overlaps, and fixes a separate /proc observation race.
+Earlier uninstrumented failures are not assumed identical. Actual temporary storage
+capacity now has bounded ENOSPC evidence after correcting conflicting mount settings.
+Reboot is deferred pending independently verified backup/console recovery.
 The original status table/walkthrough below is historical; current MAC installation
 and category approval requirements are in [selinux.md](selinux.md).
 
@@ -44,6 +48,25 @@ Root lease `starting` without a verified invocation remains an ambiguous manual-
 case; the broker does not guess/adopt a service name after interruption.
 
 ## Declared limits
+
+Current temporary-storage correction: the worker's explicit `TemporaryFileSystem=/tmp`
+is a private UID-owned 0700 `nosuid,nodev,noexec` size-limited tmpfs. `PrivateTmp=no`
+is intentional: actual systemd 257 tests show yes shadows that mount with host-backed
+XFS and defeats the size setting. `/var/tmp` remains inaccessible. No host temporary
+directory is exposed by the replacement. Actual A/B mount tables, separate devices,
+1 MiB ENOSPC, HTTP sibling survival and free-block reclamation pass. The pressure
+writer is a resource-bounded administrator helper, not a confined App/library API.
+The historical table below predates these observations; persistent quotas and
+integrated FD/task/CPU exhaustion remain unqualified.
+
+Quota qualification is deferred because the actual root filesystem is XFS `noquota`.
+A proposed bounded test, requiring separate mount/quota authorization, would create
+only a new 1 GiB guest-local image `/var/tmp/wyd-i56-quota.img`, format that disposable
+image as XFS and mount it at a new `/mnt/wyd-i56-quota` with project quotas, then test
+64 MiB tenant project limits. It would not change the existing root mount, fstab or
+Mint configuration. Available tools, free space, exact project ownership, integration
+mount layout and unmount/image-removal recovery must be reviewed before execution.
+No image, filesystem, mount or quota was created in this campaign.
 
 | Control | Mechanism | Qualification status |
 | --- | --- | --- |

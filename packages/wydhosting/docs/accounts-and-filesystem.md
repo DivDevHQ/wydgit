@@ -74,6 +74,14 @@ permissions; a source-selected path never reaches chown/chmod. See [staging](dep
 
 ## Retirement and recovery
 
+The continued four-cycle actual provider/worker race campaign retains stopped unit
+fragments, jobs, lease/category markers and staged data. Those resources can accumulate.
+Automatic retirement remains absent; removing fragments prematurely would destroy
+the current unit-hash ownership/status proof. A future authenticated tombstone and
+interruption-safe exact-resource design must preserve account/category nonrecycling.
+Campaign cleanup uses its protected resource inventory after proving service death;
+it is not the missing production retirement implementation.
+
 No automated user deletion, UID recycling, data erase, recursive quarantine cleanup or
 generated-unit removal is implemented. Stopping a pool retains data and root ownership
 markers. Failed staging remains private quarantine. Operator must prove service/cgroup

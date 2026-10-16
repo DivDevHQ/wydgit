@@ -12,9 +12,12 @@ activation certification or supported production Linux distribution.
 
 The latest integrated campaign adds real canonical provider/journal → broker → two
 confined Wydgine workers → private ingress → Caddy loopback TLS execution, independent
-file-category MAC denials and bounded worker crash/OOM recovery. Dedicated broker/edge
-MAC, external ingress, production firewall, reboot/storage and reliability gates remain
-open. See the [latest evidence](verification.md#integrated-enterprise-campaign--2026-10-16)
+file-category MAC denials and bounded worker crash/OOM recovery. The continuation
+confines Caddy, fixes reproduced relay retirement/process-observation faults and the
+ineffective private temporary-byte limit, and extends actual category denials.
+Broker MAC, external ingress, production firewall, reboot/storage, automatic retirement
+and historical HTTP500 gates remain open. See the
+[latest evidence](verification.md#reliability-and-confinement-continuation--2026-10-16)
 and [SELinux policy](selinux.md). Earlier gate tables below describe original delivery.
 
 Wydgine runs Apps. WydHosting manages infrastructure. Linux enforces OS boundaries.

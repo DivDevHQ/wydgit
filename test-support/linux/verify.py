@@ -310,7 +310,7 @@ os.execve(sys.executable,[sys.executable,'-I','-c',"import os;assert os.read(3,5
     def test_unit_template_has_closed_fixed_executable_resource_and_lifetime_policy(self):
         pool = {'poolId':'p','account':{'uid':60000,'gid':60000},'base':'/var/lib/wydhosting/pools/p/generations/1','deployments':[{'directory':'app'}], 'limits':{'memoryBytes':134217728,'cpuPercent':50,'tasks':32,'fileDescriptors':128,'temporaryBytes':1048576}}
         unit, text = broker.service_text(pool, '12345678-1234-1234-1234-123456789abc','wydhosting-broker@one.service','/run/wydhosting/job-'+'1'*32+'.json')
-        for expected in ('User=60000','NoNewPrivileges=yes','RestrictSUIDSGID=yes','Restart=no','KillMode=control-group','MemorySwapMax=0','RestrictAddressFamilies=AF_UNIX','CPUQuota=50%','TasksMax=32','BindsTo=wydhosting-broker@one.service'):
+        for expected in ('User=60000','NoNewPrivileges=yes','RestrictSUIDSGID=yes','Restart=no','KillMode=control-group','MemorySwapMax=0','RestrictAddressFamilies=AF_UNIX','CPUQuota=50%','TasksMax=32','BindsTo=wydhosting-broker@one.service','PrivateTmp=no','TemporaryFileSystem=/tmp:rw,nosuid,nodev,noexec,size=1048576,mode=0700,uid=60000,gid=60000','/etc/wydhosting /var/tmp'):
             self.assertIn(expected,text)
         active = [line for line in (broker_path.parent/'templates/wydhosting-broker@.service').read_text().splitlines() if not line.startswith('#')]
         self.assertNotIn('RestrictSUIDSGID=yes', active)
@@ -371,6 +371,75 @@ os.execve(sys.executable,[sys.executable,'-I','-c',"import os;assert os.read(3,5
             self.assertEqual(denied.exception.code, 'BROKER.SELINUX_POLICY')
             validate.assert_not_called()
             ensure.assert_not_called()
+
+    def test_retirement_process_exit_between_manager_snapshot_and_proc_read(self):
+        # Actual /proc disappearance, with explicitly simulated manager snapshots.
+        # No sleep or retry: the first snapshot deterministically reaps the child.
+        import subprocess
+        child = subprocess.Popen([sys.executable, '-I', '-c', 'import time;time.sleep(10)'])
+        self.addCleanup(lambda: child.poll() is None and (child.kill(), child.wait()))
+        unit = 'wydhosting-pool-' + 'a'*32 + '-' + 'b'*32 + '.service'
+        (self.target/unit).write_bytes(b'protected unit')
+        (self.target/unit).chmod(0o600)
+        record = dict(unit=unit, unitHash=hashlib.sha256(b'protected unit').hexdigest(),
+                      invocation='c'*32, cgroup='/system.slice/'+unit, pid=child.pid,
+                      startTime=broker.process_start(child.pid))
+        active = dict(Id=unit, LoadState='loaded', FragmentPath='/run/systemd/system/'+unit,
+                      DropInPaths='', ActiveState='active', MainPID=str(child.pid),
+                      InvocationID=record['invocation'], ControlGroup=record['cgroup'])
+        terminal = {**active, 'ActiveState':'inactive', 'MainPID':'0'}
+        original = s.open_directory
+        read = s.read_file
+        def unit_bytes(fd, name):
+            return read(fd, name, owner=os.getuid())
+        def directory(path):
+            return os.open(self.target, os.O_RDONLY | os.O_DIRECTORY) if path == '/run/systemd/system' else original(path)
+        snapshots = 0
+        def snapshot(_):
+            nonlocal snapshots
+            snapshots += 1
+            if snapshots == 1:
+                child.terminate(); child.wait(timeout=3)
+                return active
+            return terminal
+        with patch.object(s, 'read_file', side_effect=unit_bytes), patch.object(s, 'open_directory', side_effect=directory), patch.object(broker, 'show', side_effect=snapshot), patch.object(broker, 'cgroup_empty', return_value=True):
+            self.assertEqual(broker.owned_status(record), terminal)
+            self.assertEqual(snapshots, 2)
+        # Disappearance alone never authorizes adoption, stopping a replacement,
+        # or ignoring descendants. Each fresh snapshot must prove terminal state.
+        for changed in ({'ActiveState':'deactivating'}, {'MainPID':'123'}, {'FragmentPath':'/foreign'}, {'DropInPaths':'/foreign'}):
+            with patch.object(s, 'read_file', side_effect=unit_bytes), patch.object(s, 'open_directory', side_effect=directory), patch.object(broker, 'show', side_effect=[active, {**terminal, **changed}]), patch.object(broker, 'cgroup_empty', return_value=True), self.assertRaises(s.Refused):
+                broker.owned_status(record)
+        with patch.object(s, 'read_file', side_effect=unit_bytes), patch.object(s, 'open_directory', side_effect=directory), patch.object(broker, 'show', side_effect=[active, terminal]), patch.object(broker, 'cgroup_empty', return_value=False), self.assertRaises(s.Refused):
+            broker.owned_status(record)
+        for changed in ({'InvocationID':'d'*32}, {'ControlGroup':'/foreign'}, {'MainPID':'123'}):
+            with patch.object(s, 'read_file', side_effect=unit_bytes), patch.object(s, 'open_directory', side_effect=directory), patch.object(broker, 'show', return_value={**active, **changed}), patch.object(broker, 'process_start') as proc:
+                with self.assertRaises(s.Refused): broker.owned_status(record)
+                proc.assert_not_called()
+
+    def test_real_relay_peer_close_with_unread_reply_is_retirement(self):
+        for side in ('provider', 'worker'):
+            provider, caller = socket.socketpair()
+            worker, tenant = socket.socketpair()
+            try:
+                endpoint, peer = (provider, caller) if side == 'provider' else (worker, tenant)
+                endpoint.sendall(b'unread control response\n')
+                peer.close()  # Linux reports ECONNRESET instead of EOF.
+                broker.relay(provider, worker, {})
+            finally:
+                for endpoint in (provider, caller, worker, tenant): endpoint.close()
+        class BrokenRead:
+            def __init__(self, endpoint): self.endpoint = endpoint
+            def __getattr__(self, name): return getattr(self.endpoint, name)
+            def recv(self, _): raise OSError(5, 'injected I/O fault')
+        provider, caller = socket.socketpair(); worker, tenant = socket.socketpair()
+        try:
+            caller.sendall(b'readable')
+            with self.assertRaises(OSError) as failure:
+                broker.relay(BrokenRead(provider), worker, {})
+            self.assertEqual(failure.exception.errno, 5)  # Never swallow other OS failures.
+        finally:
+            for endpoint in (provider, caller, worker, tenant): endpoint.close()
 
 
 if __name__ == '__main__':

@@ -4,10 +4,12 @@
 standalone profile is unaffected. Package engine minimum remains Node **24.21.0**.
 
 Latest AlmaLinux 10.2 evidence adds real canonical provider integration, confined
-provider and independently categorized workers, same-UID MAC denials, loopback Caddy
-TLS and actual worker crash/OOM recovery. Broker/edge MAC, external network, production
-firewall, reboot/storage and reliability gates remain open; no other OS is qualified.
-See [verification](verification.md#integrated-enterprise-campaign--2026-10-16) and
+provider and independently categorized workers, same-UID MAC denials, confined Caddy
+loopback TLS, actual worker crash/OOM recovery, audited retirement overlaps and bounded
+private tmpfs ENOSPC after fixing the actual mount collision. Broker MAC, external
+network, production firewall, reboot/persistent storage, automatic retirement and
+historical HTTP500 gates remain open; no other OS is qualified.
+See [verification](verification.md#reliability-and-confinement-continuation--2026-10-16) and
 [SELinux policy](selinux.md). Earlier environment observations remain historical.
 
 | Environment | Status | Actual evidence |
