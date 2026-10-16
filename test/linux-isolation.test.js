@@ -13,6 +13,7 @@ import {createStreamPeer} from 'wydgine/trusted/stream-peer';
 import {bounds,validateBootstrap,revision} from 'wydgine/trusted/protocol';
 import {describeDeployment,linuxPreflight,planFirewall,applyFirewall,createLinuxBackend} from 'wydhosting';
 import {digest} from 'wydhosting/contracts';
+const {inspectPlatform}=await import(new URL('./src/platform/linux/platform.js',import.meta.resolve('wydhosting/package.json')));
 const root=await fs.mkdtemp(path.join(os.tmpdir(),'wyd-linux-tests-'));
 const helper=path.join(root,'peercred.node');
 const native=fileURLToPath(new URL('./native/peercred.c',import.meta.resolve('wydgine/package.json')));
@@ -27,7 +28,13 @@ async function privateHost(t,uid=process.getuid()){
  const host=await createOperationalHost({schema:'wydgit.operations/0.1',inventory,optional:[]},{root:base,peerCredentials:credentials});const socketPath=path.join(base,'http.sock');await host.start(socketPath);t.after(()=>host.shutdown());return {host,socketPath,base};
 }
 test('Linux primitive attack suite: actual current-UID filesystem and Unix sockets; no administrative commands',()=>{
- const result=spawnSync('python3',['test-support/linux/verify.py',fileURLToPath(new URL('./broker',import.meta.resolve('wydhosting/package.json')))],{encoding:'utf8',timeout:15000});assert.equal(result.status,0,result.stdout+result.stderr);assert.match(result.stderr,/Ran 26 tests/);
+ const result=spawnSync('python3',['test-support/linux/verify.py',fileURLToPath(new URL('./broker',import.meta.resolve('wydhosting/package.json')))],{encoding:'utf8',timeout:15000});assert.equal(result.status,0,result.stdout+result.stderr);assert.match(result.stderr,/Ran 28 tests/);
+});
+test('preflight requires explicit EL10 identity, kernel prerequisites and enforcing SELinux',()=>{
+ const environment={platform:'linux',arch:'x64',distro:{ID:'almalinux',VERSION_ID:'10.2'},pid1:'systemd',controllers:['cpu','memory','pids'],selinux:'enforcing'};
+ assert.equal(inspectPlatform(environment).candidate,true);assert.equal(inspectPlatform(environment).lane.firewall,'firewalld');
+ for(const distro of [{ID:'rhel',VERSION_ID:'10'},{ID:'rhel',VERSION_ID:'10.1'},{ID:'ubuntu',VERSION_ID:'24.04'},{ID:'debian',VERSION_ID:'13'}])assert.equal(inspectPlatform({...environment,distro}).candidate,true);
+ for(const change of [{platform:'darwin'},{arch:'arm64'},{pid1:'container-init'},{controllers:['cpu','pids']},{selinux:'permissive'},{selinux:'unavailable'},...['9.6','11','10evil','10.2.1','10\n'].map(VERSION_ID=>({distro:{ID:'almalinux',VERSION_ID}})),...['rocky','fedora','mint'].map(ID=>({distro:{ID,ID_LIKE:'rhel',VERSION_ID:'10'}}))])assert.equal(inspectPlatform({...environment,...change}).candidate,false,JSON.stringify(change));
 });
 test('native helper obtains kernel peer PID/UID/GID on real Unix connections',async t=>{
  const filename=path.join(root,'peer.sock');const server=net.createServer(socket=>{assert.deepEqual(credentials(socket),{pid:process.pid,uid:process.getuid(),gid:process.getgid()});socket.end();});await new Promise(r=>server.listen(filename,r));t.after(()=>new Promise(r=>server.close(r)));

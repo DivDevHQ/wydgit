@@ -14,6 +14,8 @@ ceiling remain. No broker/control API is registered with SEAM, HTTP, WBasic or C
 ## Delivered executable boundaries
 
 - Read-only `wydhosting setup` preflight and `setup --input <file>` candidate approval.
+- Shared explicit Ubuntu/Debian/AlmaLinux 10/RHEL 10 candidate matrix; EL lanes require
+  SELinux enforcing. AlmaLinux 10.2 has actual unprivileged primitive evidence only.
   No elevation, install hook, account, service or network mutation on inspection.
 - Separately installed Python socket-activated privileged broker. Closed, versioned
   operations, kernel Unix peer credentials, explicit root-reviewed pool/byte approval,

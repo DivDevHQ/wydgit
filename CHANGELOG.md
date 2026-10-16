@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Add explicit experimental AlmaLinux 10.x/RHEL 10.x broker and preflight lanes,
+  a shared packaged release matrix and fail-closed enforcing-SELinux checks.
+  Verify the AlmaLinux 10.2 guard and unprivileged boundaries on `almond-lab`;
+  privileged hosting/firewalld qualification remains pending.
+
 ### Wydgit 0.3-I5.6 — Experimental Linux isolation boundaries (alpha.15)
 
 - Add a root-reviewed, socket-activated Linux broker with kernel caller credentials,

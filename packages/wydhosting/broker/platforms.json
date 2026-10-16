@@ -1,0 +1,9 @@
+{
+  "schema": "wydhosting.linux-platforms/1",
+  "candidates": [
+    {"id":"ubuntu","version":"24.04","match":"exact","family":"debian","firewall":"ufw","selinuxRequired":false},
+    {"id":"debian","version":"13","match":"exact","family":"debian","firewall":"ufw","selinuxRequired":false},
+    {"id":"almalinux","version":"10","match":"major","family":"rhel","firewall":"firewalld","selinuxRequired":true},
+    {"id":"rhel","version":"10","match":"major","family":"rhel","firewall":"firewalld","selinuxRequired":true}
+  ]
+}

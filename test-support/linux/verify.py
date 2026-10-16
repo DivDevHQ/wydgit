@@ -1,6 +1,7 @@
 """Actual unprivileged Linux primitives; mocked OS administration is labelled below."""
 import hashlib
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
@@ -20,6 +21,31 @@ s = broker.s
 
 
 class BoundaryTests(unittest.TestCase):
+    def test_platform_matrix_accepts_explicit_el10_candidates_not_lookalikes(self):
+        for identity, version in [('almalinux', '10'), ('almalinux', '10.2'), ('rhel', '10.0'), ('ubuntu', '24.04'), ('debian', '13')]:
+            self.assertIsNotNone(broker.platform_candidate(identity, version))
+        for identity, version in [('almalinux', '9.6'), ('almalinux', '11'), ('almalinux', '10evil'), ('almalinux', '10.2.1'), ('rhel', '8'), ('rocky', '10'), ('fedora', '43'), ('mint', '24.04'), ('ubuntu', '24.04.1')]:
+            self.assertIsNone(broker.platform_candidate(identity, version))
+
+    def test_mocked_platform_guard_refuses_missing_kernel_or_selinux_prerequisites(self):
+        real_open = open
+        files = {'/etc/os-release':'ID="almalinux"\nVERSION_ID="10.2"\n', '/proc/1/comm':'systemd\n', '/sys/fs/cgroup/cgroup.controllers':'cpu memory pids\n', '/sys/fs/selinux/enforce':'1\n'}
+        def read(filename, *args, **kwargs):
+            if filename in files:
+                if files[filename] is None: raise FileNotFoundError(filename)
+                return io.StringIO(files[filename])
+            return real_open(filename, *args, **kwargs)
+        with patch('builtins.open', side_effect=read), patch('platform.machine', return_value='x86_64') as machine, patch.object(broker, 'command') as command:
+            broker.verify_platform()
+            for filename, bad in [('/sys/fs/selinux/enforce','0'), ('/sys/fs/selinux/enforce',None), ('/proc/1/comm','container-init'), ('/sys/fs/cgroup/cgroup.controllers','cpu memory'), ('/etc/os-release','ID=rocky\nID_LIKE="rhel"\nVERSION_ID=10\n')]:
+                previous = files[filename]; files[filename] = bad
+                try:
+                    with self.assertRaises(s.Refused): broker.verify_platform()
+                finally: files[filename] = previous
+            machine.return_value = 'aarch64'
+            with self.assertRaises(s.Refused): broker.verify_platform()
+            command.assert_not_called()
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(prefix='wyd-i56-primitives-')
         self.root = Path(self.temporary.name)

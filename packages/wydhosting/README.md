@@ -23,6 +23,11 @@ credential-checked Unix ingress. It is **experimental and unqualified**. Live fi
 transactions, automatic resource retirement and privileged VM integration remain
 incomplete. No production-ready result is emitted.
 
+Explicit experimental Linux candidates are Ubuntu 24.04, Debian 13, AlmaLinux 10.x
+and RHEL 10.x on x86_64 with systemd/cgroup v2. EL lanes require enforcing SELinux;
+no implicit `ID_LIKE` admission, MAC policy installation or live firewalld adapter is
+provided. AlmaLinux 10.2 has unprivileged primitive evidence only; RHEL is untested.
+
 `wydhosting setup` is read-only preflight. `wydhosting setup --input /absolute/input.json`
 prints a candidate approval; neither command provisions anything. `serve --config`
 requires protected administrator-installed configuration and a nonroot provider UID.

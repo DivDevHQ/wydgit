@@ -8,10 +8,16 @@ development host. This is a deliberately unmet acceptance item, not a passing mo
 
 ## Implemented preview
 
-Closed input requires UFW as the candidate manager, a nonempty bounded list of explicit
+The current closed preview input requires UFW as its manager, a nonempty bounded list of explicit
 administrator IP addresses and actual ports, allowed public 80/443 and independently
 verified VM-console recovery. It does not assume SSH port 22, infer all administration
 paths from the current connection, flush unrelated rules or certify current rules.
+
+AlmaLinux/RHEL candidates declare **firewalld** in their shared platform matrix.
+That declaration does not enable this UFW-specific preview or supply a firewalld
+adapter: firewalld input and all live apply operations still refuse. Preserve the
+guest's active firewalld, zones, SELinux policy and administrative access while a
+separate managed transaction/rollback implementation is developed and qualified.
 Output identifies Unix-only worker listeners and the mandatory missing verification
 steps. A boolean input saying a console is verified is **not actual console evidence**.
 It is a plan prerequisite, not authentication or permission to mutate the machine.

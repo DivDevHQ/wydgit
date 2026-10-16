@@ -3,6 +3,7 @@
 import fcntl
 import grp
 import hashlib
+import json
 import os
 import pwd
 import re
@@ -569,6 +570,16 @@ def handle(provider, policy, state, audit=None):
         os.close(lock)
 
 
+def platform_candidate(identity, version):
+    # Never trust ID_LIKE or a caller-supplied distro/policy override.
+    with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'platforms.json'), encoding='utf-8') as stream:
+        matrix = json.load(stream)
+    s.require(matrix.get('schema') == 'wydhosting.linux-platforms/1', 'BROKER.PLATFORM')
+    return next((lane for lane in matrix['candidates'] if lane['id'] == identity and
+                 (version == lane['version'] if lane['match'] == 'exact' else
+                  re.fullmatch(re.escape(lane['version']) + r'(?:\.[0-9]+)?', version))), None)
+
+
 def verify_platform():
     import platform
     with open('/etc/os-release', encoding='utf-8') as stream:
@@ -579,7 +590,15 @@ def verify_platform():
         init = stream.read(64).strip()
     with open('/sys/fs/cgroup/cgroup.controllers', encoding='ascii') as stream:
         controllers = set(stream.read(4096).split())
-    s.require(platform.machine() == 'x86_64' and init == 'systemd' and (identity, version) in (('ubuntu', '24.04'), ('debian', '13')) and {'memory', 'cpu', 'pids'}.issubset(controllers), 'BROKER.PLATFORM')
+    lane = platform_candidate(identity, version)
+    s.require(platform.machine() == 'x86_64' and init == 'systemd' and lane is not None and {'memory', 'cpu', 'pids'}.issubset(controllers), 'BROKER.PLATFORM')
+    if lane['selinuxRequired']:
+        try:
+            with open('/sys/fs/selinux/enforce', encoding='ascii') as stream:
+                enforcing = stream.read(8).strip() == '1'
+        except OSError:
+            enforcing = False
+        s.require(enforcing, 'BROKER.SELINUX')
 
 
 def main():

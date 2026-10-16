@@ -13,7 +13,7 @@ git log -1 --format=%H -- docs/milestones/0.3-I5.6/verification.md
 ```
 
 **Overall: experimental partial implementation; not implementation complete; Linux
-security qualification NOT EXECUTED.** No authorized disposable VM was available.
+security qualification NOT EXECUTED.** At the original alpha.15 delivery no authorized disposable VM was available.
 No root/sudo/account/systemd/cgroup/firewall/SSH/network/DNS/certificate provisioning
 was performed on the operator's machine. Sandboxed test restrictions were bypassed
 only for explicitly authorized ordinary-user subprocess/socket/browser/npm/Git work,
@@ -28,6 +28,31 @@ PID1 on the execution surface reported `codex`, not a disposable systemd VM. Doc
 socket access denied; no usable QEMU/libvirt/KVM VM facility detected. No attempt to
 change those permissions, launch a host daemon or treat the operator's host as a VM.
 Exact cgroup observation and supported candidate distinctions are in the support matrix.
+
+### AlmaLinux follow-up — 2026-10-16
+
+An operator-provided AlmaLinux 10.2 KVM guest `almond-lab` is now reachable. The actual
+updated broker platform guard passed there, as did all 28 unprivileged Python boundary
+tests (including explicitly mocked administrative/platform cases). Temporary sudo
+access was verified only with `id -u`; no privileged hosting attack test has run.
+Exact guest properties and outstanding prerequisites are in the support matrix.
+The shared candidate policy adds explicit AlmaLinux 10.x/RHEL 10.x identities and
+requires enforcing SELinux for both. Node preflight now also checks architecture and
+all required cgroup controllers. No firewalld transaction or SELinux policy is added.
+The 929-test and package/browser counts below describe the original alpha.15 delivery;
+follow-up validation is recorded separately and does not qualify the privileged gates.
+
+Follow-up validation passed: **930/930** repository tests, `npm run check` (3 pages,
+42 links), and three independently installed tarball consumers with repository imports
+refused. Installed regressions passed **148** five-library cases, **35** provider
+cases, **20** real subprocess supervisor cases and **19** Linux boundary cases
+(the latter includes the 28 Python cases). The shared matrix ships in the actual
+WydHosting tarball and is used by its installed Python/Node checks. Evidence for
+this run is `/tmp/wyd-i54-packed-yYMM6d`; local/VM primitive logs are
+`/tmp/wydgit-el10-test.log` and `/tmp/wydgit-almond-lab-primitives.log`.
+Browser/client suites were not rerun for this follow-up; no browser/client source or
+distribution changed. Versions remain alpha.15; this adds candidate platform policy
+without changing worker/broker protocol or canonical library/client version axes.
 
 ## Executed regression evidence
 

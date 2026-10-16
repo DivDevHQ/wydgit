@@ -5,6 +5,7 @@ import {createHash} from 'node:crypto';
 import {poolInventory,safePath} from '../../adapter.js';
 import {validateRouting,validateApprovedSource} from 'wydgine/trusted/provider';
 import {validateRegistry,check,integer,shape,sealed,digest} from '../../contracts.js';
+import {inspectPlatform} from './platform.js';
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 export const linuxPaths=Object.freeze({approval:'/etc/wydhosting/approval.json',state:'/var/lib/wydhosting',release:'/opt/wydhosting/release',socket:'/run/wydhosting/broker.sock'});
 export async function describeDeployment(root) {
@@ -49,9 +50,10 @@ export async function createLinuxPlan(input,{providerUid,providerGid,limits,exec
 }
 export async function linuxPreflight() {
  const read=async file=>(await fs.readFile(file,'utf8').catch(()=>''));
- const os=await read('/etc/os-release'),cgroups=await read('/sys/fs/cgroup/cgroup.controllers'),pid1=(await read('/proc/1/comm')).trim();
+ const os=await read('/etc/os-release'),cgroups=await read('/sys/fs/cgroup/cgroup.controllers'),pid1=(await read('/proc/1/comm')).trim(),enforce=(await read('/sys/fs/selinux/enforce')).trim();
  const distro=Object.fromEntries(os.split('\n').filter(x=>/^(ID|VERSION_ID)=/.test(x)).map(x=>{const [k,v]=x.split('=');return [k,v.replaceAll('"','')];}));
- return sealed({schema:'wydhosting.linux-preflight/1',platform:process.platform,node:process.version,distro,pid1,cgroupV2:cgroups.split(/\s+/).filter(Boolean),candidate:process.platform==='linux'&&((distro.ID==='ubuntu'&&distro.VERSION_ID==='24.04')||(distro.ID==='debian'&&distro.VERSION_ID==='13'))&&pid1==='systemd',privilegedQualification:'not-executed',productionReady:false});
+ const controllers=cgroups.split(/\s+/).filter(Boolean),selinux=enforce==='1'?'enforcing':enforce==='0'?'permissive':'unavailable';
+ return sealed({schema:'wydhosting.linux-preflight/1',platform:process.platform,node:process.version,distro,pid1,cgroupV2:controllers,...inspectPlatform({platform:process.platform,arch:process.arch,distro,pid1,controllers,selinux}),privilegedQualification:'not-executed',productionReady:false});
 }
 
 // Registry intent remains the sole journal. In this lane privileged descriptors

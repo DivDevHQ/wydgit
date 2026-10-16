@@ -53,9 +53,13 @@ resource-isolation claim. Do not disable system MAC to make the candidate work.
 
 ## Disposable VM walkthrough — operator only, not executed
 
-This procedure requires a **new isolated Ubuntu Server 24.04 amd64 VM**, snapshot,
+This procedure requires a **new isolated candidate amd64 VM**, snapshot,
 independent hypervisor console and explicit administrator authorization for that VM.
-Debian 13 needs a separate run. No public IP, DNS or commercial certificate is needed.
+Candidates are Ubuntu Server 24.04, Debian 13, AlmaLinux 10.x and RHEL 10.x; each
+needs its own qualification run. AlmaLinux/RHEL must retain SELinux enforcing and
+their existing firewalld ownership. Do not substitute UFW or disable SELinux to make
+tests pass. Exact verified AlmaLinux prerequisites are in the support matrix;
+privileged hosting tests remain unexecuted. No public IP, DNS or commercial certificate is needed.
 Use an isolated virtual network. Record the VM/image SHA and versions before changing it.
 Do not transfer personal keys, publisher private material or development-host config.
 
