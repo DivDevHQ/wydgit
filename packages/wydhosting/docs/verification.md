@@ -1509,3 +1509,58 @@ previous read-only inventory and historical 99/99 installed result remain histor
 No reboot/shutdown, firewall/network/quota change, I5.7 or WydOS implementation,
 version bump, prerelease or release occurred. Production gates remain those in the
 new design, including complete authority removal and installed enforcing proof.
+
+## Constrained manager implementation Slice 1 — 2026-10-17
+
+Baseline `develop/0.3` HEAD/tracking/live remote matched
+`133ea40db7470902d54e86ac79ac446b1479e0b4`; working tree initially clean.
+Version remains **0.3.0-alpha.15**. See the updated
+[authority design](constrained-systemd-authority.md#implementation-slice-1--offline-foundation-2026-10-17).
+
+Implemented privately in `broker/lifecycle_contract.py`: the exact closed lifecycle/1
+request grammar, 8 KiB strict parsing, canonical bytes/request digests, exact offline
+tuple/revision/sequence and independent reservation-fixture binding, operation-ID
+conflict comparison, and a pinned versioned fixed candidate renderer returning only
+bytes/hash/references. The binding fixture is not an installed approval schema or
+authorization credential. Caller claims of administrator authorization are rejected;
+no caller-provided record can establish trust. The module is unused by the broker
+and has no CLI, socket, file publication or systemd operation.
+
+Eleven Python test methods cover unknown/missing/duplicate/escaped-duplicate/reserved
+fields, invalid UTF-8/BOM/trailing JSON/depth/size, booleans/floats/unsafe integers,
+forged tenant/account/pool/deployment/lifetime/epoch/revision/sequence, UID/GID/category
+bounds and reservation collisions, traversal/control characters, unit directives,
+shell/environment injections, foreign services, malicious authority-fixture values,
+resource bounds, operation-ID conflicts, template/launcher substitution and hashes.
+A real local symlink is passed only as a rejected parameter; no path is followed.
+The tests do not establish protected-record loading, race resistance, authentication,
+SELinux/systemd confinement or production containment.
+
+Focused Python **11/11** and ordinary-user Linux **21/21** passed. Initial repository
+`npm test` passed **940/940** without skips/cancellations; `npm run check` passed.
+Initial independent packed consumers passed service-free, canonical **156/156**,
+provider **35/35**, subprocess **20/20**, Linux **21/21** (including the new Python
+contract tests), repository imports rejected and one installed engine per consumer.
+Initial packed evidence: `/tmp/wyd-i54-packed-8mWOT5`. Final template review moved
+executable assembly entirely outside generic interpolation and updated its digest;
+Python **11/11** passed again. Delivery checks and freshly packed consumers rerun
+after final source/docs edits; their outcomes accompany the delivery handoff. Logs:
+`/tmp/wyd-i56-slice1-{focused-ordinary,test,check,packed}.log` and final
+`/tmp/wyd-i56-slice1-delivery-{test,check,packed}.log`.
+
+Retained failures: the first Python run exposed an incorrect uppercase test fixture
+(all-numeric operation ID unchanged by uppercasing); the fixture was corrected to
+uppercase hex letters. The sandboxed focused Node suite aborted with an internal
+async-ID assertion; its log remains `/tmp/wyd-i56-slice1-focused.log`. The ordinary-user
+rerun passed without weakened assertions. Initial sandbox GitHub DNS and Git-index
+access restrictions were resolved through authorized ordinary-user execution.
+
+No guest connection or state observation, fixture installation, new manager service,
+policy change, privilege transfer or privileged qualification occurred. Current broker
+authority and historical replacement-window evidence remain unchanged. Next steps:
+independent protected approval/provisioning/session verification, bounded response/FD
+handoff, durable serialized intent/results and recovery/rate/active-count decisions,
+protected publication/effective-property checks, coordinated launcher/adapter/path
+migration, complete removal of old broker rights and installed enforcing adversarial
+qualification. No partial authority removal, reboot/shutdown, Mint privileged change,
+firewall/SSH/network/quota change, SELinux weakening, I5.7, version bump or release.

@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Add a private offline I5.6 lifecycle request validator, exact reservation binding,
+  canonical operation references/replay comparison and pinned fixed candidate unit
+  renderer with hostile-input tests. No manager activation or broker authority change;
+  durable state, independent authentication and installed confinement remain open.
+
 - Specify the I5.6 constrained systemd manager boundary, closed internal contracts,
   writer exclusion, durable recovery and migration/qualification gates. Design only;
   broker indirect systemd authority remains uncontained.

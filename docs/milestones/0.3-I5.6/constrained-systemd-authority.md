@@ -4,12 +4,14 @@ Date: 2026-10-17. Baseline: `develop/0.3` at
 `a0ff09f8a433e18ae82aad308cdfa105a94af23b`, clean, tracking ref and live
 `origin/develop/0.3` equal. Version stays **0.3.0-alpha.15**.
 
-**Design only; no manager, protocol, policy or runtime change is implemented.**
+**Offline contract/candidate renderer implemented in Slice 1 below; no active
+manager, installed protocol, policy or runtime change is implemented.**
 The current broker remains experimental and is not fully compromise contained.
 This document specifies an internal migration contract, not a new public API or
 permission to deploy. A complete authority transition is the smallest safe runtime
 slice: independently validating requests while retaining broker unit writes would
-leave the demonstrated architecture gap open. No disconnected prototype is shipped.
+leave the demonstrated architecture gap open. Slice 1 supplies private offline
+validation without presenting it as an authority transition.
 
 ## Observed authority and evidence
 
@@ -322,3 +324,61 @@ the separate helper independently verifies and executes it and emits a durable r
 WydOS identity/roles confer no implicit SEAM or host authority. No remote endpoint,
 public contract, separate WydOS planning implementation or new delegation authority
 is introduced in this phase.
+
+## Implementation Slice 1 — offline foundation, 2026-10-17
+
+Baseline `133ea40db7470902d54e86ac79ac446b1479e0b4`, `develop/0.3`, live
+remote equal and clean. Version remains **0.3.0-alpha.15**.
+
+`broker/lifecycle_contract.py` implements the exact flat `wydhosting.lifecycle/1`
+request grammar above: 8 KiB strict UTF-8/JSON, duplicate/reserved/unknown field
+rejection, bounded integers without coercion, canonical sorted compact bytes,
+closed operations and exact tuple/revision/sequence binding. No public export,
+CLI, socket, filesystem resolver, publisher or broker integration is added.
+
+The private `wydhosting.lifecycle-offline-binding/1` fixture is deliberately **not**
+an installed approval format or an authorization channel. It describes one already
+selected lifetime, epoch and sequence, an allowed-operation subset, reserved nonroot
+UID=GID/category, a bounded deployment-name list, the existing Linux resource bounds,
+a verified-session placeholder and pinned template/release digests. Separate
+reservation fixtures must match the exact tenant/account/UID/GID/category and reject
+account, UID or category collisions. These records must eventually be obtained from
+independent protected manager/administrator evidence; caller-supplied records or
+claims of administrator authorization prove nothing. Peer authentication, sealed
+record loading, freshness, epoch allocation, start-rate/active-count enforcement
+and lifecycle-state decisions remain unimplemented.
+
+`bind_request` produces a canonical request digest and complete resource/session/
+identity/template/release reference suitable for future durable intent. It does not
+persist or attest ownership. `replay_matches` compares validated stored request bytes:
+same ID with changed content conflicts; missing/malformed history refuses. Equality
+is not permission to repeat an effect. A future serialized durable store must return
+the exact result or quarantine ambiguous evidence. No durable journal/recovery or
+response grammar is implemented in this slice.
+
+Candidate template identity is `wydhosting.worker/1`; its pinned definition digest is
+`84d6687c30af853ff1ba75119704bf1ed78244698f2649c0b83424446fc6381c`.
+The digest covers the version, fixed Python launcher and fixed service definition;
+rendering checks it independently against the supplied pin. Release approval must
+also independently pin the entire renderer/launcher/runtime closure, including all
+derivation code. This is integrity comparison, not a signature or trusted installer.
+
+`render_candidate` only returns bytes and a unit hash/reference. Executable and
+security directives are fixed from the current broker service contract; only typed
+numerics, hash-derived job paths, canonical deployment paths and independently
+selected session identity vary. Candidate broker-session syntax follows the observed
+Linux socket instance counter-PID-UID format; other platforms/instance formats need
+explicit review. Request bytes cannot choose a template, service, executable, path,
+environment or directive. Even offline fixture substitutions are validated. The
+current job/runtime paths exist solely for offline parity: **do not install or
+activate candidate output**. Manager-owned paths, worker authentication/FD handoff
+and writer exclusion must migrate together first. The current launcher still
+authenticates the old broker flow. No administrator-owned installation is claimed.
+
+`test-support/linux/verify_lifecycle_contract.py` supplies hostile-input tests invoked
+by the repository and independent packed Linux suites. Actual local symlinks are
+presented as rejected strings; no path is resolved and this does not qualify
+filesystem race resistance. Ordinary-user validation does not establish systemd or
+SELinux confinement. Existing broker authority, unit generation, SELinux rules and
+known retirement replacement window remain unchanged. Complete all migration gates
+above before activating any manager or removing broker authority.

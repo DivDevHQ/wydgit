@@ -30,6 +30,9 @@ async function privateHost(t,uid=process.getuid()){
 test('Linux primitive attack suite: actual current-UID filesystem and Unix sockets; no administrative commands',()=>{
  const result=spawnSync('python3',['test-support/linux/verify.py',fileURLToPath(new URL('./broker',import.meta.resolve('wydhosting/package.json')))],{encoding:'utf8',timeout:15000});assert.equal(result.status,0,result.stdout+result.stderr);assert.match(result.stderr,/Ran 42 tests/);
 });
+test('offline lifecycle contract and fixed candidate renderer reject hostile input without manager effects',()=>{
+ const result=spawnSync('python3',['test-support/linux/verify_lifecycle_contract.py',fileURLToPath(new URL('./broker',import.meta.resolve('wydhosting/package.json')))],{encoding:'utf8',timeout:5000});assert.equal(result.status,0,result.stdout+result.stderr);assert.match(result.stderr,/Ran 11 tests/);
+});
 test('firewalld probe mocked guards refuse management zones, existing resources and nonroot mutation',()=>{
  const result=spawnSync('python3',['test-support/linux/verify_firewalld_guards.py',fileURLToPath(new URL('./broker',import.meta.resolve('wydhosting/package.json')))],{encoding:'utf8',timeout:5000});assert.equal(result.status,0,result.stdout+result.stderr);assert.match(result.stderr,/Ran 6 tests/);
 });
@@ -104,9 +107,9 @@ test('raw inherited frames refuse duplicate keys, invalid UTF-8 and noncanonical
 });
 
 test('packaged Linux operator resources are complete and match authoritative repository guides when present',async()=>{
- const packageRoot=path.dirname(fileURLToPath(import.meta.resolve('wydhosting/package.json'))),names=['README.md','linux-support-matrix.md','broker-security.md','accounts-and-filesystem.md','deployment-staging.md','service-and-cgroups.md','private-ingress.md','firewall-and-recovery.md','verification.md'];
+ const packageRoot=path.dirname(fileURLToPath(import.meta.resolve('wydhosting/package.json'))),names=['constrained-systemd-authority.md','README.md','linux-support-matrix.md','broker-security.md','accounts-and-filesystem.md','deployment-staging.md','service-and-cgroups.md','private-ingress.md','firewall-and-recovery.md','verification.md'];
  for(const name of names){const shipped=await fs.readFile(path.join(packageRoot,'docs',name),'utf8');assert.ok(shipped.length>100);const source=await fs.readFile(path.join('docs/milestones/0.3-I5.6',name),'utf8').catch(()=>null);if(source!==null)assert.equal(shipped,source);}
- for(const name of ['broker/broker.py','broker/security.py','broker/worker.py','broker/firewalld_probe.py','templates/wydhosting-broker.socket','templates/wydhosting-broker@.service','templates/wydhosting-provider.service','templates/wydhosting-broker.slice','templates/Caddyfile'])assert.equal((await fs.stat(path.join(packageRoot,name))).isFile(),true);
+ for(const name of ['broker/lifecycle_contract.py','broker/broker.py','broker/security.py','broker/worker.py','broker/firewalld_probe.py','templates/wydhosting-broker.socket','templates/wydhosting-broker@.service','templates/wydhosting-provider.service','templates/wydhosting-broker.slice','templates/Caddyfile'])assert.equal((await fs.stat(path.join(packageRoot,name))).isFile(),true);
 });
 
 test('explicit trusted implementation root loads all five canonical libraries outside App source ancestry',async t=>{
