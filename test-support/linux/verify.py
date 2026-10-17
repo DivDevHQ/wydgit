@@ -11,7 +11,7 @@ import sys
 import tempfile
 import unittest
 from unittest.mock import patch
-from contextlib import ExitStack
+from contextlib import ExitStack, contextmanager
 
 sys.dont_write_bytecode = True
 broker_path = Path(sys.argv.pop(1))
@@ -52,6 +52,110 @@ class BoundaryTests(unittest.TestCase):
                 with self.assertRaises(s.Refused): broker.retire_job({**record,'state':'running'},pool)
                 with self.assertRaises(s.Refused): broker.retire_job({**record,'unit':'foreign.service'},pool)
             self.assertGreaterEqual(status.call_count,3)
+
+    @contextmanager
+    def retirement_fixture(self):
+        """Real current-UID artifacts; manager/cgroup and root ownership simulated."""
+        generation = '12345678-1234-1234-1234-123456789abc'
+        pool = {'poolId':'p', 'base':'/var/lib/wydhosting/pools/p/generations/1'}
+        unit = 'wydhosting-pool-' + broker.key('p') + '-' + generation.replace('-', '') + '.service'
+        record = {'state':'stopped', 'generation':generation, 'base':pool['base'],
+                  'unit':unit, 'invocation':'abc', 'cgroup':'/system.slice/' + unit}
+        terminal = {'ActiveState':'inactive', 'MainPID':'0', 'InvocationID':'abc',
+                    'ControlGroup':record['cgroup'], 'Job':''}
+        with tempfile.TemporaryDirectory() as root, ExitStack() as stack:
+            job = Path(root)/('job-' + broker.key('p'+generation) + '.json')
+            endpoint = Path(root)/('worker-' + broker.key('p'+generation) + '.sock')
+            job.write_bytes(s.encode({'schema':'wydhosting.worker-launch/1', 'socket':str(endpoint),
+                                      'poolId':'p', 'generation':generation}))
+            listener = stack.enter_context(socket.socket(socket.AF_UNIX))
+            listener.bind(str(endpoint))
+            real_stat = os.stat
+            def simulated_root_stat(name, *args, **kwargs):
+                info = real_stat(name, *args, **kwargs)
+                if name == endpoint.name:
+                    fields = list(info); fields[4] = 0
+                    return os.stat_result(fields)
+                return info
+            stack.enter_context(patch.object(broker, 'RUN', root))
+            stack.enter_context(patch.object(s, 'open_directory', side_effect=lambda name: os.open(root, os.O_RDONLY | os.O_DIRECTORY) if name == root else self.fail('unexpected directory')))
+            stack.enter_context(patch.object(s, 'read_file', side_effect=lambda fd,name: (Path(root)/name).read_bytes()))
+            stack.enter_context(patch.object(os, 'stat', side_effect=simulated_root_stat))
+            status = stack.enter_context(patch.object(broker, 'owned_status', return_value=terminal))
+            empty = stack.enter_context(patch.object(broker, 'cgroup_empty', return_value=True))
+            yield pool, record, terminal, job, endpoint, status, empty
+
+    def test_retirement_rechecks_manager_and_cgroup_before_each_unlink(self):
+        changes = [{'Job':'123'}, {'Job':'456'}, {'ActiveState':'active','MainPID':'42'},
+                   {'ActiveState':'activating'}, {'InvocationID':'replacement'},
+                   {'ControlGroup':'/replacement'}, {'MainPID':'42'}, None]
+        for boundary in (2, 3):
+            for change in changes:
+                with self.subTest(boundary=boundary, change=change), self.retirement_fixture() as f:
+                    pool, record, terminal, job, endpoint, status, empty = f
+                    # Calls are deterministic barriers, with no timing assumptions.
+                    status.side_effect = [terminal]*(boundary-1) + [{**terminal, **(change or {})}]
+                    if change is None:
+                        empty.side_effect = [True]*(boundary-1) + [False]
+                    with self.assertRaises(s.Refused) as refused:
+                        broker.retire_job(record, pool)
+                    self.assertEqual(refused.exception.code, 'BROKER.OWNERSHIP_UNKNOWN')
+                    self.assertTrue(job.exists())
+                    self.assertEqual(endpoint.exists(), boundary == 2)
+                    self.assertEqual(status.call_count, boundary)
+                    # Resolve the simulated conflict and reconcile the partial result.
+                    status.side_effect = None; empty.side_effect = None
+                    broker.retire_job(record, pool)
+                    broker.retire_job(record, pool)
+                    self.assertFalse(job.exists()); self.assertFalse(endpoint.exists())
+
+    def test_retirement_interruption_between_artifacts_and_stale_generation(self):
+        with self.retirement_fixture() as f:
+            pool, record, terminal, job, endpoint, status, empty = f
+            other = '87654321-4321-4321-4321-cba987654321'
+            newer_job = job.with_name('job-' + broker.key('p'+other) + '.json')
+            newer_socket = endpoint.with_name('worker-' + broker.key('p'+other) + '.sock')
+            newer_job.write_bytes(b'newer generation sentinel')
+            with socket.socket(socket.AF_UNIX) as listener:
+                listener.bind(str(newer_socket))
+                newer_identity = newer_socket.stat().st_ino
+                unlink = os.unlink
+                def interrupt(name, **kwargs):
+                    if name == job.name:
+                        raise OSError('deterministic interruption after socket unlink')
+                    return unlink(name, **kwargs)
+                with patch.object(os, 'unlink', side_effect=interrupt):
+                    with self.assertRaisesRegex(OSError, 'deterministic interruption'):
+                        broker.retire_job(record, pool)
+                self.assertFalse(endpoint.exists()); self.assertTrue(job.exists())
+                broker.retire_job(record, pool); broker.retire_job(record, pool)
+                self.assertFalse(job.exists())
+                self.assertEqual(newer_job.read_bytes(), b'newer generation sentinel')
+                self.assertEqual(newer_socket.stat().st_ino, newer_identity)
+                # A stale record cannot select a newer unit by changing only generation.
+                with self.assertRaises(s.Refused):
+                    broker.retire_job({**record, 'generation':other}, pool)
+                self.assertEqual(newer_job.read_bytes(), b'newer generation sentinel')
+                self.assertEqual(newer_socket.stat().st_ino, newer_identity)
+
+    def test_retirement_refuses_replaced_initial_artifacts_and_missing_proof(self):
+        for artifact in ('job-content', 'socket-file', 'socket-symlink', 'socket-hardlink', 'missing-job'):
+            with self.subTest(artifact=artifact), self.retirement_fixture() as f:
+                pool, record, terminal, job, endpoint, status, empty = f
+                original = job.read_bytes()
+                sentinel = job.with_name('unrelated'); sentinel.write_bytes(b'preserve')
+                if artifact == 'job-content': job.write_bytes(b'{}')
+                elif artifact == 'missing-job': job.unlink()
+                else:
+                    endpoint.unlink()
+                    if artifact == 'socket-file': endpoint.write_bytes(b'preserve')
+                    elif artifact == 'socket-symlink': endpoint.symlink_to(sentinel)
+                    else: os.link(sentinel, endpoint)
+                with self.assertRaises(s.Refused): broker.retire_job(record, pool)
+                self.assertTrue(endpoint.exists())
+                self.assertEqual(sentinel.read_bytes(), b'preserve')
+                if artifact not in ('job-content', 'missing-job'):
+                    self.assertEqual(job.read_bytes(), original)
 
     def test_mocked_provisioning_seals_only_after_verification_and_refuses_interrupted_intent(self):
         spec = importlib.util.spec_from_file_location('provision', broker_path / 'provision_accounts.py')

@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-17",
+  "startingCommit": "caa2d3bb688ebee8a94cff00e86d55fdb651e307",
+  "scope": "Ordinary-user retirement barriers, actual current-UID artifacts, simulated manager/cgroup/root socket ownership; guest read-only inventory only",
+  "artifactReplacement": {
+    "result": "UNRESOLVED privileged-writer check/unlink window",
+    "stdout": "socket replacement preserved: False\njob replacement preserved: False\nREPRODUCED: simulated privileged writer replacements were unlinked; no unprivileged writer or real systemd claim\n",
+    "reproducerPython": "import importlib.util\nimport sys\nsys.argv = ['verify.py', 'packages/wydhosting/broker']\nspec = importlib.util.spec_from_file_location('retirement_tests', 'test-support/linux/verify.py')\nm = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\ncase = m.BoundaryTests()\nfor artifact in ('socket', 'job'):\n    with case.retirement_fixture() as f:\n        pool, record, terminal, job, endpoint, status, empty = f\n        calls = 0\n        def replace_after_validation(_):\n            global calls\n            calls += 1\n            if calls == (2 if artifact == 'socket' else 3):\n                target = endpoint if artifact == 'socket' else job\n                target.unlink(); target.write_bytes(b'privileged replacement sentinel')\n            return terminal\n        status.side_effect = replace_after_validation\n        m.broker.retire_job(record, pool)\n        target = endpoint if artifact == 'socket' else job\n        print(artifact, 'replacement preserved:', target.exists(), flush=True)\n        if target.exists(): raise AssertionError('reproducer no longer demonstrates window')\nprint('REPRODUCED: simulated privileged writer replacements were unlinked; no unprivileged writer or real systemd claim')\n",
+    "interpretation": "A writer already able to replace entries in the protected runtime directory can substitute an artifact during terminal verification. This does not demonstrate customer/provider write access, an SELinux bypass, or a replacement real systemd invocation. Rechecking alone cannot make check/unlink atomic against such a writer; publisher/manager authority redesign remains outside this campaign."
+  },
+  "retainedFailures": {
+    "sandboxPrimitives": "42 methods: 1 failure, 28 subtest/test errors from socket EPERM; ordinary-user rerun 42/42 passed",
+    "sandboxGuestInventory": "local SSH socket EPERM; authorized read-only inventory outside sandbox passed"
+  },
+  "guestInventory": {
+    "host": "almond-lab",
+    "selinux": "Enforcing",
+    "sshd": "active",
+    "firewalld": "active",
+    "conflicts": "No wyd/w56 passwd/group names; no wyd* loaded/unit files; no /etc/wydhosting, /run/wydhosting, /opt/wydhosting, /var/lib/wydhosting; no wyd SELinux module",
+    "publicZone": "enp1s0; cockpit dhcpv6-client ssh; no ports or rich rules",
+    "mutations": false
+  },
+  "guestQualification": "Not rerun: no runtime change; preserve prior 99/99 as historical evidence, not a fresh result",
+  "logs": "/tmp/wydgit-i56-final-*"
+}

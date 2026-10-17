@@ -1409,3 +1409,68 @@ recovery, broader privileged ambiguous-retirement attacks, backup restore, indep
 console recovery, external-network and remaining exact-image qualification gates
 remain open. Best next action: review this bounded evidence and plan the remaining
 interruption/recovery matrix under the backup/console gates; do not infer I5.7 readiness.
+
+
+## Final bounded retirement campaign — 2026-10-17
+
+Baseline `develop/0.3`, HEAD and independently queried remote all matched
+`caa2d3bb688ebee8a94cff00e86d55fdb651e307`; working tree was clean. Version remains
+**0.3.0-alpha.15**. No runtime, protocol, privilege, policy, manifests or lockfiles
+changed. Durable diagnostic source/output and read-only guest inventory are in
+[retirement evidence](retirement-hardening-2026-10-17.json).
+
+Three new ordinary-user Python test methods expand 39 to **42**. Manager/cgroup
+and root socket ownership are explicitly simulated; file/socket creation, removal,
+hardlink/symlink substitution and newer-generation sentinels use actual current-UID
+filesystem operations. These are not real systemd, cgroup or SELinux race tests.
+Deterministic call barriers replace sleeps:
+
+- Before socket unlink and before job unlink: 16 subcases inject a newly pending or
+  changed job ID, active/activating state, replacement invocation/cgroup, nonzero
+  MainPID or repopulated cgroup. Each refuses, preserves remaining artifacts, then
+  completes and repeats reconciliation after the simulated conflict is resolved.
+- An injected OSError on job unlink leaves the socket absent and proof intact;
+  retry and repeated reconciliation finish. Newer-generation job bytes/socket inode
+  remain intact, including a stale record with a mismatched newer generation.
+- Five initial conflicts refuse: changed job content, socket replaced with a regular
+  file, symlink or hardlink, and missing job proof with an extant socket.
+
+A separate diagnostic **reproduced an unresolved privileged-writer window**: substitute
+an artifact from the second (socket) or third (job) terminal-status callback, after
+its initial validation. Both replacement sentinels are unlinked. The evidence JSON
+retains the complete reproducer and output; this observation is not a security pass.
+The runtime directory is protected and broker operations are serialized per pool;
+this does not demonstrate an ordinary customer/provider can perform the substitution.
+However, checks and name-based unlink are not atomic against another privileged
+writer, and manager/cgroup snapshots are not a transaction with filesystem deletion.
+A final reread would only narrow those windows. Trusted writer exclusion and the
+fixed-template/separately constrained manager boundary require wider design review;
+that redesign is explicitly excluded here. No partial runtime fix or containment
+claim is made. Real late manager/artifact mutation attacks remain unqualified.
+
+Retained execution failures: the sandboxed primitive run reported one failure and
+28 errors at socket EPERM (including subcases); the normal ordinary-user rerun passed
+42/42 without weakening assertions. A read-only SSH inventory similarly encountered
+local sandbox socket EPERM, then succeeded outside that restriction.
+
+Guest work was read-only: almond-lab reachable, SELinux Enforcing, sshd/firewalld active,
+no conflicting WydHosting identities, units, installation/state/runtime directories or
+policy module. Public zone remains enp1s0 with cockpit/dhcpv6-client/ssh, no ports or
+rich rules. No fixtures created, no teardown needed, old staging retained. The previous
+**99/99 installed AlmaLinux** result remains historical; no fresh installed privileged
+qualification was run for this test-only change, within the allowance budget.
+
+I5.6 remains experimental: unit-write/start/reload authority prevents full broker
+compromise containment. Fixed administrator templates/constrained manager, privileged
+ambiguous-retirement races, account-tool partial effects, power-loss/reboot recovery,
+backup/console restore, storage quotas, external networking and remaining exact-image
+qualification remain production gates. No reboot/power loss, host privileged change,
+firewall/network/quota change, I5.7 work or WydOS work was performed.
+
+Validation for this campaign: ordinary Python **42/42**, focused Linux **20/20**,
+repository `npm test` **939/939**, `npm run check` passed. Final required checks follow
+the synchronized guide edit. Independent packed consumers passed service-free,
+canonical **156/156**, provider **35/35**, subprocess **20/20**, Linux **20/20**
+(including 42 Python methods), with repository imports rejected and one installed
+engine per consumer. Logs: `/tmp/wydgit-i56-final-{primitives-ordinary,linux,test,packed}.log`;
+final delivery reruns use `delivery` in place of `final`. No public package publication.

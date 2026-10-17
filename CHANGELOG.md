@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Add deterministic retirement regressions for late manager/cgroup conflicts, partial
+  cleanup, repeated reconciliation and stale generations; retain privileged artifact
+  replacement window evidence as an unresolved production gate. No runtime change.
+
 - Settle admitted Page service calls before HTTP completion, cancel JSON/SQLite
   precommit work at the execution boundary, fsync JSON publication directories and
   report committed/not-committed/indeterminate outcomes without changing deadlines.
