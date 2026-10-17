@@ -1638,3 +1638,81 @@ Historical guest evidence and retirement replacement-window diagnostics are pres
 No guest was contacted, inventoried or modified. No new privileged manager/socket,
 policy/capability change, Mint privileged configuration change, mount/quota/network/
 SSH/firewall change, reboot/shutdown, WydOS UI, I5.7, version bump or release occurred.
+
+## Constrained manager implementation Slice 3 — 2026-10-17
+
+Baseline branch `develop/0.3`, HEAD/tracking/live remote equal
+`96ac409f8274efa24bc9afaf3b0ef37e7006a804`; initially clean. Version remains
+**0.3.0-alpha.15**, no manifest/lockfile change. See the
+[Slice 3 storage/recovery contract](constrained-systemd-authority.md#implementation-slice-3--durable-offline-journal-and-recovery-2026-10-17).
+
+Private `broker/lifecycle_journal.py` adds a versioned canonical checksum envelope,
+complete approval/request/reservation/template/resource binding, bounded transition
+history, serialized expected-state transitions, durable exclusive staging/file fsync/
+directory fsync/atomic rename publication and fail-closed offline classification.
+Duplicate submissions return recorded state; intent/unknown outcomes require
+reconciliation. Completed records require bound receipts and an independently supplied
+trusted evidence verifier on write and recovery. Receipt labels/digests alone never
+prove an external effect. Current protected authorization is reloaded; revocation,
+expiration, changed approval and stale reservation deny. Missing/corrupt/pending
+history never grants replay. No implicit initialization or repair exists.
+
+Focused journal Python **15/15** passed. Actual current-user file/descriptor/rename/
+fsync/flock tests simulate only expected root ownership for positive fixtures; the
+production ownership check rejects current-user stores. Faults and mutation barriers
+are deterministic, with no timing sleeps. Independent process contention and abrupt
+process exit exercise actual kernel lock exclusion/release. Simulated crash boundaries
+and evidence-verifier callbacks do not establish real power-loss/systemd/SELinux proof.
+Repository and fresh installed packed Linux suites now invoke the same journal tests;
+source/package closure checks require the journal module.
+
+Preserved initial failures: `/tmp/wyd-i56-slice3-python-initial.log` exposed revoked
+approval being masked as PROTECTION by the storage wrapper; preserve the original
+bounded denial code instead. `/tmp/wyd-i56-slice3-python-remediation.log` exposed a
+fixture helper passing duplicate `now` keywords; correct fixture option merging.
+No assertions were weakened. `/tmp/wyd-i56-slice3-linux.log` retains the previously
+observed sandbox Node native async-ID assertion; ordinary-user rerun passed **23/23**.
+Focused passing Python log: `/tmp/wyd-i56-slice3-python.log`. Final source/docs checks
+use `/tmp/wyd-i56-slice3-delivery-{test,check,packed,linux}.log`.
+
+Directory FD provenance, separate root-controlled ancestry, SELinux and mount writer
+exclusion, administrator maintenance serialization, trusted bootstrap of a virgin
+namespace, protected backup provenance and actual filesystem/hardware persistence
+are explicit preconditions, not installed guarantees. No rollback resistance to a
+privileged writer is claimed. Missing history needs reconciliation, never reset.
+Installed boot-aware external postcondition verification, separately authorized
+reconciliation/retry, effect admission integration, retention, full authority transfer
+and installed crash/enforcing qualification remain gates. Broker authority and all
+historical guest/retirement diagnostic evidence remain unchanged.
+
+No guest contact, inventory or mutation, manager/socket activation, privileged
+configuration, systemd authority transfer, firewall/SSH/SELinux/mount/quota change,
+I5.7, version bump, prerelease or release occurred. Only the authorized development
+commit/push is delivered; no package or deployment publication.
+
+Initial repository `npm test` passed **942/942**, no skips/cancellations;
+`npm run check` passed (3 pages, 42 internal links). Initial packed evidence
+`/tmp/wyd-i54-packed-t1s21H` passed service-free, canonical **156/156**, provider
+**35/35** and subprocess **20/20**, but Linux passed **22/23**: a source edit made
+after tarball creation added the directory-metadata check and regression while that
+run was still staging tests. Inspection confirmed the installed old module lacked
+`directory_before` while its staged newer test included `directory-mode`. This is a
+mixed-snapshot verification failure, retained in `linux-boundaries.log` and
+`/tmp/wyd-i56-slice3-packed-initial.log`, not a passing qualification. Freeze all source,
+tests and documentation, then rerun required checks and freshly pack for delivery.
+Final review also requires recovery/duplicate lookups to re-sync the directory before
+recognizing a snapshot visible after a prior rename/final-sync failure. A deterministic
+recovery-sync EIO test requires refusal. All checks rerun after this final edit.
+The delivery handoff reports those final results and independent remote verification.
+
+A later parallel repository/packed run retained two existing deadline failures:
+repository **941/942**, `bounded startup failure never publishes a late token or
+resurrects a failed App`, HOST.STARTUP on the sibling activation with startupMs=500;
+packed canonical **155/156**, `bounded transfer timeout and operation limits`,
+FILES.TIMEOUT. Logs: `/tmp/wyd-i56-slice3-concurrent-{test,packed}.log` and
+`/tmp/wyd-i54-packed-gvGKZc/five-library-tests.log`. Concurrent workload is a suspected
+cause, not an established diagnosis. The final focused Linux run passed **23/23**,
+including journal **15/15**. Preserve timing assertions and rerun required repository
+and freshly packed suites sequentially after this evidence edit. The earlier review
+packed run `/tmp/wyd-i54-packed-clLnPc` also passed all stages, but predates the final
+recovery-sync edit and does not substitute for final verification.

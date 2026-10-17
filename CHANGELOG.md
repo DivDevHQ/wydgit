@@ -1,5 +1,11 @@
 ## Unreleased
 
+- Add a private offline I5.6 durable lifecycle journal with serialized atomic synced
+  publication, exact approval/evidence binding and fail-closed recovery; ambiguous
+  intent never grants replay. Add deterministic corruption, crash-boundary and I/O
+  adversarial tests. No manager activation or authority transfer; installed storage,
+  evidence verification and recovery authorization remain gates. Version unchanged.
+
 - Add private offline I5.6 administrator approval loading through a trusted directory
   descriptor, exact independent request/reservation/template authorization and bounded
   allow/deny codes, with deterministic replacement and hostile-input tests. No active

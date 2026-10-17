@@ -503,3 +503,140 @@ final consumption, for both files. They test observed drift, not hostile-root im
 Protected-directory provenance, privileged SELinux/mount writer exclusion, actual
 root-authored approval, live identities/sessions and systemd containment require
 separate installed qualification. No guest was contacted or modified.
+
+## Implementation Slice 3 — durable offline journal and recovery, 2026-10-17
+
+Baseline `96ac409f8274efa24bc9afaf3b0ef37e7006a804`, clean `develop/0.3`,
+tracking and independently queried live remote equal. Version stays alpha.15.
+Private `broker/lifecycle_journal.py` is unused by the broker, has no CLI/socket,
+and performs only journal filesystem operations. No systemd/account effects or
+attempt/retry/reconciliation authority are returned by any API.
+
+### Format and transitions
+
+`wydhosting.lifecycle-journal/1` is a canonical compact sorted UTF-8 JSON envelope
+with exactly `schema`, `payload` (canonical JSON string), and `digest` (SHA-256 of
+payload bytes). Payload maps operation IDs to closed records containing exactly
+`approval`, `approvalDigest`, `transitions`, and `evidence`. `approval` is the complete
+canonical Slice 2 approval serialized as a string, validated again with the same
+parser. This retains the exact canonical request/digest, tenant/account/pool,
+UID/GID/category, reservation snapshot digest, both generations, epoch, policy
+revision/sequence, operation, all five resource ceilings, template/release/service,
+validity interval and original active approval state. Approval identity is the
+SHA-256 of its full canonical bytes; no incompatible identity schema is introduced.
+
+`transitions` is an ordered, bounded state sequence whose array indices are transition
+sequence numbers starting at zero. The initial state is always `prepared`:
+
+- `prepared` → `intent-recorded` or `rejected`.
+- `intent-recorded` → `outcome-unknown`, `completed` or `reconciliation-required`.
+- `outcome-unknown` → `completed` or `reconciliation-required`.
+- `completed`, `rejected` and `reconciliation-required` are terminal.
+
+Every transition uses expected-state compare-and-swap while holding the writer lock.
+Duplicate prepare with identical content returns the existing state without rewriting
+or resetting history. Changed content under the same ID rejects `CONFLICT` before
+approval comparison. There is no reset, deletion, compaction, retry or repair API.
+The store is bounded to 128 operations and 1 MiB; reaching capacity requires separately
+reviewed administrator retention/namespace planning, never automatic history eviction.
+Unknown versions, duplicate keys, noncanonical encoding, checksum mismatch, malformed
+approval, invalid transitions and missing/inconsistent completion receipts refuse.
+Checksums detect corruption, not privileged tampering, rollback or signed provenance.
+
+`evidence` is empty except in completed records. Completion uses the strict flat
+`wydhosting.lifecycle-evidence/1` receipt with exactly `schema`, `approvalDigest`,
+`requestDigest`, `tenantId`, `generation`, `reservationDigest`, `postcondition`, and
+`referenceDigest`. The reference is a SHA-256 identity of independently held external
+evidence, never a caller pathname. All bindings must match the full approval.
+Operation-specific postconditions are `exact-invocation-running`,
+`exact-state-observed`, and `exact-generation-retired` for start, status, and
+stop-and-retire respectively. These labels and receipt bytes are **not proof**.
+A trusted `verify_evidence(approval_bytes, receipt_bytes)` callback must independently
+load and verify authoritative evidence and return exactly True, both when completing
+and every time recorded completion is recovered. No default verifier is provided;
+without one completion refuses `EVIDENCE`. Verifier exceptions deny. Broker code must
+never select this callback. Tests use labelled simulated evidence; no installed
+systemd/account/boot-aware verifier is implemented or claimed.
+
+### Persistence and serialization
+
+Only an explicitly trusted administrator/manager directory FD is accepted; no broker
+path or broker-passed FD is valid. Dedicated protected ancestry, read-only mount
+provenance and enforcing SELinux writer exclusion have the same mandatory bootstrap
+requirements as Slice 2. Directory UID/GID must be root with 0500/0700 mode. All
+writers, administrator maintenance, backup restore and future effect admission must
+participate in the same quiescence/serialization protocol. Held FDs must be reacquired
+after administrator tree cutover. DAC/drift checks cannot exclude a compromised root
+broker or hostile administrator; these protections remain uninstalled/unqualified.
+
+Each call independently opens `.` relative to the trusted FD (fixed internal name),
+checks inode identity and obtains a nonblocking exclusive Linux directory `flock`.
+An independent open file description is essential: dup would share flock ownership
+and permit overlapping calls. Contention returns `BUSY`. The descriptor remains held
+through loading, authorization, verification, publication and final directory fsync;
+close/process death releases the lock without a stale lock file. This is advisory
+local-filesystem serialization, not a distributed lock. No operation holds it across
+external effects because no external execution is implemented; future integration
+must extend the serialized admission/maintenance protocol through effects.
+
+Only `journal.json` is accepted in an initialized directory. It must be regular,
+single-linked, root UID/GID, exactly 0600, nonempty and at most 1 MiB. The existing
+Linux amd64 openat2 primitive enforces BENEATH/NO_SYMLINKS/NO_XDEV without fallback;
+NONBLOCK prevents FIFO blocking. Same-inode bounded pread, size, metadata and final
+name comparisons detect observed short reads, in-place changes and replacement.
+Source metadata is checked again after authorization/evidence consumption.
+
+Publication creates the fixed `pending.json` exclusively with NOFOLLOW, sets 0600,
+loops over short writes, retries interrupted writes, refuses zero writes and propagates
+ENOSPC/EIO. It fsyncs the complete file, verifies readback and name/inode metadata,
+then fsyncs the directory to retain the pending marker. Source and pending names and
+metadata are checked before an atomic same-directory rename over `journal.json`,
+followed by another directory fsync. No failed stage is silently cleaned up. Any
+pending marker or unexpected entry quarantines the entire store. Sync failures,
+including EINTR, refuse; there is no success return until all syncs finish. A failure
+after rename may leave the new record visible; the caller must treat publication as
+indeterminate. Recovery and duplicate lookups re-sync the directory before recognizing
+visible history; recovery independently verifies any visible completion. A crash
+may recover the old snapshot, the new snapshot or a pending marker according to the
+actual filesystem's persistence behavior; none is permission to repeat effects.
+
+`initialize(fd)` is an explicit administrator bootstrap for a **proven virgin** empty
+namespace only. It durably publishes the empty initial snapshot using the same path.
+It never runs implicitly, refuses an existing store and is not a recovery tool.
+Emptiness cannot prove absence of deleted history: administrator provenance and
+creation/ancestor fsync belong to bootstrap. Missing/corrupt history requires operator
+reconciliation, never initialization to permit old operations. There is no protection
+against administrator rollback to a complete older valid snapshot; trusted retention,
+backup provenance and future external reconciliation must address that gate.
+
+### Recovery and qualification limits
+
+`recover` returns `(recorded_state, classification)`, never an allow decision. Durable
+intent and outcome-unknown both classify `reconciliation-required`; prepared/rejected
+remain recorded states without an attempt grant. Missing operation/history refuses;
+foreign request/generation conflicts. Every call reloads current protected approval
+and reservations, clock and release pin. Expired/revoked approvals deny even historical
+completion; changing any approval bytes or reservation snapshot also denies. Separate
+fresh scoped administrator reconciliation/retry authorization is still unimplemented.
+No automatic replay of useradd, publication, start/stop, deletion or cleanup exists.
+
+Fifteen deterministic ordinary-user tests exercise actual local file/descriptor/
+rename/fsync/flock calls and injected write/read/sync/rename failures. Expected root
+ownership is explicitly simulated for positive fixtures; unmodified ownership rejects
+current-user storage. Tests cover duplicates/conflicts, pre-intent and post-intent
+interruption, possible-effect ambiguity, each completion sync boundary, invalid/torn/
+oversized/corrupt/versioned history, invalid state sequences, absent/foreign evidence,
+revocation/expiration/stale reservation, links/FIFO/types/modes, source and pending
+mutation/replacement, partial/EINTR/zero writes, ENOSPC/EIO/sync EINTR, competing
+independent descriptors/processes, process-exit lock release and stale transitions.
+No test executes an external lifecycle effect or actual power interruption.
+
+Atomic rename, successful file/directory fsync persistence, advisory directory flock,
+mount behavior, storage hardware/cache honesty and crash/power-loss ordering require
+actual target filesystem and mount qualification. This slice is an offline durable
+foundation under stated trusted-writer assumptions, **not production crash consistency**.
+Installed protected directories, SELinux/mount exclusion, boot-aware authoritative
+postcondition verifiers, independent provisioning/live sessions, rate/active-count
+admission, reconciliation authority, effect integration, retention/recovery tooling,
+complete broker authority removal and enforcing installed adversarial qualification
+remain activation gates. No guest or privileged configuration was touched.
