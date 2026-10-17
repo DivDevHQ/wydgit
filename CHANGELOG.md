@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Specify the proposed WydOS platform independence foundation: reuse canonical
+  services and SEAM, define portable service/discovery contracts, portability
+  validation tiers and a phased adapter roadmap. Cross-reference architecture and
+  toolchain proposals; no runtime, host-security, dependency or version changes.
+
 - Add a private offline I5.6 durable lifecycle journal with serialized atomic synced
   publication, exact approval/evidence binding and fail-closed recovery; ambiguous
   intent never grants replay. Add deterministic corruption, crash-boundary and I/O

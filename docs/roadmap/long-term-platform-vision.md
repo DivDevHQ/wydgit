@@ -176,6 +176,12 @@ The Almond reference should be reproducible and remain optional. Documentation a
 
 ## 7. WydOS: optional portable OS-integration library
 
+The [WydOS platform independence foundation](../wydos.md) develops this vision into
+proposed service, discovery, authorization and portability-validation contracts.
+It governs the detailed WydOS proposal; examples here remain strategic illustrations,
+not implemented APIs. Linux (including Almond), Windows and macOS are long-term
+targets. WydOS does not require Almond or WydHosting.
+
 **WydOS is a library that plugs into Wydgine, not an operating system.** It publishes portable contracts for host-approved OS capabilities and routes authorized operations to OS-specific drivers through SEAM. Driver support is optional and capability-discoverable; unsupported functionality fails explicitly and safely.
 
 Proposed future capability families, **not existing APIs**:
@@ -192,7 +198,8 @@ Example conceptual namespace: `OS.NOTIFICATIONS.SHOW`, **illustrative only**, no
 
 ### 7.1 WydOS/Almond driver
 
-**`WydOS/Almond`** is the first driver, initially for the Almond Linux distribution. Given its AlmaLinux basis, it may share implementation with AlmaLinux, Rocky Linux, RHEL and Fedora, subject to concrete capability/version/security testing. Common facilities include systemd, D-Bus, SELinux, firewalld/nftables, cgroups v2, RPM/DNF and freedesktop desktop interfaces. Detect actual capabilities, not just `/etc/os-release` branding.
+**`WydOS/Almond`** is the proposed initial reference driver for Almond Linux; it is
+not implemented and is not a dependency of the portable WydOS contract. Given its AlmaLinux basis, it may share implementation with AlmaLinux, Rocky Linux, RHEL and Fedora, subject to concrete capability/version/security testing. Common facilities include systemd, D-Bus, SELinux, firewalld/nftables, cgroups v2, RPM/DNF and freedesktop desktop interfaces. Detect actual capabilities, not just `/etc/os-release` branding.
 
 Internally, favor common Linux building blocks plus thin distribution-specific adapters when needed. Other OS drivers (Windows, macOS, Debian-family, etc.) may follow through community contribution, but need independent validation for security-equivalent claims.
 

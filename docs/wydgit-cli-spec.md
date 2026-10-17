@@ -103,6 +103,12 @@ And WydClient can receive a small prepared application bundle without needing an
 
 ### Validate
 
+The proposed [WydOS portability analysis](wydos.md#5-package-portability-validation)
+belongs in this read-only validation workflow. It should report service/dependency
+requirements, optional adapters, missing fallbacks and per-target evidence without
+executing packages, installing providers or granting authority. These checks and
+portability report formats are not implemented by this specification.
+
 It should check a package or project without compiling, installing, or executing it, as appropriate to the input.
 
 That would be particularly useful for 3rd party Wydgit Developers, because they could catch invalid manifests, unsupported WBasic syntax, missing resources, and inconsistent permissions before handing an application to Wydgine.

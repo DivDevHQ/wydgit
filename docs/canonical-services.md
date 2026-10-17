@@ -8,6 +8,13 @@ grants authority. Implementations load only from validated, explicit host npm
 mappings, never from invocation arguments. Ordinary packages cannot import modules,
 register handlers, construct ExecutionContexts or access raw registry handlers.
 
+## Proposed WydOS extension
+
+The [WydOS foundation](wydos.md) reuses this registry, exact service API versions,
+caller-bound dispatch and existing library ownership. Its discovery projection and
+new OS-facing operations are proposals; no second registry, adapter loader, client
+transport or implicit grants are implemented. Existing APIs below remain authoritative.
+
 ## Versions and compatibility
 
 Three versions describe different things:

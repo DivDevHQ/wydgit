@@ -22,6 +22,11 @@ Its long-term goal is broader than a site builder or web framework. Wydgit is in
 
 The canonical Wydgit application model must therefore remain independent of HTML, the DOM, Node.js, any particular database, and any particular operating system.
 
+The proposed [WydOS foundation](wydos.md) defines an optional OS-facing services
+layer: portable contracts, controlled platform adapters, capability discovery and
+portability validation. It reuses canonical libraries and SEAM; it adds no runtime
+or authority and does not depend on Almond Linux.
+
 A useful description of the ambition is:
 
 > **Wydgit is a proposed shape for Web 4.0: a portable, capability-safe application layer for the open web.**

@@ -9,6 +9,16 @@
 > The ZIP container, registry and broader distribution architecture below are
 > proposals; they do not replace either implemented package contract.
 
+## WydOS portability analysis (proposed)
+
+The [WydOS validation contract](wydos.md#5-package-portability-validation) extends
+this proposed validation architecture with required/optional service capabilities,
+host-specific calls, dependency and runtime requirements, adapter profiles and
+fallback analysis. Reports explain portability tiers, incompatibilities and missing
+evidence per target. Static analysis does not establish runtime compatibility;
+universal Linux/Windows/macOS claims require integration tests on those platforms.
+This adds no fields to the implemented package manifest or installer.
+
 ## 1. Purpose
 
 This document establishes Wydgit's intended approach to application packaging, publisher authentication, cryptographic integrity, software licensing, compatibility, and distribution.
