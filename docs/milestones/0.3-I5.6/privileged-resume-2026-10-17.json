@@ -1,0 +1,708 @@
+{
+  "date": "2026-10-17",
+  "baseCommit": "b0357c51fecc65fc980934ef9f648a681e2442a2",
+  "version": "0.3.0-alpha.15",
+  "guest": "almond-lab",
+  "total": {
+    "event": "TOTAL",
+    "passed": 99,
+    "failed": 0,
+    "categories": {
+      "account-provisioning": {
+        "passed": 2,
+        "failed": 0
+      },
+      "privileged-broker-dac": {
+        "passed": 30,
+        "failed": 0
+      },
+      "selinux-mac": {
+        "passed": 2,
+        "failed": 0
+      },
+      "selinux-broker-mac": {
+        "passed": 5,
+        "failed": 0
+      },
+      "integrated-service": {
+        "passed": 23,
+        "failed": 0
+      },
+      "broker-ownership": {
+        "passed": 2,
+        "failed": 0
+      },
+      "integrated-resource": {
+        "passed": 5,
+        "failed": 0
+      },
+      "service-recovery": {
+        "passed": 15,
+        "failed": 0
+      },
+      "retirement-race": {
+        "passed": 12,
+        "failed": 0
+      },
+      "resource-retirement": {
+        "passed": 3,
+        "failed": 0
+      }
+    },
+    "productionQualified": false
+  },
+  "passedCases": [
+    {
+      "category": "account-provisioning",
+      "name": "interrupted provisioning refuses retry"
+    },
+    {
+      "category": "account-provisioning",
+      "name": "verified account provisioning is repeatable"
+    },
+    {
+      "category": "privileged-broker-dac",
+      "name": "real broker ensure-account i56-a"
+    },
+    {
+      "category": "privileged-broker-dac",
+      "name": "real broker stage i56-a"
+    },
+    {
+      "category": "privileged-broker-dac",
+      "name": "real broker ensure-account i56-b"
+    },
+    {
+      "category": "privileged-broker-dac",
+      "name": "real broker stage i56-b"
+    },
+    {
+      "category": "privileged-broker-dac",
+      "name": "same UID wrong primary GID kernel authorization"
+    },
+    {
+      "category": "privileged-broker-dac",
+      "name": "wrong UID rejected using actual SO_PEERCRED"
+    },
+    {
+      "category": "privileged-broker-dac",
+      "name": "tenant 61051 broker socket DAC denial"
+    },
+    {
+      "category": "privileged-broker-dac",
+      "name": "tenant 61052 broker socket DAC denial"
+    },
+    {
+      "category": "privileged-broker-dac",
+      "name": "broker rejects retire {}"
+    },
+    {
+      "category": "privileged-broker-dac",
+      "name": "broker rejects cleanup {}"
+    },
+    {
+      "category": "privileged-broker-dac",
+      "name": "broker rejects stage {'path': '/etc'}"
+    },
+    {
+      "category": "privileged-broker-dac",
+      "name": "broker rejects reconcile {'unit': 'sshd.service'}"
+    },
+    {
+      "category": "privileged-broker-dac",
+      "name": "broker rejects foreign pool/traversal"
+    },
+    {
+      "category": "privileged-broker-dac",
+      "name": "broker malformed {\"a\":1,\"a\":2}"
+    },
+    {
+      "category": "privileged-broker-dac",
+      "name": "broker malformed {"
+    },
+    {
+      "category": "privileged-broker-dac",
+      "name": "broker malformed {\"constructor\":{}}"
+    },
+    {
+      "category": "privileged-broker-dac",
+      "name": "B authorized file read/write"
+    },
+    {
+      "category": "privileged-broker-dac",
+      "name": "A cannot read B private file"
+    },
+    {
+      "category": "privileged-broker-dac",
+      "name": "A cannot modify B private file"
+    },
+    {
+      "category": "privileged-broker-dac",
+      "name": "tenant 61051 cannot read approval"
+    },
+    {
+      "category": "privileged-broker-dac",
+      "name": "tenant 61051 cannot write sealed code"
+    },
+    {
+      "category": "privileged-broker-dac",
+      "name": "tenant 61052 cannot read approval"
+    },
+    {
+      "category": "privileged-broker-dac",
+      "name": "tenant 61052 cannot write sealed code"
+    },
+    {
+      "category": "privileged-broker-dac",
+      "name": "A symlink to B denied by kernel"
+    },
+    {
+      "category": "privileged-broker-dac",
+      "name": "A traversal to B denied by kernel"
+    },
+    {
+      "category": "privileged-broker-dac",
+      "name": "broker rejects symlinked approved source"
+    },
+    {
+      "category": "selinux-mac",
+      "name": "enforcing broker refuses a legacy unconfined launch"
+    },
+    {
+      "category": "selinux-broker-mac",
+      "name": "existing account category cannot change"
+    },
+    {
+      "category": "selinux-broker-mac",
+      "name": "partially reserved category cannot be adopted by another account"
+    },
+    {
+      "category": "selinux-broker-mac",
+      "name": "incorrect account UID category approval refuses before account tools"
+    },
+    {
+      "category": "privileged-broker-dac",
+      "name": "B authorized private socket connect"
+    },
+    {
+      "category": "privileged-broker-dac",
+      "name": "A cannot connect B private socket"
+    },
+    {
+      "category": "privileged-broker-dac",
+      "name": "A cannot signal B process"
+    },
+    {
+      "category": "privileged-broker-dac",
+      "name": "B authorized process signal 0"
+    },
+    {
+      "category": "selinux-broker-mac",
+      "name": "unconfined broker invocation refuses before release and socket"
+    },
+    {
+      "category": "integrated-service",
+      "name": "installed canonical provider service starts"
+    },
+    {
+      "category": "integrated-service",
+      "name": "edge -> canonical provider -> worker tenant a"
+    },
+    {
+      "category": "integrated-service",
+      "name": "edge -> canonical provider -> worker tenant b"
+    },
+    {
+      "category": "integrated-service",
+      "name": "provider rejects unknown hostname"
+    },
+    {
+      "category": "integrated-service",
+      "name": "provider rejects spoofed headers Forwarded"
+    },
+    {
+      "category": "integrated-service",
+      "name": "provider rejects spoofed headers X-Forwarded-For"
+    },
+    {
+      "category": "integrated-service",
+      "name": "provider rejects spoofed headers X-Forwarded-Port"
+    },
+    {
+      "category": "integrated-service",
+      "name": "provider rejects spoofed headers X-Forwarded-Host"
+    },
+    {
+      "category": "integrated-service",
+      "name": "provider rejects spoofed headers X-Forwarded-Proto"
+    },
+    {
+      "category": "integrated-service",
+      "name": "provider rejects spoofed headers Connection"
+    },
+    {
+      "category": "integrated-service",
+      "name": "HEAD status and empty response"
+    },
+    {
+      "category": "integrated-service",
+      "name": "unknown application route preserves 404"
+    },
+    {
+      "category": "integrated-service",
+      "name": "unauthorized local identity cannot reach provider socket"
+    },
+    {
+      "category": "integrated-service",
+      "name": "integrated service identity wydhosting-pool-69816689df4526f1283221607d19e1fb-cd816c6521864f7581333f4571c38c51.service"
+    },
+    {
+      "category": "integrated-service",
+      "name": "integrated cgroup limits i56-a"
+    },
+    {
+      "category": "integrated-service",
+      "name": "inherited control descriptor and no leaked regular files i56-a"
+    },
+    {
+      "category": "integrated-service",
+      "name": "worker has no TCP listener i56-a"
+    },
+    {
+      "category": "integrated-service",
+      "name": "edge UID cannot bypass provider to worker i56-a"
+    },
+    {
+      "category": "integrated-service",
+      "name": "integrated service identity wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-ba9b54b63b214b538f5fa8b7174517c3.service"
+    },
+    {
+      "category": "integrated-service",
+      "name": "integrated cgroup limits i56-b"
+    },
+    {
+      "category": "integrated-service",
+      "name": "inherited control descriptor and no leaked regular files i56-b"
+    },
+    {
+      "category": "integrated-service",
+      "name": "worker has no TCP listener i56-b"
+    },
+    {
+      "category": "integrated-service",
+      "name": "edge UID cannot bypass provider to worker i56-b"
+    },
+    {
+      "category": "broker-ownership",
+      "name": "broker refuses conflicting durable unitHash"
+    },
+    {
+      "category": "broker-ownership",
+      "name": "broker refuses conflicting durable invocation"
+    },
+    {
+      "category": "selinux-broker-mac",
+      "name": "broker actual confined hostile boundaries"
+    },
+    {
+      "category": "selinux-mac",
+      "name": "MAC same UID hostile category boundaries"
+    },
+    {
+      "category": "integrated-resource",
+      "name": "actual worker private tmpfs ENOSPC and sibling survival"
+    },
+    {
+      "category": "integrated-resource",
+      "name": "bounded worker cgroup native fd pressure and sibling survival"
+    },
+    {
+      "category": "integrated-resource",
+      "name": "bounded worker cgroup native tasks pressure and sibling survival"
+    },
+    {
+      "category": "integrated-resource",
+      "name": "bounded worker cgroup native cpu pressure and sibling survival"
+    },
+    {
+      "category": "service-recovery",
+      "name": "integrated worker SIGKILL replacement uses a fresh authorized lifetime"
+    },
+    {
+      "category": "service-recovery",
+      "name": "healthy canonical sibling survives SIGKILL"
+    },
+    {
+      "category": "service-recovery",
+      "name": "integrated worker OOM replacement uses a fresh authorized lifetime"
+    },
+    {
+      "category": "service-recovery",
+      "name": "healthy canonical sibling survives OOM"
+    },
+    {
+      "category": "integrated-resource",
+      "name": "actual worker service records oom-kill"
+    },
+    {
+      "category": "service-recovery",
+      "name": "manager daemon-reload preserves active routing"
+    },
+    {
+      "category": "retirement-race",
+      "name": "concurrent sibling termination and provider retirement 0"
+    },
+    {
+      "category": "retirement-race",
+      "name": "fresh provider lifetime after overlapping retirement 0"
+    },
+    {
+      "category": "retirement-race",
+      "name": "both tenant routes after overlapping retirement 0"
+    },
+    {
+      "category": "retirement-race",
+      "name": "concurrent sibling termination and provider retirement 1"
+    },
+    {
+      "category": "retirement-race",
+      "name": "fresh provider lifetime after overlapping retirement 1"
+    },
+    {
+      "category": "retirement-race",
+      "name": "both tenant routes after overlapping retirement 1"
+    },
+    {
+      "category": "retirement-race",
+      "name": "concurrent sibling termination and provider retirement 2"
+    },
+    {
+      "category": "retirement-race",
+      "name": "fresh provider lifetime after overlapping retirement 2"
+    },
+    {
+      "category": "retirement-race",
+      "name": "both tenant routes after overlapping retirement 2"
+    },
+    {
+      "category": "retirement-race",
+      "name": "concurrent sibling termination and provider retirement 3"
+    },
+    {
+      "category": "retirement-race",
+      "name": "fresh provider lifetime after overlapping retirement 3"
+    },
+    {
+      "category": "retirement-race",
+      "name": "both tenant routes after overlapping retirement 3"
+    },
+    {
+      "category": "service-recovery",
+      "name": "provider graceful stop empties both worker cgroups"
+    },
+    {
+      "category": "resource-retirement",
+      "name": "automatic exact job retirement after graceful provider stop"
+    },
+    {
+      "category": "service-recovery",
+      "name": "provider restart from durable stopped leases"
+    },
+    {
+      "category": "service-recovery",
+      "name": "provider restart restores correct tenant response"
+    },
+    {
+      "category": "service-recovery",
+      "name": "confined worker reaped independently after broker SIGKILL"
+    },
+    {
+      "category": "service-recovery",
+      "name": "sibling canonical route survives broker SIGKILL"
+    },
+    {
+      "category": "service-recovery",
+      "name": "lost broker authority refuses stale route"
+    },
+    {
+      "category": "service-recovery",
+      "name": "explicit interrupted confined lease reconciliation"
+    },
+    {
+      "category": "resource-retirement",
+      "name": "broker death reconciliation retires exact job"
+    },
+    {
+      "category": "resource-retirement",
+      "name": "repeated retirement reconciliation is idempotent"
+    },
+    {
+      "category": "service-recovery",
+      "name": "provider SIGKILL independently retires both workers"
+    },
+    {
+      "category": "service-recovery",
+      "name": "provider refuses stale supervisor ownership after SIGKILL"
+    },
+    {
+      "category": "service-recovery",
+      "name": "SELinux remains enforcing"
+    }
+  ],
+  "failures": [],
+  "brokerRuntime": [
+    {
+      "worker": {
+        "CapabilityBoundingSet": "",
+        "ProtectControlGroups": "yes",
+        "ProtectSystem": "strict",
+        "NoNewPrivileges": "yes",
+        "RestrictSUIDSGID": "yes",
+        "RestrictNamespaces": "yes"
+      },
+      "broker": {
+        "CapabilityBoundingSet": "cap_chown cap_dac_override cap_fowner",
+        "ProtectControlGroups": "yes",
+        "ProtectSystem": "strict",
+        "NoNewPrivileges": "yes",
+        "RestrictSUIDSGID": "no",
+        "RestrictNamespaces": "yes",
+        "ReadOnlyPaths": [
+          "/etc/systemd",
+          "/etc/wydhosting"
+        ],
+        "actualCapabilities": {
+          "CapEff": "000000000000000b",
+          "CapPrm": "000000000000000b",
+          "CapBnd": "000000000000000b",
+          "CapAmb": "0000000000000000"
+        }
+      },
+      "brokerSELinux": "system_u:system_r:wydhosting_broker_t:s0",
+      "workerSELinux": "system_u:system_r:wydhosting_worker_t:s0:c51"
+    },
+    {
+      "worker": {
+        "CapabilityBoundingSet": "",
+        "ProtectControlGroups": "yes",
+        "ProtectSystem": "strict",
+        "NoNewPrivileges": "yes",
+        "RestrictSUIDSGID": "yes",
+        "RestrictNamespaces": "yes"
+      },
+      "broker": {
+        "CapabilityBoundingSet": "cap_chown cap_dac_override cap_fowner",
+        "ProtectControlGroups": "yes",
+        "ProtectSystem": "strict",
+        "NoNewPrivileges": "yes",
+        "RestrictSUIDSGID": "no",
+        "RestrictNamespaces": "yes",
+        "ReadOnlyPaths": [
+          "/etc/systemd",
+          "/etc/wydhosting"
+        ],
+        "actualCapabilities": {
+          "CapEff": "000000000000000b",
+          "CapPrm": "000000000000000b",
+          "CapBnd": "000000000000000b",
+          "CapAmb": "0000000000000000"
+        }
+      },
+      "brokerSELinux": "system_u:system_r:wydhosting_broker_t:s0",
+      "workerSELinux": "system_u:system_r:wydhosting_worker_t:s0:c52"
+    }
+  ],
+  "brokerCanary": [
+    {
+      "pid": 2843,
+      "context": "system_u:system_r:wydhosting_broker_t:s0",
+      "outcomes": {
+        "foreign-provider-file": "EACCES",
+        "system-file-write": "EACCES",
+        "arbitrary-shell": "EACCES",
+        "generic-executable": "EACCES",
+        "account-tool-useradd": "EACCES",
+        "account-tool-groupadd": "EACCES",
+        "shared-passwd-write": "EACCES",
+        "shared-shadow-read": "EACCES",
+        "shared-shadow-write": "EACCES",
+        "provisioning-proof-write": "EACCES",
+        "tcp-socket": "EACCES",
+        "provider-signal": "EACCES",
+        "provider-socket": "EACCES",
+        "foreign-relabel": "EACCES",
+        "foreign-service": "refused"
+      }
+    }
+  ],
+  "cleanup": [
+    {
+      "event": "remove-unit",
+      "unit": "wydhosting-provider.service"
+    },
+    {
+      "event": "remove-unit",
+      "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-cd816c6521864f7581333f4571c38c51.service"
+    },
+    {
+      "event": "remove-unit",
+      "unit": "wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-ba9b54b63b214b538f5fa8b7174517c3.service"
+    },
+    {
+      "event": "remove-unit",
+      "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-9453e95c73484b108eeeb7c9319361eb.service"
+    },
+    {
+      "event": "remove-unit",
+      "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-9f971cef13d649e887865a6c75f8881f.service"
+    },
+    {
+      "event": "remove-unit",
+      "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-e60198105c0b48fe8151fea614aaff7f.service"
+    },
+    {
+      "event": "remove-unit",
+      "unit": "wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-e0cbbd2752974b489a84e95152341445.service"
+    },
+    {
+      "event": "remove-unit",
+      "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-1955807a52934cd6a8cdacb8556f135e.service"
+    },
+    {
+      "event": "remove-unit",
+      "unit": "wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-2ffcfb6873b5449e80dc3e92be7aaf37.service"
+    },
+    {
+      "event": "remove-unit",
+      "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-d2415b8575df409f9188692b3e199ce0.service"
+    },
+    {
+      "event": "remove-unit",
+      "unit": "wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-dff3b1551d324dafb0c05fd8d598d7d8.service"
+    },
+    {
+      "event": "remove-unit",
+      "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-eb1695570e964b30af71ca650b746517.service"
+    },
+    {
+      "event": "remove-unit",
+      "unit": "wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-2011ec3829cd418489b7728dd4680d16.service"
+    },
+    {
+      "event": "remove-unit",
+      "unit": "wydhosting-pool-69816689df4526f1283221607d19e1fb-6369d598c3c4421f950b93d4fe303d84.service"
+    },
+    {
+      "event": "remove-unit",
+      "unit": "wydhosting-pool-08f155da2e286dcb3a877d7ba0d9b934-e56fce8fc0c14004b7286b8edfa8a43e.service"
+    },
+    {
+      "event": "delete-user",
+      "name": "wyd-i56-edge",
+      "uid": 61053
+    },
+    {
+      "event": "delete-user",
+      "name": "wyd-08f155da2e286dcb3a87",
+      "uid": 61052
+    },
+    {
+      "event": "delete-user",
+      "name": "wyd-69816689df4526f12832",
+      "uid": 61051
+    },
+    {
+      "event": "delete-user",
+      "name": "wyd-i56-provider",
+      "uid": 61050
+    },
+    {
+      "event": "remove-disposable-tree",
+      "path": "/run/wydhosting"
+    },
+    {
+      "event": "remove-disposable-tree",
+      "path": "/etc/wydhosting"
+    },
+    {
+      "event": "remove-disposable-tree",
+      "path": "/var/lib/wydhosting"
+    },
+    {
+      "event": "remove-disposable-tree",
+      "path": "/opt/wydhosting"
+    }
+  ],
+  "rawLogs": {
+    "build.log": {
+      "path": "/tmp/wydgit-i56-privileged-resume/build.log",
+      "sha256": "921f668c7322ba0e2c1feebd4007a3c36941ad425f26e8adc3ce3130607c717b"
+    },
+    "pack-hosting.log": {
+      "path": "/tmp/wydgit-i56-privileged-resume/pack-hosting.log",
+      "sha256": "f7dd49b586a13a53687b74a1a43da10c18348af84b7b7b973aef89a8950342e3"
+    },
+    "guest-attempt1.log": {
+      "path": "/tmp/wydgit-i56-privileged-resume/guest-attempt1.log",
+      "sha256": "f248e9153092fbde69315f71923875250865a98df14be515b2d670c12f713dc6"
+    },
+    "npm-test.log": {
+      "path": "/tmp/wydgit-i56-privileged-resume/npm-test.log",
+      "sha256": "88d1d3d2b3da4f698e9c94528db76b342d14ead1383243647553d8781b00fcc9"
+    },
+    "primitives-ordinary.log": {
+      "path": "/tmp/wydgit-i56-privileged-resume/primitives-ordinary.log",
+      "sha256": "55a0b3829198a9f75f73a884e93c40b4a91c3db8f2065b45697e4df783318b9b"
+    },
+    "primitives.log": {
+      "path": "/tmp/wydgit-i56-privileged-resume/primitives.log",
+      "sha256": "df8162ad910628ac5df4fcb8cf64e09ca818c18718cb9f6e17b326e1fd54a7b3"
+    },
+    "build-final.log": {
+      "path": "/tmp/wydgit-i56-privileged-resume/build-final.log",
+      "sha256": "45a61faa7d13cfb267eade35e5c1ffe14baa96bae4ec99b3ae5c03400a3af435"
+    },
+    "linux.log": {
+      "path": "/tmp/wydgit-i56-privileged-resume/linux.log",
+      "sha256": "8f84c1fd0290fe6e7961ad181609e88d841c176b793bebc2a8c0cef55366bac2"
+    },
+    "packed.log": {
+      "path": "/tmp/wydgit-i56-privileged-resume/packed.log",
+      "sha256": "8a9ca06f56c6f5ead851ee9233be09ff2c9da2c089f133a5d49768491043f806"
+    },
+    "guest-final-inventory.log": {
+      "path": "/tmp/wydgit-i56-privileged-resume/guest-final-inventory.log",
+      "sha256": "bcb5f4dfa5a7355ef8a3a683c9cbf7be0191d26d98a8c0b0df957e9c5d47bd2a"
+    },
+    "pack-engine.log": {
+      "path": "/tmp/wydgit-i56-privileged-resume/pack-engine.log",
+      "sha256": "7003159281d0d0e7484739beadceea4c5897253404ac9a93be1943f990a20fdd"
+    },
+    "check.log": {
+      "path": "/tmp/wydgit-i56-privileged-resume/check.log",
+      "sha256": "4e437bb4ebff45ddb9678e543f256b37dfaa0f4bca6969731a24c5ab84a7d1cd"
+    },
+    "final-test.log": {
+      "path": "/tmp/wydgit-i56-privileged-resume/final-test.log",
+      "sha256": "e28bbfae6eb2da41c68e47ed5ad3b777fc2629e429ab52a31786c230b27d29ac"
+    }
+  },
+  "installedSourceSHA256": {
+    "packages/wydhosting/broker/security.py": "867fe0e52c81c7e37d054e87c93b3c08d64f0a4f645f04b31640226d116e7101",
+    "packages/wydhosting/broker/broker.py": "e27e19d8b48b9523dde99d7f119c6b56f1e37c084a17a503845d31d016a7584f",
+    "packages/wydhosting/broker/firewalld_probe.py": "28d742398e94033e896f291deb963017601b0157f6481e878136095807b3748b",
+    "packages/wydhosting/broker/worker.py": "bd54fcbf3a203ae6b058b72abb28df60289efab8f69ef746a62efb5d65392073",
+    "packages/wydhosting/broker/provision_accounts.py": "48c601b97585f9450561bfc2a6dc03cc889f0dbf1bf40d0f0e4d4a4f16120e5a",
+    "packages/wydhosting/selinux/wydhosting_worker.cil": "73153ce0c9a37118f5f6672b074a08103b55b5153d9973bb548153e70f09fc23",
+    "packages/wydhosting/templates/wydhosting-broker@.service": "8867fa044a192c142d90e6b681ac5dc99c7c3912a6cc188fd9637d593a1b384b"
+  },
+  "limits": [
+    "No fresh Caddy/TLS edge chain or external networking test",
+    "Interruption injection precedes first account-tool execution; not power loss inside useradd",
+    "Ambiguous retirement and shadow-lock verification failures tested with ordinary-user mocks",
+    "Managed-unit write/start/reload authority remains a serious indirect root-execution risk",
+    "Backup and independent-console recovery gates remain open",
+    "Previous interrupted campaign directory retained; no historical results reconstructed"
+  ],
+  "ordinaryFailure": "Final documentation check initially 938/939: packaged verification guide differed from authoritative guide; synchronized copies without weakening assertion."
+}

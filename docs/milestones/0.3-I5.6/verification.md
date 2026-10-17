@@ -1,8 +1,8 @@
 # I5.6 verification and qualification record
 
-**Latest checkpoint:** [interrupted campaign recovery](continuation-2026-10-17.md).
-The HTTP-only correction is independently validated; privileged account/retirement
-drafts remain uncommitted and guest verification is blocked by SSH reachability.
+**Latest checkpoint:** [privileged drafts resumed](#privileged-drafts-resumed--2026-10-17).
+The HTTP correction and reviewed account/retirement changes have fresh independent
+validation. Installed AlmaLinux checks passed 99/99; I5.6 remains experimental.
 See [operation completion](operation-completion.md) for implemented semantics and limits.
 
 **Previous campaign:** [reliability diagnosis and broker domain](#reliability-diagnosis-and-broker-domain-campaign--2026-10-16)
@@ -1333,3 +1333,79 @@ operations, export direction, package closure and all 23 browser blobs, then com
 and pushes only develop/0.3 as explicitly authorized. No main merge, tag, release,
 publication, external deployment or host provisioning. I5.7 stopped migration/cutover
 and I5.8 integrated Linux/release qualification remain outstanding.
+
+
+## Privileged drafts resumed — 2026-10-17
+
+Fresh read-only recovery at `b0357c51fecc65fc980934ef9f648a681e2442a2` confirmed
+`almond-lab` reachable, SELinux enforcing, sshd/firewalld active. The root-owned
+`/var/tmp/wyd-i56-outcome` contained build/archive/harness sources, no campaign logs.
+No existing hosting installation, units, processes, module or fixture identities
+conflicted with a fresh run. The old directory was retained unchanged; no prior
+failure was attributed to software and no historical result was reconstructed.
+
+Reviewed preserved account, retirement, broker policy/unit, test and documentation
+drafts together. Offline provisioning reads only exact validated administrator
+approval, serializes provisioners, records intent before account-tool effects and
+seals success only after live identity/groups and shadow-lock verification. Missing
+success plus pending intent refuses adoption/retry. Recovery requires administrator
+inspection. The broker only reads sealed identity proofs and live passwd/group data;
+it loses direct account-tool execution, database writes, shadow reads and three
+capabilities. It retains substantial indirect systemd authority.
+
+Exact job/socket retirement follows durable stopped lease publication. It independently
+requires verified unit bytes, exact pool/base/generation/cgroup, terminal manager state,
+no pending manager job, no conflicting invocation/cgroup, and empty recorded cgroup.
+It rechecks manager/cgroup evidence at deletion, verifies job content/socket identity,
+and refuses ambiguity. Socket-first cleanup is repeatable; units, leases, category
+records, accounts and customer code/data remain. There is no production UID recycling.
+
+Fresh evidence is retained in the repository milestone record `docs/milestones/0.3-I5.6/privileged-resume-2026-10-17.json`.
+Ordinary-user results are distinct from installed guest results:
+
+- Python primitives **39/39**, Linux Node boundaries **20/20**. Administrative mocks
+  cover final verification failure before sealing, interrupted intent, conflicting
+  proof, active/replacement/pending manager state and nonempty cgroup refusals.
+  The first sandboxed Python run failed one case and errored six at socket EPERM;
+  the ordinary-user rerun passed without assertion or isolation changes.
+- Final documentation verification first passed 938/939: the packaged verification
+  guide differed from its authoritative copy. The copies were synchronized without
+  changing the assertion; the failure log is retained.
+- Repository `npm test`: **939/939**; `npm run check`: passed. Packed verifier:
+  service-free acceptance, canonical **156/156**, provider **35/35**, process
+  supervision **20/20**, Linux boundaries **20/20**, installed engine resolution passed.
+- Fresh installed AlmaLinux campaign: **99 passed, 0 failed**. Categories and all
+  case names are recorded in the linked JSON. Real accounts were provisioned and
+  verified twice. An administrator fault injected before the first account command
+  left durable intent; retry refused. Independent absence of both name/numeric
+  user/group identities justified removing only that exact fixture intent, then
+  provisioning succeeded. This is not recovery from interruption inside useradd.
+- Actual broker domain was `system_u:system_r:wydhosting_broker_t:s0`; CapEff/Prm/Bnd
+  were `000000000000000b` (CHOWN/DAC_OVERRIDE/FOWNER), CapAmb zero. The installed
+  hostile broker canary denied all 15 attempts, including useradd/groupadd execution,
+  passwd/shadow writes, shadow read and provisioning-proof write. The canary retains
+  its deliberately wider capability/syscall/mount setup to measure actual MAC.
+- Actual provider/worker domains/categories, cgroups, resource limits, sibling health,
+  durable hash/invocation refusals, crash/restart and retirement overlap checks passed.
+  Three new retirement cases verified graceful stop, broker-death reconciliation and
+  repeated reconciliation. No fresh Caddy/TLS chain was run in this build; existing
+  edge-UID worker-bypass refusal passed, without claiming a fresh edge-domain campaign.
+
+Fixture teardown removed only this campaign's accounts/groups, units, services,
+installation/state and temporary SELinux module. Final independent inventory confirmed
+none remained; SSH and firewalld stayed active, SELinux enforcing, public zone still
+`enp1s0` with cockpit/dhcpv6-client/ssh and no added ports or rules. No reboot, shutdown,
+mount, quota experiment, Mint privilege configuration or active-zone change occurred.
+Fresh root-protected build/harness staging remains at
+`/var/tmp/wyd-i56-privileged-resume`; the old `/var/tmp/wyd-i56-outcome` is untouched.
+Host logs are `/tmp/wydgit-i56-privileged-resume`; packed logs are
+`/tmp/wyd-i54-packed-R8VDRq`. Version remains alpha.15; no manifests/lockfiles changed.
+
+I5.6 remains experimental. Unit-write/start/reload authority can still permit indirect
+privileged execution: **full broker compromise containment is not established**.
+Fixed administrator templates and a separately constrained manager remain a production
+gate; no publisher redesign was begun here. Power-loss/account-tool partial-effect
+recovery, broader privileged ambiguous-retirement attacks, backup restore, independent
+console recovery, external-network and remaining exact-image qualification gates
+remain open. Best next action: review this bounded evidence and plan the remaining
+interruption/recovery matrix under the backup/console gates; do not infer I5.7 readiness.

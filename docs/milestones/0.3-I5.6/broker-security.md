@@ -1,5 +1,8 @@
 # Privileged broker security contract
 
+**Experimental account/retirement candidate:** see the 2026-10-17 privileged
+resume evidence in [verification](verification.md); production qualification remains open.
+
 **Implemented candidate, 56 real AlmaLinux broker/worker checks passed; NOT qualified.**
 A causal on/off/on experiment confirmed systemd 257 RestrictSUIDSGID returns ENOSYS
 for mandatory openat2 calls. Under explicit authorization, only the trusted broker
@@ -17,8 +20,7 @@ adds root-approved account SELinux categories, descriptor-applied deployment/run
 labels, nonrecyclable category markers and actual domain verification before launch.
 On an enforcing guest a missing category refuses execution. Provider/workers now have
 an experimental confined policy; the root broker now has the experimental
-`wydhosting_broker_t` domain. Actual direct-access denials pass; shared account and
-managed-unit/manager authority remain **not production compromise qualified**.
+`wydhosting_broker_t` domain. Actual direct-access denials pass; managed-unit/manager authority remain **not production compromise qualified**.
 See [SELinux](selinux.md).
 
 ## Installation trust
@@ -40,14 +42,14 @@ check refuses. This release shape passed the installed AlmaLinux VM campaign;
 other runtime/library closures still need separate qualification.
 
 The long-running provider is nonroot, with no capabilities. Broker sessions are root
-because fixed account tools and system service operations require it. The service
+for sealed staging and system service operations. The service
 limits retained capabilities, address families, memory/tasks/descriptors, host writes,
-core dumps and inherited environment. Account tools need atomic writes/locks in `/etc`;
-the template honestly permits that directory rather than claiming file-only writes
-would safely support `useradd`. NoNewPrivileges prevents acquired privilege. Dedicated
+core dumps and inherited environment. Account creation is now an offline administrator
+operation; the broker cannot write `/etc` or execute account tools. Its bound is
+CHOWN/DAC_OVERRIDE/FOWNER. NoNewPrivileges prevents acquired privilege. Dedicated
 experimental broker MAC is delivered, with verified startup context and
-read-only approval/systemd configuration mounts. A capability-split account/service
-helper and containment of indirect manager execution remain undelivered.
+read-only approval/systemd configuration mounts. The separate offline account provisioner is implemented; containment of indirect
+manager execution remains undelivered.
 
 ## Closed protocol
 
@@ -63,7 +65,7 @@ separately bounded at 4 MiB. Unsupported fields or operations fail closed.
 
 | Operation | Parameters and authorization | Implemented effect |
 | --- | --- | --- |
-| `ensure-account` | Empty body, approved pool/account | Verify or create exactly that restricted account; never adopt an existing unmanaged identity |
+| `ensure-account` | Empty body, approved pool/account | Verify an exact administrator-sealed provisioning record and live identity; never create or adopt |
 | `stage` | Empty body, approved descriptor/source/placement | Copy a fresh sealed generation; no existing generation replacement |
 | `launch` | Exact pinned bootstrap, new epoch/lifetime | Start fixed reviewed unit; authenticate its actual main peer; relay worker control only |
 | `status` | Empty body, approved pool with recorded lease | Controlled systemd accounting/status after unit-byte/invocation/cgroup ownership checks |
@@ -90,9 +92,8 @@ currently one OS provider principal, not customer/operator role delegation or a 
 admin API. Provider ID, pool ID and policy digest are integrity/resource selectors.
 
 Per-pool nonblocking `flock` serializes account/stage/launch/reconcile. A launch holds
-the lock for its entire control session; another launch/retire cannot race it. Account
-creation shared by multiple same-customer pools may fail conservatively on concurrent
-creation and require operator review. There is no automatic account adoption/recycling.
+the lock for its entire control session; another launch/retire cannot race it. Offline account provisioning must finish before provider activation. Interrupted
+creation refuses adoption and requires administrator review. There is no automatic account adoption/recycling.
 
 ## Worker authentication and lifecycle
 
@@ -159,3 +160,35 @@ NoNewPrivileges policy matches, and no process is already active. An /etc unit o
 unreviewed global drop-in cannot override the generated service silently. These
 manager-field checks have contract tests and actual AlmaLinux service/lease evidence;
 hostile global drop-in and interrupted-start VM attacks remain unqualified.
+
+## Account authority reduction and exact job retirement
+
+After installing root approval, an administrator runs the installed
+`broker/provision_accounts.py` with no arguments, then restores the exact
+`/etc/wydhosting/accounts` labels before activating the broker. The utility reads only
+validated installed approval; it offers no socket, command argument or publisher
+script interface. It creates locked/nologin identities and seals exact account JSON
+under `/etc/wydhosting/accounts/<account-hash>.json`. Broker code checks that read-only
+proof plus passwd/group identity and groups; it no longer reads shadow. Administrators
+must preserve the sealed account's lock and reject external account changes. Success is sealed only after identity/groups and shadow-lock verification. Durable
+intent precedes account-tool execution; concurrent provisioners are serialized. A
+pending intent without a success proof refuses automatic retry/adoption and requires
+administrator review, even if the account tools never ran. Partial creation is not
+silently repaired. Neither provider nor broker can write the proof.
+
+SELinux denies account-tool execution, passwd/group/shadow writes, shadow reads and
+proof writes. The normal broker also has a read-only `/etc` and loses SETUID, SETGID
+and AUDIT_WRITE. This is a direct authority reduction, **not containment of account
+changes through the remaining systemd escape surface**. Managed unit writes/start/
+reload remain powerful. A compromised broker can still potentially induce root
+execution through the manager; immutable administrator units and a separately
+constrained manager boundary remain mandatory before production qualification.
+
+After a verified stop, exact unit hash/invocation checks, terminal manager state,
+no pending manager job and empty recorded cgroup, the
+broker durably records stopped state, then retires only that generation's public job
+and handshake socket. The exact job content, unit identity and root-owned socket are
+required; missing proof with an extant socket refuses. Socket-first removal permits
+interrupted cleanup and repeated reconciliation. Unit fragments, leases, categories,
+accounts, staged code/data and ambiguous starts remain retained. No wildcard sweep,
+UID reuse or generic deletion operation was added.

@@ -234,17 +234,15 @@
 (type wydhosting_upload_t)
 (type wydhosting_account_t)
 (type wydhosting_broker_unit_t)
-(type wydhosting_account_temp_t)
-(typeattributeset file_type (wydhosting_broker_state_t wydhosting_broker_approval_t wydhosting_upload_t wydhosting_account_t wydhosting_broker_unit_t wydhosting_account_temp_t))
+(typeattributeset file_type (wydhosting_broker_state_t wydhosting_broker_approval_t wydhosting_upload_t wydhosting_account_t wydhosting_broker_unit_t))
 (typeattributeset systemd_unit_file_type (wydhosting_broker_unit_t))
 (roletype object_r wydhosting_broker_state_t)
 (roletype object_r wydhosting_broker_approval_t)
 (roletype object_r wydhosting_upload_t)
 (roletype object_r wydhosting_account_t)
 (roletype object_r wydhosting_broker_unit_t)
-(roletype object_r wydhosting_account_temp_t)
 (filecon "/var/lib/wydhosting/broker(/.*)?" any (system_u object_r wydhosting_broker_state_t ((s0) (s0))))
-(filecon "/etc/wydhosting/approval[.]json" file (system_u object_r wydhosting_broker_approval_t ((s0) (s0))))
+(filecon "/etc/wydhosting/(approval[.]json|accounts/[a-f0-9]{32}[.]json)" file (system_u object_r wydhosting_broker_approval_t ((s0) (s0))))
 (filecon "/var/lib/wydhosting/uploads(/.*)?" any (system_u object_r wydhosting_upload_t ((s0) (s0))))
 (filecon "/var/lib/wydhosting/accounts(/.*)?" any (system_u object_r wydhosting_account_t ((s0) (s0))))
 (filecon "/run/systemd/system/wydhosting-pool-[a-f0-9]+-[a-f0-9]+[.]service" file (system_u object_r wydhosting_broker_unit_t ((s0) (s0))))
@@ -256,7 +254,7 @@
 ; broker execute_no_trans on bin_t (in particular, /bin/sh remains denied).
 (allow wydhosting_broker_t bin_t (file (entrypoint execute open read getattr map)))
 (allow wydhosting_broker_t wydhosting_broker_t (process (fork sigchld signal getcap setrlimit getattr setfscreate)))
-(allow wydhosting_broker_t wydhosting_broker_t (capability (chown dac_override fowner setuid setgid audit_write)))
+(allow wydhosting_broker_t wydhosting_broker_t (capability (chown dac_override fowner)))
 (allow wydhosting_broker_t init_t (fd (use)))
 (allow wydhosting_broker_t init_t (unix_stream_socket (read write getattr getopt connectto)))
 (allow wydhosting_broker_t wydhosting_broker_t (unix_stream_socket (create bind listen accept connect read write getattr getopt setopt shutdown)))
@@ -266,6 +264,8 @@
 (allow wydhosting_broker_t wydhosting_worker_t (process (getattr)))
 (allow wydhosting_broker_t wydhosting_runtime_t (dir (search open read getattr)))
 (allow wydhosting_broker_t wydhosting_runtime_t (file (open read getattr map)))
+(filecon "/etc/wydhosting/accounts" dir (system_u object_r wydhosting_broker_approval_t ((s0) (s0))))
+(allow wydhosting_broker_t wydhosting_broker_approval_t (dir (search open read getattr)))
 (allow wydhosting_broker_t wydhosting_broker_approval_t (file (open read getattr)))
 (allow wydhosting_broker_t wydhosting_root_t (dir (search open read write getattr add_name)))
 (allow wydhosting_broker_t wydhosting_upload_t (dir (search open read getattr)))
@@ -292,19 +292,13 @@
 (allow init_t wydhosting_broker_unit_t (file (open read getattr)))
 (allow wydhosting_broker_t wydhosting_broker_unit_t (service (start stop status)))
 (allow wydhosting_broker_t init_t (system (reload)))
-; Only the three fixed administrative executable types may execute in-domain.
+; Service management remains a residual TCB boundary. No account-tool execution,
+; shared account database write, shadow read or audit-write capability is granted.
 (allow wydhosting_broker_t systemd_systemctl_exec_t (file (open read getattr map execute execute_no_trans)))
-(allow wydhosting_broker_t useradd_exec_t (file (open read getattr map execute execute_no_trans)))
-(allow wydhosting_broker_t groupadd_exec_t (file (open read getattr map execute execute_no_trans)))
-; Account tools own shared databases. No generic etc_t file write is granted.
-(allow wydhosting_broker_t etc_t (dir (search open read write getattr add_name remove_name)))
+(allow wydhosting_broker_t etc_t (dir (search open read getattr)))
 (allow wydhosting_broker_t etc_t (file (open read getattr)))
 (allow wydhosting_broker_t etc_t (lnk_file (read getattr)))
-(typetransition wydhosting_broker_t etc_t file wydhosting_account_temp_t)
-(allow wydhosting_broker_t wydhosting_account_temp_t (file (create open read write getattr setattr lock link unlink rename relabelfrom relabelto)))
-(allow wydhosting_broker_t passwd_file_t (file (create open read write getattr setattr lock link unlink rename relabelfrom relabelto)))
-(allow wydhosting_broker_t shadow_t (file (create open read write getattr setattr lock link unlink rename relabelfrom relabelto)))
-(allow wydhosting_broker_t wydhosting_broker_t (netlink_audit_socket (create read write getattr getopt setopt nlmsg_relay)))
+(allow wydhosting_broker_t passwd_file_t (file (open read getattr)))
 ; Read-only loader, Python, NSS, platform and cgroup/process lifetime evidence.
 (allow wydhosting_broker_t root_t (dir (search open read getattr)))
 (allow wydhosting_broker_t usr_t (dir (search open read getattr)))
@@ -343,15 +337,6 @@
 (allow wydhosting_broker_t cert_t (dir (search open read getattr)))
 (allow wydhosting_broker_t cert_t (lnk_file (read getattr)))
 (allow wydhosting_broker_t cert_t (file (open read getattr)))
-
-; Account tools consult the distribution's label database to preserve labels on
-; atomic passwd/group replacements; it remains read-only to the broker.
-(allow wydhosting_broker_t default_context_t (dir (search open read getattr)))
-(allow wydhosting_broker_t default_context_t (file (open read getattr)))
-(allow wydhosting_broker_t file_context_t (dir (search open read getattr)))
-(allow wydhosting_broker_t file_context_t (file (open read getattr map)))
-(allow wydhosting_broker_t selinux_config_t (dir (search open read getattr)))
-(allow wydhosting_broker_t selinux_config_t (file (open read getattr)))
 
 ; The fixed systemctl helper detects its root namespace and authenticates to
 ; systemd's existing private Unix manager endpoint. No system-bus/TCP access.

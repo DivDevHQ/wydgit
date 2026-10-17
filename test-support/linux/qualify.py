@@ -288,6 +288,32 @@ def main(build, integrated=False):
         try: pwd.getpwnam(name)
         except KeyError: pass
         else: raise RuntimeError('preexisting account name')
+        users.append((name, pool['account']['uid']))
+    # Administrator fault injection before the first account-tool effect. This
+    # proves durable intent/refusal, not recovery from power loss inside useradd.
+    provisioner = RELEASE/'node_modules/wydhosting/broker/provision_accounts.py'
+    inject = "import importlib.util; spec=importlib.util.spec_from_file_location('p',"+repr(str(provisioner))+"); p=importlib.util.module_from_spec(spec); spec.loader.exec_module(p); p.b.command=lambda *a,**k: (_ for _ in ()).throw(RuntimeError('injected before account tools')); p.main()"
+    attempt = command(['/usr/bin/python3', '-I', '-c', inject], check=False)
+    assert attempt.returncode != 0
+    first = pools[0]['account']
+    pending = ETC/'accounts'/(broker.key(first['accountId'])+'.pending.json')
+    proof = ETC/'accounts'/(broker.key(first['accountId'])+'.json')
+    assert json.loads(pending.read_text()) == first and not proof.exists()
+    check('interrupted provisioning refuses retry', lambda: command(['/usr/bin/python3','-I',str(provisioner)],check=False).returncode == 70 or (_ for _ in ()).throw(AssertionError('adopted pending intent')), category='account-provisioning')
+    # Exact fixture recovery: independently establish zero identity effects before
+    # removing only this invocation's matching intent. Never delete/recycle a UID.
+    for lookup, value in ((pwd.getpwnam,broker.account_name(first)),(pwd.getpwuid,first['uid']),(grp.getgrnam,broker.account_name(first)),(grp.getgrgid,first['gid'])):
+        try: lookup(value)
+        except KeyError: pass
+        else: raise RuntimeError('unexpected partial account; administrator review required')
+    pending.unlink()
+    log('administrator-reviewed-empty-intent-recovery', accountId=first['accountId'])
+    # Explicit offline administrator action, outside the broker's SELinux domain.
+    command(['/usr/bin/python3', '-I', str(RELEASE/'node_modules/wydhosting/broker/provision_accounts.py')])
+    if integrated:
+        command(['/usr/sbin/restorecon', '-RF', str(ETC/'accounts')])
+    check('verified account provisioning is repeatable', lambda: command(['/usr/bin/python3','-I',str(provisioner)]).returncode == 0, category='account-provisioning')
+    log('administrator-provisioned-accounts', identities=[broker.account_name(p['account']) for p in pools])
     templates = RELEASE / 'node_modules/wydhosting/templates'
     for name in ('wydhosting-broker.socket', 'wydhosting-broker@.service', 'wydhosting-broker.slice'):
         text = (templates / name).read_text().replace('@PROVIDER_UID@', str(PROVIDER)).replace('@PROVIDER_GID@', str(PROVIDER))
@@ -300,11 +326,10 @@ def main(build, integrated=False):
     if integrated:
         command(['/usr/sbin/restorecon', '-F', str(RUN/'broker.sock')])
     for pool in pools:
-        users.append((broker.account_name(pool['account']), pool['account']['uid']))
         check('real broker ensure-account ' + pool['poolId'], lambda p=pool: accepted(request(policy, 'ensure-account', p['poolId'])))
         name = broker.account_name(pool['account'])
         if pwd.getpwnam(name).pw_uid == pool['account']['uid']:
-            log('broker-created-account', name=name, uid=pool['account']['uid'])
+            log('broker-verified-administrator-account', name=name, uid=pool['account']['uid'])
         check('real broker stage ' + pool['poolId'], lambda p=pool: accepted(request(policy, 'stage', p['poolId'])))
     check('same UID wrong primary GID kernel authorization', lambda: refused(request(policy, gid=A), 'BROKER.UNAUTHORIZED'))
     # Stale root approval vs existing socket owner exercises actual UID check, without opening socket permissions.
@@ -431,11 +456,16 @@ def effective_hardening(reply):
     session = bound_session(reply)
     broker = show(session)
     assert broker['RestrictSUIDSGID'] == 'no' and all(broker[k] == worker[k] for k in ('NoNewPrivileges', 'ProtectSystem', 'ProtectControlGroups', 'RestrictNamespaces'))
-    assert set(broker['CapabilityBoundingSet'].split()) == {'cap_chown', 'cap_dac_override', 'cap_fowner', 'cap_setuid', 'cap_setgid', 'cap_audit_write'}
+    assert set(broker['CapabilityBoundingSet'].split()) == {'cap_chown', 'cap_dac_override', 'cap_fowner'}
     readonly = command(['/usr/bin/systemctl', 'show', session, '-p', 'ReadOnlyPaths', '--value']).stdout.split()
     assert {'/etc/systemd', '/etc/wydhosting'} <= set(readonly), readonly
     broker['ReadOnlyPaths'] = readonly
     broker_pid = int(command(['/usr/bin/systemctl', 'show', session, '-p', 'MainPID', '--value']).stdout)
+    actual_caps = dict(line.split(':', 1) for line in Path('/proc/'+str(broker_pid)+'/status').read_text().splitlines() if ':' in line)
+    for field in ('CapEff', 'CapPrm', 'CapBnd'):
+        assert int(actual_caps[field].strip(), 16) == 11, actual_caps[field]
+    assert int(actual_caps['CapAmb'].strip(), 16) == 0
+    broker['actualCapabilities'] = {k: actual_caps[k].strip() for k in ('CapEff','CapPrm','CapBnd','CapAmb')}
     broker_context = Path('/proc/'+str(broker_pid)+'/attr/current').read_text().strip('\0\n')
     assert broker_context == 'system_u:system_r:wydhosting_broker_t:s0', broker_context
     return dict(worker=worker, broker=broker, brokerSELinux=broker_context, workerSELinux=Path('/proc/'+str(reply['pid'])+'/attr/current').read_text().strip('\0\n'))

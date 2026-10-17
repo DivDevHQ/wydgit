@@ -14,7 +14,7 @@ Environment=LANG=C
 UnsetEnvironment=NODE_OPTIONS NODE_PATH PYTHONPATH PYTHONHOME LD_PRELOAD LD_LIBRARY_PATH
 UMask=0077
 NoNewPrivileges=yes
-CapabilityBoundingSet=CAP_CHOWN CAP_DAC_OVERRIDE CAP_FOWNER CAP_SETUID CAP_SETGID CAP_AUDIT_WRITE
+CapabilityBoundingSet=CAP_CHOWN CAP_DAC_OVERRIDE CAP_FOWNER
 AmbientCapabilities=
 ProtectSystem=strict
 ProtectHome=read-only
@@ -31,10 +31,9 @@ RestrictRealtime=yes
 LockPersonality=yes
 RestrictNamespaces=yes
 RestrictAddressFamilies=AF_UNIX AF_NETLINK
-ReadWritePaths=/var/lib/wydhosting /run/wydhosting /run/systemd/system /etc
+ReadWritePaths=/var/lib/wydhosting /run/wydhosting /run/systemd/system
 ReadOnlyPaths=/etc/systemd /etc/wydhosting
-# account tools use atomic renames and locks in /etc; the executable contract,
-# not a pretend read-only /etc mount, limits those administrative writes.
+# Account provisioning is administrator-only. This session has no writable /etc.
 InaccessiblePaths=/root /home
 LimitCORE=0
 TasksMax=64

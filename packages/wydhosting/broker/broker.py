@@ -142,39 +142,26 @@ def account_name(account):
 
 def ensure_account(account, state):
     name = account_name(account)
-    marker = 'account-' + key(account['accountId']) + '.json'
+    # Authorization comes from a separately sealed administrator record. Broker
+    # state is writable by this domain and cannot attest account provisioning.
+    provisioned = s.open_directory('/etc/wydhosting/accounts')
     try:
-        recorded = s.decode(s.read_file(state, marker))
-        s.require(recorded == account, 'BROKER.OWNERSHIP')
-    except FileNotFoundError:
-        # Never adopt an existing user/group, even if the numeric/name fields match.
-        for lookup, value in [(pwd.getpwnam, name), (pwd.getpwuid, account['uid']), (grp.getgrnam, name), (grp.getgrgid, account['gid'])]:
-            try:
-                lookup(value)
-            except KeyError:
-                continue
-            raise s.Refused('BROKER.OWNERSHIP')
-        # Interrupted creation is deliberately not repaired/adopted automatically.
-        command(['/usr/sbin/groupadd', '--system', '--gid', str(account['gid']), name])
-        command(['/usr/sbin/useradd', '--system', '--uid', str(account['uid']), '--gid', str(account['gid']), '--no-user-group', '--no-create-home', '--home-dir', account['home'], '--shell', '/usr/sbin/nologin', '--password', '!', '--no-log-init', name])
-        homes = s.open_directory(ROOT + '/accounts')
         try:
-            home = s.mkdir_owned(homes, account['accountId'], account['uid'], account['gid'], 0o700)
-            os.close(home)
-        finally:
-            os.close(homes)
-        s.atomic_file(state, marker, s.encode(account))
+            recorded = s.decode(s.read_file(provisioned, key(account['accountId']) + '.json'))
+        except FileNotFoundError:
+            raise s.Refused('BROKER.ACCOUNT_NOT_PROVISIONED') from None
+        s.require(recorded == account, 'BROKER.OWNERSHIP')
+    finally:
+        os.close(provisioned)
+    return verify_account(account)
+
+
+def verify_account(account):
+    name = account_name(account)
     actual = pwd.getpwnam(name)
     group = grp.getgrnam(name)
     s.require(actual.pw_uid == account['uid'] and actual.pw_gid == account['gid'] and actual.pw_dir == account['home'] and actual.pw_shell == '/usr/sbin/nologin' and group.gr_gid == account['gid'] and not group.gr_mem, 'BROKER.ACCOUNT')
     s.require(os.getgrouplist(name, actual.pw_gid) == [actual.pw_gid], 'BROKER.GROUPS')
-    etc = s.open_directory('/etc')
-    try:
-        shadow = s.read_file(etc, 'shadow')
-        matches = [row.split(b':')[1] for row in shadow.splitlines() if row.split(b':')[0] == name.encode()]
-        s.require(len(matches) == 1 and matches[0].startswith((b'!', b'*')), 'BROKER.ACCOUNT')
-    finally:
-        os.close(etc)
     return name
 
 
@@ -236,7 +223,7 @@ def stage(pool, state):
 
 
 def show(unit):
-    fields = ('Id', 'LoadState', 'ActiveState', 'MainPID', 'ControlGroup', 'InvocationID', 'Result', 'ExecMainCode', 'ExecMainStatus', 'MemoryCurrent', 'TasksCurrent', 'CPUUsageNSec', 'FragmentPath', 'DropInPaths', 'User', 'Group', 'Restart', 'NoNewPrivileges', 'KillMode')
+    fields = ('Job', 'Id', 'LoadState', 'ActiveState', 'MainPID', 'ControlGroup', 'InvocationID', 'Result', 'ExecMainCode', 'ExecMainStatus', 'MemoryCurrent', 'TasksCurrent', 'CPUUsageNSec', 'FragmentPath', 'DropInPaths', 'User', 'Group', 'Restart', 'NoNewPrivileges', 'KillMode')
     text = command(['/usr/bin/systemctl', 'show', '--no-pager', '--property=' + ','.join(fields), unit])
     values = dict(line.split('=', 1) for line in text.splitlines() if '=' in line)
     s.require(values.get('Id') == unit and values.get('LoadState') == 'loaded', 'BROKER.OWNERSHIP')
@@ -310,6 +297,51 @@ def stop_owned(record):
     if status.get('ActiveState') not in ('inactive', 'failed'):
         command(['/usr/bin/systemctl', 'stop', record['unit']], timeout=30)
     s.require(cgroup_empty(record), 'BROKER.OWNERSHIP_UNKNOWN')
+
+
+def retire_job(record, pool):
+    """Bounded exact-generation cleanup, after durable stop and owned cgroup death.
+
+    Keep unit/lease/category/account/data evidence. Never sweep runtime names.
+    Removing the socket first makes interruption/repeated reconciliation safe.
+    """
+    generation = record.get('generation')
+    s.require(record.get('state') == 'stopped' and type(generation) is str and re.fullmatch(r'[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}', generation), 'BROKER.OWNERSHIP')
+    expected_unit = 'wydhosting-pool-' + key(pool['poolId']) + '-' + generation.replace('-', '') + '.service'
+    s.require(record.get('unit') == expected_unit and record.get('base') == pool['base'] and record.get('cgroup') == '/system.slice/' + expected_unit, 'BROKER.OWNERSHIP')
+    def terminal():
+        values = owned_status(record)
+        s.require(values.get('ActiveState') in ('inactive', 'failed') and values.get('MainPID') == '0', 'BROKER.OWNERSHIP_UNKNOWN')
+        s.require(values.get('Job') == '', 'BROKER.OWNERSHIP_UNKNOWN')
+        s.require(values.get('InvocationID') in ('', record['invocation']) and values.get('ControlGroup') in ('', record['cgroup']), 'BROKER.OWNERSHIP_UNKNOWN')
+        s.require(cgroup_empty(record), 'BROKER.OWNERSHIP_UNKNOWN')
+    terminal()
+    job_id = key(pool['poolId'] + generation)
+    job_name, socket_name = 'job-' + job_id + '.json', 'worker-' + job_id + '.sock'
+    runtime = s.open_directory(RUN)
+    try:
+        expected = {'schema':'wydhosting.worker-launch/1', 'socket':RUN + '/' + socket_name, 'poolId':pool['poolId'], 'generation':generation}
+        try:
+            s.require(s.decode(s.read_file(runtime, job_name)) == expected, 'BROKER.OWNERSHIP')
+        except FileNotFoundError:
+            # Missing proof plus an extant socket is ambiguous, never adopted.
+            try:
+                os.stat(socket_name, dir_fd=runtime, follow_symlinks=False)
+            except FileNotFoundError:
+                return
+            raise s.Refused('BROKER.OWNERSHIP') from None
+        try:
+            info = os.stat(socket_name, dir_fd=runtime, follow_symlinks=False)
+            s.require(stat.S_ISSOCK(info.st_mode) and info.st_uid == 0 and info.st_nlink == 1, 'BROKER.OWNERSHIP')
+            terminal()
+            os.unlink(socket_name, dir_fd=runtime)
+        except FileNotFoundError:
+            pass
+        terminal()
+        os.unlink(job_name, dir_fd=runtime)
+        os.fsync(runtime)
+    finally:
+        os.close(runtime)
 
 
 def service_text(pool, generation, session, job):
@@ -611,6 +643,7 @@ def launch(provider, policy, pool, b, state):
             exit_status = int(raw_status) if raw_status.isdecimal() and 0 <= int(raw_status) <= 255 else 0
             record.update(state='stopped', result=result, exitStatus=exit_status)
             s.atomic_file(state, lease_name, s.encode(record), replace=True)
+            retire_job(record, pool)
             os.write(2, s.encode({'schema':'wydhosting.service-event/1', 'principal':'uid:'+str(policy['providerUid']), 'operation':'service-retired', 'poolId':pool['poolId'], 'generation':b['generation'], 'policyRevision':policy['policyRevision'], 'result':result, 'exitStatus':exit_status}) + b'\n')
             try:
                 provider.setblocking(True)
@@ -664,6 +697,7 @@ def handle(provider, policy, state, audit=None):
                 stop_owned(record)
                 record['state'] = 'stopped'
                 s.atomic_file(state, 'lease-' + key(pool['poolId']) + '.json', s.encode(record), replace=True)
+                retire_job(record, pool)
             else:
                 s.write_frame(provider, {'ok': True, 'state': record['state'], 'generation': record['generation'], 'service': status})
                 return request

@@ -11,6 +11,7 @@ import sys
 import tempfile
 import unittest
 from unittest.mock import patch
+from contextlib import ExitStack
 
 sys.dont_write_bytecode = True
 broker_path = Path(sys.argv.pop(1))
@@ -21,6 +22,77 @@ s = broker.s
 
 
 class BoundaryTests(unittest.TestCase):
+    def test_mocked_account_proof_is_required_and_never_creates_or_adopts_accounts(self):
+        account = {'accountId':'test', 'uid':61051, 'gid':61051, 'home':'/var/lib/wydhosting/accounts/test'}
+        for error in (FileNotFoundError(), None):
+            with patch.object(s, 'open_directory', return_value=71), patch.object(os, 'close'), patch.object(s, 'read_file', side_effect=error, return_value=s.encode({**account,'uid':61052})), patch.object(broker, 'command') as command, patch.object(broker.pwd, 'getpwnam') as lookup:
+                with self.assertRaises(s.Refused): broker.ensure_account(account, -1)
+                command.assert_not_called(); lookup.assert_not_called()
+
+    def test_exact_job_retirement_is_repeatable_and_refuses_conflicting_proof(self):
+        generation = '12345678-1234-1234-1234-123456789abc'
+        pool = {'poolId':'p', 'base':'/var/lib/wydhosting/pools/p/generations/1'}
+        record = {'state':'stopped', 'generation':generation, 'base':pool['base'], 'unit':'wydhosting-pool-'+broker.key('p')+'-'+generation.replace('-','')+'.service', 'invocation':'abc', 'cgroup':'/system.slice/wydhosting-pool-'+broker.key('p')+'-'+generation.replace('-','')+'.service'}
+        with tempfile.TemporaryDirectory() as root, patch.object(broker, 'RUN', root), patch.object(broker, 'owned_status', return_value={'ActiveState':'inactive', 'MainPID':'0', 'InvocationID':'abc', 'ControlGroup':record['cgroup'], 'Job':''}) as status, patch.object(broker, 'cgroup_empty', return_value=True) as empty:
+            job = Path(root)/('job-'+broker.key('p'+generation)+'.json')
+            expected = {'schema':'wydhosting.worker-launch/1', 'socket':root+'/worker-'+broker.key('p'+generation)+'.sock', 'poolId':'p', 'generation':generation}
+            job.write_bytes(s.encode(expected))
+            # Only current-UID file ownership is mocked; filesystem unlink is real.
+            with patch.object(s, 'open_directory', side_effect=lambda name: os.open(root, os.O_RDONLY | os.O_DIRECTORY) if name == root else self.fail('unexpected directory')), patch.object(s, 'read_file', side_effect=lambda fd,name: (Path(root)/name).read_bytes()):
+                for values, vacant in [({'ActiveState':'active','MainPID':'42'}, True), ({'ActiveState':'inactive','MainPID':'0','InvocationID':'replacement'}, True), ({'ActiveState':'inactive','MainPID':'0','ControlGroup':'/foreign'}, True), ({'ActiveState':'failed','MainPID':'0','Job':''}, False), ({'ActiveState':'inactive','MainPID':'0','Job':'123'}, True)]:
+                    status.return_value = values; empty.return_value = vacant
+                    with self.assertRaises(s.Refused): broker.retire_job(record,pool)
+                    self.assertTrue(job.exists())
+                status.return_value = {'ActiveState':'inactive','MainPID':'0','InvocationID':'abc','ControlGroup':record['cgroup'], 'Job':''}; empty.return_value = True
+                broker.retire_job(record,pool); self.assertFalse(job.exists())
+                broker.retire_job(record,pool)
+                job.write_bytes(s.encode({**expected,'generation':'foreign'}))
+                with self.assertRaises(s.Refused): broker.retire_job(record,pool)
+                self.assertTrue(job.exists())
+                with self.assertRaises(s.Refused): broker.retire_job({**record,'state':'running'},pool)
+                with self.assertRaises(s.Refused): broker.retire_job({**record,'unit':'foreign.service'},pool)
+            self.assertGreaterEqual(status.call_count,3)
+
+    def test_mocked_provisioning_seals_only_after_verification_and_refuses_interrupted_intent(self):
+        spec = importlib.util.spec_from_file_location('provision', broker_path / 'provision_accounts.py')
+        provision = importlib.util.module_from_spec(spec); spec.loader.exec_module(provision)
+        account = {'accountId':'test', 'uid':61051, 'gid':61051, 'home':'/var/lib/wydhosting/accounts/test'}
+        marker = broker.key('test')+'.json'; pending = broker.key('test')+'.pending.json'
+        for failure in ('command', 'identity', 'shadow', None):
+            records = {}; events = []
+            def read(fd, name):
+                if name == 'shadow':
+                    events.append('shadow')
+                    return (provision.b.account_name(account)+':'+('unlocked' if failure == 'shadow' else '!')+':rest').encode()
+                if name not in records: raise FileNotFoundError(name)
+                return records[name]
+            def publish(fd, name, data):
+                events.append(name); records[name] = data
+            def identity(a):
+                events.append('identity')
+                if failure == 'identity': raise provision.s.Refused('BROKER.ACCOUNT')
+            with ExitStack() as stack:
+                for target, attribute, options in [
+                    (provision.s,'read_file',dict(side_effect=read)), (provision.s,'atomic_file',dict(side_effect=publish)),
+                    (provision.s,'open_directory',dict(return_value=71)), (provision.s,'mkdir_owned',dict(return_value=72)),
+                    (provision.b,'verify_account',dict(side_effect=identity)),
+                    (provision.b,'command',dict(side_effect=provision.s.Refused('BROKER.SYSTEMD') if failure == 'command' else None)),
+                    (provision.pwd,'getpwnam',dict(side_effect=KeyError)), (provision.pwd,'getpwuid',dict(side_effect=KeyError)),
+                    (provision.grp,'getgrnam',dict(side_effect=KeyError)), (provision.grp,'getgrgid',dict(side_effect=KeyError)),
+                    (os,'close',{}), (os,'unlink',{}), (os,'fsync',{})]:
+                    stack.enter_context(patch.object(target, attribute, **options))
+                if failure:
+                    with self.assertRaises(provision.s.Refused): provision.provision(account, 70)
+                    self.assertNotIn(marker, records); self.assertIn(pending, records)
+                    with self.assertRaises(provision.s.Refused): provision.provision(account, 70)
+                else:
+                    provision.provision(account, 70)
+                    self.assertLess(events.index('identity'), events.index(marker))
+                    self.assertLess(events.index('shadow'), events.index(marker))
+                    provision.provision(account, 70)
+                    records[marker] = provision.s.encode({**account,'uid':61052})
+                    with self.assertRaises(provision.s.Refused): provision.provision(account, 70)
+
     def test_real_launcher_control_fd_survives_exec_for_same_and_different_fd(self):
         import subprocess
         code = '''import importlib.util,os,socket,sys

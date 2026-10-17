@@ -1,5 +1,8 @@
 # Restricted identities and filesystem ownership
 
+**Experimental account/retirement candidate:** see the 2026-10-17 privileged
+resume evidence in [verification](verification.md); production qualification remains open.
+
 **Candidate implementation; actual broker account/staging and cross-UID checks passed
 on AlmaLinux 10.2.** See [verification](verification.md) for the 53-case campaign and
 remaining hostile-mount, MAC and recovery gaps. No development-host account, group,
@@ -16,12 +19,14 @@ The canonical registry still distinguishes customer, account, pool, App, domain,
 placement and Gate membership. The broker derives a bounded hashed `wyd-<id>` login
 name from approved accountId; it does not infer ownership from that spelling. Numeric
 UID/GID are explicitly approved, equal and at least 60000, distinct from provider IDs.
-Existing names, UIDs or groups without exact broker ownership markers are refused.
+Existing names, UIDs or groups without exact administrator-sealed provisioning records are refused.
 
 New accounts use a locked password, `/usr/sbin/nologin`, no account-creation scripts
 from publishers, no new home-copy/skel operation and no supplementary groups.
-Verification checks passwd/group/shadow, primary group and exact empty supplemental
-group list. It does not edit sudoers, sshd, authorized_keys or any existing Node
+Offline administrator provisioning checks passwd/group/shadow and seals the identity
+under `/etc/wydhosting/accounts`; the broker verifies that read-only proof, live
+passwd/group identity, primary group and exact empty supplemental group list. It has
+no shadow read or account-tool/database write authority. It does not edit sudoers, sshd, authorized_keys or any existing Node
 installation. Worker unit additionally uses NoNewPrivileges, empty capabilities,
 ProtectHome and immutable system files. Sudo/pam/sshd distribution policy still requires
 VM review; creating a no-login account is not a general audit of the machine.
@@ -39,6 +44,7 @@ customer account, so same-customer pools do not gain mutually hostile UID isolat
 ```text
 /opt/wydhosting/release/                         root-owned reviewed runtime
 /etc/wydhosting/approval.json                    root-only administrative approval
+/etc/wydhosting/accounts/<account-hash>.json      administrator-sealed identity proof
 /etc/wydhosting/provider-approval.json           root-owned provider-readable projection
 /var/lib/wydhosting/provider/                    provider UID, 0700 registry/journal
 /var/lib/wydhosting/broker/                      root, 0700 ownership/lease records
@@ -74,13 +80,16 @@ permissions; a source-selected path never reaches chown/chmod. See [staging](dep
 
 ## Retirement and recovery
 
-The continued four-cycle actual provider/worker race campaign retains stopped unit
-fragments, jobs, lease/category markers and staged data. Those resources can accumulate.
-Automatic retirement remains absent; removing fragments prematurely would destroy
-the current unit-hash ownership/status proof. A future authenticated tombstone and
-interruption-safe exact-resource design must preserve account/category nonrecycling.
-Campaign cleanup uses its protected resource inventory after proving service death;
-it is not the missing production retirement implementation.
+The broker automatically retires only exact public launch jobs and handshake sockets
+after durable stopped state, verified unit bytes, terminal manager state, no pending
+manager job, matching invocation/cgroup identity and empty recorded cgroup. Reconciliation
+repeats this bounded cleanup after worker/provider/broker death. Job content, generation,
+pool/base/unit identity and socket ownership must agree; ambiguous proof refuses.
+Interrupted socket-first cleanup is repeatable. Units, lease/category markers, accounts
+and staged data remain retained; those resources can still accumulate. Removing unit
+fragments would destroy the current unit-hash ownership/status proof and needs a
+separate interruption-safe tombstone design. Campaign teardown is broader administrator
+fixture cleanup, not automatic production resource retirement.
 
 No automated user deletion, UID recycling, data erase, recursive quarantine cleanup or
 generated-unit removal is implemented. Stopping a pool retains data and root ownership
@@ -103,5 +112,5 @@ adopting the marker left by a partial reservation, and changing its approved UID
 A failed category-change attempt can conservatively reserve an extra marker; it is
 not recycled or reassigned. Current category exhaustion/crash recovery remains
 unqualified. Uploads are separately typed read-only to the broker; account directories
-and broker markers have their own types. Shared passwd/group/shadow authority remains
-a production TCB gate; see [SELinux](selinux.md) for the proposed separate provisioner.
+and broker markers have their own types. Direct shared account authority has been removed from the broker. Indirect account
+authority through systemd remains a production TCB gate; see [SELinux](selinux.md).

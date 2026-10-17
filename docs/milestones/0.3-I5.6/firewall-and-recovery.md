@@ -1,5 +1,8 @@
 # Firewall, SSH and recovery status
 
+**Experimental account/retirement candidate:** see the 2026-10-17 privileged
+resume evidence in [verification](verification.md); production qualification remains open.
+
 The integrated campaign preserves the existing firewalld and SSH/default-zone policy.
 Its Caddy TLS tests bind only VM loopback and provide **no external packet evidence**.
 No production apply adapter was enabled. Installed-service crash/OOM/restart and
@@ -116,7 +119,8 @@ unit bytes, invocation/cgroup or proven inactive/empty state. A mismatched/ambig
 record refuses. Stale supervisor locks and pre-invocation interrupted broker records
 require console inspection, not PID guessing.
 
-Stopped account/data/snapshot resources are retained. There is no automatic account
+Stopped account/data/snapshot resources are retained. Exact stopped generation job/socket retirement is automatic after verified ownership
+and cgroup death; units/accounts/data remain retained. There is no automatic account
 retirement, UID recycling, destructive cleanup, rollback to an older writer or data
 migration. Code rollback uses normal revert commits; deployment/data rollback requires
 known ownership and compatible state. Restore the disposable VM snapshot if ambiguity

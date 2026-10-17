@@ -87,3 +87,13 @@ and final required/packed results are linked from [verification](verification.md
 Resolve the delivered SHA with `git log -1 --format=%H --` this file; verify remote
 and remaining work with `git status --short` and `git ls-remote origin refs/heads/develop/0.3`.
 I5.6 remains experimental and not production-security-qualified. I5.7 was not begun.
+
+
+## Subsequent privileged resume
+
+Fresh SSH recovery and reviewed privileged drafts were qualified in a bounded
+99/99 installed campaign later on 2026-10-17. See the final
+[privileged resume evidence](verification.md#privileged-drafts-resumed--2026-10-17).
+The earlier connectivity failure and unverified-draft descriptions above are retained
+as historical checkpoints. I5.6 remains experimental; indirect manager authority and
+backup/console/interruption gates remain open.

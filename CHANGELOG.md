@@ -3,6 +3,11 @@
 - Settle admitted Page service calls before HTTP completion, cancel JSON/SQLite
   precommit work at the execution boundary, fsync JSON publication directories and
   report committed/not-committed/indeterminate outcomes without changing deadlines.
+- Move account provisioning to an offline administrator utility with sealed identity
+  proofs; remove broker account-tool/database authority and three capabilities.
+- Retire exact stopped generation jobs/sockets after ownership and cgroup checks;
+  retain units, leases, account/category markers and data. Systemd indirect authority,
+  generic request idempotency and remaining I5.6 qualification gates stay open.
 
 - Add an experimental enforcing broker SELinux domain, typed state/approval/staging/
   units, verified startup context and read-only approval/systemd mounts; retain fixed

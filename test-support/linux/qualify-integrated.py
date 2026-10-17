@@ -206,6 +206,13 @@ print(json.dumps(dict(status=r.status,body=b.decode(),headers=dict(r.getheaders(
     live = leases(); q.units.extend(r['unit'] for r in live if r['unit'] not in q.units)
     q.command(['/usr/bin/systemctl', 'stop', name])
     q.check('provider graceful stop empties both worker cgroups', lambda: all(broker.cgroup_empty(r) for r in live))
+    def retired_jobs(records):
+        for r in records:
+            job_id = broker.key(('i56-a' if r['unit'].startswith('wydhosting-pool-'+broker.key('i56-a')+'-') else 'i56-b') + r['generation'])
+            assert not (q.RUN/('job-'+job_id+'.json')).exists()
+            assert not (q.RUN/('worker-'+job_id+'.sock')).exists()
+        return True
+    q.check('automatic exact job retirement after graceful provider stop', lambda: retired_jobs(live), category='resource-retirement')
     q.check('provider restart from durable stopped leases', start)
     q.check('provider restart restores correct tenant response', lambda: response(host='b.localhost', marker='Qualification tenant i56-b'))
     live = leases(); q.units.extend(r['unit'] for r in live)
@@ -215,6 +222,8 @@ print(json.dumps(dict(status=r.status,body=b.decode(),headers=dict(r.getheaders(
     q.check('sibling canonical route survives broker SIGKILL', lambda: response(host='b.localhost', marker='Qualification tenant i56-b'))
     q.check('lost broker authority refuses stale route', lambda: response(status=503))
     q.check('explicit interrupted confined lease reconciliation', lambda: q.accepted(q.request(policy, 'reconcile', 'i56-a')))
+    q.check('broker death reconciliation retires exact job', lambda: retired_jobs([live[0]]), category='resource-retirement')
+    q.check('repeated retirement reconciliation is idempotent', lambda: q.accepted(q.request(policy, 'reconcile', 'i56-a')) and retired_jobs([live[0]]), category='resource-retirement')
     q.command(['/usr/bin/systemctl', 'kill', '--kill-whom=main', '--signal=KILL', name])
     q.check('provider SIGKILL independently retires both workers', lambda: q.wait(lambda: all(broker.cgroup_empty(r) for r in live), 25))
     q.command(['/usr/bin/systemctl', 'stop', name], check=False)
@@ -445,6 +454,12 @@ denied('foreign-provider-file',lambda:Path(sys.argv[2]).read_bytes())
 denied('system-file-write',lambda:os.open('/etc/hostname',os.O_WRONLY))
 denied('arbitrary-shell',lambda:subprocess.run(['/bin/sh','-c','exit 0'],check=True,timeout=2))
 denied('generic-executable',lambda:subprocess.run(['/usr/bin/true'],check=True,timeout=2))
+denied('account-tool-useradd',lambda:subprocess.run(['/usr/sbin/useradd','--help'],check=True,timeout=2))
+denied('account-tool-groupadd',lambda:subprocess.run(['/usr/sbin/groupadd','--help'],check=True,timeout=2))
+denied('shared-passwd-write',lambda:os.open('/etc/passwd',os.O_WRONLY))
+denied('shared-shadow-read',lambda:Path('/etc/shadow').read_bytes())
+denied('shared-shadow-write',lambda:os.open('/etc/shadow',os.O_WRONLY))
+denied('provisioning-proof-write',lambda:os.open(next(Path('/etc/wydhosting/accounts').glob('*.json')),os.O_WRONLY))
 denied('tcp-socket',lambda:socket.socket(socket.AF_INET))
 denied('provider-signal',lambda:os.kill(int(sys.argv[3]),18))
 s=socket.socket(socket.AF_UNIX)
@@ -469,7 +484,7 @@ p.write_text(json.dumps(dict(pid=os.getpid(),context=context,outcomes=outcomes))
         *['--property='+p for p in properties], '/usr/bin/python3', '-I', str(script), str(result), str(foreign), str(pid)], check=False)
     assert attempt.returncode == 0, q.command(['/usr/bin/journalctl', '-u', unit, '-n', '20', '--no-pager', '-o', 'cat']).stdout
     value = json.loads(result.read_text())
-    assert len(value['outcomes']) == 9, value
+    assert len(value['outcomes']) == 15, value
     with open('/var/log/audit/audit.log') as audit:
         audit.seek(audit_offset); lines = audit.readlines()
     evidence = [line.strip() for line in lines if 'avc:' in line and 'denied' in line and 'scontext=system_u:system_r:wydhosting_broker_t:s0 ' in line and 'permissive=0' in line]
