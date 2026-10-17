@@ -1564,3 +1564,77 @@ protected publication/effective-property checks, coordinated launcher/adapter/pa
 migration, complete removal of old broker rights and installed enforcing adversarial
 qualification. No partial authority removal, reboot/shutdown, Mint privileged change,
 firewall/SSH/network/quota change, SELinux weakening, I5.7, version bump or release.
+
+## Constrained manager implementation Slice 2 — 2026-10-17
+
+Baseline branch `develop/0.3`, HEAD/tracking/live remote equal
+`2d4cc9525e97ea503262e86d4ab482e0643c6155`, initially clean.
+Version remains **0.3.0-alpha.15**; manifests and lockfiles unchanged.
+See [Slice 2 contract and trust requirements](constrained-systemd-authority.md#implementation-slice-2--protected-offline-authorization-2026-10-17).
+
+Private `broker/lifecycle_authorization.py` loads only fixed approval/reservation
+basenames beneath an explicitly trusted directory FD. Root UID/GID, strict modes,
+regular/single-linked bounded files, openat2 no-symlink/no-traversal/no-mount-crossing,
+same-inode fstat/pread and final file/name/directory drift checks protect consumption.
+No broker pathname, passed broker FD or authority boolean is accepted as proof.
+The closed administrator approval binds one exact operation ID/request digest,
+operation, tenant/account/pool, both generations, epoch, sequence/revision, reserved
+UID/GID/category, derived service, pinned template/version/release, resource ceilings,
+complete protected reservation snapshot digest, explicit validity interval and
+active/revoked state. Full request and protected identity comparisons are independent
+of digest equality. The existing reservation parser was extracted for shared use;
+Slice 1 semantics and tests remain intact. Results contain only allow/deny and one
+of eleven fixed bounded codes. No service, socket, executable authority or broker
+integration was added.
+
+Focused Python authorization **14/14**, existing lifecycle **11/11**, ordinary-user
+Linux suite **22/22** passed. Initial repository `npm test` passed **941/941**, no
+skips/cancellations; `npm run check` passed (3 pages, 42 internal links). Source and
+package closure checks now require the authorization module, and independent packed
+Linux tests execute the same new hostile-input suite against installed Python source.
+
+The tests cover broker-authored current-UID approval denied by the unmodified root
+owner check; positive root ownership is explicitly simulated by patching expected
+UID/GID only. Real filesystem calls test unsafe file/directory modes, symlinks,
+hardlinks, FIFOs, directory-as-file, missing/truncated/oversized/malformed/duplicate/
+escaped-duplicate data and rejected traversal/pathname/invalid descriptor input.
+They also cover conflicting tenant/account/UID/GID/category/reservations, reservation
+digest/protection independent of request digest, every request binding field,
+operation-ID conflicts, expiration/revocation without cached allows, resource and
+operation/generation scope widening, template/service/release substitution and fixed
+renderer integrity. Deterministic barriers mutate the approval after fstat/before
+pread, and replace, symlink or rewrite either record after comparison/before final
+checks. All deny. No timing sleeps or privileged filesystem changes are used.
+
+Retained environmental failure: initial sandbox GitHub DNS resolution failed; the
+authorized ordinary-user remote query matched baseline. Initial sandbox Linux Node
+suite aborted with the same native async-ID assertion seen in Slice 1, before test
+results; `/tmp/wyd-i56-slice2-focused.log` retains it. The ordinary-user rerun passed
+22/22, without weakened assertions. Python logs are
+`/tmp/wyd-i56-slice2-{python,contract}.log`; repository logs are
+`/tmp/wyd-i56-slice2-{test,check}.log`; ordinary-user focused log is
+`/tmp/wyd-i56-slice2-focused-ordinary.log`. Initial independent packed consumers in `/tmp/wyd-i54-packed-cVIs6A` passed
+service-free, canonical **156/156**, provider **35/35**, subprocess **20/20** and
+Linux **22/22**, including authorization **14/14** against the installed module.
+Repository imports were rejected and each consumer used one installed engine.
+Packed log: `/tmp/wyd-i56-slice2-packed.log`. Final post-documentation checks and
+freshly packed consumers are rerun for delivery; logs use
+`/tmp/wyd-i56-slice2-delivery-{test,check,packed}.log`.
+
+This is static offline authorization, not authenticated connection admission, live
+passwd/group/provisioning verification, durable operation uniqueness/replay, rate/
+active-count enforcement or lifecycle execution. Administrator-sealed reservation
+snapshots must be reconciled with offline account provisioning. Trusted bootstrap
+must establish directory FD ancestry and independently verified release pin; host
+clock is trusted. Existing broker-writable markers are never proof. Required SELinux
+and mount writer exclusion is **not installed or qualified**: DAC/metadata checks
+alone cannot exclude compromised root broker writes or indirect systemd execution.
+Administrator updates must quiesce/serialize future effect admission and refresh
+held directory FDs on tree cutover; no check makes approval changes and later OS
+effects atomic. Live peer/session, durable-state, protected-publication, complete
+broker authority removal and enforcing installed qualification gates remain open.
+Historical guest evidence and retirement replacement-window diagnostics are preserved.
+
+No guest was contacted, inventoried or modified. No new privileged manager/socket,
+policy/capability change, Mint privileged configuration change, mount/quota/network/
+SSH/firewall change, reboot/shutdown, WydOS UI, I5.7, version bump or release occurred.

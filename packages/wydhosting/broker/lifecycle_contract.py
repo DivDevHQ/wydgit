@@ -140,7 +140,14 @@ def _authority(raw, reservations_raw):
     require(value['templateId'] == TEMPLATE_ID and value['templateDigest'] == TEMPLATE_DIGEST)
     require(hashlib.sha256((TEMPLATE_ID + '\n' + _LAUNCHER + '\n' + _FIXED).encode()).hexdigest() == TEMPLATE_DIGEST)
     require(matches(r'[0-9a-f]{64}', value['releaseDigest']))
-    reservations = _decode(reservations_raw)
+    reservations = validate_reservations(reservations_raw)
+    require({k: value[k] for k in IDENTITY_KEYS} in reservations)
+    return value
+
+
+def validate_reservations(raw):
+    """Validate a bounded identity allocation snapshot; provenance is external."""
+    reservations = _decode(raw)
     require(type(reservations) is list and 0 < len(reservations) <= 32)
     seen = [set() for _ in range(3)]
     for record in reservations:
@@ -151,8 +158,7 @@ def _authority(raw, reservations_raw):
         for used, key in zip(seen, ('accountId', 'uid', 'category')):
             require(record[key] not in used)
             used.add(record[key])
-    require({k: value[k] for k in IDENTITY_KEYS} in reservations)
-    return value
+    return reservations
 
 
 def bind_request(raw, authority_raw, reservations_raw):

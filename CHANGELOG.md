@@ -1,5 +1,11 @@
 ## Unreleased
 
+- Add private offline I5.6 administrator approval loading through a trusted directory
+  descriptor, exact independent request/reservation/template authorization and bounded
+  allow/deny codes, with deterministic replacement and hostile-input tests. No active
+  manager or broker authority change; SELinux/mount writer exclusion remains an
+  installed qualification gate. Version stays 0.3.0-alpha.15.
+
 - Add a private offline I5.6 lifecycle request validator, exact reservation binding,
   canonical operation references/replay comparison and pinned fixed candidate unit
   renderer with hostile-input tests. No manager activation or broker authority change;

@@ -4,7 +4,8 @@ Date: 2026-10-17. Baseline: `develop/0.3` at
 `a0ff09f8a433e18ae82aad308cdfa105a94af23b`, clean, tracking ref and live
 `origin/develop/0.3` equal. Version stays **0.3.0-alpha.15**.
 
-**Offline contract/candidate renderer implemented in Slice 1 below; no active
+**Offline contract/candidate renderer (Slice 1) and protected static authorization
+(Slice 2) implemented below; no active
 manager, installed protocol, policy or runtime change is implemented.**
 The current broker remains experimental and is not fully compromise contained.
 This document specifies an internal migration contract, not a new public API or
@@ -382,3 +383,123 @@ filesystem race resistance. Ordinary-user validation does not establish systemd 
 SELinux confinement. Existing broker authority, unit generation, SELinux rules and
 known retirement replacement window remain unchanged. Complete all migration gates
 above before activating any manager or removing broker authority.
+
+## Implementation Slice 2 — protected offline authorization, 2026-10-17
+
+Baseline `2d4cc9525e97ea503262e86d4ab482e0643c6155`, clean `develop/0.3`,
+tracking and live remote equal. Version remains **0.3.0-alpha.15**.
+`broker/lifecycle_authorization.py` is a private offline consumer, unused by the
+broker and without a CLI, socket, unit publication or privileged effect. Slice 1's
+binding fixture remains a fixture; it is never accepted as administrator approval.
+
+### Exact administrator contract
+
+The closed `wydhosting.lifecycle-approval/1` object contains **all** lifecycle request
+fields, with `schema` replaced by the approval schema, plus exactly these fields:
+
+| Field | Meaning / validation |
+| --- | --- |
+| `uid`, `gid`, `category` | Equal reserved UID/GID, 60000..2147483647; category 1..1023; exact protected reservation equality |
+| `templateId`, `templateDigest` | Exactly `wydhosting.worker/1` and the Slice 1 pinned definition digest; recompute fixed definition integrity |
+| `releaseDigest` | 64 lowercase hex; must equal the independently installed release pin passed by trusted code |
+| `service` | Exact hash/lifetime-derived service name from the validated request, no template substitution |
+| `limits` | All five Slice 1 limit keys, integer ceilings within the pinned hard bounds; no extra keys |
+| `requestDigest` | SHA-256 of the strictly validated canonical lifecycle request reconstructed from approval |
+| `reservationDigest` | SHA-256 of the canonical complete protected reservation array, preserving array order |
+| `notBefore`, `expiresAt` | UTC Unix seconds, safe integers, 0 <= notBefore < expiresAt; validity is [notBefore, expiresAt) |
+| `state` | Exactly `active` or `revoked`; revoked denies every operation, including stop |
+
+There are no optional fields, operation classes, wildcard identities, allocation
+ranges, generation ranges, implicit recovery grants or authority booleans. One
+approval authorizes static eligibility for exactly one operation ID, operation,
+tenant/account/pool, deployment generation, lifetime, epoch, sequence and policy
+revision. A broader schema requires a separate review. Resource ceilings are selected
+only by administrator approval; the request has no resource fields. This decision
+API does not accept alternate resource values. Future execution must use the exact
+approved values and revalidate before effects, never treat `ALLOW` as a bearer token.
+
+`reservations.json` is a separate protected JSON array of 1..32 closed records,
+each exactly `{tenantId, accountId, uid, gid, category}` using Slice 1's identity
+validator. Account IDs, UIDs and categories must be unique across the entire snapshot.
+Multiple accounts for a tenant are permitted. Approval pins that entire snapshot and
+must match one full identity record. This is an administrator-sealed allocation
+snapshot, **not** broker category markers, a provider registry or a live OS identity
+attestation. The administrator must reconcile it with successful offline provisioning;
+existing broker-writable reservations must not be imported as authoritative evidence.
+Live passwd/group/provisioning and peer/session verification remain activation gates.
+
+Approval and reservations each use the existing strict 8 KiB UTF-8 JSON parser:
+unknown/missing/duplicate/escaped-duplicate/reserved fields, malformed/truncated data,
+controls, deep structures, unsafe numerics and widened scopes deny. A digest is only
+an integrity/binding comparison; the code checks full underlying request scope,
+protected reservation provenance and identity, template and release independently.
+A reused operation ID with another request conflicts. Repeated identical `ALLOW`
+results do not grant reexecution: durable uniqueness/results remain unimplemented.
+
+### Protected FD loading and trust boundary
+
+`authorize(raw, trusted_directory_fd, *, now, installed_release_digest)` accepts **no
+pathname**. The directory FD must be opened/retained by trusted administrator/manager
+bootstrap from independently protected ancestry, never received over the broker
+protocol or selected by broker input. `now` must come from the trusted host clock;
+`installed_release_digest` must be installed independently of the broker, and the
+trusted runtime/launcher/renderer closure must actually be verified against it.
+Supplying an arbitrary digest does not verify installed release bytes.
+
+The loader duplicates the trusted directory descriptor, checks root UID/GID and
+0500/0700 directory mode, then opens only fixed basenames `approval.json` and
+`reservations.json` with the existing Linux amd64 `openat2` primitive. BENEATH,
+NO_SYMLINKS and NO_XDEV are required; no fallback. Each file must be regular,
+root UID/GID, 0400/0600, single-linked, nonempty and at most 8192 bytes. NONBLOCK
+avoids FIFO-open blocking; special files refuse. `fstat` and bounded `pread` operate
+on the same held inode, with no check-then-reopen. Short reads deny. No caller offset
+is consumed. Both descriptors remain held during validation. Before returning allow,
+check file device/inode/mode/owner/group/link-count/size/mtime/ctime, both directory
+entries without following links, and parent metadata against initial inspection.
+Replacement or in-place drift denies. Missing, unsafe or unreadable records deny.
+No approval cache survives a decision; revocation/deletion in the held tree denies
+the next decision. Replacing the directory or its ancestry requires quiescence and
+trusted bootstrap reacquisition of the FD; a held old directory is not a pathname
+watcher and must not remain an authorization source after an administrator cutover.
+
+**DAC and drift checks are not protection against a compromised privileged writer.**
+Future installation must create a separate administrator-owned, separately typed
+approval/reservation tree outside broker runtime state. Enforcing SELinux must deny
+broker/provider/worker write, append, setattr, relabel, link, rename, unlink and
+ancestor-entry replacement, even with broker UID 0/DAC_OVERRIDE. Trusted read-only
+mount ancestry must prevent broker mount/bind-mount substitution; release, directory
+FD provenance and all ancestors must be protected. Labels/mount provenance are
+preconditions supplied by trusted bootstrap, not attested by this offline API.
+These properties are **not installed or qualified in this slice**. Pointing this API
+at current broker-writable state or accepting a broker-passed FD violates its contract.
+
+Administrator updates must quiesce future execution or use its serialized maintenance
+gate and publish a coherent approval/reservation pair. The loader detects observed
+drift, but cannot make two files plus subsequent OS effects one atomic transaction,
+guarantee revocation after its final check, or defeat hostile root/kernel writers.
+No effect may be performed using a cached decision after maintenance/revocation.
+The future manager needs a held serialized revision through effect admission and
+fresh live identity/session/state verification. This slice supplies static independent
+authorization only, not the complete manager authority transition.
+
+### Decisions and verification
+
+The immutable result has only `allowed` and a fixed bounded `code`:
+`ALLOW`, `REQUEST`, `PROTECTION`, `CHANGED`, `APPROVAL`, `REVOKED`, `TIME`,
+`REQUEST_BINDING`, `TEMPLATE`, `RELEASE`, `RESERVATION`. Invalid request denies first;
+loading/protection checks precede approval, time/revocation, request, template/release
+and reservation comparison. Final drift checks can override an otherwise successful
+comparison. No exception, path or attacker text is reflected. Invalid trusted clock
+or release inputs also deny. This is deterministic for the same inputs and unchanged
+protected records, not an ownership, authentication or completion response.
+
+Fourteen focused Python tests run within repository and packed Linux suites.
+Ordinary-user tests explicitly patch only expected root ownership to the current
+UID/GID for positive fixtures; the unpatched production root check rejects those
+same broker-authored files. Real syscalls exercise permissions, symlinks, hardlinks,
+FIFOs, missing/malformed/oversized data, held-descriptor reads and name replacement.
+Deterministic hooks mutate after inspection/before read and after validation/before
+final consumption, for both files. They test observed drift, not hostile-root immunity.
+Protected-directory provenance, privileged SELinux/mount writer exclusion, actual
+root-authored approval, live identities/sessions and systemd containment require
+separate installed qualification. No guest was contacted or modified.
