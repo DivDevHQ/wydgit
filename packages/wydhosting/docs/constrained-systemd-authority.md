@@ -1,0 +1,324 @@
+# I5.6 constrained systemd authority — Phase 1
+
+Date: 2026-10-17. Baseline: `develop/0.3` at
+`a0ff09f8a433e18ae82aad308cdfa105a94af23b`, clean, tracking ref and live
+`origin/develop/0.3` equal. Version stays **0.3.0-alpha.15**.
+
+**Design only; no manager, protocol, policy or runtime change is implemented.**
+The current broker remains experimental and is not fully compromise contained.
+This document specifies an internal migration contract, not a new public API or
+permission to deploy. A complete authority transition is the smallest safe runtime
+slice: independently validating requests while retaining broker unit writes would
+leave the demonstrated architecture gap open. No disconnected prototype is shipped.
+
+## Observed authority and evidence
+
+The source paths below are relative to `packages/wydhosting/` at the baseline.
+
+| Path | Actual behavior and implication |
+| --- | --- |
+| `broker/broker.py`: `service_text`, `launch` | Renders a complete service containing User/Group, ExecStart, environment, SELinuxContext, writable paths and dependencies. Atomically publishes `/run/systemd/system/wydhosting-pool-<pool hash>-<lifetime>.service`, then executes `systemctl daemon-reload` and `start`. |
+| `templates/wydhosting-broker@.service` | Runs as root in `wydhosting_broker_t`, with CHOWN/DAC_OVERRIDE/FOWNER, writable `/run/systemd/system`, `/run/wydhosting`, `/var/lib/wydhosting`. `/etc/systemd` and approval are read-only. NNP and capability bounds constrain the broker process, not the service definitions it can submit to PID 1. |
+| `selinux/wydhosting_worker.cil`: broker rules | Allows `systemd_unit_file_t` directory write/add/remove; new files transition to `wydhosting_broker_unit_t`, whose file permissions include create/write/setattr/link/unlink/rename. Grants that type service start/stop/status, `init_t` system reload, systemctl execution and private manager socket access. Type enforcement does not validate unit names or directives. |
+| `broker/broker.py`: `verify_unit`, `owned_status` | Checks exact FragmentPath, empty DropInPaths, selected effective service properties, unit hash, invocation, cgroup, PID/start-time. Useful against external drift in normal execution; checks and expected hashes are controlled by the same broker. |
+| `broker/broker.py`: `launch`, `stop_owned`, `handle` | Writes starting/running/stopped leases in broker state; stops an exact recorded service, checks cgroup emptiness, reconciles on provider request. Per-pool flock and BindsTo bind normal session lifecycle. A compromised broker need not honor these Python checks. |
+| `broker/broker.py`: `retire_job`, launch finally | Retires exact public job/socket names after stopped evidence; launch also unlinks its listener name in finally. Both are name-based cleanup in a broker-writable directory. Units/leases/categories/accounts/data are retained. |
+| `broker/security.py` | Descriptor-held ancestry, openat2, regular-file/owner/link validation and durable atomic publication protect normal operations. They do not exclude another authorized directory writer between checks and unlink. |
+| `broker/provision_accounts.py`, `ensure_account` | Administrator-only provisioning seals proof under `/etc/wydhosting/accounts`; broker reads it and live identities. Keep this separation; it does not defeat indirect execution via PID 1. |
+
+The existing closed provider protocol accepts no raw unit or shell command. That
+protects against malformed provider input, not compromise of the process holding
+the above OS rights. A compromised broker can author different managed-type bytes
+and ask PID 1 to interpret them. It need not execute a forbidden account tool in
+its own domain. Direct exec/account/host-write denials and the historical installed
+99/99 campaign therefore do not establish containment of this path. No new real
+exploit or SELinux bypass is asserted here.
+
+Preserve historical sections of [verification](verification.md), [broker security](broker-security.md),
+[SELinux limits](selinux.md) and the complete
+[artifact-replacement diagnostic](retirement-hardening-2026-10-17.json) unchanged
+as historical evidence. The latter substituted artifacts during terminal callbacks:
+both replacement sentinels were unlinked. Its manager/cgroup/root ownership were
+simulated; filesystem replacements were real current-UID operations. It proves an
+unresolved check/unlink window for an already authorized writer, not customer write
+access or real systemd race safety. Passing 42 primitive tests does not reverse it.
+
+## Chosen boundary
+
+Introduce one administrator-installed **lifecycle manager**, in its own confined
+SELinux domain and service. It alone renders/publishes approved generation units,
+requests their lifecycle operations and owns lifecycle evidence. Publication is an
+internal step of start, never an independently callable arbitrary-file operation.
+Use a fixed administrator-owned rendering template with typed substitutions because
+per-account limits, MCS categories and approved deployment write sets currently vary.
+Do not accept template IDs or template bytes from the caller. Template/release/policy
+revisions are pinned in administrator approval. Installing or changing a template
+is an offline administrator action.
+
+The session broker keeps approved staging, authenticated worker relay and required
+categorized ingress adaptation. It may request `start`, `status` and
+`stop-and-retire` for its authorized session only. It cannot publish/remove/relabel
+units, directly contact PID 1, reload, stop/start foreign lifetimes, select service
+properties or attest lifecycle success. Remove **all** direct broker manager rights,
+including status, so ownership decisions have one authority. Preserve existing
+provider operations through the internal adapter, without exposing a new public API.
+
+The manager owns new separately typed protected directories for intent/results,
+public launch jobs and handshake socket directory entries. Broker state is never
+manager proof. Move lifecycle category/account reservation evidence to manager-owned
+storage or independently administrator-sealed records; broker-writable reservation
+markers are insufficient. Account creation stays exclusively offline, outside both
+services. Neither service may write account databases or provisioning proofs.
+
+Manager verifies sealed provisioning/live identity, exact administrator-approved
+pool/deployment/limits/category and reserved tenant identity itself. A staged
+`deployment.json` alone is not proof: broker controls it. Verify staged contents
+against approval with held descriptors; no broker-writable input may become a
+privileged executable, template, include or configuration source. The fixed launcher
+and installed runtime run only as the approved nonroot UID/GID and worker domain;
+customer code is never interpreted in the manager. Pin immutable runtime ancestry.
+Broker staging remains a separate security surface, not a source of manager authority.
+
+## Proposed closed wire contract
+
+Internal Unix stream, one bounded request and bounded response, no passed FDs or
+ancillary data in Phase 1. Suggested protocol name `wydhosting.lifecycle/1` is reserved
+here only. All keys below are required and exclusive; body/extensions are forbidden:
+
+```json
+{
+  "schema": "wydhosting.lifecycle/1",
+  "operationId": "0123456789abcdef0123456789abcdef",
+  "operation": "start",
+  "policyRevision": "<64 lowercase hex>",
+  "tenantId": "<approved customerId>",
+  "accountId": "<approved accountId>",
+  "poolId": "<approved poolId>",
+  "deploymentGeneration": 1,
+  "generation": "<canonical lowercase UUID lifetime>",
+  "epoch": 1,
+  "expectedSequence": 0
+}
+```
+
+Operations are exactly `start`, `status`, `stop-and-retire`. Deployment generation
+selects the approved base generation; UUID generation selects a distinct worker
+lifetime. Never conflate these. Identifiers use the existing bounded identifier
+grammar and exact approval equality; numeric fields are integers, not booleans,
+floats or coerced strings, bounded to 1..9007199254740991 (sequence may be zero). Operation ID
+is 32 lowercase hex, lifetime is canonical lowercase UUID; policy digest is 64
+lowercase hex. Limit frame to 8 KiB, depth to 2, initial read to 10 seconds; reject
+invalid UTF-8, duplicate/reserved/unknown keys, trailing data, embedded NUL/control
+characters and unsupported schema before effects. Bound connections, request rate,
+queued work, journal growth and result retention; exhaustion refuses new effects.
+Manager-owned policy sets operation deadlines; a timed-out queued operation must
+revalidate before effects and a timed-out in-flight operation becomes indeterminate.
+
+UID/GID, SELinux category, unit/session/cgroup name, PID, executable, arguments,
+environment, drop-ins, dependencies, filesystem paths and resource limits are absent
+from requests. Derive them from independent installed approval and authenticated
+session, never from opaque caller strings. Reject extra fields even if unused.
+Status/stop require the exact manager-recorded tuple and current sequence. Start
+requires no live or ambiguous predecessor, a never-used lifetime, increasing epoch
+and matching current sequence; no adoption by name. Administrator approval separately
+lists permitted operations, tuples, epoch range, active-count and start-rate bounds.
+Approval alone is not an unlimited restart grant. A compromised broker can exercise
+its exact allowed operations and disrupt its sessions; this is residual authorized
+availability risk, not authority to select privileged programs.
+
+Response is a tagged closed union: schema, operationId, requestDigest,
+policyRevision, exact resource tuple, sequence, outcome and code. Outcomes are
+`completed`, `refused`, `indeterminate`. Completed start/status additionally include
+a closed ownership object: template/release digests, unit hash, unit, invocation,
+cgroup, numeric UID/GID/PID, startTime, bootId and observed state. Completed retirement
+includes terminal-state, empty-cgroup and artifact-removal evidence instead. Errors
+use fixed codes and no payload/exception/path reflection. Refused/indeterminate
+responses have no ownership or retirement object. Unknown response keys refuse.
+Use the existing sorted-key compact UTF-8 JSON digest convention, with no Unicode
+normalization or numeric coercion; freeze byte fixtures with the validator. Requests
+are flat, so the digest has no nested-object ordering ambiguity.
+Use the same 8 KiB response bound; strings use the exact identifier/hex/UUID
+grammars above, generated unit/cgroup grammars and bounded decimal startTime.
+Observed state is a closed running/stopped/unknown vocabulary. Status is explicitly
+a snapshot, never an unlimited future authorization token.
+
+Broker checks manager endpoint peer identity/domain, response binding and current
+sequence; provider retains independent worker peer/cgroup/start-time checks. Durable
+result lookup uses the same authenticated tuple/operationId. No bearer result can
+authorize another operation. Same ID plus same canonical request returns the durable
+result; same ID plus different request refuses. Duplicate requests with missing or
+ambiguous evidence cannot cause a second start.
+
+## Independent authentication and authorization
+
+Socket DAC is defense in depth. On each connection the manager obtains kernel
+SO_PEERCRED and SO_PEERSEC; require exact installed broker UID/GID and enforcing
+broker domain. UID 0 alone is insufficient. Independently resolve peer PID/start-time,
+boot ID, invocation and exact active broker session cgroup through trusted manager/
+proc evidence, with fresh verification before effects. Never accept a caller-supplied
+session unit or PID. Deny wrong domain, vanished/reused peer or ambiguous metadata.
+Bind the connection to that session until completion; copied identifiers cannot
+transfer authority. Administrator approval maps that authenticated principal/session
+class to the exact tenant/account/pool/generations and operations. Broker claims,
+provider registry, WydGate roles and SEAM capabilities cannot expand this map.
+
+The manager independently reads bounded root-owned approval and sealed identity
+proofs through protected ancestry. Freeze the validated approval revision for an
+operation; changes require serialized revalidation, never mixed revisions. A revoked
+revision denies new starts; finishing an exact already-recorded stop is allowed only
+under explicit administrator recovery policy. Missing recovery policy quarantines.
+The manager is a privileged trusted deputy: its validator must remain effective even
+when the broker's implementation is entirely bypassed.
+
+## Template, publication and lifecycle mechanics
+
+Template has fixed installed Python launcher/Node paths, environment allowlist,
+empty capabilities, NNP, restricted nonroot UID/GID and worker SELinux context,
+control-group killing, no restart, existing sandbox/resource restrictions. Values
+come from validated approval, not request interpolation. Paths derive from canonical
+IDs and approved deployment records using escape-free grammars; reject `%`, `$`,
+whitespace, quotes, newlines and traversal rather than invent escaping. Validate
+every substituted field, including approved data. Numeric limits are bounded.
+Derive BindsTo/After only from verified broker session identity. No extra Exec*,
+EnvironmentFile, transient units, aliases, shell, property setter or dependency API.
+
+Use held protected directory descriptors, same-directory exclusive temporary files,
+no symlinks/hardlinks/mount crossing, expected labels/owners/modes, fsync file,
+no-replace publication and fsync directory. A collision refuses; never overwrite a
+foreign or old unit. Manager alone requests reload after its own durable publication;
+reload is not a wire operation. Serialize manager-wide publication/reload and per-pool
+lifecycle; reload failure quarantines. Independently verify actual loaded FragmentPath,
+empty DropInPaths, rendered bytes and effective command/identity/context/environment/
+dependency/sandbox properties before start, and actual invocation afterward. Current
+selected-field `verify_unit` checks are not the full new verification contract.
+
+All unit lookup paths, aliases, global/service drop-ins, generators and transient
+unit mechanisms must be administrator protected. Manager may neither alter its own
+unit/policy nor invoke arbitrary systemd properties. MAC service rights apply only
+to a dedicated managed unit type; filename patterns alone are insufficient. A fixed
+renderer and narrow API prevent caller-selected execution; MAC/DAC protect renderer,
+unit bytes and evidence from the broker. Manager compromise remains a distinct TCB
+risk: SELinux is not a directive-content validator for manager-authored units.
+
+Manager creates and owns the public job and handshake listener; it can pass only a
+connected authenticated worker stream to the bound broker after independently
+checking MainPID/UID/GID/domain/cgroup/start-time/challenge. This requires an internal
+FD handoff implementation separate from the JSON request protocol, with exact FD
+count/type/peer verification and CLOEXEC tests. Do not implement this by granting
+broker write access to the manager's directory or accepting a broker socket path.
+Worker launcher and relay adaptation must migrate together. Manager handles broker
+death independently; BindsTo is supplemental, not completion evidence.
+
+## Durable intent, recovery and retirement races
+
+Persist authenticated request digest, full resource binding, template/policy/release
+hashes, session identity, previous sequence and operation phase **before any effect**.
+Fsync transitions: accepted → publication-intent → published → start-intent → running;
+stop-intent → terminal-observed → retirement-intent → retired. Record manager job ID,
+invocation/cgroup/PID/start-time and boot ID as they become known. Each record is
+manager-owned, append-audited and durably sequenced; journal messages alone are not
+completion proof. Disk-full/fsync failure stops further effects; loss after a manager
+effect yields indeterminate, never speculative success or an automatic new start.
+
+After crash, connection loss or timeout, return/recover exact durable results when
+provable. Otherwise mark indeterminate/quarantined, block replacement and require
+administrator review. Do not import broker leases as trusted history. Recovery may
+stop only an independently proven exact owned invocation; inability to prove it
+requires operator inspection, not numeric-PID kill or adoption. Reboot/boot-ID change
+invalidates live process evidence and requires separately qualified recovery. No
+automatic account/category reuse, data migration or broad cleanup.
+
+Retirement checks exact manager-owned unit/tuple/hash/invocation, terminal manager
+state, no pending job, zero MainPID and empty descendant cgroup before durable stopped
+and removal of exact generation artifacts. Retain units, leases, approval/category/
+account evidence and customer data. Record partial cleanup and retry only against
+the same protected generation. Both ordinary retirement and every launch/failure
+finally path must follow this rule; avoid the existing unconditional listener unlink.
+
+Repeated pathname checks cannot defeat a sufficiently privileged concurrent writer.
+The primary defense is **writer exclusion**: broker/provider/workers cannot write,
+rename, unlink, relabel or replace entries in manager artifact/unit/state directories
+or their ancestors; all legitimate lifecycle writers use the manager's shared locks.
+Worker-owned ingress remains in a distinct subtree and is never lifecycle proof.
+Bind listener descriptors and exact generation records, retain tombstones, and never
+reuse names. Account for systemd RuntimeDirectory creation/removal and installation/
+label tools as authorized writers; they must not manipulate manager evidence paths.
+An independently running administrator installer must quiesce the manager and use
+its offline maintenance gate. Audit every writer, including tmpfiles/recovery tools.
+
+With these invariants, a compromised broker loses the ability to perform the recorded
+replacement attack, and cannot race stop with an independent start via PID 1. This
+is a design argument requiring installed adversarial verification, not proof already
+obtained. Root-equivalent administrators, kernel compromise, policy replacement or
+another domain granted equivalent directory/manager rights remain outside the
+boundary. Such writers can invalidate all pathname evidence; quarantine on detected
+drift, do not promise atomic deletion safety against hostile root. Filesystem deletion
+and manager snapshots still are not a joint transaction.
+
+## Enforcement and migration gates
+
+1. Implement/test manager parser, authorization, fixed renderer and durable state
+   machine privately; no production activation or public exports. Review exact
+   bounded response grammar and FD handoff. Keep account provisioner unchanged.
+2. Install dedicated manager domain and typed approval/template/state/control/unit
+   resources. Broker must have no write/relabel/remove rights over them despite root
+   UID and DAC_OVERRIDE. Deny direct manager socket access, system reload, managed
+   service start/stop/status and systemctl execution to broker. Remove writable
+   `/run/systemd/system` from broker service; verify mounts and effective policy.
+   Restrict manager mount writes to its own exact trees/unit publication directory,
+   capability set to demonstrably required minimum, AF_UNIX only, no account tools,
+   shell, network, arbitrary bin execution or account-database writes.
+3. In a stopped maintenance window inventory existing units/leases/artifacts. Refuse
+   conflicting/ambiguous history; no automatic adoption or wildcard deletion. Install
+   new template/policy/runtime atomically as an administrator-reviewed bundle. Move
+   all lifecycle operations, artifact ownership, reservations and failure cleanup;
+   migrate worker handoff and broker adapter together. No dual authorized writers.
+4. Activate only after negative installed tests prove the old authority absent and
+   all legitimate launch/status/stop/reconcile/provider flows work. No unconfined or
+   old-broker fallback. Rollback requires offline quiescence/review; do not silently
+   restore the insecure permission set. Existing deployment remains unqualified.
+
+## Required adversarial evidence and open decisions
+
+Ordinary-user tests must reject unknown/duplicate/reserved keys, invalid encodings,
+unsafe numbers, schema confusion, commands/unit fragments/paths/env/drop-ins, foreign
+identities/generations, stale sequence/revision, operation-ID collisions, replay,
+peer/session substitution, unsealed identity, and symlink/hardlink/mount substitution.
+Test malicious approved substitution values too. Inject failure at every durable
+transition and every manager effect, full disk, disconnect, concurrent duplicates,
+partial socket/job retirement, manager restart and newer-generation sentinels.
+Keep the existing privileged-writer diagnostic as a known limitation, not a passing
+new-architecture test or an xfail that hides a runtime defect.
+
+Installed enforcing AlmaLinux qualification must bypass broker validation entirely:
+from a deliberately compromised broker domain attempt raw unit writes/replacement/
+relabel, private and bus manager calls, reload, transient/property APIs, foreign
+starts/stops and all former cleanup paths. Demand actual AVC/manager refusals and
+unchanged sentinels, alongside successful exact allowed operations. Exercise global
+drop-ins/overrides, authenticated wrong sessions, FD spoofing, broker death during
+start/stop, simultaneous tenant lifetimes, all authorized directory writers and late
+artifact/manager mutations. Demonstrate independent account-proof/database denials.
+Mock manager passes cannot establish these properties. Reboot/power-loss/destructive
+recovery tests require established backup and independent console gates first.
+Run repository and independent packed-consumer regressions after implementation.
+No expensive guest campaign is warranted for this design-only delivery.
+
+Open implementation decisions: exact socket activation/FD handoff plumbing; final
+result grammar and audit retention quotas; minimum manager capabilities and distro
+policy interfaces; administrator maintenance/revocation recovery tooling. Resolve
+these in implementation review before activation, with testable failure semantics.
+No decision permits caller-selected commands, paths or weaker enforcement.
+
+Remaining I5.6 production gates include the complete authority transition and
+independent security review; real privileged retirement/interruption qualification;
+account-tool partial-effect recovery; power-loss/reboot and backup/console restore;
+storage quotas, external networking and remaining exact-image integration. Historical
+99/99 guest checks and this design do not qualify the new architecture. I5.7, version
+changes and WydOS implementation are excluded.
+
+Future WydOS may request the same defined administrative operation through an
+authenticated adapter. Administrator-installed policy must authorize its exact scope;
+the separate helper independently verifies and executes it and emits a durable result.
+WydOS identity/roles confer no implicit SEAM or host authority. No remote endpoint,
+public contract, separate WydOS planning implementation or new delegation authority
+is introduced in this phase.

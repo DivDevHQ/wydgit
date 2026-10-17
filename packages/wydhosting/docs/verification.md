@@ -1474,3 +1474,38 @@ canonical **156/156**, provider **35/35**, subprocess **20/20**, Linux **20/20**
 (including 42 Python methods), with repository imports rejected and one installed
 engine per consumer. Logs: `/tmp/wydgit-i56-final-{primitives-ordinary,linux,test,packed}.log`;
 final delivery reruns use `delivery` in place of `final`. No public package publication.
+
+## Constrained systemd authority Phase 1 — 2026-10-17
+
+Clean `develop/0.3` baseline HEAD, tracking ref and live remote matched
+`a0ff09f8a433e18ae82aad308cdfa105a94af23b`. Version remains alpha.15.
+[Separation design](constrained-systemd-authority.md) traces actual publication,
+manager control, ownership and all cleanup paths, then specifies fixed administrator
+templates, independent authenticated closed operations, protected manager evidence,
+writer exclusion, durable recovery, complete migration and adversarial gates.
+No runtime/policy/protocol implementation or partial authority transition is shipped.
+The existing broker remains indirectly privileged and unqualified. The replacement
+JSON/reproducer and all historical failures remain unchanged; repeated pathname
+checks are explicitly insufficient against an authorized concurrent writer.
+
+Validation logs for this documentation delivery are `/tmp/wydgit-i56-authority-*`.
+The initial sandboxed npm test reported multiple failures and a Node internal
+async-ID assertion, then stalled and was interrupted; its log is retained as
+`test.log`. Ordinary-user rerun uses `test-ordinary.log`; final required checks after
+document edits use `delivery-test.log` and `delivery-check.log`. Packed-consumer
+execution uses `packed.log`. These are regression checks of existing behavior, not
+executable validation of the proposed manager. No new negative test or prototype is
+claimed; the design defines the required future hostile-input/authorization matrix.
+Completed ordinary-user repository rerun: **939/939**, no skipped/cancelled tests;
+`npm run check` passed. Independent packed consumers passed service-free, canonical
+**156/156**, provider **35/35**, subprocess **20/20**, Linux **20/20**, with
+repository imports rejected and one installed engine per consumer. Packed evidence:
+`/tmp/wyd-i54-packed-1V67j0`. Final delivery checks rerun after documentation edits;
+see delivery handoff for their outcomes. No assertion was weakened.
+
+No guest connection, guest inventory, fixture, privileged qualification or host
+privileged modification was performed. Guest state was not freshly observed; the
+previous read-only inventory and historical 99/99 installed result remain historical.
+No reboot/shutdown, firewall/network/quota change, I5.7 or WydOS implementation,
+version bump, prerelease or release occurred. Production gates remain those in the
+new design, including complete authority removal and installed enforcing proof.

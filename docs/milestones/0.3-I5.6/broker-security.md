@@ -192,3 +192,11 @@ required; missing proof with an extant socket refuses. Socket-first removal perm
 interrupted cleanup and repeated reconciliation. Unit fragments, leases, categories,
 accounts, staged code/data and ambiguous starts remain retained. No wildcard sweep,
 UID reuse or generic deletion operation was added.
+
+## Constrained systemd authority design — 2026-10-17
+
+[Phase 1 design](constrained-systemd-authority.md) specifies the separate lifecycle
+manager, fixed administrator template, closed authenticated operations, protected
+evidence/artifacts, retirement writer exclusion and complete migration gates. This
+is design only: no manager or authority reduction is implemented by that delivery.
+The privileged artifact-replacement diagnostic remains unresolved.

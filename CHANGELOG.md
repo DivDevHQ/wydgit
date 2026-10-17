@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Specify the I5.6 constrained systemd manager boundary, closed internal contracts,
+  writer exclusion, durable recovery and migration/qualification gates. Design only;
+  broker indirect systemd authority remains uncontained.
+
 - Add deterministic retirement regressions for late manager/cgroup conflicts, partial
   cleanup, repeated reconciliation and stale generations; retain privileged artifact
   replacement window evidence as an unresolved production gate. No runtime change.
