@@ -31,7 +31,7 @@ export async function openJsonAdapter(root, owner, definitions, metadata, limits
     } catch (error) { if (error.code === 'ENOENT') return null; throw error; }
     finally { await handle?.close(); }
   }
-  async function write(data) {
+  async function write(data, completion) {
     // Retain the legacy whole-document depth limit without cloning the document.
     checkJson(data,{maxBytes:limits.jsonDocumentBytes,maxDepth:64,maxNodes:Number.MAX_SAFE_INTEGER});
     validate(data);
@@ -42,24 +42,30 @@ export async function openJsonAdapter(root, owner, definitions, metadata, limits
       handle = await open(temporary, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW, 0o600);
       await handle.writeFile(text); await handle.sync(); await handle.close(); handle = null;
       await safeRoot(root);
+      completion?.begin();
       await rename(temporary, file);
+      const directory=await open(root,constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW);
+      try{await directory.sync();}finally{await directory.close();}
+      completion?.committed();
     } finally {
       await handle?.close();
       await unlink(temporary).catch(error => { if(error.code !== 'ENOENT') throw error; });
     }
   }
-  async function transaction(operation, initialize = false) {
+  async function transaction(operation, initialize = false, completion) {
     const previous = queues.get(file) ?? Promise.resolve();
     const next = previous.catch(() => {}).then(async () => {
       let lockHandle;
       try {
+        completion?.check();
         await safeRoot(root);
         try { lockHandle = await open(lock, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW, 0o600); }
         catch(error) { if(error.code === 'EEXIST') throw new StoreError('STORE.BUSY'); throw error; }
         let data = await read();
         if (data === null) { check(initialize, 'STORE.CORRUPT'); data = json(initial); await write(data); }
+        completion?.check();
         const result = operation(data);
-        if (result.changed) await write(data);
+        if (result.changed) await write(data,completion);
         return result.value;
       } catch (error) { throw safeIO(error); }
       finally { if(lockHandle) { await lockHandle.close(); await unlink(lock).catch(() => {}); } }
@@ -75,7 +81,7 @@ export async function openJsonAdapter(root, owner, definitions, metadata, limits
       for(const entry of value){bytes+=checkJson(entry.data,budget(limits,limits.historyDataBytes),'STORE.LIMIT').bytes;check(bytes<=limits.historyDataBytes,'STORE.LIMIT');}
     }
   };
-  return Object.freeze({ execute(operation, request) { return transaction(document => {
+  return Object.freeze({ execute(operation, request, completion) { return transaction(document => {
       if (operation !== 'transaction') {
         const result=applyOperation(document,operation,request);
         checkOperation(operation,result.value);
@@ -88,5 +94,5 @@ export async function openJsonAdapter(root, owner, definitions, metadata, limits
         return result;
       });
       return {changed:results.some(item => item.changed),value:results.map(item => item.value)};
-    }); } });
+    },false,completion); } });
 }

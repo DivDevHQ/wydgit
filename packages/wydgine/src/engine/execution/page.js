@@ -1,4 +1,5 @@
 import {createInstanceController} from './instances.js';
+import {createCompletion} from './completion.js';
 import {createExecutionBudget,executionBudget} from '../sewn/budget.js';
 import {execute as executeWorkflow} from '../sewn/execute.js';
 import { bindMembers, authorizeMember, resolveMember } from '../object-model/members.js';
@@ -14,13 +15,14 @@ import { webModel } from '../web-model.js';
 import { renderSite,errorDocument } from '../index.js';
 import { prepareComponents,createPresentationLedger } from '../components.js';
 
-export async function executePage({model,pageId,session,input,context,runtimeSettings={},handlers=[],actions=[],events=new EventRegistry(),files,libraries,serviceMappings,csrf,render=renderSite,observe}) {
+export async function executePage({model,pageId,session,input,context,runtimeSettings={},handlers=[],actions=[],events=new EventRegistry(),files,libraries,serviceMappings,csrf,render=renderSite,observe,cancelled=()=>false}) {
   handlers=prepareHandlers(handlers,events);actions=actions.map(record=>prepareAction(record,events));
   check(context.app===session.view.app&&session.active(),'EVENT.DENIED','Invalid owning Session');
   check((context.identity?.sessionId??null)===(session.identity?.sessionId??null),'EVENT.DENIED','Wrong Session identity');
   const presentationLedger=createPresentationLedger(context,pageId,runtimeSettings);
   let runtime=hydrate(dehydrate(model.runtime,{includeSensitive:true}),model.registry),alive=true,writable=true,unloading=false;
-  const executionLedger=createExecutionBudget(context,{guard:()=>check(alive&&session.active(),'EVENT.DENIED','Page execution ended')});
+  const executionLedger=createExecutionBudget(context,{guard:()=>check(alive&&session.active()&&!cancelled(),'EVENT.DENIED','Page execution ended')});
+  const completion=createCompletion(()=>executionBudget(executionLedger,context).check());
   const ledger=[],initialized=new Set(),archive=new Map(),errors=[];let failure;let resolving=false;
   const response=createResponse(context),requestData={...input,route:{page:pageId}};
   const tree=(state=runtime)=>{const ids=[];const walk=id=>{ids.push(id);for(const slot of Object.keys(state.get(id).slots).sort())state.get(id).slots[slot].forEach(walk);};walk(pageId);return ids;};
@@ -67,7 +69,7 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
   };
   const contexts=guard=>({PAGE:handle(pageId,guard),SESSION:freeze(clean(session.view)),REQUEST:requestFacade(requestData,context,guard),...(resolving?{}:{RESPONSE:response.facade(guard)}),SERVER:Object.freeze({App:context.app}),
     ...(resolving?{}:{FILESYS:Object.freeze({Get(id){guard();check(files,'FILE.DENIED','No approved files');return files.get(id,context,guard);}})}),
-    SERVICES:Object.freeze({async Invoke(library,apiVersion,name,input){guard();check(!resolving||library==='wydstore'&&['get','query'].includes(name),'EVENT.DENIED','Resolvers may only read records');await session.authorize();guard();check(libraries,'SEAM.DENIED','No services');input=storageInput(library,name,input);return libraries.bind(context).invoke(library,apiVersion,name,input);},async Call(library,name,input){guard();check(!resolving||library==='wydstore'&&['get','query'].includes(name),'EVENT.DENIED','Resolvers may only read records');await session.authorize();guard();check(libraries,'SEAM.DENIED','No services');input=storageInput(library,name,input);return libraries.bind(context).call(library,name,input);}})
+    SERVICES:Object.freeze({async Invoke(library,apiVersion,name,input){guard();check(!resolving||library==='wydstore'&&['get','query'].includes(name),'EVENT.DENIED','Resolvers may only read records');await session.authorize();guard();check(libraries,'SEAM.DENIED','No services');input=storageInput(library,name,input);return completion.run(operation=>libraries.bind(context,operation).invoke(library,apiVersion,name,input));},async Call(library,name,input){guard();check(!resolving||library==='wydstore'&&['get','query'].includes(name),'EVENT.DENIED','Resolvers may only read records');await session.authorize();guard();check(libraries,'SEAM.DENIED','No services');input=storageInput(library,name,input);return completion.run(operation=>libraries.bind(context,operation).call(library,name,input));}})
   });
   const componentsRuntime=createInstanceController({runtime,registry:model.registry,context,rootId:pageId,budget:executionLedger,events,services:contexts(rootGuard).SERVICES,scope:contexts(rootGuard),canEdit:()=>writable&&!unloading&&response.state==='Open',canEmit:()=>writable&&!unloading,onRuntime:next=>{runtime=next;}});
   const executor=async(document,options)=>{const id=options.scope.ME.id;if(!exists(id))return executeWorkflow(document,options);const d=model.registry.get(runtime.get(id).prototype);if(!d.component&&!Object.keys(d.events).length)return executeWorkflow(document,options);componentsRuntime.adopt(runtime);if(!componentsRuntime.executable(id))await componentsRuntime.activate();return componentsRuntime.workflow(document,options.scope,id,options);};
@@ -159,11 +161,21 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
     if(!response.explicit){const projection=webModel(runtime,model);const components=await prepareComponents(projection,pageId,input,context,libraries,session,presentationLedger);const result=await render(projection,input.path,{csrf,components});response.tree(result.html,result.status);}
   }catch(error){failure=safeError(error);}
   finally {
+    try {
     writable=false;unloading=true;response.beginCleanup();dispatcher.close();
     const cleanup=createDispatcher({budget:executionLedger,executor,dynamicHandlers:options=>componentsRuntime.handlers(options),prototypeRegistry:model.registry,registry:events,handlers,context,handle,contexts,canRaise:()=>false,exists:id=>exists(id)||archive.has(id)});
     for(const id of [...ledger].reverse())try{await cleanup.dispatch({type:'Page.Unload',source:pageId,target:id,payload:{}});}catch(error){errors.push(safeError(error).toJSON());}
     cleanup.close();await componentsRuntime.dispose();errors.push(...componentsRuntime.errors());const charges=executionBudget(executionLedger,context).snapshot();executionBudget(executionLedger,context).close();alive=false;observe?.({steps:charges.steps??0,limited:[failure,...errors].some(error=>['SEWN.LIMIT','EVENT.LIMIT'].includes(error?.code))});
+    }catch(error){failure??=safeError(error);}
+    finally {
+    executionBudget(executionLedger,context).close();alive=false;
+    // Revocation stops new work; it does not cancel already submitted kernel I/O.
+    // Keep the request in the host's drain set until every admitted call settles.
+    await completion.settle();
+    }
   }
-  if(failure&&response.state==='Open')response.tree(errorDocument(),failure.code==='EVENT.DENIED'||failure.code==='SEAM.DENIED'||failure.code==='REQUEST.FORGERY'?403:500);
-  return {response,error:failure?.toJSON()??null,cleanupErrors:errors};
+  const outcome=completion.outcome(Boolean(failure));
+  if(failure&&outcome==='indeterminate')await response.failedOperation();
+  else if(failure&&response.state==='Open')response.tree(errorDocument(),failure.code==='EVENT.DENIED'||failure.code==='SEAM.DENIED'||failure.code==='REQUEST.FORGERY'?403:500);
+  return {response,error:failure?.toJSON()??null,cleanupErrors:errors,outcome};
 }

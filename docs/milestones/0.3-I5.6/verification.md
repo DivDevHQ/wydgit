@@ -1,6 +1,11 @@
 # I5.6 verification and qualification record
 
-**Latest campaign:** [reliability diagnosis and broker domain](#reliability-diagnosis-and-broker-domain-campaign--2026-10-16)
+**Latest checkpoint:** [interrupted campaign recovery](continuation-2026-10-17.md).
+The HTTP-only correction is independently validated; privileged account/retirement
+drafts remain uncommitted and guest verification is blocked by SSH reachability.
+See [operation completion](operation-completion.md) for implemented semantics and limits.
+
+**Previous campaign:** [reliability diagnosis and broker domain](#reliability-diagnosis-and-broker-domain-campaign--2026-10-16)
 and [SELinux policy](selinux.md). Earlier sections retain their original failures,
 counts and limitations; they are historical evidence, not the current gate decision.
 
@@ -23,6 +28,27 @@ No root/sudo/account/systemd/cgroup/firewall/SSH/network/DNS/certificate provisi
 was performed on the operator's machine. Sandboxed test restrictions were bypassed
 only for explicitly authorized ordinary-user subprocess/socket/browser/npm/Git work,
 not by running customer code or provisioning as root.
+
+## HTTP completion recovery — 2026-10-17
+
+Reviewed repository regression: **939/939**, no failures/skips/cancellations. Required
+content validation passed. Fresh focused HTTP/storage regression: **13/13**, including
+actual server-observed cancellation and explicit indeterminate post-rename failure.
+Independent installed canonical consumer: **156/156** (including all seven completion
+regressions); provider consumer: **35/35**. Supervisor/Linux consumer results and
+final post-documentation checks are captured at delivery. The packed matrix contains
+the preserved privileged candidates; its ordinary-user passes do not qualify their
+root operations. The installed engine/store sources match the delivered HTTP change.
+
+Evidence: [sanitized completion observations](../../../test-support/linux/evidence/2026-10-17-http-completion.json)
+and [continuation checkpoint](continuation-2026-10-17.md). Fresh raw logs use
+`/tmp/wydgit-i56-resume`; the fresh independent installation is
+`/tmp/wyd-i54-packed-xQ5ACh`. The initial resumed 11/13 failure and corrected 13/13
+run remain separate. Previous interrupted `/tmp` evidence was unavailable; no
+missing result is labelled passed. Guest SSH was unreachable, so fresh VM identity,
+SELinux/SSH/firewalld and cleanup are **unverified**. No new VM mutation or prohibited
+firewall/quota/reboot/host action occurred. The privileged drafts remain uncommitted;
+I5.6 remains experimental, with systemd authority, crash receipts and recovery gates open.
 
 ## Reliability diagnosis and broker domain campaign — 2026-10-16
 

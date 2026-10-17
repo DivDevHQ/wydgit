@@ -104,8 +104,11 @@ export async function openStores(input, rawCheckJson) {
   const execute = async (operation, raw, caller, policy) => {
     try {
       const request=validate(operation,raw,caller,policy),store=stores.get(request.store);
+      // This host-only control is never accepted in a canonical store request.
+      const completion=policy.operation;
+      completion?.cancelled();completion?.check();
       if (operation==='metadata') {const value=json(store.metadata.get(request.collection));request.checkResult(value);return value;}
-      return await store.adapter.execute(operation,request);
+      return await store.adapter.execute(operation,request,completion);
     } finally {prepared.delete(raw);}
   };
   return frozen({authorize,execute,validate});

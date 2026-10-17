@@ -10,11 +10,11 @@ export function failure(code) {
 export const isServiceFailure = error => failures.has(error);
 const identifier = value => typeof value === 'string' && /^[a-z][a-z0-9-]{0,63}$/.test(value);
 const apiVersion = value => typeof value === 'string' && /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/.test(value);
-export function bindServices(context, lookup, describe = () => undefined) {
+export function bindServices(context, lookup, describe = () => undefined, operation) {
   checkContext(context);
   const run = async (service, input, versioned) => {
     if (!service || !context.allows(service.capability) || !service.authorize) return failure('SEAM.DENIED').toJSON();
-    const policy=effectiveLimits(service.limits ?? SERVICE_DEFAULTS,context);
+    const policy=Object.freeze({...effectiveLimits(service.limits ?? SERVICE_DEFAULTS,context),...(operation?{operation}:{})});
     const limited=versioned || service.enforceLegacyLimits === true;
     let request;
     try { if(limited)checkJsonBudget(input,policy.request);
@@ -23,6 +23,7 @@ export function bindServices(context, lookup, describe = () => undefined) {
     try {
       if (await service.authorize(request, context, policy) !== true) return failure('SEAM.DENIED').toJSON();
       if (versioned && (!service.validate || await service.validate(request, context, policy) !== true)) return failure('SERVICE.INVALID_REQUEST').toJSON();
+      operation?.begin();
       const result = await service.handler(request, context, policy);
       let value;
       try { if(limited)checkJsonBudget(result,policy.response);

@@ -127,10 +127,11 @@ export async function openSqliteAdapter(root, owner, definitions, metadata, limi
     }
     return next.deleted ? {id:next.id, version:next.version, deleted:true} : snapshot(next);
   }
-  async function transaction(operation, request, initialize = false) {
+  async function transaction(operation, request, initialize = false, completion) {
     let db;
     try {
       await inspectFiles();
+      completion?.check();
       db = new Database(file, {fileMustExist:true, timeout:1000});
       db.pragma('trusted_schema = OFF');
       db.pragma('foreign_keys = ON');
@@ -144,9 +145,16 @@ export async function openSqliteAdapter(root, owner, definitions, metadata, limi
           const value=execute(db,item.operation,item.request);request.addResult(value);return value;
         }) : execute(db,operation,request);
         if(operation!=='transaction')request.checkResult(result);
+        // Throwing here rolls back the entire synchronous transaction. After
+        // return the native COMMIT cannot be interrupted by a JavaScript timer.
+        try{completion?.check();}catch(error){completion?.cancelled();throw error;}
         return result;
       });
-      return initialize || ['get','query','count','history'].includes(operation) ? run.deferred() : run.immediate();
+      if(initialize || ['get','query','count','history'].includes(operation))return run.deferred();
+      completion?.begin();
+      let value;
+      value=run.immediate();
+      completion?.committed();return value;
     } catch (error) { throw providerError(error); }
     finally { if (db) { try { db.close(); } catch { throw new StoreError('STORE.IO'); } } }
   }
@@ -175,5 +183,5 @@ export async function openSqliteAdapter(root, owner, definitions, metadata, limi
     }
     await transaction(null,null,true);
   } catch (error) { throw providerError(error); }
-  return Object.freeze({execute(operation,request) { return transaction(operation,request); }});
+  return Object.freeze({execute(operation,request,completion) { return transaction(operation,request,false,completion); }});
 }

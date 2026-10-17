@@ -1,0 +1,167 @@
+{
+  "schema": "wydhosting.i56-http-completion-evidence/1",
+  "date": "2026-10-17",
+  "baseline": "dc254c8e0309d0fa890b8e752fdedeee9e2f7305",
+  "branch": "develop/0.3",
+  "version": "0.3.0-alpha.15",
+  "qualification": "experimental; not production-security-qualified",
+  "attempts": [
+    {
+      "name": "focused-first",
+      "passed": 11,
+      "failed": 2,
+      "reason": "Recovered connection-loss fixtures incorrectly assumed EVENT.DENIED; the revoked-ledger continuation reports SEWN.LIMIT. Kept failures; changed to explicit server-close observation and no-commit verification."
+    },
+    {
+      "name": "focused-final",
+      "passed": 13,
+      "failed": 0
+    },
+    {
+      "name": "repository-reviewed",
+      "passed": 939,
+      "failed": 0
+    },
+    {
+      "name": "installed-canonical-consumer",
+      "passed": 156,
+      "failed": 0
+    },
+    {
+      "name": "installed-provider-consumer",
+      "passed": 35,
+      "failed": 0
+    },
+    {
+      "name": "ordinary-python-primitives",
+      "passed": 38,
+      "failed": 0,
+      "scope": "Administrative operations mocked; no root/MAC qualification"
+    }
+  ],
+  "httpObservations": [
+    {
+      "provider": "JSON",
+      "boundary": "open",
+      "controlledWaitMs": 1100,
+      "status": 500,
+      "diagnostics": [
+        {
+          "schema": "wydgine.http-event/1",
+          "phase": "page",
+          "code": "SEWN.LIMIT"
+        },
+        {
+          "schema": "wydgine.http-event/1",
+          "phase": "cleanup",
+          "code": "SEWN.LIMIT"
+        }
+      ],
+      "recoveryStatus": 200,
+      "completedBeforeRelease": false,
+      "committedRecordVisibleAfterFailure": false,
+      "historicalAttribution": false
+    },
+    {
+      "provider": "SQLite",
+      "boundary": "lstat",
+      "controlledWaitMs": 1100,
+      "status": 500,
+      "diagnostics": [
+        {
+          "schema": "wydgine.http-event/1",
+          "phase": "page",
+          "code": "SEWN.LIMIT"
+        },
+        {
+          "schema": "wydgine.http-event/1",
+          "phase": "cleanup",
+          "code": "SEWN.LIMIT"
+        }
+      ],
+      "recoveryStatus": 200,
+      "completedBeforeRelease": false,
+      "committedRecordVisibleAfterFailure": false,
+      "historicalAttribution": false
+    },
+    {
+      "provider": "JSON",
+      "boundary": "rename",
+      "controlledWaitMs": 1100,
+      "status": 500,
+      "diagnostics": [
+        {
+          "schema": "wydgine.http-event/1",
+          "phase": "page",
+          "code": "SEWN.LIMIT"
+        },
+        {
+          "schema": "wydgine.http-event/1",
+          "phase": "cleanup",
+          "code": "SEWN.LIMIT"
+        }
+      ],
+      "recoveryStatus": 200,
+      "completedBeforeRelease": false,
+      "committedRecordVisibleAfterFailure": true,
+      "historicalAttribution": false
+    },
+    {
+      "provider": "JSON",
+      "boundary": "connection-loss",
+      "client": "ECONNRESET",
+      "serverCloseObserved": true,
+      "committed": false,
+      "recoveryStatus": 200
+    },
+    {
+      "provider": "SQLite",
+      "boundary": "connection-loss",
+      "client": "ECONNRESET",
+      "serverCloseObserved": true,
+      "committed": false,
+      "recoveryStatus": 200
+    },
+    {
+      "boundary": "held Page.Load during drain",
+      "controlledWaitMs": 1100,
+      "status": 500,
+      "diagnostics": [
+        {
+          "schema": "wydgine.http-event/1",
+          "phase": "page",
+          "code": "SEWN.LIMIT"
+        },
+        {
+          "schema": "wydgine.http-event/1",
+          "phase": "cleanup",
+          "code": "SEWN.LIMIT"
+        }
+      ],
+      "siblingStatus": 200,
+      "historicalAttribution": false
+    }
+  ],
+  "guest": {
+    "ssh": "No route to host",
+    "freshIdentityEnforcementAndCleanup": "not verified",
+    "mutationsDuringResume": false,
+    "interruptedStagingToInspect": "/var/tmp/wyd-i56-outcome"
+  },
+  "deferred": [
+    "privileged account/retirement candidate qualification",
+    "indirect systemd authority reduction",
+    "forced process termination mid-commit",
+    "durable client-keyed Page receipts",
+    "external active-zone firewall",
+    "filesystem quotas",
+    "reboot"
+  ],
+  "logHashes": {
+    "focused-first.log": "4631df3a79b03c104181a0ce6c71efacdccefdcd954d9e93523f071eb2e97c1a",
+    "focused-final.log": "9888f5876da00ca0983cc7b919e98f87d8d874a816a8ddcd1689a06845f08239",
+    "required-final.log": "32f98a625ef7360cf1dd6514cc61fc8a2ffd87cb7f61d2bf168de31547210301",
+    "linux-python.log": "7ac16943e9ca8092ea175c14e3fe45189be4b7b772739d7e6a3dc19d1743d459",
+    "content-final.log": "4e437bb4ebff45ddb9678e543f256b37dfaa0f4bca6969731a24c5ab84a7d1cd"
+  }
+}

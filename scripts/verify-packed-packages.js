@@ -48,7 +48,7 @@ await fs.copyFile(path.join(repository,'test-support/packed/service-free.mjs'),p
 await run(process.execPath,['--import',path.join(serviceFree,'proof-register.mjs'),'service-free.mjs'],serviceFree,{log:'service-free.log'});
 console.log('PASS service-free installed binary, validation, HTTP/assets, restart, closed configuration');
 const full=await consumer('five-library',['wydgine','wydstore','wydgate','wydsearch','wydfiles','wydstream']);
-const selected=['multi-app','hostname-host','hosting-operations','hardening','guestbook-package','packages','package-infrastructure','wydgate-http','wydstream-http','wydstream-search','wydstream-security','wydsearch-package','wydfiles','wydstore-sqlite','process-supervision','linux-isolation'];
+const selected=['multi-app','hostname-host','hosting-operations','hardening','guestbook-package','packages','package-infrastructure','wydgate-http','wydstream-http','wydstream-search','wydstream-security','wydsearch-package','wydfiles','wydstore-sqlite','operation-completion','process-supervision','linux-isolation'];
 async function stage(root){
  await fs.copyFile(path.join(repository,'wydgit.config.json'),path.join(root,'wydgit.config.json'));
  await fs.mkdir(path.join(root,'.fixtures'));

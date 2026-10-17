@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Settle admitted Page service calls before HTTP completion, cancel JSON/SQLite
+  precommit work at the execution boundary, fsync JSON publication directories and
+  report committed/not-committed/indeterminate outcomes without changing deadlines.
+
 - Add an experimental enforcing broker SELinux domain, typed state/approval/staging/
   units, verified startup context and read-only approval/systemd mounts; retain fixed
   operations, capability bounds and the broker-only openat2 exception.

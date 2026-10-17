@@ -33,6 +33,7 @@ export function createResponse(context) {
       }
     });},
     beginCleanup(){cleanup=true;},
+    async failedOperation(){await file?.file.close();file=null;mode='tree';status=500;state='Committed';body='<!doctype html><html lang="en"><title>Operation outcome indeterminate</title><main><h1>Operation outcome indeterminate</h1><p>This request did not complete. Changes may have been saved. Check current state before submitting again.</p></main></html>';headers.clear();cookies.clear();},
     tree(html,code=200){check(state==='Open','RESPONSE.STATE','Already committed');check(typeof html==='string'&&html.length<=2*1024*1024,'RESPONSE.LIMIT','Output limit');body=html;status=code;state='Committed';},
     async send(res,head=false){
       check(state==='Committed','RESPONSE.STATE','No output');

@@ -79,13 +79,14 @@ export function createPipeline({root,libraries,execution={},lifecycle,guard=()=>
         input.action={target:single('_target'),type:single('_action'),csrf:single('_csrf'),payload:{}};
         if(input.action.type==='Change')input.action.payload={OldValue:model.runtime.get(input.action.target).properties.value,NewValue:single('value')};
       }
-      result=await executePage({model,pageId:page.id,session,input,context,runtimeSettings,handlers:execution.handlers,actions:execution.actions,events:execution.events,files:execution.files,libraries,serviceMappings:packages?.pages.get(page.id)?.storageMappings,observe:governance?data=>governance.page(data):undefined,csrf:session.csrf});
+      result=await executePage({model,pageId:page.id,session,input,context,runtimeSettings,handlers:execution.handlers,actions:execution.actions,events:execution.events,files:execution.files,libraries,serviceMappings:packages?.pages.get(page.id)?.storageMappings,observe:governance?data=>governance.page(data):undefined,csrf:session.csrf,cancelled:()=>res.destroyed});
       // executePage returns structured failures rather than throwing. Preserve
       // their diagnostic boundary without logging requests, messages or details.
       for(const [phase,error]of [['page',result.error],['cleanup',result.cleanupErrors[0]]])if(error){
         const code=typeof error.code==='string'&&/^[A-Z][A-Z0-9_]{0,31}(?:\.[A-Z][A-Z0-9_]{0,31}){1,3}$/.test(error.code)&&error.code.length<=64?error.code:'HTTP.INTERNAL';
         try{diagnostic({schema:'wydgine.http-event/1',phase,code});}catch{}
       }
+      res.setHeader('X-Wydgit-Operation-Outcome',result.outcome);
       await result.response.send(res,req.method==='HEAD');
     }catch(error){if(!res.headersSent){if(error.code==='GATE.SESSION_INVALID')res.setHeader('Set-Cookie',[cookiePolicy.serialize('auth','',0)]);res.statusCode=req.path.startsWith('/_transfer/')?(/DENIED|FORGERY|GATE\.SESSION_INVALID/.test(error.code??'')?403:/LIMIT|QUOTA/.test(error.code??'')?413:/UNSUPPORTED_MEDIA|INVALID_MEDIA/.test(error.code??'')?415:/CONFLICT|STATE/.test(error.code??'')?409:/NOT_FOUND/.test(error.code??'')?404:400):(/DENIED|FORGERY|GATE\.SESSION_INVALID/.test(error.code??'')?403:400);res.setHeader('Content-Type','text/html; charset=utf-8');res.end(errorDocument());}else res.destroy();}
     finally{transferOutput?.stream?.destroy();await transferOutput?.close?.();await result?.response.close();}

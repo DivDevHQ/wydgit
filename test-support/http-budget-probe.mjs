@@ -1,4 +1,4 @@
-// Bounded diagnostic campaign, not a claim to attribute historical incidents.
+// Regression for the demonstrated deadline defect; original failing evidence is retained.
 // Run: node --test test-support/http-budget-probe.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -7,11 +7,12 @@ import {syncBuiltinESMExports} from 'node:module';
 import path from 'node:path';
 import {Readable} from 'node:stream';
 import {once} from 'node:events';
+import http from 'node:http';
 import {packageFixture} from './packages.js';
 import {runInstaller} from '../scripts/install-package.js';
 import {createHostApp} from 'wydgine';
 
-for(const provider of ['JSON','SQLite'])test(`${provider}: controlled Contact storage wait crosses unchanged Page deadline`,{timeout:15000},async t=>{
+for(const [provider,boundary] of [['JSON','precommit'],['SQLite','precommit'],['JSON','submitted-commit'],['JSON','connection-loss'],['SQLite','connection-loss']])test(`${provider}: controlled Contact ${boundary} wait crosses unchanged Page deadline`,{timeout:15000},async t=>{
  const f=await packageFixture(t),diagnostics=[];
  await fs.writeFile(path.join(f.root,'wydgit.config.json'),await fs.readFile('wydgit.config.json'));
  await runInstaller({args:[f.packagePath,'--root',f.root,'--apply'],input:Readable.from(['y','y','contact','contact','sections','0',provider,'','y','y'].map(a=>a+'\n')),output:{write(){}}});
@@ -19,25 +20,47 @@ for(const provider of ['JSON','SQLite'])test(`${provider}: controlled Contact st
  const server=app.listen(0,'127.0.0.1');await once(server,'listening');t.after(()=>app.shutdown(server));
  const url=`http://127.0.0.1:${server.address().port}/contact/`,first=await fetch(url),html=await first.text();assert.equal(first.status,200);
  const cookie=first.headers.get('set-cookie').split(';')[0],csrf=/name="_csrf" value="([^"]+)"/.exec(html)[1];
- const submit=()=>fetch(url,{method:'POST',headers:{cookie,'content-type':'application/x-www-form-urlencoded'},body:new URLSearchParams({_target:'guestbook-form',_action:'Submit',_csrf:csrf,name:'Budget probe',message:'Public probe'})});
+ const body=new URLSearchParams({_target:'guestbook-form',_action:'Submit',_csrf:csrf,name:'Budget probe',message:'Public probe'});
+ let disconnected,client;const closed=new Promise(r=>disconnected=r);
+ if(boundary==='connection-loss')server.once('request',(_req,res)=>res.once('close',disconnected));
+ const submit=()=>boundary==='connection-loss'?new Promise((resolve,reject)=>{
+  client=http.request(url,{method:'POST',headers:{cookie,'content-type':'application/x-www-form-urlencoded','content-length':Buffer.byteLength(body.toString())}},resolve);
+  client.on('error',reject);client.end(body.toString());
+ }):fetch(url,{method:'POST',headers:{cookie,'content-type':'application/x-www-form-urlencoded'},body});
  let reached,release;const entered=new Promise(r=>reached=r),barrier=new Promise(r=>release=r);t.after(()=>release());
- const method=provider==='JSON'?'open':'lstat',original=fs[method];let armed=true;
+ const method=boundary==='submitted-commit'?'rename':provider==='JSON'?'open':'lstat',original=fs[method];let armed=true;
  // Pause after the actual adapter's read-open/inspection, holding its usual locks
  // and descriptors. No program, deadline, assertion or concurrency policy changes.
  const mocked=t.mock.method(fs,method,async(...args)=>{
   const value=await original(...args);
-  if(armed&&typeof args[0]==='string'&&args[0].startsWith(f.root+path.sep)&&/[/\\][a-f0-9]{64}\.(json|sqlite)$/.test(args[0])){
+  if(armed&&typeof args[0]==='string'&&args[0].startsWith(f.root+path.sep)&&(boundary==='submitted-commit'||/[/\\][a-f0-9]{64}\.(json|sqlite)$/.test(args[0]))){
    armed=false;reached();await barrier;
   }
   return value;
  });syncBuiltinESMExports();
  t.after(()=>{mocked.mock.restore();syncBuiltinESMExports();});
- let completed=false;const pending=submit().then(async response=>{await response.arrayBuffer();completed=true;return response;});await entered;
+ let completed=false;const pending=submit().then(async response=>{await response.clone().arrayBuffer();completed=true;return response;},error=>({aborted:error.code}));await entered;
+ if(boundary==='connection-loss'){
+  client.destroy();assert.equal((await pending).aborted,'ECONNRESET');
+  // A real server-side close, rather than a client fetch rejection, proves the
+  // cancellation boundary has been reached before storage is released.
+  await closed;release();
+  const until=Date.now()+3000;while(!diagnostics.some(e=>e.phase==='page')&&Date.now()<until)await new Promise(r=>setTimeout(r,10));
+  // Store sanitizes the cancellation exception; the subsequent SEWN tick sees
+  // the revoked ledger and reports LIMIT. This code alone is not timeout proof.
+  assert.ok(diagnostics.some(e=>e.phase==='page'&&e.code==='SEWN.LIMIT'),JSON.stringify(diagnostics));
+  mocked.mock.restore();syncBuiltinESMExports();
+  const recovered=await fetch(url);assert.equal(recovered.status,200);assert.equal((await recovered.text()).includes('Budget probe'),false);
+  console.log(JSON.stringify({provider,boundary,client:'ECONNRESET',serverCloseObserved:true,committed:false,recoveryStatus:200}));return;
+ }
  await new Promise(r=>setTimeout(r,1100));const completedBeforeRelease=completed;release();
  const response=await pending;assert.equal(response.status,500);
+ if(boundary==='submitted-commit')assert.match(await response.clone().text(),/outcome indeterminate/);
+ assert.equal(completedBeforeRelease,false,'Page must retain admitted I/O until cancellation settles');
+ assert.equal(response.headers.get('x-wydgit-operation-outcome'),boundary==='precommit'?'not-committed':'indeterminate');
  assert.ok(diagnostics.some(e=>e.phase==='page'&&e.code==='SEWN.LIMIT'),JSON.stringify(diagnostics));
  mocked.mock.restore();syncBuiltinESMExports();
- const recovered=await fetch(url);assert.equal(recovered.status,200);const recoveredBody=await recovered.text();
+ const recovered=await fetch(url);assert.equal(recovered.status,200);const recoveredBody=await recovered.text();assert.equal(recoveredBody.includes('Budget probe'),boundary==='submitted-commit','observable result must match the commit boundary');
  console.log(JSON.stringify({provider,boundary:method,controlledWaitMs:1100,status:response.status,diagnostics,recoveryStatus:recovered.status,completedBeforeRelease,committedRecordVisibleAfterFailure:recoveredBody.includes('Budget probe'),historicalAttribution:false}));
 });
 
