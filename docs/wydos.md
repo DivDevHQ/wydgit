@@ -8,6 +8,11 @@ extension, discovery endpoint or platform adapter is delivered by this milestone
 explicit, controlled capabilities.** Target systems are Linux (including Almond
 Linux), Microsoft Windows and Apple macOS. Targets are goals, not support claims.
 
+The proposed [execution-context and administrative-domain architecture](execution-contexts-and-administrative-domains.md)
+relates portable SUB client capabilities to future optional platform-specific APIs,
+and reserves host administration without enabling privileged WydHosting before 0.4.
+Its native client manifest schema remains deferred; it adds no unchecked OS access.
+
 ## 1. Architecture and existing foundations
 
 WydOS is an optional OS-facing services abstraction, not a replacement kernel,

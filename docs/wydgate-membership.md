@@ -19,6 +19,12 @@ and domain permissions remain supported and never populate SEAM grants.
 An App owner is a membership fact. A platform administrator is a separately trusted
 host principal. Neither substitutes for the other.
 
+The proposed [execution-context and domain architecture](execution-contexts-and-administrative-domains.md)
+reuses membership/roster/role Wydgits at site, future account and host scopes. These
+are separately trusted domain bindings, not automatic federation or capabilities.
+The current API below remains App-scoped; hosting customer accounts are distinct
+from Gate authentication accounts.
+
 ## Host configuration and storage
 
 Keep the existing private WydStore identity directory, host dependency binding,

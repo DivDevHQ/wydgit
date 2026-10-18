@@ -6,6 +6,12 @@
 
 Authority belongs to an execution context, not to the target object.
 
+The proposed [execution-context and domain architecture](execution-contexts-and-administrative-domains.md)
+distinguishes a context label from the full trusted `ExecutionContext`, ownership
+domain, capabilities and Gate policy. It specifies immutable placement and scoped
+service enforcement without granting authority from administrative labels.
+The implementation below remains the current contract.
+
 The trusted host creates `ExecutionContext` with `publisher`, optional `package`,
 optional `app` identity, `self` (instance ID), `capabilities`, `scopes`,
 `visible` and `editable` (instance IDs),

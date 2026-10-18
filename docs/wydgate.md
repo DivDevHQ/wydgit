@@ -5,6 +5,10 @@
 
 # WydGate — 0.2-H
 
+See the proposed [execution-context and domain architecture](execution-contexts-and-administrative-domains.md)
+for reusable scoped membership Wydgits, Gate policy inputs to SEAM and isolated
+site/account/provider directories. It does not extend the implemented API below.
+
 **Libraries provide capabilities. SEAM grants authority.**
 
 `@wydgit/gate@0.1.0-alpha.3` is the independently versioned canonical library

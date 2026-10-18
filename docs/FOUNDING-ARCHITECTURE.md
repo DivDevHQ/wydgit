@@ -299,7 +299,12 @@ WydClient provides controlled access to browser/client capabilities rather than 
 
 This includes safe abstractions over client-side persistence such as browser storage.
 
-Historical note: the client runtime was briefly nicknamed **SUB** during early design. Production architecture uses WydClient / CLIENT.
+Historical note: the client runtime was briefly nicknamed **SUB** during early design. Production architecture uses WydClient / CLIENT. The proposed
+[execution-context architecture](execution-contexts-and-administrative-domains.md) uses `SUB` as
+the portable client **context identifier**, not as a runtime/product rename.
+`runat=Client` implicitly resolves to `context=SUB` (explicit SUB is allowed);
+server execution requires concrete trusted placement. These proposed identifiers
+do not change the implemented serialization, package targets or language grammar.
 
 ---
 

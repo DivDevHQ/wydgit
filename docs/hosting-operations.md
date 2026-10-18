@@ -170,6 +170,12 @@ from SIGKILL, power loss, disk failure or interrupted remote I/O. See the full
 
 ## Architecture and next implementation phase
 
+The proposed [execution-context and domain architecture](execution-contexts-and-administrative-domains.md)
+defines site/account/host storage separation, trusted administrative provisioning
+and audited cross-domain interfaces. Platform/App Administration remains 0.3-J;
+privileged managed WydHosting and its qualification remain deferred to 0.4 under
+[Decision 0003](decisions/0003-defer-managed-hosting-qualification-to-0.4.md).
+
 [I4](milestones/0.3-I4/README.md) separates trusted Wydgine worker facilities from
 optional WydHosting provider orchestration. Its [I5 plan](milestones/0.3-I4/I5-plan.md)
 preserves the operational behavior described here; no provider supervisor, Linux

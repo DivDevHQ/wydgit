@@ -1,5 +1,13 @@
 ## Unreleased
 
+- Integrate the proposed execution-context, administrative-domain and WydStore
+  isolation architecture: concrete trusted Server placement, implicit Client/SUB,
+  scoped Gate policy, one BackOffice framework, protected provisioning/recovery,
+  migration and acceptance requirements, and future native portability contracts.
+  Cross-link governing architecture and service docs. Documentation only; preserve
+  0.3-J Platform/App Administration, WydHosting privileged work/qualification in
+  0.4, current runtime versions and existing unresolved release gates.
+
 - Add host-only stopped-App manual replacement: retire instances in place,
   checkpoint exact staged artifacts/previews, explicitly prepare one-to-one
   references, then validate and publish approved developer data migrations through

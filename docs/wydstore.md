@@ -6,6 +6,12 @@
 
 **Libraries provide capabilities. SEAM grants authority.**
 
+The proposed [execution-context and domain architecture](execution-contexts-and-administrative-domains.md)
+extends the isolation design to site, account and host ownership, preserving exact
+existing ownership checks. FrontEnd and BackOffice share their own site domain
+under separate authorization; account/provider stores remain isolated. Domain
+schema changes and administrative provisioning are not implemented by that design.
+
 WydStore is the first implemented canonical library: identity `wydstore`, Node
 package `@wydgit/store`, publisher `wydgit.core`, trust `canonical`, target `server`.
 It lives in `packages/wydstore` and has independent version `0.1.0-alpha.2`; the

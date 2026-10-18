@@ -1,5 +1,12 @@
 # WydClient
 
+The proposed [execution-context architecture](execution-contexts-and-administrative-domains.md)
+resolves `runat=Client` implicitly to `context=SUB` (explicit SUB allowed). SUB is a
+portable client application interface; native desktop/mobile adapters need not
+emulate a browser. Future platform-specific contexts/APIs and manifest variants
+remain optional proposals, with explicit portability requirements. This design
+adds no current native runtime, manifest fields or server-service transport.
+
 The current runtime is **WydClient 0.1.0-alpha.9**, WydSUB **0.1**, with
 current Wydgine/platform **0.3.0-alpha.15** (the historical H4 reference is alpha.8). The [H4 contract](milestones/0.3-H4/README.md) adds semantic native controls, typed
 form drafts/submission, explicit CLIENT family/package authoring and signing.
