@@ -85,12 +85,12 @@ test('session identity is frozen host context metadata, never runtime authority 
  const {gate,registry}=await fixture(t),user=await gate.createUser({username:'alice',password:secret});
  await gate.assignUser({userId:user.id,roles:[],permissions:['store.records.write']});
  const login=await gate.login('alice',secret),identity=await gate.resolveSession(login.token);
- const context=new ExecutionContext({publisher:'acme',package:'acme/app',self:'widget',app:'appA',identity});
+ const context=new ExecutionContext({context:'FrontEnd',publisher:'acme',package:'acme/app',self:'widget',app:'appA',identity});
  assert.equal(context.identity.userId,user.id);assert.equal(context.identity.authenticated,true);assert.equal(context.allows('store.records.write'),false);
  assert.deepEqual(context.capabilities,[]);assert.deepEqual(context.traversal,[]);assert.deepEqual(context.visible,['widget']);
  assert.throws(()=>context.identity.permissions.push('gate.roles.manage'),TypeError);
  assert.throws(()=>registry.bind({...context}),error=>error.code==='SEAM.CONTEXT');
- assert.throws(()=>new ExecutionContext({publisher:'acme',self:'widget',app:'appB',identity}),error=>error.code==='SEAM.CONTEXT');
+ assert.throws(()=>new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'widget',app:'appB',identity}),error=>error.code==='SEAM.CONTEXT');
  await gate.assignUser({userId:user.id,roles:[],permissions:[]});assert.deepEqual((await gate.resolveSession(login.token)).permissions,[]);
  assert.deepEqual(context.identity.permissions,['store.records.write']); // Snapshot: host must resolve on each request.
  const privileged=gateContext({capabilities:[...manifest.capabilities,'store.records.write']});

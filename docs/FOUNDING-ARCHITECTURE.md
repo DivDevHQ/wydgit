@@ -303,8 +303,9 @@ Historical note: the client runtime was briefly nicknamed **SUB** during early d
 [execution-context architecture](execution-contexts-and-administrative-domains.md) uses `SUB` as
 the portable client **context identifier**, not as a runtime/product rename.
 `runat=Client` implicitly resolves to `context=SUB` (explicit SUB is allowed);
-server execution requires concrete trusted placement. These proposed identifiers
-do not change the implemented serialization, package targets or language grammar.
+server execution requires concrete trusted placement. The
+[implemented foundation](execution-context-foundation.md) versions optional execution
+declarations; package targets and language grammar remain unchanged.
 
 ---
 

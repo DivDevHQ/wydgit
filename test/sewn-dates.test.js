@@ -1,3 +1,4 @@
+import {clientContext} from '../test-support/client-context.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {compile,compileModule} from '../wydgine/wydbasic/index.js';
@@ -7,7 +8,7 @@ import {validate} from '../wydgine/sewn/validate.js';
 import {build} from 'esbuild';
 import {runInNewContext} from 'node:vm';
 import {gzipSync,brotliCompressSync} from 'node:zlib';
-const run=(p,limits={})=>execute(p,{scope:{},context:new ExecutionContext({publisher:'application',self:'home',limits})});
+const run=(p,limits={})=>execute(p,{scope:{},context:new ExecutionContext({context:'FrontEnd',publisher:'application',self:'home',limits})});
 const dt=s=>`DateTime("${s}")`;
 const a=dt('2024-01-31T23:15:16.123Z');
 const cases=[
@@ -55,7 +56,7 @@ test('independent browser bundle runs shared date fixtures without compiler or h
  const result=await build({stdin:{contents:"export {execute} from './wydgine/sewn/execute.js';export {ExecutionContext} from './wydgine/seam/context.js';export {PrototypeRegistry} from './wydgine/object-model/prototypes.js';export {bindMembers} from './wydgine/object-model/members.js';",resolveDir:process.cwd()},bundle:true,platform:'browser',target:'es2022',format:'iife',globalName:'Portable',minify:true,write:false,metafile:true});
  for(const input of Object.keys(result.metafile.inputs))assert.ok(!/wydbasic|static-libraries|storage|node_modules/.test(input),input);
  const sandbox={setTimeout,clearTimeout};runInNewContext(result.outputFiles[0].text,sandbox);const api=sandbox.Portable;
- await conformance((p,limits={})=>runInNewContext(`Portable.execute(JSON.parse(${JSON.stringify(JSON.stringify(p))}),{scope:{},context:new Portable.ExecutionContext({publisher:'application',self:'home',limits:${JSON.stringify(limits)}})})`,sandbox));
+ await conformance((p,limits={})=>runInNewContext(`Portable.execute(JSON.parse(${JSON.stringify(JSON.stringify(p))}),{scope:{},context:new Portable.ExecutionContext({runat:'Client',publisher:'application',self:'home',limits:${JSON.stringify(limits)}})})`,sandbox));
  const bytes=result.outputFiles[0].contents;console.log('date event harness min/gzip/br',bytes.length,gzipSync(bytes).length,brotliCompressSync(bytes).length);
 });
 test('date static linking preserves 0.18 and caller budgets; WydClient cancellation remains live',async()=>{
@@ -65,5 +66,5 @@ test('date static linking preserves 0.18 and caller budgets; WydClient cancellat
  assert.equal(p.schema,'sewn/0.18');assert.deepEqual((await run(p)).value,[2024,2024]);await assert.rejects(run(p,{sewnSteps:15}),{code:'SEWN.LIMIT'});
  const {mountClient}=await import('../wydclient/index.js');class Element extends EventTarget{}const element=new Element();
  const workflow=compileModule(`EVENT Change\nDIM y=DatePart(${a},"year","UTC")\nEVENT.Cancel()\nEND EVENT`).events[0].workflow;
- const client=mountClient({nodes:[{id:'home',kind:'field',element,value:'old'}],context:new ExecutionContext({publisher:'application',self:'home'}),handlers:[{owner:'home',type:'Change',workflow}]});await client.ready;element.value='new';element.dispatchEvent(new Event('change'));await client.idle();assert.equal(element.value,'old');assert.equal(client.error(),null);await client.unmount();
+ const client=mountClient({nodes:[{id:'home',kind:'field',element,value:'old'}],context:clientContext(new ExecutionContext({context:'FrontEnd',publisher:'application',self:'home'})),handlers:[{owner:'home',type:'Change',workflow}]});await client.ready;element.value='new';element.dispatchEvent(new Event('change'));await client.idle();assert.equal(element.value,'old');assert.equal(client.error(),null);await client.unmount();
 });

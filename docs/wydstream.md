@@ -5,7 +5,7 @@
 # WydStream — 0.3-D
 
 WydStream is the host-approved canonical library `wydstream` implemented by
-`@wydgit/stream@0.1.0-alpha.1`. Its service API is **1.0.0**. The separately
+`@wydgit/stream@0.1.0-alpha.2`. Its service API is **1.0.0**. The separately
 installable ordinary package **divdev/media@0.1.0** supplies Upload, Player and
 Gallery Wydgits. Loading the library provides infrastructure; installing the
 package provides UI. Neither action grants capabilities without SEAM approval.

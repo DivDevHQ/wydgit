@@ -9,7 +9,7 @@ export function createExecutionBudget(context,{guard=()=>{},deadline=Infinity}={
   const started=Date.now(),end=Math.min(deadline,started+bounds.timeMs),counts=Object.create(null);let live=true,eventDepth=-1,exhaustion=null;
   const token=Object.freeze(Object.create(null));
   const fail=(resource,used,limit,code='SEWN.LIMIT')=>{live=false;exhaustion??=Object.freeze({resource,used,limit});throw new WydgitError(code,'Execution budget exhausted',exhaustion);};
-  const assert=()=>{const now=Date.now();if(!live)fail(exhaustion?.resource??'closed',exhaustion?.used??0,exhaustion?.limit??0);if(now>=end)fail('timeMs',Math.max(0,now-started),Math.max(0,end-started));try{guard();}catch(error){live=false;exhaustion??=Object.freeze({resource:'guard',used:0,limit:0});throw error;}};
+  const assert=()=>{checkContext(context);const now=Date.now();if(!live)fail(exhaustion?.resource??'closed',exhaustion?.used??0,exhaustion?.limit??0);if(now>=end)fail('timeMs',Math.max(0,now-started),Math.max(0,end-started));try{guard();}catch(error){live=false;exhaustion??=Object.freeze({resource:'guard',used:0,limit:0});throw error;}};
   const ledger=Object.freeze({bounds:Object.freeze(bounds),deadline:end,
     check:assert,
     eventDepth:()=>eventDepth,

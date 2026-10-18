@@ -6,7 +6,7 @@ import {execute} from '../wydgine/sewn/execute.js';
 import {ExecutionContext,PrototypeRegistry} from '../wydgine/object-model/index.js';
 import {bindMembers} from '../wydgine/object-model/members.js';
 import {fixture,runPage} from '../test-support/events.js';
-const context=new ExecutionContext({publisher:'acme',self:'home'});
+const context=new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'home'});
 const run=(source,scope={},ctx=context)=>execute(compile(source),{context:ctx,scope});
 const literal=value=>({op:'literal',value});
 const document=body=>({schema:'sewn/0.9',procedures:{},body});
@@ -34,7 +34,7 @@ test('identity compares underlying objects across fresh tokens and procedure fra
  assert.equal((await run('RETURN Me IS Page',{ME:a,PAGE:b})).value,true);
  const mod=compileModule('FUNCTION Same(a AS Wydgit, b AS Wydgit) AS Boolean\nRETURN a IS b\nEND FUNCTION\nEVENT Page.Load\nSELECT CASE Me\nCASE IS Page\nRETURN Same(Me, Page)\nCASE IS NULL\nRETURN FALSE\nCASE ELSE\nRETURN FALSE\nEND SELECT\nEND EVENT').events[0].workflow;
  assert.equal((await execute(mod,{context,scope:{ME:me,PAGE:me}})).value,true);
- const foreign=new ExecutionContext({publisher:'acme',self:'home'});bindMembers(b,{context:foreign,node:()=>node});await assert.rejects(run('RETURN Me IS Page',{ME:a,PAGE:b}),{code:'OBJECT.ACCESS'});
+ const foreign=new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'home'});bindMembers(b,{context:foreign,node:()=>node});await assert.rejects(run('RETURN Me IS Page',{ME:a,PAGE:b}),{code:'OBJECT.ACCESS'});
 });
 
 test('grammar and compiler reject malformed, unsupported and incompatible selection',()=>{
@@ -55,9 +55,9 @@ test('independent closed wire grammar and runtime type guards',async()=>{
 });
 
 test('selection and identity spend shared steps and preserve fatal limits',async()=>{
- const limited=new ExecutionContext({publisher:'acme',self:'home',limits:{sewnSteps:4}});
+ const limited=new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'home',limits:{sewnSteps:4}});
  await assert.rejects(run('SELECT CASE 2\nCASE 1, 2\nRETURN 3\nEND SELECT',{},limited),{code:'SEWN.LIMIT'});
- await assert.rejects(run('TRY\nRETURN Me IS Me\nCATCH err\nRETURN FALSE\nEND TRY',{ME:{id:'home'}},new ExecutionContext({publisher:'acme',self:'home',limits:{sewnSteps:3}})),{code:'SEWN.LIMIT'});
+ await assert.rejects(run('TRY\nRETURN Me IS Me\nCATCH err\nRETURN FALSE\nEND TRY',{ME:{id:'home'}},new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'home',limits:{sewnSteps:3}})),{code:'SEWN.LIMIT'});
 });
 
 test('prototype methods and authorized Page integration use selection',async()=>{
@@ -70,7 +70,7 @@ test('prototype methods and authorized Page integration use selection',async()=>
 
 test('identity and selection retain consumed-draft and stale-handle guards',async()=>{
  const registry=new PrototypeRegistry([{id:'acme/card',publisher:'acme',properties:{},slots:{}}]);
- const ctx=new ExecutionContext({publisher:'acme',self:'home',capabilities:['object.instances.construct'],scopes:{prototypes:['acme/card']}});
+ const ctx=new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'home',capabilities:['object.instances.construct'],scopes:{prototypes:['acme/card']}});
  for(const suffix of ['RETURN card IS card','SELECT CASE card\nCASE ELSE\nRETURN TRUE\nEND SELECT'])await assert.rejects(execute(compile('DIM card AS Wydgit\nSET card=NEW "acme/card"("draft")\nMe.Insert("items", 0, card)\n'+suffix),{context:ctx,prototypeRegistry:registry,scope:{ME:{id:'home',Insert(){}}}}),{code:'OBJECT.CONSTRUCTION'});
  const handle={id:'home'};bindMembers(handle,{context,node(){throw new Error('stale private details');}});
  await assert.rejects(run('RETURN Me IS NULL OR Me IS Me',{ME:handle}),e=>e.code==='SEWN.EXECUTION_FAILED'&&!e.message.includes('private'));

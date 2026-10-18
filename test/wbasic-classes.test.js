@@ -17,7 +17,7 @@ const options=(definitions=core)=>({manifest,verifiedPackages:{[manifest.id]:man
 const build=(s=source,o=options())=>compileClass(s,o).definition;
 const wrap=body=>`PUBLIC CLASS Card\nMETA Id = "divdev/card"\n${body}\nEND CLASS`;
 function host(ds,id,properties={},limits={}) {
- const registry=new PrototypeRegistry(ds,{verifiedPrototypes:verified(ds)}),context=new ExecutionContext({publisher:'caller',self:'card',visible:['card'],limits});
+ const registry=new PrototypeRegistry(ds,{verifiedPrototypes:verified(ds)}),context=new ExecutionContext({context:'FrontEnd',publisher:'caller',self:'card',visible:['card'],limits});
  const node={id:'card',prototype:id,properties};let live=true;
  const handle=bindMembers({id:'card',prototype:id},{context,node(){assert.ok(live);return node;},set(name,value){node.properties[name]=value;}});
  return {context,prototypeRegistry:registry,scope:{ME:handle},node,dispose(){live=false;}};

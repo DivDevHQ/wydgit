@@ -1,6 +1,6 @@
 # WydSearch — 0.3-C
 
-WydSearch `0.1.0-alpha.1` exposes canonical service API `1.0.0`. It uses the
+WydSearch `0.1.0-alpha.2` exposes canonical service API `1.0.0`. It uses the
 existing SEAM dispatcher and a host-approved WydStore dependency, with identical
 application behavior on JSON and SQLite. SQLite is recommended for production.
 This is bounded site search, not an internet-scale search engine.

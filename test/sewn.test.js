@@ -1,3 +1,4 @@
+import {clientContext} from '../test-support/client-context.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {execute} from '../packages/wydgine/src/engine/sewn/execute.js';
@@ -7,7 +8,7 @@ import {runPage,fixture} from '../test-support/events.js';
 import {mountClient} from '../wydclient/index.js';
 const l=value=>({op:'literal',value}),v=name=>({op:'variable',name}),c=name=>({op:'context',name}),r=(target,key)=>({op:'read',target,key}),b=(operator,left,right)=>({op:'binary',operator,left,right}),p=body=>({schema:'sewn/0.1',body});
 const ret=value=>({op:'return',value});
-const run=(body,limits={},scope={})=>execute(p(body),{context:new ExecutionContext({publisher:'acme',self:'home',limits}),scope});
+const run=(body,limits={},scope={})=>execute(p(body),{context:new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'home',limits}),scope});
 const reject=(fn,code)=>assert.rejects(fn,e=>e.code===code);
 test('JSON literals, local variables, expressions, branches, members, loops and termination are deterministic',async()=>{
  const body=[{op:'declare',name:'sum',value:l(0)},{op:'forEach',name:'item',items:l([1,2,3]),body:[{op:'set',name:'sum',value:b('+',v('sum'),v('item'))}]},{op:'if',condition:b('=',v('sum'),l(6)),then:[ret({op:'object',fields:{total:v('sum'),label:b('concat',l('o'),l('k')),member:r(l({a:[true]}),'a')}})],else:[{op:'stop'}]}];
@@ -37,7 +38,7 @@ test('Page contexts use existing scoped handles, facade allowlists and request i
  const stale=p([{op:'declare',name:'old',value:c('ME')},{op:'call',target:v('old'),method:'Remove',args:[]},ret(r(v('old'),'properties'))]);assert.equal((await runPage({handlers:[{type:'Page.Load',owner:'note',workflow:stale}]})).error.code,'EVENT.DENIED');
 });
 test('SEWN client handler executes through WydClient with no DOM access',async()=>{
- const element=new EventTarget();const client=mountClient({nodes:[{id:'home',element}],context:new ExecutionContext({publisher:'acme',self:'home'}),handlers:[{type:'Client.Ready',owner:'home',workflow:p([{op:'if',condition:b('=',r(c('ME'),'id'),l('home')),then:[ret(l('ready'))],else:[ret(c('REQUEST'))]}])}]});await client.ready;assert.equal(client.error(),null);await client.unmount();
+ const element=new EventTarget();const client=mountClient({nodes:[{id:'home',element}],context:clientContext(new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'home'})),handlers:[{type:'Client.Ready',owner:'home',workflow:p([{op:'if',condition:b('=',r(c('ME'),'id'),l('home')),then:[ret(l('ready'))],else:[ret(c('REQUEST'))]}])}]});await client.ready;assert.equal(client.error(),null);await client.unmount();
 });
 test('portable subsystem contains no source evaluation or native imports',async()=>{
  const fs=await import('node:fs/promises');

@@ -1,3 +1,4 @@
+import {clientContext} from '../test-support/client-context.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -10,7 +11,7 @@ import {execute} from '../wydgine/sewn/execute.js';
 import {validate} from '../wydgine/sewn/validate.js';
 import {ExecutionContext} from '../wydgine/seam/context.js';
 const standard=JSON.parse(readFileSync(new URL('../libraries/wbasic/prototypes.json',import.meta.url))).prototypes[0];
-const context=limits=>new ExecutionContext({publisher:'application',app:'application',self:'home',limits});
+const context=limits=>new ExecutionContext({context:'FrontEnd',publisher:'application',app:'application',self:'home',limits});
 const definition=(id,alias,source,methodRules={},dependencies={},options={})=>({...compileDefinitions([{id,publisher:id.split('/')[0],static:true,alias,version:'1.0.0',dependencies,properties:{},slots:{},methodRules,behaviorSource:source}],options)[0]});
 const setup=(definitions=[standard])=>({libraries:new StaticLibraryRegistry(definitions,{verifiedPrototypes:Object.fromEntries(definitions.map(d=>[d.id,d.publisher]))}),dependencies:Object.fromEntries(definitions.map(d=>[d.id,d.version]))});
 const options=setup();
@@ -124,12 +125,12 @@ test('WydClient linked static procedures preserve cancellation and budget enforc
  const {mountClient}=await import('../wydclient/index.js');class Element extends EventTarget{}
  const workflow=compileModule('WITH LIBRARY divdev/wbasic\nEVENT Change\nIF WBasic.Mid("Goober",2,3)="oob" THEN\nEVENT.Cancel()\nEND IF\nEND EVENT',options).events[0].workflow;
  assert.equal(Object.keys(workflow.procedures).length,1);
- for(const [limits,expected] of [[{},null],[{sewnProcedureCalls:0},'SEWN.LIMIT']]){const element=new Element(),client=mountClient({nodes:[{id:'home',kind:'field',element,value:'old'}],context:context(limits),handlers:[{owner:'home',type:'Change',workflow}]});await client.ready;element.value='new';element.dispatchEvent(new Event('change'));await client.idle();assert.equal(element.value,'old');assert.equal(client.error(),expected);await client.unmount();}
+ for(const [limits,expected] of [[{},null],[{sewnProcedureCalls:0},'SEWN.LIMIT']]){const element=new Element(),client=mountClient({nodes:[{id:'home',kind:'field',element,value:'old'}],context:clientContext(context(limits)),handlers:[{owner:'home',type:'Change',workflow}]});await client.ready;element.value='new';element.dispatchEvent(new Event('change'));await client.idle();assert.equal(element.value,'old');assert.equal(client.error(),expected);await client.unmount();}
 });
 
 test('browser executor consumes portable static wire without compiler or resolver code',async()=>{
  const {build}=await import('esbuild'),{runInNewContext}=await import('node:vm');
- const result=await build({stdin:{contents:"import {execute} from './wydgine/sewn/execute.js';import {ExecutionContext} from './wydgine/seam/context.js';export const run=(p,limits={})=>execute(p,{scope:{},context:new ExecutionContext({publisher:'application',self:'home',limits})});",resolveDir:process.cwd()},bundle:true,platform:'browser',target:'es2022',format:'iife',globalName:'PortableRuntime',write:false,metafile:true});
+ const result=await build({stdin:{contents:"import {execute} from './wydgine/sewn/execute.js';import {ExecutionContext} from './wydgine/seam/context.js';export const run=(p,limits={})=>execute(p,{scope:{},context:new ExecutionContext({context:'FrontEnd',publisher:'application',self:'home',limits})});",resolveDir:process.cwd()},bundle:true,platform:'browser',target:'es2022',format:'iife',globalName:'PortableRuntime',write:false,metafile:true});
  for(const input of Object.keys(result.metafile.inputs))assert.ok(!/wydbasic|static-libraries|node_modules|wydstore|storage/.test(input),input);
  const sandbox={setTimeout,clearTimeout};runInNewContext(result.outputFiles[0].text,sandbox);
  const p=JSON.stringify(compile(imported('Mid("Goober",2,3)'),options));
@@ -140,7 +141,7 @@ test('browser executor consumes portable static wire without compiler or resolve
 test('static calls from instance methods cannot inherit private declaring-class access',async()=>{
  const reader=definition('acme/reader','Reader','FUNCTION ReadHidden(value AS Wydgit) AS String\nRETURN value.[secret]\nEND FUNCTION');const opts=setup([reader]);
  const root={id:'wydgit.core/app',publisher:'wydgit.core',properties:{secret:{type:'string',default:'hidden',access:'private'}},slots:{},behavior:compilePrototype('WITH LIBRARY acme/reader\nFUNCTION Leak() AS String\nRETURN ReadHidden(Me)\nEND FUNCTION',opts)};
- const registry=new PrototypeRegistry([root]),runtime=hydrate({schema:'wydgit/0.2',id:'home',prototype:root.id,properties:{},slots:{},provenance:{}},registry),ctx=new ExecutionContext({publisher:"application",app:"home",self:"home"});
+ const registry=new PrototypeRegistry([root]),runtime=hydrate({schema:'wydgit/0.2',id:'home',prototype:root.id,properties:{},slots:{},provenance:{}},registry),ctx=new ExecutionContext({context:'FrontEnd',publisher:"application",app:"home",self:"home"});
  await assert.rejects(execute(compile('RETURN Me.Leak()'),{scope:{ME:runtime.scope(ctx)},context:ctx,prototypeRegistry:registry}),{code:'OBJECT.ACCESS'});
 });
 
@@ -165,6 +166,6 @@ test('private subroutines, dynamic result checks and operation budgets retain th
  const dynamic=definition('acme/dynamic','Dynamic','FUNCTION Text() AS String\nRETURN SESSION.input\nEND FUNCTION');await assert.rejects(run('WITH LIBRARY acme/dynamic\nRETURN Text()',setup([dynamic]),{SESSION:{input:42}}),{code:'SEWN.TYPE'});
  const iteration=definition('acme/iteration','Iteration','FUNCTION Total() AS Integer\nDIM n AS Integer=0\nFOR i=1 TO 3\nn=n+i\nNEXT\nRETURN n\nEND FUNCTION');await assert.rejects(run('WITH LIBRARY acme/iteration\nRETURN Total()',setup([iteration]),{},{sewnIterations:2}),{code:'SEWN.LIMIT'});
  await assert.rejects(run(imported('Mid("x",1,1)'),options,{},{sewnTimeMs:0}),{code:'SEWN.LIMIT'});
- const {mountClient}=await import('../wydclient/index.js');assert.throws(()=>mountClient({nodes:[{id:'home',element:new EventTarget()}],context:context(),handlers:[{owner:'home',type:'Client.Ready',wydBasic:'RETURN "source"'}]}),{code:'EVENT.INVALID'});
+ const {mountClient}=await import('../wydclient/index.js');assert.throws(()=>mountClient({nodes:[{id:'home',element:new EventTarget()}],context:clientContext(context()),handlers:[{owner:'home',type:'Client.Ready',wydBasic:'RETURN "source"'}]}),{code:'EVENT.INVALID'});
  const {build}=await import('esbuild');const browser=await build({entryPoints:['wydclient/index.js'],bundle:true,platform:'browser',target:'es2022',format:'esm',write:false,metafile:true});for(const input of Object.keys(browser.metafile.inputs))assert.ok(!/wydbasic|static-libraries/.test(input),input);
 });

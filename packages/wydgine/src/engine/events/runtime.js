@@ -14,7 +14,7 @@ export function handler(fn) {
   check(/^(?:async\s+)?(?:function(?:\s+[\w$]+)?\s*)?\(\s*\)/.test(source)&&fn.length===0,'EVENT.INVALID','Handlers must declare no parameters');return fn;
 }
 export function createDispatcher({registry=new EventRegistry(),handlers=[],context,handle,contexts=()=>({}),exists=()=>true,defaults={},limit={},completed=()=>false,runtimeTarget='server',identifiers={},reusable=false,canRaise=exists,prototypeRegistry,budget,executor=executeWorkflow,dynamicHandlers=()=>[]}) {
-  checkContext(context);
+  checkContext(context);check(context.runat===({server:'Server',client:'Client'})[runtimeTarget],'EXECUTION.RUNTIME','Dispatcher target conflicts with trusted binding');
   const records=handlers.map(prepareRuntimeHandler).map((r)=>{const d=registry.get(r.type);check(['Semantic','Custom'].includes(d.family)||r.source===undefined||r.source===r.owner,'EVENT.INVALID','Lifecycle handler owner must be recipient');check(typeof r.owner==='string','EVENT.INVALID','Missing owner');return r;});
   const bounds={queue:64,dispatches:256,handlers:2048,depth:16,timeMs:5000,...limit};
   for(const key of Object.keys(bounds)){const grant=context.limits[`event${key[0].toUpperCase()+key.slice(1)}`];if(grant!==undefined)bounds[key]=Math.min(bounds[key],grant);check(Number.isSafeInteger(bounds[key])&&bounds[key]>0,'EVENT.LIMIT','Invalid limit');}

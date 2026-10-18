@@ -7,7 +7,7 @@ import { ExecutionContext } from '../wydgine/seam/context.js';
 import { packageFixture } from '../test-support/packages.js';
 import { initializeHost } from '../wydgine/host.js';
 import { loadRepository } from '../wydgine/repository.js';
-const context=new ExecutionContext({publisher:'untrusted',self:'x'});
+const context=new ExecutionContext({context:'FrontEnd',publisher:'untrusted',self:'x'});
 const run=source=>execute(compile(source),{context,scope:{}});
 
 test('NewId is a bounded portable String intrinsic, distinct IDs and no host/entropy/authority surface',async()=>{
@@ -21,11 +21,11 @@ test('NewId is a bounded portable String intrinsic, distinct IDs and no host/ent
 
 test('NewId works in WydStore and NEW but confers no create/construct/edit authority',async t=>{
  const {root}=await packageFixture(t),libraries=await initializeHost({root});const id=(await run('RETURN NewId()')).value;
- const ctx=new ExecutionContext({publisher:'divdev',package:'divdev/guestbook',app:'boilerplate',self:'x',capabilities:['store.records.create'],scopes:{wydstore:[{store:'host-book',collection:'host-entries'}]}});
+ const ctx=new ExecutionContext({context:'FrontEnd',publisher:'divdev',package:'divdev/guestbook',app:'boilerplate',self:'x',capabilities:['store.records.create'],scopes:{wydstore:[{store:'host-book',collection:'host-entries'}]}});
  const input={store:'host-book',collection:'host-entries',id,data:{name:'Ada',message:'Portable'}};assert.equal((await libraries.bind(ctx).call('wydstore','create',input)).ok,true);
  assert.equal((await libraries.bind(context).call('wydstore','create',{...input,id:(await run('RETURN NewId()')).value})).code,'SEAM.DENIED');
  const source='DIM panel AS Wydgit\nSET panel = NEW "acme/message-panel"(NewId())\nRETURN panel.id';
- const prototypeRegistry=loadRepository(root).registry,construct=new ExecutionContext({publisher:'untrusted',self:'x',capabilities:['object.instances.construct'],scopes:{prototypes:['acme/message-panel']}});
+ const prototypeRegistry=loadRepository(root).registry,construct=new ExecutionContext({context:'FrontEnd',publisher:'untrusted',self:'x',capabilities:['object.instances.construct'],scopes:{prototypes:['acme/message-panel']}});
  const created=await execute(compile(source),{context:construct,prototypeRegistry,scope:{}});assert.match(created.value,/^w[0-9a-f]{32}$/);assert.equal(construct.allows('object.instances.edit'),false);
  await assert.rejects(execute(compile(source),{context,prototypeRegistry,scope:{}}),e=>e.code==='SEAM.DENIED');
 });

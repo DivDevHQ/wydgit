@@ -149,7 +149,7 @@ test('registration is narrow, complete, poison-on-error and sealed after success
 });
 
 test('loading services never changes execution context grants, visibility, traversal or mutation authority', async () => {
- const context=new ExecutionContext({publisher:'ordinary',self:'object'}),before=JSON.stringify(context);
+ const context=new ExecutionContext({context:'FrontEnd',publisher:'ordinary',self:'object'}),before=JSON.stringify(context);
  const registry=await load();assert.equal(registry.capabilities().length,1);assert.equal(JSON.stringify(context),before);
  code(()=>context.require('test.echo.read'),'SEAM.DENIED');assert.equal(context.allows('object.instances.edit'),false);
  assert.deepEqual(context.visible,['object']);assert.deepEqual(context.traversal,[]);assert.deepEqual(context.editable,[]);
@@ -212,7 +212,7 @@ test('host dependency bindings are scoped, explicit, dependency-first and never 
  const binding={library:'zbase',app:'appA',capabilities:['base.data.read'],scopes:{base:'private'}};
  const consumerEntry=entry({id:'aconsumer',package:'@acme/consumer',bindings:[binding]}),baseEntry=entry({id:'zbase',package:'@acme/base'});
  const registry=await load(config(consumerEntry,baseEntry),root);
- const caller=new ExecutionContext({publisher:'ordinary',self:'object',capabilities:['test.echo.read']});
+ const caller=new ExecutionContext({context:'FrontEnd',publisher:'ordinary',self:'object',capabilities:['test.echo.read']});
  const result=await registry.bind(caller).call('aconsumer','echo',{});assert.equal(result.ok,true);assert.equal(result.value.backend.value.package,'library:aconsumer');assert.equal(result.value.backend.value.app,'appA');assert.equal(result.value.caller.publisher,'ordinary');assert.deepEqual(result.value.caller.capabilities,['test.echo.read']);
  assert.equal((await registry.bind(caller).call('zbase','read',{})).code,'SEAM.DENIED');
  await rejects(()=>load(config({...consumerEntry,bindings:[]},baseEntry),root),'LIBRARY.DEPENDENCY_DENIED');
@@ -229,7 +229,7 @@ test('versioned dependency calls retain host binding identity and cannot use the
  const consumer={...fixtureManifest,id:'consumer',requirements:requirements(need('zbase'))};
  install(root,{name:'@acme/consumer',manifest:consumer,source:`export const manifest=${JSON.stringify(consumer)};export function register({service,dependency}){const backend=dependency('zbase');service('echo',async()=>({versioned:await backend.invoke('1.0.0','read',{}),legacy:await backend.call('read',{})}),{authorize:()=>true});}`});
  const r=await load(config(entry({id:'zbase',package:'@acme/base'}),entry({id:'consumer',package:'@acme/consumer',bindings:[{library:'zbase',app:'site-A',capabilities:['base.data.read'],scopes:{}}]})),root);
- const caller=new ExecutionContext({publisher:'ordinary',package:'ordinary/pkg',app:'site-B',self:'home',capabilities:['test.echo.read']});
+ const caller=new ExecutionContext({context:'FrontEnd',publisher:'ordinary',package:'ordinary/pkg',app:'site-B',self:'home',capabilities:['test.echo.read']});
  const result=await r.bind(caller).call('consumer','echo',{});
  assert.equal(result.value.versioned.value.app,'site-A');assert.equal(result.value.versioned.value.principal,'library:consumer');assert.equal(result.value.versioned.value.installation,null);
  assert.equal(result.value.legacy.code,'SERVICE.VERSION_REQUIRED');
@@ -241,7 +241,7 @@ test('approved library initialization and scope extensions are generic and priva
  export function initialize({root,options,adapter}){if(!root||adapter?.token!=='approved')throw new Error('private path');return {context:{value:options.value},async start(registry){const result=await registry.bindPresentation(adapter.caller).call('wydtest','echo',{text:'start'});if(!result.ok)throw new Error('startup');}};}
  export function resolvePackageScopes({app,scopes}){if(app!=='site')throw new Error('wrong site');return scopes.map(resource=>({resource}));}
  export function register({service,hostContext}){service('echo',value=>({value:hostContext.value,...value}),{presentation:true,authorize:()=>true,validate:()=>true});}`});
- const caller=new ExecutionContext({publisher:'example',app:'site',self:'page',capabilities:['test.echo.read']});
+ const caller=new ExecutionContext({context:'FrontEnd',publisher:'example',app:'site',self:'page',capabilities:['test.echo.read']});
  const registry=await loadLibraries({config:config(entry({options:{value:'host-only'}})),root,platformVersion:platform.version,adapters:{wydtest:{token:'approved',caller}}});
  assert.equal(JSON.stringify(registry.resolvePackageScopes('wydtest',['one'],'site')),JSON.stringify([{resource:'one'}]));assert.throws(()=>registry.resolvePackageScopes('wydtest',['one'],'other'),{code:'PACKAGE.STORAGE'});
  const result=await registry.bindPresentation(caller).call('wydtest','echo',{text:'query'});assert.equal(result.value.value,'host-only');assert.equal(registry.hostContext,undefined);
@@ -252,7 +252,7 @@ test('library close revokes retained bindings and attempts every cleanup once ev
  const root=temp(t),cleaned=[];
  const source=`export const manifest=${JSON.stringify(fixtureManifest)};export function initialize({adapter}) {return {stop:adapter.stop};}export function register({service}){service('echo',v=>v,{authorize:()=>true});}`;
  install(root,{source});const second={...fixtureManifest,id:'wydsecond',capabilities:['test.second.read'],services:[{name:'echo',capability:'test.second.read'}]};install(root,{name:'@fixture/second',source:source.replace(JSON.stringify(fixtureManifest),JSON.stringify(second))});const registry=await loadLibraries({config:config(entry(),entry({id:'wydsecond',package:'@fixture/second'})),root,platformVersion:platform.version,app:'app-alpha',adapters:{wydsecond:{stop(){cleaned.push('second');}},wydtest:{stop(){cleaned.push('stop');throw Error('private path');}}}});
- const a=new ExecutionContext({app:'app-alpha',publisher:'same',self:'home',capabilities:['test.echo.read']}),b=new ExecutionContext({app:'app-beta',publisher:'same',self:'home',capabilities:['test.echo.read']});assert.throws(()=>registry.bind(b));const bound=registry.bind(a);assert.equal((await bound.call('wydtest','echo','hello')).value,'hello');await assert.rejects(registry.close(),{code:'LIBRARY.CLEANUP_FAILED'});await assert.rejects(registry.close());assert.deepEqual(new Set(cleaned),new Set(['stop','second']));await assert.rejects(bound.call('wydtest','echo','late'));
+ const a=new ExecutionContext({context:'FrontEnd',app:'app-alpha',publisher:'same',self:'home',capabilities:['test.echo.read']}),b=new ExecutionContext({context:'FrontEnd',app:'app-beta',publisher:'same',self:'home',capabilities:['test.echo.read']});assert.throws(()=>registry.bind(b));const bound=registry.bind(a);assert.equal((await bound.call('wydtest','echo','hello')).value,'hello');await assert.rejects(registry.close(),{code:'LIBRARY.CLEANUP_FAILED'});await assert.rejects(registry.close());assert.deepEqual(new Set(cleaned),new Set(['stop','second']));await assert.rejects(bound.call('wydtest','echo','late'));
 });
 test('a failed library start still runs its initialization cleanup and preserves a sanitized failure',async t=>{
  const root=temp(t);let stopped=0;

@@ -1,3 +1,4 @@
+import {clientContext} from '../test-support/client-context.js';
 import {prepareHandlers as prepareClientHandlers} from '../wydgine/events/index.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -20,7 +21,7 @@ import { fixture, envelope, runPage } from '../test-support/events.js';
 const dynamicIds=['guestbook-entry-20','guestbook-entry-200','guestbook-entry-abc123'];
 const malformed=['*','foo*','-*','*-entry','guest*-entry','guestbook-*-item','guestbook-entry-**','guestbook-entry-?','entry-[abc]','entry-{a,b}','entry-(a|b)','entry-+*','entry-\\d*','entry-^*',''];
 const grant='guestbook-entry-*';
-const context=extra=>new ExecutionContext({publisher:'operator',app:'boilerplate',self:'home',visible:['home','section',grant],editable:['home','section',grant],capabilities:['object.instances.edit'],traversal:['children'],...extra});
+const context=extra=>new ExecutionContext({context:'FrontEnd',publisher:'operator',app:'boilerplate',self:'home',visible:['home','section',grant],editable:['home','section',grant],capabilities:['object.instances.edit'],traversal:['children'],...extra});
 function graph() {
   const base=fixture(),raw=dehydrate(base.model.runtime);
   raw.slots.pages[0].slots.sections[0].slots.blocks=dynamicIds.map(id=>envelope(id,'block',{content:{type:'markdown',value:'Original'}}));
@@ -73,8 +74,8 @@ test('Page handles, Submit action visibility and server Form traversal/edit chec
   const base=formGraph(),handlers=[{owner:'guestbook-form',type:'Page.Load',wydBasic:'CALL Me.Bind({"name":"Ada"})'}];
   assert.deepEqual(descendantFields(base.runtime,base.model.registry,'guestbook-form',base.context).map(n=>n.id),[dynamicIds[1]]);
   const good=await runPage({...base,handlers});assert.equal(good.error,null);assert.match(good.transport.text,/value="Ada"/);
-  const traverse=await runPage({...base,handlers,context:new ExecutionContext({...base.context,traversal:[]})});assert.equal(traverse.error.code,'SEAM.TRAVERSAL');
-  const edit=await runPage({...base,handlers,context:new ExecutionContext({...base.context,editable:['guestbook-form']})});assert.equal(edit.error.code,'MUTATION.DENIED');
+  const traverse=await runPage({...base,handlers,context:new ExecutionContext({context:'FrontEnd',...base.context,traversal:[]})});assert.equal(traverse.error.code,'SEAM.TRAVERSAL');
+  const edit=await runPage({...base,handlers,context:new ExecutionContext({context:'FrontEnd',...base.context,editable:['guestbook-form']})});assert.equal(edit.error.code,'MUTATION.DENIED');
   // Route a wildcard-visible Form owner as well as fields through the existing POST action.
   const raw=dehydrate(base.runtime);raw.slots.pages[0].slots.sections[0].slots.blocks[0].id='guestbook-entry-form';const runtime=hydrate(raw,base.model.registry);
   const result=await runPage({...base,model:webModel(runtime,base.model),context:context({capabilities:['object.instances.edit','app.forms.submit'],editable:[grant]}),input:{method:'POST',form:new URLSearchParams({_target:'guestbook-entry-form',_action:'Submit',_csrf:'c'.repeat(64),name:'Posted'}).toString(),action:{target:'guestbook-entry-form',type:'Submit',csrf:'c'.repeat(64),payload:{}}},actions:[{page:'home',target:'guestbook-entry-form',type:'Submit',method:'POST',capability:'app.forms.submit',wydBasic:'CALL Me.Clear()'}]});
@@ -86,10 +87,10 @@ test('client visibility and Form edits share object matching; client action reso
   const prototypeRegistry=loadRepository(process.cwd()).registry;
   const nodes=()=>[{id:'guestbook-form',kind:'form',prototype:'wydgit.core/form',element:new Control(),properties:{}},{id:dynamicIds[1],parent:'guestbook-form',kind:'field',prototype:'wydgit.core/text-input',element:new Control(),properties:{name:'name',label:'Name'}}];
   const ctx=context({self:'guestbook-form',visible:['guestbook-form',grant],editable:['guestbook-form',grant],capabilities:['object.instances.edit','client.actions.submit'],scopes:{actions:['guestbook-*']}});
-  const controls=nodes(),client=mountClient({nodes:controls,prototypeRegistry,context:ctx,handlers:prepareClientHandlers([{owner:'guestbook-form',type:'Client.Ready',wydBasic:'CALL Me.Bind({"name":"Client Ada"})'}])});
+  const controls=nodes(),client=mountClient({nodes:controls,prototypeRegistry,context:clientContext(ctx),handlers:prepareClientHandlers([{owner:'guestbook-form',type:'Client.Ready',wydBasic:'CALL Me.Bind({"name":"Client Ada"})'}])});
   await client.ready;assert.equal(controls[1].element.value,'Client Ada');
   controls[0].element.dispatchEvent(new Event('submit',{cancelable:true}));await client.idle();assert.equal(client.error(),'EVENT.DENIED');await client.unmount();
-  for(const [extra,code] of [[{editable:['guestbook-form']},'SEAM.DENIED'],[{traversal:[]},'SEAM.TRAVERSAL']]){const denied=mountClient({nodes:nodes(),prototypeRegistry,context:new ExecutionContext({...ctx,...extra}),handlers:prepareClientHandlers([{owner:'guestbook-form',type:'Client.Ready',wydBasic:'CALL Me.Bind({"name":"Denied"})'}])});await assert.rejects(denied.ready,{code});}
+  for(const [extra,code] of [[{editable:['guestbook-form']},'SEAM.DENIED'],[{traversal:[]},'SEAM.TRAVERSAL']]){const denied=mountClient({nodes:nodes(),prototypeRegistry,context:clientContext(new ExecutionContext({context:'FrontEnd',...ctx,...extra})),handlers:prepareClientHandlers([{owner:'guestbook-form',type:'Client.Ready',wydBasic:'CALL Me.Bind({"name":"Denied"})'}])});await assert.rejects(denied.ready,{code});}
 });
 
 test('wildcard visibility/editability cannot authorize prototype construction or library resource scopes',async t=>{
@@ -99,8 +100,8 @@ test('wildcard visibility/editability cannot authorize prototype construction or
   await assert.rejects(execute(compile(source),{prototypeRegistry,context:context({capabilities:['object.instances.construct'],scopes:{prototypes:['acme/*']}}),scope:{}}),{code:'SEAM.DENIED'});
   const allowed=context({capabilities:['object.instances.construct'],scopes:{prototypes:['acme/message-panel']}});assert.equal((await execute(compile(source),{prototypeRegistry,context:allowed,scope:{}})).value,dynamicIds[1]);assert.equal(allowed.allows('object.instances.edit'),false);
   const libraries=await initializeHost({root}),input={store:'host-book',collection:'host-entries'};
-  const noCapability=new ExecutionContext({publisher:'divdev',package:'divdev/guestbook',app:'boilerplate',self:'home',visible:[grant],editable:[grant],scopes:{wydstore:[input]}});assert.equal((await libraries.bind(noCapability).call('wydstore','query',input)).code,'SEAM.DENIED');
-  const noResource=new ExecutionContext({...noCapability,capabilities:['store.records.read'],scopes:{wydstore:[{store:'host-*',collection:'host-*'}]}});assert.equal((await libraries.bind(noResource).call('wydstore','query',input)).ok,false);
+  const noCapability=new ExecutionContext({context:'FrontEnd',publisher:'divdev',package:'divdev/guestbook',app:'boilerplate',self:'home',visible:[grant],editable:[grant],scopes:{wydstore:[input]}});assert.equal((await libraries.bind(noCapability).call('wydstore','query',input)).code,'SEAM.DENIED');
+  const noResource=new ExecutionContext({context:'FrontEnd',...noCapability,capabilities:['store.records.read'],scopes:{wydstore:[{store:'host-*',collection:'host-*'}]}});assert.equal((await libraries.bind(noResource).call('wydstore','query',input)).ok,false);
 });
 
 test('Guestbook installation/activation use approved wildcard scopes for IDs beyond old range',async t=>{
@@ -129,7 +130,7 @@ test('package policies reject malformed/overbroad object patterns and require se
 });
 
 test('lifecycle object visibility uses wildcard grants without broadening lifecycle capability policy',async()=>{
-  let called=0;const app=dynamicIds[1],ctx=new ExecutionContext({publisher:'operator',self:'operator',app,visible:[grant]});
+  let called=0;const app=dynamicIds[1],ctx=new ExecutionContext({context:'FrontEnd',publisher:'operator',self:'operator',app,visible:[grant]});
   const lifecycle=createLifecycle({app,context:ctx,handlers:[{owner:dynamicIds[1],type:'Server.Start',run:function(){assert.equal(this.ME.id,dynamicIds[1]);called++;}}]});await lifecycle.start();assert.equal(called,1);await lifecycle.stop();
   const denied=createLifecycle({app,context:ctx,handlers:[{owner:dynamicIds[1],type:'Server.Start',capability:'store.records.create',run:function(){}}]});await denied.start();assert.equal(denied.errors()[0].code,'SEAM.DENIED');
 });

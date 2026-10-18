@@ -86,7 +86,7 @@ test('Hono TCP host preserves routes, HEAD, security, asset cache and approved r
 
 test('bounded forms, cookies, Change payload, explicit responses and concurrent isolation cross real Hono transport', async t => {
   const root = await pageRoot(t), base = fixture().context;
-  const context = new ExecutionContext({ ...base, capabilities: [...base.capabilities, 'response.files.send', 'files.resources.read'], scopes: { ...base.scopes, files: ['report'] } });
+  const context = new ExecutionContext({context:'FrontEnd', ...base, capabilities: [...base.capabilities, 'response.files.send', 'files.resources.read'], scopes: { ...base.scopes, files: ['report'] } });
   const fileRoot = await temp(t); await fs.writeFile(path.join(fileRoot, 'report.txt'), 'safe report');
   const files = await fileCatalog(fileRoot, [{ id: 'report', file: 'report.txt', type: 'text/plain' }]);
   const changes = [], loads = [], unloads = [];
@@ -158,6 +158,6 @@ for (const signal of ['SIGINT', 'SIGTERM']) test(`server entrypoint gracefully e
   const exited = once(child, 'exit');
   let output = '';
   await new Promise((resolve, reject) => { child.stdout.on('data', chunk => { output += chunk; if (/http:\/\/127\.0\.0\.1:\d+/.test(output)) resolve(); }); child.once('error', reject); child.once('exit', () => reject(new Error('Server exited before listen'))); });
-  assert.match(output, /Wydgit 0\.3\.0-alpha\.15/); child.kill(signal);
+  assert.match(output, /Wydgit 0\.3\.0-alpha\.16/); child.kill(signal);
   const [code, termination] = await exited; assert.equal(code, 0); assert.equal(termination, null);
 });

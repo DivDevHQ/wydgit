@@ -27,7 +27,7 @@ for(const provider of ['JSON','SQLite'])test(`${provider}: uploaded media indexe
  const mediaSource=mediaSearchSource({indexes:[{id:'site',app:f.caller.app,resource:'media',get destination(){return destination;}}],dispatch:caller=>libraries.bind(caller)});
  const source={...mediaSource,async resolve(...args){const document=await mediaSource.resolve(...args);return document&&unsafeURL?{...document,url:unsafeURL}:document;}};
  libraries=await initializeHost({root:f.root,adapters:{wydsearch:{source}}});
- const caller=extra=>new ExecutionContext({...f.editor,capabilities:[...f.editor.capabilities,'search.documents.index','search.documents.read'],scopes:{...f.editor.scopes,wydsearch:[{index:'site',resources:['media']}]},...extra});
+ const caller=extra=>new ExecutionContext({context:'FrontEnd',...f.editor,capabilities:[...f.editor.capabilities,'search.documents.index','search.documents.read'],scopes:{...f.editor.scopes,wydsearch:[{index:'site',resources:['media']}]},...extra});
  const invoke=(op,input,c=caller())=>libraries.bind(c).invoke('wydsearch','1.0.0',op,{index:'site',...input});
  const form=new FormData();form.append('file',new Blob([png]),'image.png');form.append('title','Needle <b>image</b>');form.append('description','Searchable media metadata');
  const request=new Request('http://localhost',{method:'POST',body:form});

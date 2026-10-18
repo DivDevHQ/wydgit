@@ -10,7 +10,7 @@ export const owner={publisher:'wydgit.core',package:'host:site-search',principal
 export const pageIds=['getting-started','security','libraries','portability','draft'];
 const envelope=(id,prototype,properties={},slots={})=>({schema:'wydgit/0.2',id,prototype:'wydgit.core/'+prototype,properties,slots,provenance:{}});
 export function searchContext(identity=null,maintenance=false) {
- return new ExecutionContext({...owner,app:'boilerplate',self:'search',identity,visible:['search-*'],capabilities:['search.documents.read',...(maintenance?['search.documents.index','search.documents.remove','search.index.rebuild']:[])],scopes:{wydsearch:[{index:'site',...(maintenance?{resources:pageIds}:{})}]}});
+ return new ExecutionContext({context:'FrontEnd',...owner,app:'boilerplate',self:'search',identity,visible:['search-*'],capabilities:['search.documents.read',...(maintenance?['search.documents.index','search.documents.remove','search.index.rebuild']:[])],scopes:{wydsearch:[{index:'site',...(maintenance?{resources:pageIds}:{})}]}});
 }
 export async function createSearchExample(root,provider='json') {
  const project=path.resolve(import.meta.dirname,'../..');
@@ -27,7 +27,7 @@ export async function createSearchExample(root,provider='json') {
  await fs.writeFile(path.join(root,'wydgit.config.json'),JSON.stringify(initial));
  const packagePath=path.join(project,'examples/search'),manifest=JSON.parse(await fs.readFile(path.join(packagePath,'manifest.json')));
  const model=loadRepository(root),ids=[];const walk=id=>{ids.push(id);Object.values(model.runtime.get(id).slots).flat().forEach(walk);};walk(model.runtime.rootId);
- const installationContext=new ExecutionContext({publisher:'operator',app:'boilerplate',self:'boilerplate',capabilities:['object.instances.edit'],visible:[...ids,'search','wydsearch','wydsearch-*'],editable:[...ids,'search','wydsearch','wydsearch-*']});
+ const installationContext=new ExecutionContext({context:'FrontEnd',publisher:'operator',app:'boilerplate',self:'boilerplate',capabilities:['object.instances.edit'],visible:[...ids,'search','wydsearch','wydsearch-*'],editable:[...ids,'search','wydsearch','wydsearch-*']});
  const policy={installationContext,placement:{page:'search',parent:'search',slot:'sections',index:0},page:envelope('search','page',{title:'Search',slug:'search'}),approvals:manifest.permissions,storageMappings:{},properties:{'wydsearch-bar':{placeholder:'Search Wydgit'},'wydsearch-results':{pageSize:2}},additions:pageIds.map((id,i)=>({placement:{page:id,parent:id,slot:'sections',index:0},instance:{...envelope('wydsearch-header-'+i,'section',{position:'header'},{blocks:[{...envelope('wydsearch-bar-'+i,'search-bar',{destination:'/search/',placeholder:'Search Wydgit'}),prototype:'divdev/search-bar'}]}),prototype:'divdev/search-section'}})),infrastructure:{enableWydstore:true,stores:[],search:{index:'site',pages:pageIds,provider,location:'.wydgit-data/search-site'}}};
  await applyOperatorInstall(await planOperatorInstall({root,packagePath,manifest,policy,installationContext}));
  const config=JSON.parse(await fs.readFile(path.join(root,'wydgit.config.json')));config.libraries.sort((a,b)=>a.id==='wydstore'?-1:b.id==='wydstore'?1:0);

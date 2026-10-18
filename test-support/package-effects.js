@@ -21,7 +21,7 @@ export async function interruptedEffects(t,root,request) {
   const ended=once(child,'close');child.kill('SIGKILL');await ended;
 }
 export async function provisionFixture(t,provider) {
-  const f=await lifecycleFixture(t),context=new ExecutionContext({...f.context,visible:[...f.context.visible,...f.manifest.permissions.visible],editable:[...f.context.editable,...f.manifest.permissions.visible]});
+  const f=await lifecycleFixture(t),context=new ExecutionContext({context:'FrontEnd',...f.context,visible:[...f.context.visible,...f.manifest.permissions.visible],editable:[...f.context.editable,...f.manifest.permissions.visible]});
   const library=f.config.libraries.find(l=>l.id==='wydstore');library.enabled=false;delete library.options;
   await writeJson(path.join(f.root,'wydgit.config.json'),f.config);
   const policy={installationContext:JSON.parse(JSON.stringify(context)),approvals:f.manifest.permissions,storageMappings:{entries:{store:'new-book',collection:'entries'}},

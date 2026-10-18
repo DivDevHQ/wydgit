@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mountClient } from '../wydclient/index.js';
 import { ExecutionContext } from '../wydgine/seam/context.js';
 class Element extends EventTarget {value='';}
-const context=()=>new ExecutionContext({publisher:'acme',self:'form',visible:['form','field'],capabilities:['client.actions.submit','client.cookies.read'],scopes:{actions:['form'],cookies:[{name:'theme',path:'/'},{name:'__Host-wydgit-auth',path:'/'}]}});
+const context=()=>new ExecutionContext({runat:'Client',publisher:'acme',self:'form',visible:['form','field'],capabilities:['client.actions.submit','client.cookies.read'],scopes:{actions:['form'],cookies:[{name:'theme',path:'/'},{name:'__Host-wydgit-auth',path:'/'}]}});
 test('client Mount/Ready/Unmount, semantic adaptation, Change reconciliation and submit ownership',async()=>{
  const form=new Element(),field=new Element(),trace=[];let submits=0,stale;
  const handlers=['Mount','Ready','Unmount'].flatMap(p=>['form','field'].map(owner=>({type:`Client.${p}`,owner,run:function(){trace.push(`${p}:${this.ME.id}`);assert.throws(()=>this.REQUEST,e=>e.code==='EVENT.CONTEXT');}})));

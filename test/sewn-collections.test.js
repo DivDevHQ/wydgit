@@ -1,10 +1,11 @@
+import {clientContext} from '../test-support/client-context.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {compile,compileModule} from '../wydgine/wydbasic/index.js';
 import {execute} from '../wydgine/sewn/execute.js';
 import {validate} from '../wydgine/sewn/validate.js';
 import {ExecutionContext} from '../wydgine/seam/context.js';
-const context=limits=>new ExecutionContext({publisher:'acme',self:'home',limits});
+const context=limits=>new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'home',limits});
 const run=async(source,SESSION={},limits={})=>(await execute(compile(source),{scope:{SESSION},context:context(limits)})).value;
 const literal=value=>({op:'literal',value});
 const document=(body,procedures={})=>({schema:'sewn/0.13',procedures,body});
@@ -154,15 +155,15 @@ test('procedure arrays, typed indexed returns and authorized service arrays inte
 test('WydClient executes indexed reads, collections, procedure loops and constants with cancellation',async()=>{
  const {mountClient}=await import('../wydclient/index.js');class Element extends EventTarget{}const element=new Element();
  const module=compileModule('FUNCTION Total() AS Integer\nCONST endValue AS Integer=3\nDIM n AS Integer=0\nFOR i=1 TO endValue\nn=n+i\nNEXT\nRETURN n\nEND FUNCTION\nEVENT Change\nCONST names AS String=Join(Split("a,b",","),"-")\nIF names="a-b" AND Total()=6 AND Split(names,"-")[1]="b" THEN\nEVENT.Cancel()\nEND IF\nEND EVENT');
- const client=mountClient({nodes:[{id:'home',kind:'field',element,value:'old'}],context:context(),handlers:[{owner:'home',type:'Change',workflow:module.events[0].workflow}]});
+ const client=mountClient({nodes:[{id:'home',kind:'field',element,value:'old'}],context:clientContext(context()),handlers:[{owner:'home',type:'Change',workflow:module.events[0].workflow}]});
  await client.ready;element.value='new';element.dispatchEvent(new Event('change'));await client.idle();assert.equal(element.value,'old');assert.equal(client.error(),null);await client.unmount();
- const limitedElement=new Element();const limited=mountClient({nodes:[{id:'home',kind:'field',element:limitedElement,value:'old'}],context:context({sewnIterations:1}),handlers:[{owner:'home',type:'Change',workflow:compile('FOR i=1 TO 2\nNEXT')}]});
+ const limitedElement=new Element();const limited=mountClient({nodes:[{id:'home',kind:'field',element:limitedElement,value:'old'}],context:clientContext(context({sewnIterations:1})),handlers:[{owner:'home',type:'Change',workflow:compile('FOR i=1 TO 2\nNEXT')}]});
  await limited.ready;limitedElement.value='new';limitedElement.dispatchEvent(new Event('change'));await limited.idle();assert.equal(limitedElement.value,'old');assert.equal(limited.error(),'SEWN.LIMIT');await limited.unmount();
 });
 
 test('browser-targeted executor runs 0.13 wire workflows without source compilers or Node services',async()=>{
  const {build}=await import('esbuild');const {runInNewContext}=await import('node:vm');
- const result=await build({stdin:{contents:"import {execute} from './wydgine/sewn/execute.js';import {ExecutionContext} from './wydgine/seam/context.js';export const run=(document,limits={})=>execute(document,{scope:{},context:new ExecutionContext({publisher:'acme',self:'home',limits})});",resolveDir:process.cwd()},bundle:true,platform:'browser',target:'es2022',format:'iife',globalName:'PortableRuntime',write:false,metafile:true});
+ const result=await build({stdin:{contents:"import {execute} from './wydgine/sewn/execute.js';import {ExecutionContext} from './wydgine/seam/context.js';export const run=(document,limits={})=>execute(document,{scope:{},context:new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'home',limits})});",resolveDir:process.cwd()},bundle:true,platform:'browser',target:'es2022',format:'iife',globalName:'PortableRuntime',write:false,metafile:true});
  for(const input of Object.keys(result.metafile.inputs))assert.ok(!/wydbasic|node_modules|wydstore|storage/.test(input),input);
  const sandbox={setTimeout,clearTimeout};runInNewContext(result.outputFiles[0].text,sandbox);
  const source='CONST names AS String=Join(Split("Andy,Barney,Goober",","),"-")\nDIM total AS Integer=0\nFOR i=1 TO 3\ntotal=total+i\nNEXT\nRETURN names & Convert(total,String)';

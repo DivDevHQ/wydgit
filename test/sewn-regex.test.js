@@ -1,3 +1,4 @@
+import {clientContext} from '../test-support/client-context.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -9,7 +10,7 @@ import {StaticLibraryRegistry} from '../wydgine/static-libraries/index.js';
 import {MAXIMA} from '../wydgine/sewn/schema.js';
 const staticWire=JSON.parse(readFileSync(new URL('./fixtures/sewn15-static-regex.json',import.meta.url)));
 const fixtures=JSON.parse(readFileSync(new URL('./fixtures/sewn15-regex.json',import.meta.url)));
-const context=limits=>new ExecutionContext({publisher:'application',self:'home',limits});
+const context=limits=>new ExecutionContext({context:'FrontEnd',publisher:'application',self:'home',limits});
 const literal=value=>({op:'literal',value});
 const operation=(name,args)=>({op:'operation',name,args:args.map(literal)});
 const document=value=>({schema:'sewn/0.15',procedures:{},body:[{op:'return',value}]});
@@ -114,13 +115,13 @@ test('WydClient regex Change handlers preserve cancellation and fatal limits',as
  const {mountClient}=await import('../wydclient/index.js');class Element extends EventTarget{}
  for(const limits of [{},{sewnRegexWork:0}]){
   const element=new Element();const p=compileModule('EVENT Change\nIF RegexTest("ABC-1234","^[A-Z]{3}-\\d{4}$","") THEN\nEVENT.Cancel()\nEND IF\nEND EVENT').events[0].workflow;
-  const client=mountClient({nodes:[{id:'home',kind:'field',element,value:'old'}],context:context(limits),handlers:[{owner:'home',type:'Change',workflow:p}]});await client.ready;element.value='new';element.dispatchEvent(new Event('change'));await client.idle();assert.equal(element.value,'old');assert.equal(client.error(),limits.sewnRegexWork===0?'SEWN.LIMIT':null);await client.unmount();
+  const client=mountClient({nodes:[{id:'home',kind:'field',element,value:'old'}],context:clientContext(context(limits)),handlers:[{owner:'home',type:'Change',workflow:p}]});await client.ready;element.value='new';element.dispatchEvent(new Event('change'));await client.idle();assert.equal(element.value,'old');assert.equal(client.error(),limits.sewnRegexWork===0?'SEWN.LIMIT':null);await client.unmount();
  }
 });
 
 test('browser-only wire executor satisfies the same full regex conformance without host tooling',async()=>{
  const {build}=await import('esbuild');const {runInNewContext}=await import('node:vm');
- const result=await build({stdin:{contents:"import {execute} from './wydgine/sewn/execute.js';import {ExecutionContext} from './wydgine/seam/context.js';export const run=(p,limits={})=>execute(p,{scope:{},context:new ExecutionContext({publisher:'application',self:'home',limits})});",resolveDir:process.cwd()},bundle:true,platform:'browser',target:'es2022',format:'iife',globalName:'PortableRuntime',write:false,metafile:true});
+ const result=await build({stdin:{contents:"import {execute} from './wydgine/sewn/execute.js';import {ExecutionContext} from './wydgine/seam/context.js';export const run=(p,limits={})=>execute(p,{scope:{},context:new ExecutionContext({context:'FrontEnd',publisher:'application',self:'home',limits})});",resolveDir:process.cwd()},bundle:true,platform:'browser',target:'es2022',format:'iife',globalName:'PortableRuntime',write:false,metafile:true});
  for(const input of Object.keys(result.metafile.inputs))assert.ok(!/wydbasic|static-libraries|package\.js|node_modules|wydstore|storage/.test(input),input);
  // Native dynamic RegExp construction is unavailable, including in the engine.
  const sandbox={setTimeout,clearTimeout,RegExp:class {constructor(){throw Error('Native regex forbidden');}}};runInNewContext(result.outputFiles[0].text,sandbox);

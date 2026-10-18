@@ -1,3 +1,4 @@
+import {declaration} from '../execution/placement.js';
 import { clean, jsonKeys, record, requireThat as check } from './validation.js';
 export const SCHEMA = 'wydgit/0.2';
 export const validId = id => typeof id === 'string' && /^[A-Za-z][\w.-]*$/.test(id);
@@ -6,9 +7,12 @@ export function validateEnvelope(raw) {
   check(record(raw), 'OBJECT.ENVELOPE', 'Expected object envelope');
   check([Object.prototype, null].includes(Object.getPrototypeOf(raw)), 'INPUT.JSON', 'Expected plain envelope');
   const keys = Reflect.ownKeys(raw);
-  check(keys.length === envelopeFields.length && keys.every(k => envelopeFields.includes(k)), 'OBJECT.ENVELOPE', 'Expected exactly the canonical envelope fields');
+  const schema = Object.getOwnPropertyDescriptor(raw, 'schema')?.value;
+  const fields = schema === 'wydgit/0.3' && Object.hasOwn(raw, 'execution') ? [...envelopeFields, 'execution'] : envelopeFields;
+  check(keys.length === fields.length && keys.every(k => fields.includes(k)), 'OBJECT.ENVELOPE', 'Expected exactly the canonical envelope fields');
   check(keys.every(k => { const d = Object.getOwnPropertyDescriptor(raw, k); return d.enumerable && Object.hasOwn(d, 'value'); }), 'INPUT.JSON', 'Expected enumerable JSON fields');
-  check(raw.schema === SCHEMA && validId(raw.id) && typeof raw.prototype === 'string', 'OBJECT.ENVELOPE', 'Invalid schema or identity');
+  check([SCHEMA, 'wydgit/0.3'].includes(raw.schema) && validId(raw.id) && typeof raw.prototype === 'string', 'OBJECT.ENVELOPE', 'Invalid schema or identity');
+  if (Object.hasOwn(raw, 'execution')) declaration(raw.execution);
   check(record(raw.properties) && record(raw.slots) && record(raw.provenance), 'OBJECT.ENVELOPE', 'Properties, slots and provenance must be objects');
 }
 export function resolveProperties(input, definition, { incomplete = false } = {}) {
@@ -42,5 +46,5 @@ export function copyEnvelope(input, active = new Set(), seen = new Set(), depth 
     slots[key] = children.map(child => copyEnvelope(child, active, seen, depth + 1));
   }
   active.delete(input);
-  return { schema: input.schema, id: input.id, prototype: input.prototype, properties: clean(input.properties), slots, provenance: clean(input.provenance) };
+  return { ...(input.execution ? {execution: declaration(input.execution)} : {}), schema: input.schema, id: input.id, prototype: input.prototype, properties: clean(input.properties), slots, provenance: clean(input.provenance) };
 }

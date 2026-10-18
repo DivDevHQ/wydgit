@@ -19,7 +19,7 @@ for(const provider of ['json','sqlite']) {
   await self.updateAccount('New name');assert.equal((await self.currentAccount()).displayName,'New name');
   await denied(()=>self.listMembers(),'SEAM.DENIED');await denied(()=>self.manageMember({id:registered.membership.id,role:'administrator'}),'SEAM.DENIED');
   await f.gate.manageMember({id:registered.membership.id,role:'administrator'});await denied(()=>f.gate.resolveSession(login.token),'GATE.SESSION_INVALID');const promoted=await f.gate.login('alice',f.password),admin=f.memberGate(await f.gate.resolveSession(promoted.token));await denied(()=>admin.listMembers(),'SEAM.DENIED');
-  const context=new ExecutionContext({publisher:'acme',package:'acme/other',installation:'other',self:'widget',app:'other',identity:null,capabilities:['gate.members.manage'],scopes:{wydgate:['boilerplate']}});
+  const context=new ExecutionContext({context:'FrontEnd',publisher:'acme',package:'acme/other',installation:'other',self:'widget',app:'other',identity:null,capabilities:['gate.members.manage'],scopes:{wydgate:['boilerplate']}});
   await denied(()=>createGate(f.libraries.bind(context)).listMembers(),'GATE.DENIED');
   assert.equal((await f.gate.listMembers({limit:1})).members.length,1);await denied(()=>f.gate.listMembers({limit:51}),'GATE.INVALID_USER');
   await denied(()=>admin.changeOwnPassword('wrong long passphrase',f.password+'new'),'GATE.AUTH_FAILED');
@@ -31,7 +31,7 @@ for(const provider of ['json','sqlite']) {
  });
  test(`${provider}: owner claims race atomically and package installation cannot bootstrap`,async t=>{
   const f=await membershipFixture(t,provider);const results=await Promise.allSettled([f.gate.bootstrapOwner({username:'ownerone',password:f.password}),f.gate.bootstrapOwner({username:'ownertwo',password:f.password})]);assert.equal(results.filter(r=>r.status==='fulfilled').length,1);
-  const ctx=new ExecutionContext({...f.gateContext,publisher:'divdev',package:'divdev/membership',principal:'divdev/membership',installation:'package-install'});
+  const ctx=new ExecutionContext({context:'FrontEnd',...f.gateContext,publisher:'divdev',package:'divdev/membership',principal:'divdev/membership',installation:'package-install'});
   await denied(()=>createGate(f.libraries.bind(ctx)).bootstrapOwner({username:'evilowner',password:f.password}),'GATE.DENIED');assert.equal((await f.gate.listMembers()).total,1);
  });
  test(`${provider}: remote recovery is safely unavailable and exposes no challenge`,async t=>{
@@ -60,7 +60,7 @@ for(const provider of ['json','sqlite'])test(`${provider}: recovery challenges e
  await f.gate.requestPasswordReset('alice');const token=delivered[1].token;
  const attempts=await Promise.allSettled([f.gate.resetPassword(token,f.password+'next'),f.gate.resetPassword(token,f.password+'other')]);assert.equal(attempts.filter(a=>a.status==='fulfilled').length,1);assert.equal(attempts.find(a=>a.status==='rejected').reason.code,'GATE.RECOVERY_INVALID');
  await denied(()=>f.gate.resetPassword(token,f.password+'again'),'GATE.RECOVERY_INVALID');await denied(()=>f.gate.resolveSession(session.token),'GATE.SESSION_INVALID');await denied(()=>f.gate.login('alice',f.password),'GATE.AUTH_FAILED');
- const record=await f.libraries.bind(new ExecutionContext({publisher:'wydgit.core',package:'library:wydgate',app:'boilerplate',self:'host',capabilities:['store.records.read'],scopes:{wydstore:[{store:'identity',collection:'directory'}]}})).call('wydstore','get',{store:'identity',collection:'directory',id:'local-identity'});
+ const record=await f.libraries.bind(new ExecutionContext({context:'FrontEnd',publisher:'wydgit.core',package:'library:wydgate',app:'boilerplate',self:'host',capabilities:['store.records.read'],scopes:{wydstore:[{store:'identity',collection:'directory'}]}})).call('wydstore','get',{store:'identity',collection:'directory',id:'local-identity'});
  assert.equal(record.ok,true);assert.ok(!JSON.stringify(record).includes(token));assert.ok(!JSON.stringify(record).includes(f.password));assert.equal(record.value.data.membership.challenges[0].used,true);
 });
 test('failed recovery delivery invalidates its challenge without exposing account existence',async t=>{
@@ -77,7 +77,7 @@ for(const provider of ['json','sqlite'])test(`${provider}: idle expiry, logout, 
 });
 test('installed administration needs both a live App administrator fact and a SEAM grant',async t=>{
  const f=await membershipFixture(t);const registered=await f.gate.register({username:'alice',password:f.password});const login=await f.gate.login('alice',f.password),identity=await f.gate.resolveSession(login.token);
- const administration=subject=>createGate(f.libraries.bind(new ExecutionContext({publisher:'divdev',package:'divdev/admin',installation:'admin-receipt',self:'admin',app:'boilerplate',identity:subject,capabilities:['gate.members.manage'],scopes:{wydgate:['boilerplate']}})));
+ const administration=subject=>createGate(f.libraries.bind(new ExecutionContext({context:'FrontEnd',publisher:'divdev',package:'divdev/admin',installation:'admin-receipt',self:'admin',app:'boilerplate',identity:subject,capabilities:['gate.members.manage'],scopes:{wydgate:['boilerplate']}})));
  await denied(()=>administration(null).listMembers(),'GATE.DENIED');await denied(()=>administration(identity).listMembers(),'GATE.DENIED');
  await denied(()=>administration({...identity,membershipRole:'administrator'}).listMembers(),'GATE.DENIED');
  await f.gate.manageMember({id:registered.membership.id,role:'administrator'});const promoted=await f.gate.login('alice',f.password),adminIdentity=await f.gate.resolveSession(promoted.token);assert.equal((await administration(adminIdentity).listMembers()).total,1);

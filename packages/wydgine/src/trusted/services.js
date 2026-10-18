@@ -1,5 +1,5 @@
 // Trusted canonical implementation integrations; not portable App authority.
-export {ExecutionContext} from '../engine/seam/context.js';
+export {ExecutionContext,endExecutionContext} from '../engine/seam/context.js';
 export {loadRepository} from '../engine/repository.js';
 export {renderMarkdown,pagePath} from '../engine/index.js';
 export {receiveFile} from '../engine/http/transfers.js';

@@ -1,3 +1,4 @@
+import {restrictExecution, checkPlacement} from '../execution/placement.js';
 import {validateControlBindings} from '../controls.js';
 import {componentContract,validateComponent} from './component-contracts.js';
 import { classContracts } from './class-contracts.js';
@@ -38,6 +39,7 @@ export class PrototypeRegistry {
         check(!base.interface,'INTERFACE.DEFINITION','Concrete prototypes cannot inherit interfaces');
         check(base.publisher === d.publisher || (officialPublishers.includes(base.publisher) && base.public === true), 'PROTOTYPE.PUBLISHER', 'Cross-publisher inheritance denied');
       }
+      const execution = restrictExecution(d.execution, base?.execution);
       check(d.static===undefined||typeof d.static==='boolean','PROTOTYPE.STATIC','Invalid static flag');
       if(d.static){check(Object.keys(d).every(k=>['id','publisher','public','abstract','static','alias','version','dependencies','properties','slots','methodRules','behavior'].includes(k)),'PROTOTYPE.STATIC','Unsupported static prototype metadata');check(record(d.dependencies??{})&&Object.entries(d.dependencies??{}).every(([id,v])=>identity.test(id)&&typeof v==='string'),'PROTOTYPE.STATIC','Invalid static dependencies');check(d.extends===undefined&&!d.abstract&&!d.friends?.length&&!d.overrides?.length&&!d.presentation&&!d.actions&&Object.keys(d.properties??{}).length===0&&Object.keys(d.slots??{}).length===0,'PROTOTYPE.STATIC','Dedicated static prototypes cannot contain instance state or inheritance');check(typeof d.alias==='string'&&/^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(d.alias)&&typeof d.version==='string'&&/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/.test(d.version),'PROTOTYPE.STATIC','Static prototypes need an alias and exact version');}
       else check(!base?.static&&d.alias===undefined&&d.version===undefined,'PROTOTYPE.STATIC','Static metadata requires a dedicated static prototype');
@@ -107,7 +109,7 @@ export class PrototypeRegistry {
         }
       }
       const declarations=classContracts(d,base,methods,properties);const component=componentContract(d,base);
-      const result = freeze({ ...d, ...declarations, ...(component?{component}:{}), implements:implementations, ...(presentation?{presentation}:{}), abstract: d.abstract ?? false, properties, propertyOwners, slots, methods, methodRules, friends, actions, ancestors: base ? [base.id, ...base.ancestors] : [] });
+      const result = freeze({ ...d, ...(execution?{execution}:{}), ...declarations, ...(component?{component}:{}), implements:implementations, ...(presentation?{presentation}:{}), abstract: d.abstract ?? false, properties, propertyOwners, slots, methods, methodRules, friends, actions, ancestors: base ? [base.id, ...base.ancestors] : [] });
       visiting.delete(id); this.#definitions.set(id, result); return result;
     };
     for (const id of raw.keys()) resolve(id);
@@ -135,6 +137,7 @@ export class PrototypeRegistry {
   get(id) { const d = this.#definitions.get(id); check(d, 'PROTOTYPE.UNKNOWN', `Unknown prototype: ${id}`); return d; }
   method(id, name, caller = null, exact = true, context = null) {
     const definition = this.get(id);
+    if(context)checkPlacement({},definition,context);
     check(!definition.static,'PROTOTYPE.STATIC','Static methods require compile-time linking');
     check(Object.hasOwn(definition.methods, name) || !exact, 'PROTOTYPE.METHOD', 'Unknown prototype method');
     const member = resolveMember(definition, 'method', name, exact);

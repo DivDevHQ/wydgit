@@ -8,8 +8,8 @@ import { temp } from './wydstore.js';
 export { temp } from './wydstore.js';
 export const project=path.resolve(import.meta.dirname,'..');
 export const secret='a long test passphrase';
-export const gateContext=(extra={})=>new ExecutionContext({publisher:'acme',package:'acme/app',app:'appA',self:'widget',capabilities:manifest.capabilities,scopes:{wydgate:['appA']},...extra});
-export const storageContext=()=>new ExecutionContext({publisher:'wydgit.core',package:'library:wydgate',app:'appA',self:'host-test',capabilities:['store.records.read','store.records.create','store.records.write'],scopes:{wydstore:[{store:'identity',collection:'directory'}]}});
+export const gateContext=(extra={})=>new ExecutionContext({context:'FrontEnd',publisher:'acme',package:'acme/app',app:'appA',self:'widget',capabilities:manifest.capabilities,scopes:{wydgate:['appA']},...extra});
+export const storageContext=()=>new ExecutionContext({context:'FrontEnd',publisher:'wydgit.core',package:'library:wydgate',app:'appA',self:'host-test',capabilities:['store.records.read','store.records.create','store.records.write'],scopes:{wydstore:[{store:'identity',collection:'directory'}]}});
 export function configuration(root,provider='json',membership) {
  return {schema:'wydgit.host/0.1',libraries:[
   {id:'wydgate',package:'@wydgit/gate',enabled:true,version:'^0.1.0-alpha.3',publisher:'wydgit.core',trust:'canonical',

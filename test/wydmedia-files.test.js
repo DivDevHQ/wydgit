@@ -41,7 +41,7 @@ for(const adapter of ['JSON','SQLite'])test(`${adapter}: WydFiles media publicat
  const second=await f.invoke('create-upload');assert.ok(second.ok);assert.equal((await f.invoke('create-upload')).code,'STREAM.LIMIT');
  // Expire only these reservations through an authorized metadata write for bounded repair.
  const {ExecutionContext}=await import('../wydgine/seam/context.js');const settings=JSON.parse(await fs.readFile(path.join(f.root,'wydgit.config.json'))).libraries.find(l=>l.id==='wydstream').options.apps[0];
- const storeCaller=new ExecutionContext({app:f.caller.app,publisher:'wydgit.core',package:'library:wydstream',self:'library-wydstream',capabilities:['store.records.read','store.records.write'],scopes:{wydstore:[{store:settings.store,collection:settings.collection}]}});
+ const storeCaller=new ExecutionContext({context:'FrontEnd',app:f.caller.app,publisher:'wydgit.core',package:'library:wydstream',self:'library-wydstream',capabilities:['store.records.read','store.records.write'],scopes:{wydstore:[{store:settings.store,collection:settings.collection}]}});
  const store=f.libraries.bind(storeCaller),saved=await store.invoke('wydstore','1.0.0','get',{store:settings.store,collection:settings.collection,id:'media-ledger'});const data=structuredClone(saved.value.data);data.items.forEach(i=>i.expiresAt=0);
  assert.ok((await store.invoke('wydstore','1.0.0','transaction',{store:settings.store,collection:settings.collection,operations:[{operation:'update',input:{id:'media-ledger',version:saved.value.version,data}}]})).ok);
  assert.ok((await f.invoke('reconcile',{},f.context({principal:'host:media-repair',capabilities:['stream.media.repair']}))).ok);

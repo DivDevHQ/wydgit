@@ -28,7 +28,7 @@ test('explicit-root standalone App renders and loads all approved services witho
  const {root}=await fixture(t);
  const app=await worker.createHostApp({root:path.join(root,'app-alpha'),appId:'app-alpha'});
  let server;t.after(async()=>{if(server?.listening)await app.shutdown(server);else await app.stop();});
- const context=new ExecutionContext({publisher:'acme',package:'acme/demo',app:'app-alpha',self:'home',capabilities:['store.records.read'],scopes:{wydstore:[{store:'main',collection:'records'}]}});
+ const context=new ExecutionContext({context:'FrontEnd',publisher:'acme',package:'acme/demo',app:'app-alpha',self:'home',capabilities:['store.records.read'],scopes:{wydstore:[{store:'main',collection:'records'}]}});
  assert.ok(Object.isFrozen(context));checkContext(context);assert.throws(()=>checkContext({...context}),{code:'SEAM.CONTEXT'});
  const binding=app.locals.libraries.bind(context);
  assert.equal((await binding.invoke('wydstore','1.0.0','count',{store:'main',collection:'records'})).value,0);

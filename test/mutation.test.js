@@ -15,7 +15,7 @@ const registry = () => new PrototypeRegistry([
 const node = (id, children = []) => ({schema:'wydgit/0.2',id,prototype:'acme/item',properties:{title:id},slots:{children},provenance:{}});
 const tree = () => ({schema:'wydgit/0.2',id:'app',prototype:'wydgit.core/app',properties:{},slots:{children:[node('a',[node('aa')]),node('b'),node('c')]},provenance:{}});
 const allIds = ['app','a','aa','b','c','new','new-child','copy','copy-child','replacement','other'];
-const context = (extra = {}) => new ExecutionContext({publisher:'acme',self:'a',visible:allIds,editable:allIds,capabilities:['object.instances.edit'],...extra});
+const context = (extra = {}) => new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'a',visible:allIds,editable:allIds,capabilities:['object.instances.edit'],...extra});
 const runtime = () => hydrate(tree(),registry(),{revision:7});
 const code = (fn, expected) => assert.throws(fn,e=>e.code===expected,expected);
 
@@ -193,14 +193,14 @@ test('generated edits remain deterministic through canonical serialization and h
 });
 
 test('demo renders from an edited snapshot and version metadata stays synchronized', () => {
- const model=loadRepository(projectRoot),caller=new ExecutionContext({publisher:'host',self:'home',capabilities:['object.instances.edit'],editable:['home']});
+ const model=loadRepository(projectRoot),caller=new ExecutionContext({context:'FrontEnd',publisher:'host',self:'home',capabilities:['object.instances.edit'],editable:['home']});
  const edit=model.runtime.edit(caller);edit.setProperty('home','title','Home');
  const next=webModel(edit.commit().runtime,model);
  for(const route of ['/','/about/','/contact/']){const result=renderSite(next,route);assert.equal(result.status,200);assert.deepEqual(result.diagnostics,[]);}
  const pkg=JSON.parse(fs.readFileSync(new URL('../package.json',import.meta.url)));
  const lock=JSON.parse(fs.readFileSync(new URL('../package-lock.json',import.meta.url)));
  const app=JSON.parse(fs.readFileSync(new URL('../content/app.json',import.meta.url)));
- assert.equal(pkg.version,'0.3.0-alpha.15');assert.equal(pkg.name,'wydgit');assert.equal(app.properties.revision,'Wydgit 0.3 alpha 15');
+ assert.equal(pkg.version,'0.3.0-alpha.16');assert.equal(pkg.name,'wydgit');assert.equal(app.properties.revision,'Wydgit 0.3 alpha 16');
  assert.equal(lock.version,pkg.version);assert.equal(lock.packages[''].version,pkg.version);assert.equal(lock.name,pkg.name);assert.equal(lock.packages[''].name,pkg.name);
 });
 

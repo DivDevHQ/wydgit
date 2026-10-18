@@ -1,6 +1,6 @@
 {
   "name": "@wydgit/stream",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "private": true,
   "type": "module",
   "license": "MPL-2.0",
@@ -15,7 +15,7 @@
     "file-type": "21.3.4"
   },
   "peerDependencies": {
-    "wydgine": "0.3.0-alpha.13 || 0.3.0-alpha.14 || 0.3.0-alpha.15"
+    "wydgine": "0.3.0-alpha.13 || 0.3.0-alpha.14 || 0.3.0-alpha.15 || 0.3.0-alpha.16"
   },
   "files": [
     "src",

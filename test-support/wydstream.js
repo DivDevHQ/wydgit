@@ -25,12 +25,12 @@ export async function mediaFixture(t,provider='JSON',install=true,files=false) {
  if(!install)return f;
  f.receipt=await applyOperatorInstall(await f.plan());
  f.libraries=await initializeHost({root:f.root});
- f.gateContext=new ExecutionContext({publisher:'host',package:'host:gate',app:'boilerplate',self:'home',capabilities:gateConfig.libraries.find(l=>l.id==='wydgate').options?['gate.users.create','gate.users.read','gate.credentials.authenticate','gate.sessions.use','gate.sessions.manage']:[],scopes:{wydgate:['boilerplate']}});
+ f.gateContext=new ExecutionContext({context:'FrontEnd',publisher:'host',package:'host:gate',app:'boilerplate',self:'home',capabilities:gateConfig.libraries.find(l=>l.id==='wydgate').options?['gate.users.create','gate.users.read','gate.credentials.authenticate','gate.sessions.use','gate.sessions.manage']:[],scopes:{wydgate:['boilerplate']}});
  f.gate=createGate(f.libraries.bind(f.gateContext));
  const user=await f.gate.createUser({username:'alice',password:'long media fixture passphrase'});const login=await f.gate.login('alice','long media fixture passphrase');
  f.user=user;f.token=login.token;f.identity=await f.gate.resolveSession(login.token);
  f.active=activatePackages(loadRepository(f.root),f.libraries,f.root);f.caller=f.active.context({pageId:'home',session:{identity:f.identity},ids:[]});
- f.context=extra=>new ExecutionContext({...f.caller,capabilities:[...f.caller.capabilities,'stream.media.write','stream.media.delete'],...extra});
+ f.context=extra=>new ExecutionContext({context:'FrontEnd',...f.caller,capabilities:[...f.caller.capabilities,'stream.media.write','stream.media.delete'],...extra});
  f.editor=f.context({});f.invoke=(op,input={},caller=f.editor)=>f.libraries.bind(caller).invoke('wydstream','1.0.0',op,{resource:'media',...input});
  return f;
 }

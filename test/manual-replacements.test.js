@@ -189,7 +189,7 @@ for(const provider of ['json','sqlite'])test(`${provider}: manual postcommit can
 });
 for(const provider of ['json','sqlite'])test(`${provider}: manual rejects missing host authority and malformed, destructive approvals`,async t=>{
  const f=await developerFixture(t,provider),before=await image(f),{ExecutionContext}=await import('../wydgine/seam/context.js');
- for(const context of [new ExecutionContext({...f.context,package:'acme/a'}),new ExecutionContext({...f.context,app:'wrong'}),new ExecutionContext({...f.context,capabilities:['object.instances.edit']})])await assert.rejects(run(f,'retire',{installationContext:context}),e=>['PACKAGE.DENIED','SEAM.DENIED'].includes(e.code));
+ for(const context of [new ExecutionContext({context:'FrontEnd',...f.context,package:'acme/a'}),new ExecutionContext({context:'FrontEnd',...f.context,app:'wrong'}),new ExecutionContext({context:'FrontEnd',...f.context,capabilities:['object.instances.edit']})])await assert.rejects(run(f,'retire',{installationContext:context}),e=>['PACKAGE.DENIED','SEAM.DENIED'].includes(e.code));
  let called=false;const malformed={...request(f,'retire'),get shell(){called=true;return 'x';}};await assert.rejects(manualReplacement(malformed),{code:'INPUT.JSON'});assert.equal(called,false);assert.deepEqual(await image(f),before);
  await run(f,'retire');const retired=await image(f),step=f.request.declaration.steps[0];step.logic.storage[0].operations=[{op:'drop',field:'text'}];sealStep(step);approveRequest(f.request);
  await assert.rejects(run(f,'stage'),{code:'PACKAGE.MIGRATION'});assert.deepEqual(await image(f),retired);

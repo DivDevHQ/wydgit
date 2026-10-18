@@ -8,7 +8,7 @@ import { createResponse } from '../wydgine/http/response.js';
 import { fileCatalog } from '../wydgine/http/files.js';
 import { Transport } from '../test-support/events.js';
 import { temp } from '../test-support/wydstore.js';
-const ctx=(extra={})=>new ExecutionContext({publisher:'acme',self:'page',capabilities:['request.cookies.read','response.headers.write','response.cookies.write','response.markdown.write','response.files.send','files.resources.read'],scopes:{headers:['cache-control','content-type','set-cookie','content-security-policy'],cookies:[{name:'theme',path:'/'},{name:'__Host-wydgit-auth',path:'/'}],files:['report']},...extra});
+const ctx=(extra={})=>new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'page',capabilities:['request.cookies.read','response.headers.write','response.cookies.write','response.markdown.write','response.files.send','files.resources.read'],scopes:{headers:['cache-control','content-type','set-cookie','content-security-policy'],cookies:[{name:'theme',path:'/'},{name:'__Host-wydgit-auth',path:'/'}],files:['report']},...extra});
 const rejects=(fn,code)=>assert.rejects(fn,e=>e.code===code);
 
 test('bounded request maps preserve repeated values, reject malformed keys/encoding and hide raw cookies',()=>{

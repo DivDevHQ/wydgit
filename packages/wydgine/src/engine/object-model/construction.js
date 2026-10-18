@@ -1,3 +1,4 @@
+import {checkPlacement} from '../execution/placement.js';
 import { bindMembers, authorizeMember, resolveMember } from './members.js';
 import { formTree,publicProperties } from './forms.js';
 // Invocation-local builders. This module never creates a canonical runtime or stores data.
@@ -13,7 +14,7 @@ export function construction(registry,context,bounds,guard,ledger) {
   const validate=(raw,complete=false,depth=0,ids=new Set())=>{
     check(depth<=bounds.draftDepth&&ids.size<bounds.draftNodes,'SEWN.LIMIT','Draft graph limit');
     check(validId(raw.id)&&!ids.has(raw.id),'OBJECT.CONSTRUCTION','Invalid or duplicate draft identity');ids.add(raw.id);
-    const def=registry.get(raw.prototype);check(!def.abstract&&!def.static&&!registry.isA(def.id,'wydgit.core/app'),'OBJECT.CONSTRUCTION','Prototype cannot be constructed');
+    const def=registry.get(raw.prototype);checkPlacement(raw,def,context);check(!def.abstract&&!def.static&&!registry.isA(def.id,'wydgit.core/app'),'OBJECT.CONSTRUCTION','Prototype cannot be constructed');
     const properties=resolveProperties(raw.properties,def,{incomplete:!complete});
     const slots=Object.create(null);for(const key of Object.keys(raw.slots))check(Object.hasOwn(def.slots,key),'OBJECT.UNKNOWN_SLOT','Unknown draft slot');
     for(const [key,rule] of Object.entries(def.slots)){

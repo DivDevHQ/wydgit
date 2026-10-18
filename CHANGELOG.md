@@ -1,5 +1,15 @@
 ## Unreleased
 
+- Establish Wydgine/platform 0.3.0-alpha.16 execution contexts: exact Client/SUB,
+  Server/FrontEnd and Server/BackOffice bindings, versioned optional prototype and
+  instance restrictions, inherited validation and fail-closed trusted placement.
+  Fence ended bindings across derived contexts, budgets, edits and cached service
+  dispatch; preserve SEAM grants and existing package recovery/receipt checks.
+  Migrate public host adapters, operator policies and development fixtures explicitly.
+  Ship WydClient alpha.10 without altering historical bundles; Search/Stream alpha.2
+  and exact hosting/peer metadata follow the engine boundary. Qualify context and
+  JSON/SQLite regression paths; no BackOffice UI, wider store isolation or 0.4 work.
+
 - Integrate the proposed execution-context, administrative-domain and WydStore
   isolation architecture: concrete trusted Server placement, implicit Client/SUB,
   scoped Gate policy, one BackOffice framework, protected provisioning/recovery,

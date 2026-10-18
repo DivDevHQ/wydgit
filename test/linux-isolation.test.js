@@ -131,7 +131,7 @@ test('explicit trusted implementation root loads all five canonical libraries ou
  const base=await fs.mkdtemp(path.join(root,'services-'));await provisionExample(base);const appRoot=path.join(base,'app-alpha');await fs.rm(path.join(appRoot,'node_modules'),{recursive:true,force:true});
  const fake=path.join(appRoot,'node_modules/@wydgit/store');await fs.mkdir(fake,{recursive:true});await fs.writeFile(path.join(fake,'package.json'),JSON.stringify({name:'@wydgit/store',version:'0.1.0-alpha.3',type:'module',exports:{'.':'./index.js','./package.json':'./package.json'}}));await fs.writeFile(path.join(fake,'index.js'),"throw new Error('Upload-selected implementation must never load');\n");
  const app=await createHostApp({root:appRoot,appId:'app-alpha',implementationRoot:process.cwd()});t.after(()=>app.stop());
- const context=new ExecutionContext({publisher:'acme',package:'acme/demo',app:'app-alpha',self:'home',capabilities:['store.records.read'],scopes:{wydstore:[{store:'main',collection:'records'}]}});
+ const context=new ExecutionContext({context:'FrontEnd',publisher:'acme',package:'acme/demo',app:'app-alpha',self:'home',capabilities:['store.records.read'],scopes:{wydstore:[{store:'main',collection:'records'}]}});
  assert.equal((await app.locals.libraries.bind(context).invoke('wydstore','1.0.0','count',{store:'main',collection:'records'})).value,0);await app.stop();
  // No fallback from a missing trusted root to upload node_modules.
  await assert.rejects(createHostApp({root:appRoot,implementationRoot:path.join(base,'absent')}),{code:'LIBRARY.NOT_INSTALLED'});

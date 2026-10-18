@@ -73,7 +73,7 @@ for(const provider of ['json','sqlite']) {
   f.documents.get('security').allowed=false;
   assert.equal((await f.invoke('search',{query:'secret'},authenticated)).value.total,0);
   assert.equal((await f.invoke('metadata',{},authenticated)).value.visibleDocuments,1);
-  const principal=new ExecutionContext({...authenticated,principal:'intruder',scopes:{wydsearch:[{index:'different'}]}});
+  const principal=new ExecutionContext({context:'FrontEnd',...authenticated,principal:'intruder',scopes:{wydsearch:[{index:'different'}]}});
   assert.equal((await f.invoke('metadata',{},principal)).code,'SEARCH.DENIED');
   f.documents.get('getting-started').published=false;
   assert.equal((await f.invoke('search',{query:'wydgit'},authenticated)).value.total,0);
@@ -81,10 +81,10 @@ for(const provider of ['json','sqlite']) {
  test(`${provider}: ownership, scopes, capabilities and host limits cannot be spoofed`,async t=>{
   const f=await custom(t,provider);f.put('getting-started');
   for(const extra of [{app:'other'},{principal:'intruder'},{package:'other/package'},{publisher:'other'},{scopes:{}}]){
-   const caller=new ExecutionContext({...searchContext(null,true),...extra});
+   const caller=new ExecutionContext({context:'FrontEnd',...searchContext(null,true),...extra});
    for(const operation of ['index','remove','reindex'])assert.equal((await f.invoke(operation,operation==='reindex'?{ids:['getting-started']}:{id:'getting-started'},caller)).code,'SEARCH.DENIED');
   }
-  assert.equal((await f.invoke('search',{query:'wydgit'},new ExecutionContext({...searchContext(),app:'other'}))).code,'SEARCH.DENIED');
+  assert.equal((await f.invoke('search',{query:'wydgit'},new ExecutionContext({context:'FrontEnd',...searchContext(),app:'other'}))).code,'SEARCH.DENIED');
   for(const operation of ['index','remove','reindex'])assert.equal((await f.invoke(operation,operation==='reindex'?{ids:['getting-started']}:{id:'getting-started'},searchContext())).code,'SEAM.DENIED');
   assert.equal((await f.invoke('index',{id:'getting-started',principal:owner.principal})).code,'SEARCH.INVALID_REQUEST');
   assert.equal((await f.invoke('search',{query:'wydgit',limits:{queryBytes:999999}})).code,'SEARCH.INVALID_REQUEST');
@@ -112,7 +112,7 @@ for(const provider of ['json','sqlite']) {
   const f=await custom(t,provider);f.put('getting-started');f.put('security',{url:'javascript:alert(1)'});
   assert.equal((await f.invoke('reindex',{ids:['getting-started','security']})).code,'SEARCH.INVALID_DOCUMENT');
   assert.equal((await f.invoke('metadata')).value.visibleDocuments,0);
-  const tiny=new ExecutionContext({...searchContext(null,true),limits:{serviceResponseBytes:1}});
+  const tiny=new ExecutionContext({context:'FrontEnd',...searchContext(null,true),limits:{serviceResponseBytes:1}});
   assert.equal((await f.invoke('index',{id:'getting-started'},tiny)).code,'SEARCH.LIMIT');
   assert.equal((await f.invoke('metadata')).value.visibleDocuments,0);
   for(const limits of [{queryBytes:ceilings.queryBytes+1},{queryBytes:0},{unexpected:1},null,[]]){
@@ -226,7 +226,7 @@ test('native Results composition has a bounded aggregate service-call budget',as
  const page={sections:[{blocks:Array.from({length:8},(_,i)=>({id:'search-'+i,prototype:'block',presentation:presentation('search-results'),index:'site',queryParameter:'q',pageSize:2}))}]};
  let calls=0;const libraries={bindPresentation:()=>({invoke:async()=>{calls++;return {ok:true,value:{results:[],total:0}};}})};
  for(const [componentRequests,expected] of [[100,4],[1,1],[0,0]]){
-  calls=0;const context=new ExecutionContext({...searchContext(),limits:{componentRequests}});
+  calls=0;const context=new ExecutionContext({context:'FrontEnd',...searchContext(),limits:{componentRequests}});
   await prepareSearch({pages:new Map([['search',page]])},'search',{query:'q=wydgit'},context,libraries,{authorize:async()=>{}},createPresentationLedger(context,'search'));
   assert.equal(calls,expected);
  }

@@ -8,7 +8,7 @@ import { createStores } from '@wydgit/store/client';
 import platform from '../package.json' with {type:'json'};
 export const project = path.resolve(import.meta.dirname,'..');
 export const caps = ['read','create','write','delete'].map(a=>`store.records.${a}`);
-export const context = (extra={}) => new ExecutionContext({publisher:'acme',package:'acme/demo',app:'appA',self:'card',capabilities:caps,scopes:{wydstore:[{store:'main',collection:'users'}]},...extra});
+export const context = (extra={}) => new ExecutionContext({context:'FrontEnd',publisher:'acme',package:'acme/demo',app:'appA',self:'card',capabilities:caps,scopes:{wydstore:[{store:'main',collection:'users'}]},...extra});
 export const reject = (fn,code) => assert.rejects(fn,e=>e.code===code,code);
 export const definition = (root,provider='json') => ({id:'main',app:'appA',publisher:'acme',package:'acme/demo',provider,root,collections:[{id:'users',fields:{name:{type:'string',required:true},active:{type:'boolean',default:true},score:{type:'number'},info:{type:'object'},tags:{type:'array'},nothing:{type:'null'}}}]});
 export const config = store => ({schema:'wydgit.host/0.1',libraries:[{id:'wydstore',package:'@wydgit/store',enabled:true,version:'^0.1.0-alpha.2',publisher:'wydgit.core',trust:'canonical',options:{stores:Array.isArray(store)?store:[store]}}]});

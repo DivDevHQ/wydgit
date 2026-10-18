@@ -1,3 +1,4 @@
+import {clientContext} from '../test-support/client-context.js';
 import {readFileSync} from 'node:fs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -20,7 +21,7 @@ const options=registry=>({prototypeRegistry:registry,dependencies:{'contracts/ic
 const l=value=>({op:'literal',value}),v=name=>({op:'variable',name}),me={op:'context',name:'ME'},cast=(value=me)=>({op:'cast',type,value}),impl=(value=me)=>({op:'implements',type,value});
 const ret=value=>({op:'return',value}),doc=body=>({schema:'sewn/0.17',procedures:{},body});
 function host(id='collections/counter',limits={},registry=registryOf()){
- const context=new ExecutionContext({publisher:'application',self:'counter',visible:['counter'],capabilities:['object.instances.construct'],scopes:{prototypes:['collections/counter']},limits});
+ const context=new ExecutionContext({context:'FrontEnd',publisher:'application',self:'counter',visible:['counter'],capabilities:['object.instances.construct'],scopes:{prototypes:['collections/counter']},limits});
  const node={id:'counter',prototype:id,properties:{secret:'hidden'}};
  const handle=bindMembers({id:node.id,prototype:id},{context,node:()=>node});return {prototypeRegistry:registry,context,scope:{ME:handle}};
 }
@@ -80,16 +81,16 @@ test('browser executes validated contracts without compiler, registry installer,
  const result=await build({stdin:{contents:"export {execute} from './wydgine/sewn/execute.js';export {PrototypeRegistry} from './wydgine/object-model/prototypes.js';export {ExecutionContext} from './wydgine/seam/context.js';export {bindMembers} from './wydgine/object-model/members.js';",resolveDir:process.cwd()},bundle:true,platform:'browser',target:'es2022',format:'iife',globalName:'PortableRuntime',minify:true,write:false,metafile:true});
  for(const input of Object.keys(result.metafile.inputs))assert.ok(!/wydbasic|static-libraries|node_modules|storage|packages\/index/.test(input),input);
  const sandbox={setTimeout,clearTimeout};runInNewContext(result.outputFiles[0].text,sandbox);
- await conformance((p,h)=>{const ds=definitions();sandbox.input=JSON.stringify({p,ds,verified:trusted(ds),id:h.scope.ME.prototype,limits:h.context.limits});return runInNewContext(`(()=>{const x=JSON.parse(input),context=new PortableRuntime.ExecutionContext({publisher:'application',self:'counter',limits:x.limits});const node={id:'counter',prototype:x.id};const handle=PortableRuntime.bindMembers({id:'counter',prototype:x.id},{context,node:()=>node});return PortableRuntime.execute(x.p,{context,scope:{ME:handle},prototypeRegistry:new PortableRuntime.PrototypeRegistry(x.ds,{verifiedPrototypes:x.verified})});})()`,sandbox);});
+ await conformance((p,h)=>{const ds=definitions();sandbox.input=JSON.stringify({p,ds,verified:trusted(ds),id:h.scope.ME.prototype,limits:h.context.limits});return runInNewContext(`(()=>{const x=JSON.parse(input),context=new PortableRuntime.ExecutionContext({runat:'Client',publisher:'application',self:'counter',limits:x.limits});const node={id:'counter',prototype:x.id};const handle=PortableRuntime.bindMembers({id:'counter',prototype:x.id},{context,node:()=>node});return PortableRuntime.execute(x.p,{context,scope:{ME:handle},prototypeRegistry:new PortableRuntime.PrototypeRegistry(x.ds,{verifiedPrototypes:x.verified})});})()`,sandbox);});
  const bytes=result.outputFiles[0].contents;console.log('Interface event executor with approved prototype metadata bytes',bytes.length,gzipSync(bytes).length,brotliCompressSync(bytes).length);
 });
 
 test('WydClient interface events retain cancellation, caller budgets and guarded handles',async()=>{
  const {mountClient}=await import('../wydclient/index.js');class Element extends EventTarget{}
  for(const infinite of [false,true]){
-  const registry=registryOf(),element=new Element(),context=new ExecutionContext({publisher:'application',self:'counter',visible:['counter'],limits:{sewnIterations:4}});
+  const registry=registryOf(),element=new Element(),context=new ExecutionContext({context:'FrontEnd',publisher:'application',self:'counter',visible:['counter'],limits:{sewnIterations:4}});
   const workflow=compileModule(`EVENT Change\nDIM item AS ICountable=Me\nIF Implements(item,ICountable) THEN\n${infinite?'DO WHILE TRUE\nLOOP':'IF item.Count()=7 THEN\nEVENT.Cancel()\nEND IF'}\nEND IF\nEND EVENT`,options(registry)).events[0].workflow;
-  const client=mountClient({prototypeRegistry:registry,nodes:[{id:'counter',prototype:'collections/counter',kind:'field',element,value:'old'}],context,handlers:[{owner:'counter',type:'Change',workflow}]});await client.ready;element.value='new';element.dispatchEvent(new Event('change'));await client.idle();assert.equal(element.value,'old');assert.equal(client.error(),infinite?'SEWN.LIMIT':null);await client.unmount();
+  const client=mountClient({prototypeRegistry:registry,nodes:[{id:'counter',prototype:'collections/counter',kind:'field',element,value:'old'}],context:clientContext(context),handlers:[{owner:'counter',type:'Change',workflow}]});await client.ready;element.value='new';element.dispatchEvent(new Event('change'));await client.idle();assert.equal(element.value,'old');assert.equal(client.error(),infinite?'SEWN.LIMIT':null);await client.unmount();
  }
 });
 
@@ -100,7 +101,7 @@ test('consumed draft and stale transaction references cannot be revived or inspe
   const body=[{op:'declare',name:'original',value:draft},{op:'declare',name:'view',value:cast(v('original'))},{op:'call',target:{op:'context',name:'PAGE'},method:'Insert',args:[l('items'),l(0),v('original')]},ret(operation(v('view')))];
   await assert.rejects(run(doc(body),h),{code:'OBJECT.CONSTRUCTION'});
  }
- const registry=registryOf(),context=new ExecutionContext({publisher:'application',self:'home',visible:['counter'],capabilities:['object.instances.edit']});
+ const registry=registryOf(),context=new ExecutionContext({context:'FrontEnd',publisher:'application',self:'home',visible:['counter'],capabilities:['object.instances.edit']});
  const {loadRepository}=await import('../wydgine/repository.js');const runtime=loadRepository(process.cwd()).runtime;const edit=runtime.edit(context),node={id:'counter',prototype:'collections/counter'},handle=bindMembers({id:'counter',prototype:node.prototype},{context,node(){edit.changes();return node;}});edit.abort();
  for(const operation of [cast,impl])await assert.rejects(run(doc([ret(operation())]),{context,prototypeRegistry:registry,scope:{ME:handle}}));
 });
@@ -124,6 +125,6 @@ test('package installation pins interface artifacts, validates ownership and rel
  await assert.rejects(planPackageInstall(fixture.options),{code:'INTERFACE.PUBLISHER'});
  const verifiedPackages={[fixture.manifest.id]:'divdev'},plan=await planPackageInstall({...fixture.options,verifiedPackages});assert.equal(plan.compiledSources.refresh.events[0].workflow.schema,'sewn/0.17');await applyPackageInstall(plan);
  const model=loadRepository(fixture.root,{verifiedPackages}),entry=model.installed.packages[0],workflow=packageBindings(entry,model.registry,model.runtime).handlers[0].workflow;
- const id=entry.manifest.bindings[0].owner,context=new ExecutionContext({publisher:'application',self:id,visible:[id]});assert.equal((await execute(workflow,{prototypeRegistry:model.registry,context,scope:{ME:model.runtime.scope(context,id)}})).value,3);
+ const id=entry.manifest.bindings[0].owner,context=new ExecutionContext({context:'FrontEnd',publisher:'application',self:id,visible:[id]});assert.equal((await execute(workflow,{prototypeRegistry:model.registry,context,scope:{ME:model.runtime.scope(context,id)}})).value,3);
  await fs.writeFile(path.join(fixture.packagePath,'refresh.bas'),'invalid source');assert.deepEqual(packageBindings(entry,model.registry,model.runtime).handlers[0].workflow,workflow);
 });

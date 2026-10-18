@@ -8,6 +8,7 @@ import { checkContext } from '../seam/context.js';
 export function createEdit(original, context, registry, hydrate, dehydrate) {
   checkContext(context);
   const authorize = ids => {
+    checkContext(context);
     check(context.capabilities.includes('object.instances.edit') && ids.every(id => matchesObjectGrant(context.visible, id) && matchesObjectGrant(context.editable, id)), 'MUTATION.DENIED', 'Mutation denied');
   };
   authorize([]);
@@ -23,7 +24,7 @@ export function createEdit(original, context, registry, hydrate, dehydrate) {
     visit(root); return entries;
   };
   const initial = index(working), reserved = new Set(initial.keys()), explicitMoves = new Set();
-  const open = () => check(!closed, 'MUTATION.CLOSED', 'Edit session is closed');
+  const open = () => { checkContext(context);check(!closed, 'MUTATION.CLOSED', 'Edit session is closed'); };
   const get = (entries, id) => {
     authorize([id]);
     check(entries.has(id), 'MUTATION.NOT_FOUND', 'Object not found');

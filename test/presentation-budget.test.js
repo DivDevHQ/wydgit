@@ -13,7 +13,7 @@ import {installPackage} from '../wydgine/packages/index.js';
 import {createHostApp} from '../app.js';
 const presentation={schema:'wydgit.presentation/0.1',request:{library:'wydstore',apiVersion:'1.0.0',operation:'count',input:{store:'host-book',collection:'host-entries'}},template:{tag:'p',attrs:{id:{get:'id'}},text:{get:'data.state'}}};
 function tree(count=20){let first={id:'widget-0',presentation,componentRequests:99999,children:[]},current=first;for(let i=1;i<count;i++){const next={id:'widget-'+i,presentation,limits:{componentRequests:99999},children:[]};current.children=[next];current=next;}return {pages:new Map([['page',{sections:[{blocks:[first]}]}]])};}
-const context=limits=>new ExecutionContext({publisher:'example',app:'site',self:'page',visible:['widget-*'],limits});
+const context=limits=>new ExecutionContext({context:'FrontEnd',publisher:'example',app:'site',self:'page',visible:['widget-*'],limits});
 const session={authorize:async()=>{}};
 test('runtime configuration validates bounded integers and defaults without coercion',()=>{
  assert.equal(presentationPolicy().componentRequests,4);
@@ -43,7 +43,7 @@ test('authorization and validation failures consume eligible attempts without ex
  await prepareComponents(model,'page',{query:''},caller,libraries,session,ledger);assert.equal(calls,0);for(const state of result.states.values())assert.deepEqual(state,{state:'error'});
 });
 for(const limit of [0,4,16])test(`installed Form-field presentation obeys host setting ${limit} on independent HTTP executions`,async t=>{
- const f=await packageFixture(t);f.manifest.bindings=[];f.manifest.resources.sources={};f.manifest.permissions.capabilities=['store.records.read'];f.manifest.permissions.visible=['guestbook','guestbook-form','guestbook-*'];f.manifest.permissions.editable=[];f.options.approvals=f.manifest.permissions;const operator=f.options.installationContext;f.options.installationContext=new ExecutionContext({...operator,visible:[...operator.visible,'guestbook-*'],editable:[...operator.editable,'guestbook-*']});
+ const f=await packageFixture(t);f.manifest.bindings=[];f.manifest.resources.sources={};f.manifest.permissions.capabilities=['store.records.read'];f.manifest.permissions.visible=['guestbook','guestbook-form','guestbook-*'];f.manifest.permissions.editable=[];f.options.approvals=f.manifest.permissions;const operator=f.options.installationContext;f.options.installationContext=new ExecutionContext({context:'FrontEnd',...operator,visible:[...operator.visible,'guestbook-*'],editable:[...operator.editable,'guestbook-*']});
  await fs.writeFile(path.join(f.packagePath,'manifest.json'),JSON.stringify(f.manifest));
  const node=(id,prototype,slots={})=>({schema:'wydgit/0.2',id,prototype,properties:{},slots,provenance:{}});
  const definitions=[{id:'divdev/guestbook',publisher:'divdev',extends:'wydgit.core/section',properties:{},slots:{}},{id:'divdev/form',publisher:'divdev',extends:'wydgit.core/form',properties:{},slots:{fields:{accepts:['wydgit.core/field'],ordered:true,min:0,max:32}}},{id:'divdev/status-field',publisher:'divdev',extends:'wydgit.core/text-input',properties:{name:{type:'string',default:'status'},presentation:{type:'object',default:{request:{library:'wydstore',operation:'create'}}}},slots:{},presentation}];

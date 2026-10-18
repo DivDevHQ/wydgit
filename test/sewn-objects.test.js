@@ -26,7 +26,7 @@ const definitions=()=>[
  {id:'acme/card',publisher:'acme',extends:'wydgit.core/base',slots:{items:{accepts:['acme/card'],ordered:true,max:1}}},
  {id:'acme/fancy',publisher:'acme',extends:'acme/card',overrides:['settitle'],behavior:doc([],{settitle:sub([call(me,'Set',[l('title'),{op:'binary',operator:'concat',left:l('Fancy: '),right:v('value')}])],[{...param}])})}
 ];
-const context=(extra={})=>new ExecutionContext({publisher:'caller',self:'app',visible:['app','card','child'],editable:['app','card','child'],capabilities:['object.instances.edit','object.instances.construct'],scopes:{prototypes:['acme/card','acme/fancy','wydgit.core/base']},...extra});
+const context=(extra={})=>new ExecutionContext({context:'FrontEnd',publisher:'caller',self:'app',visible:['app','card','child'],editable:['app','card','child'],capabilities:['object.instances.edit','object.instances.construct'],scopes:{prototypes:['acme/card','acme/fancy','wydgit.core/base']},...extra});
 const envelope=(id,type,properties={},slots={})=>({schema:'wydgit/0.2',id,prototype:type,properties,slots,provenance:{}});
 const draft=(name='card',type='acme/card')=>({op:'declare',name,value:{op:'construct',type,id:l(name)}});
 async function run(body,{ctx=context(),registry=new PrototypeRegistry(definitions()),scope={}}={}){return execute(doc(body),{context:ctx,prototypeRegistry:registry,scope});}

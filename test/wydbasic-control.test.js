@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {compile,compileModule,compilePrototype} from '../wydgine/wydbasic/index.js';import {execute} from '../wydgine/sewn/execute.js';import {ExecutionContext,PrototypeRegistry} from '../wydgine/object-model/index.js';import {fixture,runPage} from '../test-support/events.js';
-const context=new ExecutionContext({publisher:'acme',self:'home'}),run=source=>execute(compile(source),{context,scope:{}});
+const context=new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'home'}),run=source=>execute(compile(source),{context,scope:{}});
 
 test('IS NULL and IS NOT NULL compose with NOT/AND/OR and retain explicit boolean semantics',async()=>{
  const source='RETURN [NULL IS NULL, FALSE IS NOT NULL, NOT NULL IS NULL, NULL IS NULL AND FALSE IS NOT NULL, 0 IS NULL OR "" IS NOT NULL]';assert.deepEqual((await run(source)).value,[true,true,false,true,true]);assert.equal(compile(source).schema,'sewn/0.6');

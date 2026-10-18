@@ -1,3 +1,4 @@
+import {clientContext} from '../test-support/client-context.js';
 import {prepareHandlers as prepareClientHandlers} from '../wydgine/events/index.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -8,7 +9,7 @@ import {ExecutionContext,PrototypeRegistry} from '../wydgine/object-model/index.
 import {fixture,runPage} from '../test-support/events.js';
 import {mountClient} from '../wydclient/index.js';
 const registry=()=>loadRepository(process.cwd()).registry;
-const context=(extra={})=>new ExecutionContext({publisher:'caller',self:'home',capabilities:['object.instances.construct'],scopes:{prototypes:['acme/message-panel','acme/important-message-panel','wydgit.core/object','acme/unknown']},...extra});
+const context=(extra={})=>new ExecutionContext({context:'FrontEnd',publisher:'caller',self:'home',capabilities:['object.instances.construct'],scopes:{prototypes:['acme/message-panel','acme/important-message-panel','wydgit.core/object','acme/unknown']},...extra});
 const run=(source,extra={})=>execute(compile(source),{context:context(),prototypeRegistry:registry(),scope:{},...extra});
 const error=code=>e=>e.code===code;
 
@@ -59,7 +60,7 @@ END EVENT`;
  assert.throws(()=>compilePrototype(`SUB Recursive()\nCALL Me.Recursive()\nEND SUB`)&&new PrototypeRegistry([{id:'acme/a',publisher:'acme',behavior:compilePrototype(`SUB Recursive()\nCALL Me.Recursive()\nEND SUB`)}]),error('PROTOTYPE.METHOD'));
 });
 
-const pageContext=()=>{const base=fixture().context;return new ExecutionContext({...base,visible:[...base.visible,'result-panel'],editable:[...base.editable,'result-panel'],capabilities:[...base.capabilities,'object.instances.construct'],scopes:{...base.scopes,prototypes:['acme/message-panel','acme/important-message-panel']}});};
+const pageContext=()=>{const base=fixture().context;return new ExecutionContext({context:'FrontEnd',...base,visible:[...base.visible,'result-panel'],editable:[...base.editable,'result-panel'],capabilities:[...base.capabilities,'object.instances.construct'],scopes:{...base.scopes,prototypes:['acme/message-panel','acme/important-message-panel']}});};
 const applicationSource=`EVENT Submit
  DIM panel AS Wydgit
  SET panel = NEW "acme/important-message-panel"("result-panel")
@@ -76,7 +77,7 @@ test('vertical Page Submit → NEW draft → override/inherited methods → vali
  const result=await runPage({context:pageContext(),handlers:routed,actions,input});assert.equal(result.error,null);assert.match(result.transport.text,/Important: Resources/);
  const later=await runPage({context:pageContext()});assert.doesNotMatch(later.transport.text,/Important: Resources/);
  for(const capability of ['object.instances.construct','object.instances.edit']){
-  const ctx=pageContext();const denied=await runPage({context:new ExecutionContext({...ctx,capabilities:ctx.capabilities.filter(x=>x!==capability)}),handlers:routed,actions,input});assert.ok(denied.error);assert.doesNotMatch(denied.transport.text,/Important: Resources/);
+  const ctx=pageContext();const denied=await runPage({context:new ExecutionContext({context:'FrontEnd',...ctx,capabilities:ctx.capabilities.filter(x=>x!==capability)}),handlers:routed,actions,input});assert.ok(denied.error);assert.doesNotMatch(denied.transport.text,/Important: Resources/);
  }
  const reuse=await runPage({context:pageContext(),handlers:[{...routed[0],wydBasicModule:applicationSource.replace('END EVENT','panel.SetMessage("again")\nEND EVENT')}],actions,input});assert.equal(reuse.error.code,'OBJECT.CONSTRUCTION');
  const old=await runPage({handlers:[{owner:'section',type:'Page.Load',wydBasic:'Me.Insert("blocks", 0, {"id":"thanks","type":"wydgit.core/block","properties":{"content":{"type":"markdown","value":"Descriptor"}}})'}]});assert.equal(old.error,null);assert.match(old.transport.text,/Descriptor/);
@@ -84,8 +85,8 @@ test('vertical Page Submit → NEW draft → override/inherited methods → vali
 
 test('WydClient executes inherited read-only methods through the same portable dispatch, with no tree mutation facade',async()=>{
  const element={addEventListener(){},removeEventListener(){}};
- const mounted=mountClient({prototypeRegistry:registry(),context:context(),nodes:[{id:'home',prototype:'acme/important-message-panel',properties:{content:{type:'markdown',value:'Client'}},element}],handlers:prepareClientHandlers([{owner:'home',wydBasicModule:'EVENT Client.Ready\nIF NOT Me.HasMessage() THEN\n Me.Missing()\nEND IF\nEND EVENT'}])});await mounted.ready;await mounted.unmount();assert.equal(mounted.error(),null);
- const denied=mountClient({prototypeRegistry:registry(),context:context(),nodes:[{id:'home',prototype:'acme/message-panel',properties:{content:{type:'markdown',value:''}},element}],handlers:prepareClientHandlers([{owner:'home',wydBasic:'Me.SetMessage("Denied")',type:'Client.Ready'}])});await assert.rejects(denied.ready,error('SEWN.DENIED'));
+ const mounted=mountClient({prototypeRegistry:registry(),context:clientContext(context()),nodes:[{id:'home',prototype:'acme/important-message-panel',properties:{content:{type:'markdown',value:'Client'}},element}],handlers:prepareClientHandlers([{owner:'home',wydBasicModule:'EVENT Client.Ready\nIF NOT Me.HasMessage() THEN\n Me.Missing()\nEND IF\nEND EVENT'}])});await mounted.ready;await mounted.unmount();assert.equal(mounted.error(),null);
+ const denied=mountClient({prototypeRegistry:registry(),context:clientContext(context()),nodes:[{id:'home',prototype:'acme/message-panel',properties:{content:{type:'markdown',value:''}},element}],handlers:prepareClientHandlers([{owner:'home',wydBasic:'Me.SetMessage("Denied")',type:'Client.Ready'}])});await assert.rejects(denied.ready,error('SEWN.DENIED'));
 });
 
 test('prototype methods retain caller context through real WydStore dispatch and cannot use core publisher authority',async t=>{
@@ -94,7 +95,7 @@ test('prototype methods retain caller context through real WydStore dispatch and
  RETURN SERVICES.Call("wydstore", "create", {"store":"main", "collection":"users", "id":"saved", "data":{"name":"Denied"}})
 END FUNCTION`);
  const prototypeRegistry=new PrototypeRegistry([{id:'wydgit.core/trusted',publisher:'wydgit.core',public:true,behavior},{id:'acme/derived',publisher:'acme',extends:'wydgit.core/trusted'}]);
- const deniedContext=new ExecutionContext({...store.ctx,capabilities:store.ctx.capabilities.filter(x=>x!=='store.records.create')});let captured;
+ const deniedContext=new ExecutionContext({context:'FrontEnd',...store.ctx,capabilities:store.ctx.capabilities.filter(x=>x!=='store.records.create')});let captured;
  const scope={ME:{prototype:'acme/derived'},SERVICES:{async Call(library,method,input){captured=deniedContext;return store.registry.bind(deniedContext).call(library,method,input);}}};
  const denied=await execute(compile('RETURN Me.Save()'),{prototypeRegistry,context:deniedContext,scope});assert.equal(denied.value.ok,false);assert.equal(denied.value.code,'SEAM.DENIED');assert.equal(captured,deniedContext);assert.equal((await store.collection.query()).length,0);
 });

@@ -1,3 +1,4 @@
+import {checkPlacement} from '../execution/placement.js';
 import {credentialCookies} from './credential-cookies.js';
 import { submissionToken } from './submission-authority.js';
 import { evaluate } from '../components.js';
@@ -49,8 +50,9 @@ export function createPipeline({root,libraries,execution={},lifecycle,guard=()=>
       if(execution.authenticatedPages?.includes(page.id))check(session.identity?.authenticated===true,'SEAM.DENIED','Authentication required');
       if(session.cookie)res.setHeader('Set-Cookie',[session.cookie]);
       const ids=[];const walk=id=>{ids.push(id);Object.values(model.runtime.get(id).slots).flat().forEach(walk);};walk(page.id);
-      const selectedContext=execution.context?await execution.context({session:session.view,pageId:page.id,ids}):new ExecutionContext({publisher:'wydgit.core',app,self:page.id,visible:ids,identity:session.identity});
+      const selectedContext=execution.context?await execution.context({session:session.view,pageId:page.id,ids}):new ExecutionContext({context:'FrontEnd',publisher:'wydgit.core',app,self:page.id,visible:ids,identity:session.identity});
       const context=contextPolicy(selectedContext);
+      for(const id of ids){const node=model.runtime.get(id);checkPlacement(node,model.registry.get(node.prototype),context);}
       if(transfer){
         res.setHeader('Cache-Control','no-store');
         const [,library,operation,,target]=transfer;

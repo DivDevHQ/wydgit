@@ -13,6 +13,7 @@ const apiVersion = value => typeof value === 'string' && /^(0|[1-9][0-9]*)\.(0|[
 export function bindServices(context, lookup, describe = () => undefined, operation) {
   checkContext(context);
   const run = async (service, input, versioned) => {
+    try { checkContext(context); } catch { return failure('SEAM.DENIED').toJSON(); }
     if (!service || !context.allows(service.capability) || !service.authorize) return failure('SEAM.DENIED').toJSON();
     const policy=Object.freeze({...effectiveLimits(service.limits ?? SERVICE_DEFAULTS,context),...(operation?{operation}:{})});
     const limited=versioned || service.enforceLegacyLimits === true;
@@ -23,8 +24,10 @@ export function bindServices(context, lookup, describe = () => undefined, operat
     try {
       if (await service.authorize(request, context, policy) !== true) return failure('SEAM.DENIED').toJSON();
       if (versioned && (!service.validate || await service.validate(request, context, policy) !== true)) return failure('SERVICE.INVALID_REQUEST').toJSON();
+      checkContext(context);
       operation?.begin();
       const result = await service.handler(request, context, policy);
+      checkContext(context);
       let value;
       try { if(limited)checkJsonBudget(result,policy.response);
         value=freeze(clean(result)); }

@@ -16,10 +16,10 @@ import hosting from '../packages/wydhosting/package.json' with {type:'json'};
 test('package and historical imports preserve one authority graph and exact prerelease compatibility',async()=>{
  assert.throws(()=>legacyApp({root:null}),TypeError);await assert.rejects(legacyHost({root:null}),TypeError);await assert.rejects(createHostApp({root:null}),TypeError);
  assert.equal(ExecutionContext,installedContext);assert.equal(createHostApp,trustedHostApp);assert.equal(provider.validateAppInventory,validateAppInventory);
- const context=new installedContext({publisher:'acme',self:'home'});checkContext(context);assert.ok(Object.isFrozen(context));assert.throws(()=>checkContext({...context}),{code:'SEAM.CONTEXT'});
+ const context=new installedContext({context:'FrontEnd',publisher:'acme',self:'home'});checkContext(context);assert.ok(Object.isFrozen(context));assert.throws(()=>checkContext({...context}),{code:'SEAM.CONTEXT'});
  assert.equal(hosting.dependencies.wydgine,engine.version);assert.ok(!engine.dependencies?.wydhosting);
  assert.equal(semver.satisfies(engine.version,hosting.dependencies.wydgine),true);
- assert.equal(semver.satisfies('0.3.0-alpha.16',hosting.dependencies.wydgine),false);
+ assert.equal(semver.satisfies('0.3.0-alpha.17',hosting.dependencies.wydgine),false);
  assert.equal(semver.satisfies(engine.version,'^0.3.0'),false);
 });
 test('legacy engine consists exclusively of re-exports and cross-package integrations use approved exports',async()=>{

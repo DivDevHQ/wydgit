@@ -11,7 +11,7 @@ export function approveRegistry(declarations, verifiedPrototypes, executable = f
   check(declarations.length <= LIMITS.prototypes, 'MANIFEST.LIMIT', 'Prototype limit exceeded');
   for (const d of declarations) {
     check(record(d) && typeof d.id === 'string' && d.publisher !== 'wydgit.core', 'PROTOTYPE.IDENTITY', 'Invalid prototype identity');
-    check(Object.keys(d).every(k => ['id', 'publisher', 'public', 'abstract', 'extends', 'properties', 'slots', 'friends', 'methodRules', 'overrides', 'behavior','interface','alias','version','signatures','implements',...(executable?['component','presentation','methodContracts','lifecycle','events','dependencies','static']:[])].includes(k)), 'PROTOTYPE.DEFINITION', 'Unsupported client prototype field');
+    check(Object.keys(d).every(k => ['id', 'publisher', 'execution', 'public', 'abstract', 'extends', 'properties', 'slots', 'friends', 'methodRules', 'overrides', 'behavior','interface','alias','version','signatures','implements',...(executable?['component','presentation','methodContracts','lifecycle','events','dependencies','static']:[])].includes(k)), 'PROTOTYPE.DEFINITION', 'Unsupported client prototype field');
     // H1 validates inert method declarations using H0, but accepts no executable bodies.
     if (d.behavior && !executable) check(Array.isArray(d.behavior.body) && d.behavior.body.length === 0 && record(d.behavior.procedures) && Object.values(d.behavior.procedures).every(p => Array.isArray(p.body) && p.body.length === 0), 'PROTOTYPE.METHOD', 'Executable behavior is deferred');
   }

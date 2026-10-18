@@ -9,7 +9,7 @@ export function modelFixture(){const base=loadRepository(process.cwd()),raw=dehy
 export const session={view:{id:'sessionA',app:'app',authenticated:false},active:()=>true,authorize:async()=>{}};
 export function fixture(extra={}){
  const model=modelFixture(),app=model.runtime.rootId,ids=['home','section','form','name','note','thanks','extra'];
- const context=new ExecutionContext({publisher:'acme',package:'acme/example',self:'home',app,visible:ids,editable:ids,traversal:['children','parent'],capabilities:['object.instances.edit','response.markdown.write','response.status.write','response.headers.write','response.cookies.write','request.cookies.read','event.custom.raise','app.forms.submit'],scopes:{events:['Cart.Added'],cookies:[{name:'theme',path:'/'}],headers:['cache-control']},...extra});
+ const context=new ExecutionContext({context:'FrontEnd',publisher:'acme',package:'acme/example',self:'home',app,visible:ids,editable:ids,traversal:['children','parent'],capabilities:['object.instances.edit','response.markdown.write','response.status.write','response.headers.write','response.cookies.write','request.cookies.read','event.custom.raise','app.forms.submit'],scopes:{events:['Cart.Added'],cookies:[{name:'theme',path:'/'}],headers:['cache-control']},...extra});
  return {model,context,session:{...session,view:{...session.view,app}}};
 }
 export class Transport extends EventEmitter {

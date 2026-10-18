@@ -65,11 +65,11 @@ test('legacy single installer refuses unresolved graph edges',async t=>{
 
 for(const action of ['install','update','upgrade','uninstall','purge','promote'])test(`unauthorized ${action} fails before planning package actions`,async t=>{
   const f=await lifecycleFixture(t),a=await f.candidate('a');
-  const denied=new ExecutionContext({publisher:'operator',self:'home',app:'boilerplate',capabilities:['object.instances.edit']});
+  const denied=new ExecutionContext({context:'FrontEnd',publisher:'operator',self:'home',app:'boilerplate',capabilities:['object.instances.edit']});
   await assert.rejects(packageOperation(f.operation(action,'acme/a',[a],{installationContext:denied})),{code:'SEAM.DENIED'});
-  const foreign=new ExecutionContext({publisher:'operator',self:'home',app:'foreign',capabilities:['packages.lifecycle.manage']});
+  const foreign=new ExecutionContext({context:'FrontEnd',publisher:'operator',self:'home',app:'foreign',capabilities:['packages.lifecycle.manage']});
   await assert.rejects(packageOperation(f.operation(action,'acme/a',[a],{installationContext:foreign})),{code:'PACKAGE.DENIED'});
-  const packageContext=new ExecutionContext({publisher:'acme',package:'acme/a',self:'home',app:'boilerplate',capabilities:['packages.lifecycle.manage']});
+  const packageContext=new ExecutionContext({context:'FrontEnd',publisher:'acme',package:'acme/a',self:'home',app:'boilerplate',capabilities:['packages.lifecycle.manage']});
   await assert.rejects(packageOperation(f.operation(action,'acme/a',[a],{installationContext:packageContext})),{code:'PACKAGE.DENIED'});
 });
 
@@ -134,7 +134,7 @@ test('concurrent plans serialize, a competitor sees BUSY, and a stale plan canno
 test('cancellation, shared work exhaustion and parent execution accounting cannot replenish budgets',async t=>{
   const f=await lifecycleFixture(t),a=await f.candidate('a'),abort=new AbortController();abort.abort();
   await assert.rejects(packageOperation(f.operation('install','acme/a',[a],{signal:abort.signal})),{code:'PACKAGE.CANCELLED'});
-  const context=new ExecutionContext({...f.context,limits:{packageWork:4}}),budget=createPackageBudget(context);
+  const context=new ExecutionContext({context:'FrontEnd',...f.context,limits:{packageWork:4}}),budget=createPackageBudget(context);
   await assert.rejects(packageOperation(f.operation('install','acme/a',[a],{installationContext:context,budget})),{code:'PACKAGE.LIMIT'});assert.equal(state(f),null);
   await assert.rejects(planPackageOperation(f.operation('install','acme/a',[a],{installationContext:context,budget})),{code:'PACKAGE.LIMIT'});
   const parent=createExecutionBudget(f.context),token=createPackageBudget(f.context,{parentBudget:parent});
@@ -214,7 +214,7 @@ test('foreign App additions remain retained and veto purge; foreign package atta
 for(const provider of ['json','sqlite'])test(`${provider}: Guestbook lifecycle preserves configuration, content, navigation, mappings and approved authority`,async t=>{
   const f=await lifecycleFixture(t),configPath=path.join(f.root,'wydgit.config.json'),config=JSON.parse(await fs.readFile(configPath,'utf8'));
   config.libraries.find(l=>l.id==='wydstore').options.stores[0].provider=provider;await writeJson(configPath,config);
-  const context=new ExecutionContext({...f.context,visible:[...f.context.visible,...f.manifest.permissions.visible],editable:[...f.context.editable,...f.manifest.permissions.visible]});
+  const context=new ExecutionContext({context:'FrontEnd',...f.context,visible:[...f.context.visible,...f.manifest.permissions.visible],editable:[...f.context.editable,...f.manifest.permissions.visible]});
   const dep=await f.candidate('dep');await rewriteManifest(f.options,m=>{m.dependencies={'acme/dep':'^1'};m.version='1.0.0';});
   const options={...f.options,navigation:{id:'main-navigation',label:'Guestbook'}};
   const operation=(action,candidates=[])=>f.operation(action,'divdev/guestbook',candidates,{installationContext:context});
@@ -321,7 +321,7 @@ for(const first of ['update','uninstall'])test(`shared dependency upgrade racing
 });
 
 test('zero elapsed budget fails distinctly before any lifecycle write',async t=>{
- const f=await lifecycleFixture(t),a=await f.candidate('a'),context=new ExecutionContext({...f.context,limits:{packageTimeMs:0}});
+ const f=await lifecycleFixture(t),a=await f.candidate('a'),context=new ExecutionContext({context:'FrontEnd',...f.context,limits:{packageTimeMs:0}});
  await assert.rejects(packageOperation(f.operation('install','acme/a',[a],{installationContext:context})),{code:'PACKAGE.LIMIT'});assert.equal(state(f),null);assert.equal(inspectPackageOperation(f.root),null);
 });
 

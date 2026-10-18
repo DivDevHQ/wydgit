@@ -29,7 +29,7 @@ export async function developerFixture(t,provider,{chain=false,multiple=false}={
   logic.from=from.version;logic.storage[0].from=chain?2:1;logic.storage[0].to=target.schemaVersion;logic.storage[0].fields=lastFields;
   steps.push(make('rename-text',from,inspect(candidate.packagePath),logic,'text','body'));
   const request=approveRequest({schema:'wydgit.developer-migration-request/1',declaration:{schema:'wydgit.developer-migrations/1',package:'acme/a',supportedSources:chain?['1.0.0','1.1.0']:['1.0.0'],limits:{records:4096,history:16384,bytes:4*1024*1024,mappings:256,steps:32,stagingBytes:4*1024*1024},steps},path:steps.map(s=>s.id),approvals:[],artifacts});
-  const context=new ExecutionContext({...f.context,capabilities:[...f.context.capabilities,'store.records.read','store.records.write']});
+  const context=new ExecutionContext({context:'FrontEnd',...f.context,capabilities:[...f.context.capabilities,'store.records.read','store.records.write']});
   const operation=(extra={})=>f.operation('upgrade','acme/a',[candidate],{installationContext:context,developerMigrations:request,...extra});
   return {...f,newCandidate:f.candidate,context,request,candidate,operation};
 }

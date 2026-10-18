@@ -80,7 +80,7 @@ test('host-enabled compatible storage and explicit exact grants required; packag
  await assert.rejects(planPackageInstall({...options,storageMappings:{entries:{store:'host-book',collection:'host-entries',provider:'sqlite'}}}));
  await assert.rejects(planPackageInstall({...options,approvals:{...options.approvals,capabilities:[]}}),code('PACKAGE.DENIED'));
  await assert.rejects(planPackageInstall({...options,approvals:{...options.approvals,capabilities:[...options.approvals.capabilities,'store.records.delete']}}),code('PACKAGE.DENIED'));
- await assert.rejects(planPackageInstall({...options,installationContext:new ExecutionContext({publisher:'divdev',package:'divdev/guestbook',self:'home',app:'boilerplate',visible:options.installationContext.visible,editable:options.installationContext.editable})}),code('MUTATION.DENIED'));
+ await assert.rejects(planPackageInstall({...options,installationContext:new ExecutionContext({context:'FrontEnd',publisher:'divdev',package:'divdev/guestbook',self:'home',app:'boilerplate',visible:options.installationContext.visible,editable:options.installationContext.editable})}),code('MUTATION.DENIED'));
  assert.deepEqual(await fs.readdir(path.join(root,'data')),[]);
 });
 
@@ -98,7 +98,7 @@ test('activation uses exact approved principal and actual Session identity, reje
  const {root,options}=await packageFixture(t);await applyPackageInstall(await planPackageInstall(options));const libraries=await initializeHost({root}),model=loadRepository(root),active=activatePackages(model,libraries,root);
  const identity={authenticated:true,app:'boilerplate',userId:'user',sessionId:'session',createdAt:1,expiresAt:9,roles:[],groups:[],permissions:['store.records.delete']};const context=active.context({pageId:'home',session:{identity},ids:['home']});assert.equal(context.identity.sessionId,'session');assert.equal(context.package,'divdev/guestbook');assert.equal(context.principal,context.package);assert.equal(context.installation,model.installed.packages[0].receipt.id);assert.equal(context.template,model.installed.packages[0].installable);assert.notEqual(context.installation,model.installed.packages[0].instance);assert.equal(context.allows('store.records.delete'),false);assert.equal(context.editable.includes('home'),false);
  assert.equal((await libraries.bind(context).call('wydstore','create',{store:'host-book',collection:'host-entries',id:'entry',data:{name:'Ada',message:'Hello'}})).ok,true);
- const denied=new ExecutionContext({publisher:'divdev',package:'divdev/guestbook',app:'boilerplate',self:'guestbook',scopes:context.scopes});assert.equal((await libraries.bind(denied).call('wydstore','query',{store:'host-book',collection:'host-entries'})).code,'SEAM.DENIED');
+ const denied=new ExecutionContext({context:'FrontEnd',publisher:'divdev',package:'divdev/guestbook',app:'boilerplate',self:'guestbook',scopes:context.scopes});assert.equal((await libraries.bind(denied).call('wydstore','query',{store:'host-book',collection:'host-entries'})).code,'SEAM.DENIED');
  const altered={...model,installed:{...model.installed,packages:[...model.installed.packages,...model.installed.packages]}};assert.throws(()=>activatePackages(altered,libraries,root),code('PACKAGE.PRINCIPALS'));
  const {createHostApp}=await import('../app.js');await assert.rejects(createHostApp({root,execution:{context:()=>context}}),code('PACKAGE.PRINCIPALS'));
 });
@@ -111,7 +111,7 @@ test('second package: duplicate prototypes and same Page denied; different Page 
  next.resources.sources={};next.bindings=[];next.storage=[];next.requires.libraries=[];next.permissions={capabilities:[],traversal:[],visible:['other-section'],editable:[],scopes:{wydstore:[]}};
  await write(path.join(packagePath,'manifest.json'),next);await write(path.join(packagePath,'prototypes.json'),[{id:'divdev/other',publisher:'divdev',extends:'wydgit.core/section',properties:{},slots:{}}]);
  await write(path.join(packagePath,'section.json'),{schema:'wydgit/0.2',id:'other-section',prototype:'divdev/other',properties:{},slots:{},provenance:{}});
- const ctx=options.installationContext;const installContext=new ExecutionContext({...ctx,visible:[...ctx.visible,'other-section'],editable:[...ctx.editable,'other-section']});
+ const ctx=options.installationContext;const installContext=new ExecutionContext({context:'FrontEnd',...ctx,visible:[...ctx.visible,'other-section'],editable:[...ctx.editable,'other-section']});
  const otherOptions={...options,placement:{page:'about',parent:'about',slot:'sections',index:0},approvals:next.permissions,storageMappings:{},installationContext:installContext};
  const plan=await planPackageInstall(otherOptions);await assert.rejects(applyPackageInstall(plan,{beforeReplace(){throw new Error('persistence failed');}}),/persistence failed/);assert.equal(await read(path.join(root,STATE)),accepted);assert.equal(loadRepository(root).runtime.get('home').slots.sections[1],'guestbook');
  await applyPackageInstall(plan);const model=loadRepository(root),libraries=await initializeHost({root}),active=activatePackages(model,libraries,root);
@@ -180,7 +180,7 @@ test('package safety ceiling permits more than 32 and rejects planning at 1024 b
   });
   await write(path.join(packagePath,'section.json'),{schema:'wydgit/0.2',id:instanceId(i),prototype:'wydgit.core/section',properties:{},slots:{blocks:[]},provenance:{}});
   return {root,packagePath,placement:{page:pageId(i),parent:pageId(i),slot:'sections',index:0},approvals,
-   installationContext:new ExecutionContext({publisher:'operator',self:pageId(i),app:'boilerplate',capabilities:['object.instances.edit'],visible:[pageId(i),instanceId(i)],editable:[pageId(i),instanceId(i)]})};
+   installationContext:new ExecutionContext({context:'FrontEnd',publisher:'operator',self:pageId(i),app:'boilerplate',capabilities:['object.instances.edit'],visible:[pageId(i),instanceId(i)],editable:[pageId(i),instanceId(i)]})};
  };
  for(let i=0;i<33;i++)await applyPackageInstall(await planPackageInstall(await optionsFor(i)));
  const model=loadRepository(root);assert.equal(model.installed.packages.length,33);

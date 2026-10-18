@@ -9,7 +9,7 @@ const l=value=>({op:'literal',value}),v=name=>({op:'variable',name}),ret=value=>
 const nil=(value,negate=false)=>({op:'isNull',value,negate});
 const loop=(name,items,body)=>({op:'forEach',name,items:l(items),body});
 const doc=(body,procedures={})=>({schema:'sewn/0.6',procedures,body});
-const ctx=extra=>new ExecutionContext({publisher:'acme',self:'home',...extra});
+const ctx=extra=>new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'home',...extra});
 const run=(p,extra={})=>execute(p,{context:ctx(),scope:{},...extra});
 const exit={op:'exitFor'},add=name=>({op:'set',name,value:{op:'binary',operator:'+',left:v(name),right:l(1)}});
 

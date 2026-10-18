@@ -10,7 +10,9 @@ The proposed [execution-context and domain architecture](execution-contexts-and-
 distinguishes a context label from the full trusted `ExecutionContext`, ownership
 domain, capabilities and Gate policy. It specifies immutable placement and scoped
 service enforcement without granting authority from administrative labels.
-The implementation below remains the current contract.
+The [implemented foundation](execution-context-foundation.md) adds immutable
+`runat`/`context` and host-ended placement lifetimes to the existing authority object.
+Capabilities, ownership and scope enforcement below remain authoritative.
 
 The trusted host creates `ExecutionContext` with `publisher`, optional `package`,
 optional `app` identity, `self` (instance ID), `capabilities`, `scopes`,
@@ -41,7 +43,7 @@ provenance do not participate in capability checks.
 ```js
 // Trusted host code only:
 const context = new ExecutionContext({
-  publisher: 'acme', self: 'card-1',
+  context: 'FrontEnd', publisher: 'acme', self: 'card-1',
   visible: ['card-2'], traversal: ['nextSibling']
 });
 const card = runtime.scope(context);

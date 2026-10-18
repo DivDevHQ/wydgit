@@ -126,7 +126,7 @@ The [trusted local package lifecycle](docs/package-lifecycle.md) now supports
 dependency graphs, conservative updates and retained removal/reinstall.
 [Qualification blockers](docs/milestones/0.3-package-lifecycle/README.md) remain.
 
-Current versions are **Wydgine/WydHosting/platform 0.3.0-alpha.15**, **WydClient 0.1.0-alpha.9**
+Current versions are **Wydgine/WydHosting/platform 0.3.0-alpha.16**, **WydClient 0.1.0-alpha.10**
 and **WydSUB 0.1**. WBasic/component contracts are implemented through 0.20;
 the language reference also contains clearly marked future proposals. These are
 separate version axes. Historical browser artifacts remain immutable.
@@ -176,7 +176,7 @@ ZIP format are distinct; the latter is not the current installer.
 - [I5.1 engine boundary and baseline locks](docs/milestones/0.3-I5.1/README.md)
 - [I4 Wydgine/WydHosting architecture and I5 implementation plan](docs/milestones/0.3-I4/README.md)
 - [Development rules](docs/DEVELOPMENT.md) and [founding architecture](docs/FOUNDING-ARCHITECTURE.md)
-- [Execution contexts, administrative domains and WydStore isolation](docs/execution-contexts-and-administrative-domains.md) — proposed implementation architecture; 0.3-J and 0.4 boundaries preserved
+- [Execution contexts, administrative domains and WydStore isolation](docs/execution-contexts-and-administrative-domains.md) — broader architecture; [implemented context foundation](docs/execution-context-foundation.md), 0.3-J and 0.4 boundaries preserved
 - [Canonical objects](docs/canonical-oop.md), [object model](docs/object-model.md), [mutation](docs/mutation-model.md)
 - [WBasic implemented guide](docs/wydbasic.md) and [language reference](docs/wbasic-language-ref.md)
 - [SEWN](docs/sewn.md), [SEAM](docs/seam.md), [components](docs/components.md), [events](docs/events.md)

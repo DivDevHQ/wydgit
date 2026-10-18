@@ -4,7 +4,7 @@ import {compile,compileModule} from '../wydgine/wydbasic/index.js';
 import {execute} from '../wydgine/sewn/execute.js';
 import {validate} from '../wydgine/sewn/validate.js';
 import {ExecutionContext} from '../wydgine/object-model/index.js';
-const context=new ExecutionContext({publisher:'acme',self:'home'});
+const context=new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'home'});
 const run=async(source,scope={})=>(await execute(compile(source),{context,scope})).value;
 test('numeric contracts, boundaries, dynamic assignments and compatibility',async()=>{
  for(const type of ['Integer','Float','Number'])assert.equal(await run(`DIM x AS ${type}=42.0\nRETURN x`),42);
@@ -40,7 +40,7 @@ test('new closed grammar, older versions and procedure contracts',async()=>{
  for(let n=1;n<=9;n++)assert.throws(()=>validate({...p,schema:`sewn/0.${n}`}));
  const mod=compileModule('FUNCTION F(x AS Integer) AS Float\nRETURN x/2\nEND FUNCTION\nEVENT Page.Load\nRETURN F(3)\nEND EVENT');assert.equal((await execute(mod.events[0].workflow,{context,scope:{}})).value,1.5);
  const bad=compileModule('FUNCTION F(x AS Integer) AS Integer\nRETURN x\nEND FUNCTION\nEVENT Page.Load\nRETURN F(Val("0.5"))\nEND EVENT');await assert.rejects(execute(bad.events[0].workflow,{context,scope:{}}),{code:'SEWN.TYPE'});
- const tiny=new ExecutionContext({publisher:'acme',self:'home',limits:{sewnSteps:1}});await assert.rejects(execute(p,{context:tiny,scope:{}}),{code:'SEWN.LIMIT'});
+ const tiny=new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'home',limits:{sewnSteps:1}});await assert.rejects(execute(p,{context:tiny,scope:{}}),{code:'SEWN.LIMIT'});
 });
 
 test('independent numeric wire operations, malformed shapes and shared limits',async()=>{
@@ -52,7 +52,7 @@ test('independent numeric wire operations, malformed shapes and shared limits',a
  for(const expr of [{...wire('+',1,2),type:'Number'},{...wire('+',1,2),operator:'eval'},{...wire('+',1,2),extra:true},{op:'numericCheck',type:'Number',value:l(1)},{op:'numericPredicate',predicate:'TypeOf',value:l(1)},{op:'xor',left:l(true)}])assert.throws(()=>validate(doc(expr)),{code:'SEWN.INVALID'});
  for(let n=1;n<=9;n++)for(const expr of [wire('+',1,2),{op:'numericCheck',type:'Integer',value:l(1)},{op:'numericPredicate',predicate:'IsInteger',value:l(1)},{op:'xor',left:l(true),right:l(false)}]){const p={...doc(expr),schema:`sewn/0.${n}`};if(n===1)delete p.procedures;assert.throws(()=>validate(p),{code:'SEWN.INVALID'});}
  const deep={op:'numericPredicate',predicate:'IsInteger',value:l(1)};
- await assert.rejects(evalWire(deep,new ExecutionContext({publisher:'acme',self:'home',limits:{sewnExpressionDepth:0}})),{code:'SEWN.LIMIT'});
+ await assert.rejects(evalWire(deep,new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'home',limits:{sewnExpressionDepth:0}})),{code:'SEWN.LIMIT'});
  for(const op of ['numericCheck','numericPredicate'])await assert.rejects(evalWire({op,...(op==='numericCheck'?{type:'Integer'}:{predicate:'IsInteger'}),value:{op:'context',name:'ME'}},context,{ME:{id:'home'}}),{code:'SEWN.TYPE'});
 });
 

@@ -6,7 +6,7 @@ const MiB=1024*1024;
 const signature=d=>JSON.stringify([d.id,d.resource,d.owner.publisher,d.owner.package,d.owner.principal,d.title,d.body,d.summary,d.url,d.type,d.categories,d.visibility,d.revision,d.schemaVersion]);
 export const defaults=Object.freeze({queryBytes:512,documentBytes:16384,batchDocuments:32,documentTokens:2048,queryTokens:16,pageSize:20,resultCount:256,snippetBytes:320,indexBytes:MiB,indexDocuments:256,queryWork:524288});
 export const ceilings=Object.freeze({queryBytes:2048,documentBytes:65536,batchDocuments:64,documentTokens:8192,queryTokens:32,pageSize:50,resultCount:1024,snippetBytes:1024,indexBytes:4*MiB,indexDocuments:1024,queryWork:8388608});
-export const manifest={schema:'wydgit.library/0.1',id:'wydsearch',version:'0.1.0-alpha.1',apiVersion:'1.0.0',publisher:'wydgit.core',trust:'canonical',platform:'^0.3.0-alpha.1',targets:['server'],requirements:{schema:'wydgit.requirements/0.1',libraries:[{library:'wydstore',version:'^0.1.0-alpha.3'}]},capabilities:['search.documents.index','search.documents.remove','search.index.rebuild','search.documents.read'],services:[{name:'index',capability:'search.documents.index'},{name:'remove',capability:'search.documents.remove'},{name:'reindex',capability:'search.index.rebuild'},...['search','suggest','metadata'].map(name=>({name,capability:'search.documents.read'}))]};
+export const manifest={schema:'wydgit.library/0.1',id:'wydsearch',version:'0.1.0-alpha.2',apiVersion:'1.0.0',publisher:'wydgit.core',trust:'canonical',platform:'^0.3.0-alpha.1',targets:['server'],requirements:{schema:'wydgit.requirements/0.1',libraries:[{library:'wydstore',version:'^0.1.0-alpha.3'}]},capabilities:['search.documents.index','search.documents.remove','search.index.rebuild','search.documents.read'],services:[{name:'index',capability:'search.documents.index'},{name:'remove',capability:'search.documents.remove'},{name:'reindex',capability:'search.index.rebuild'},...['search','suggest','metadata'].map(name=>({name,capability:'search.documents.read'}))]};
 export async function register({service,options,dependency,failure,checkJson,hostContext}) {
  const searchSource=hostContext.source;
  const fail=code=>{throw failure(code);},check=(ok,code='SEARCH.INVALID_REQUEST')=>{if(!ok)fail(code);};
@@ -123,7 +123,7 @@ export function initialize({root,options,adapter}){
  return {context:{source},async start(libraries){
   for(const resource of source?.refresh??[]){
    const app=loadRepository(root).runtime.rootId;
-   const context=new ExecutionContext({...resource,app,self:'search-maintenance',capabilities:['search.index.rebuild'],scopes:{wydsearch:[{index:resource.index,resources:resource.pages}]}});
+   const context=new ExecutionContext({context:'FrontEnd',...resource,app,self:'search-maintenance',capabilities:['search.index.rebuild'],scopes:{wydsearch:[{index:resource.index,resources:resource.pages}]}});
    const batch=options.limits?.batchDocuments??defaults.batchDocuments;
    for(let offset=0;offset<resource.pages.length;offset+=batch){const result=await libraries.bind(context).invoke('wydsearch','1.0.0','reindex',{index:resource.index,ids:resource.pages.slice(offset,offset+batch)});if(!result.ok)throw new Error('Approved search refresh failed');}
   }

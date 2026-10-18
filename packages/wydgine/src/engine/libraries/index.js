@@ -11,7 +11,7 @@ const emptyRequirements = () => ({ schema: 'wydgit.requirements/0.1', libraries:
 // succeeds. Package functions and registry mutation never cross into Wydgits.
 export async function loadLibraries({ config: input, requirements: requested = emptyRequirements(), platformVersion, root, implementationRoot=root, lifecycle = async () => {}, adapters = {}, app = null, guard = () => {}, observe }) {
   let live=true,closing;const stops=[];
-  const assertLive=context=>{ensure(live,'SEAM.DENIED','Application binding retired');guard();if(context){checkContext(context);ensure(app===null||context.app===app,'SEAM.DENIED','Wrong application binding');}};
+  const assertLive=context=>{ensure(live,'SEAM.DENIED','Application binding retired');guard();if(context){checkContext(context);ensure(context.runat==='Server','SEAM.DENIED','Server services require server placement');ensure(app===null||context.app===app,'SEAM.DENIED','Wrong application binding');}};
   const guarded=(record,context)=>record&&{...record,authorize:async(...args)=>{assertLive(context);const result=await record.authorize?.(...args);assertLive(context);return result;},handler:async(...args)=>{assertLive(context);const result=await record.handler(...args);assertLive(context);return result;}};
   const bind=(context,lookup,operation)=>{assertLive(context);const dispatch=bindServices(context,(id,name)=>guarded(lookup(id,name),context),id=>staged.get(id)?.manifest,operation);return Object.freeze(Object.fromEntries(['call','invoke'].map(name=>[name,async(...args)=>{assertLive(context);const finish=staged.has(args[0])?observe?.(args[0]):undefined;let failed=true;try{const result=await dispatch[name](...args);assertLive(context);failed=result?.ok!==true;return result;}finally{finish?.(failed);}}])));};
   const close=()=>closing??=(async()=>{live=false;let failed=false;const results=await Promise.allSettled(stops.toReversed().map(stop=>Promise.resolve().then(stop)));failed=results.some(r=>r.status==='rejected');if(failed)throw new WydgitError('LIBRARY.CLEANUP_FAILED','Library cleanup failed');})();
@@ -89,7 +89,7 @@ export async function loadLibraries({ config: input, requirements: requested = e
       ensure(binding.capabilities.every(cap => dependency.capabilities.includes(cap)), 'LIBRARY.DEPENDENCY_DENIED', 'Binding capability is not provided by dependency');
       // The host grants a separate implementation identity. Libraries cannot
       // choose its publisher/package or modify the application caller's grants.
-      return [binding.library,new ExecutionContext({publisher:manifest.publisher, package:`library:${id}`,
+      return [binding.library,new ExecutionContext({context:'FrontEnd',publisher:manifest.publisher, package:`library:${id}`,
         self:`library-${id}`, installation:binding.installation??null, app:binding.app, capabilities:binding.capabilities, scopes:binding.scopes})];
     })));
   }

@@ -135,7 +135,7 @@ test('canonical Store state remains App scoped across supervised process lifetim
  async function stores(write){
   const host=await createOperationalHost({schema:'wydgit.operations/0.1',inventory,optional:[]},{root:path.join(f.root,'shared'),execution:f.execution});
   try{await host.start(0,'127.0.0.1');for(const [index,id]of ['app-alpha','app-beta'].entries()){
-   const token=host.controller.select(id),service=host.controller.bind(token,host.controller.context(token,{publisher:'acme',package:'acme/demo',self:'home',capabilities:['store.records.create','store.records.read'],scopes:{wydstore:[{store:'main',collection:'records'}]}}));
+   const token=host.controller.select(id),service=host.controller.bind(token,host.controller.context(token,{context:'FrontEnd',publisher:'acme',package:'acme/demo',self:'home',capabilities:['store.records.create','store.records.read'],scopes:{wydstore:[{store:'main',collection:'records'}]}}));
    if(write)assert.equal((await service.invoke('wydstore','1.0.0','create',{store:'main',collection:'records',id:'same-id',data:{name:'private-'+index}})).ok,true);
    assert.equal((await service.invoke('wydstore','1.0.0','get',{store:'main',collection:'records',id:'same-id'})).value.data.name,'private-'+index);
   }}finally{await host.shutdown();}

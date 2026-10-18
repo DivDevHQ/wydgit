@@ -1,3 +1,4 @@
+import {checkPlacement} from '../wydgine/execution/placement.js';
 import {bindMembers} from '../wydgine/object-model/members.js';
 import { matchesObjectGrant } from '../wydgine/seam/context.js';
 import { formOperation,publicProperties,fieldKind,sensitive,formTree } from '../wydgine/object-model/forms.js';
@@ -17,7 +18,7 @@ export function mountClient({nodes,context,handlers=[],readCookies=()=>'',submit
   if(prototypeRegistry){
     const envelope=node=>({prototype:node.prototype,properties:resolveProperties(node.properties??{},prototypeRegistry.get(node.prototype)),slots:{children:supplied.filter(n=>n.parent===node.id).map(envelope)}});
     for(const root of supplied.filter(n=>!n.parent&&n.prototype)){const raw=envelope(root);formTree(raw,prototypeRegistry);}
-    for(const node of ordered)if(node.prototype){node.properties=resolveProperties(node.properties??{},prototypeRegistry.get(node.prototype));if(prototypeRegistry.isA(node.prototype,'wydgit.core/field'))node.controlKind=fieldKind(node.prototype,prototypeRegistry);}
+    for(const node of ordered)if(node.prototype){checkPlacement(node,prototypeRegistry.get(node.prototype),context);node.properties=resolveProperties(node.properties??{},prototypeRegistry.get(node.prototype));if(prototypeRegistry.isA(node.prototype,'wydgit.core/field'))node.controlKind=fieldKind(node.prototype,prototypeRegistry);}
   }
   const semantic=new Map(ordered.map(n=>[n.id,{id:n.id,prototype:n.prototype,properties:clean(n.properties??{})}]));
   let pending=0;

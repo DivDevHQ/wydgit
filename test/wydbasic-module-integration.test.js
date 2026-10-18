@@ -14,7 +14,7 @@ test('WydBASIC EVENT module → SEWN functions/SUB → semantic Submit → WydSt
  const root=await temp(t);for(const dir of ['content','prototypes','public'])await fs.cp(path.join(process.cwd(),dir),path.join(root,dir),{recursive:true});
  const raw=dehydrate(modelFixture().runtime);await fs.rm(path.join(root,'content/pages'),{recursive:true});await fs.mkdir(path.join(root,'content/pages'));await fs.writeFile(path.join(root,'content/pages/home.json'),JSON.stringify(raw.slots.pages[0]));await fs.writeFile(path.join(root,'content/navigation.json'),'[]');raw.slots.pages=[];raw.slots.navigation=[];await fs.writeFile(path.join(root,'content/app.json'),JSON.stringify(raw));
  const store={...definition(await temp(t)),app:raw.id,package:'acme/example'},libraries=await load(store);
- const base=fixture().context,context=new ExecutionContext({...base,capabilities:[...base.capabilities,'store.records.create','store.records.read'],scopes:{...base.scopes,wydstore:[{store:'main',collection:'users'}]}});
+ const base=fixture().context,context=new ExecutionContext({context:'FrontEnd',...base,capabilities:[...base.capabilities,'store.records.create','store.records.read'],scopes:{...base.scopes,wydstore:[{store:'main',collection:'users'}]}});
  const handlers=[{owner:'home',wydBasicModule:`
 FUNCTION IsExplicit(value AS String) AS Boolean
     RETURN value = "1"
@@ -60,7 +60,7 @@ END EVENT
  const invalid=await post('name=&note=keep');assert.match(invalid.html,/aria-invalid="true"/);assert.match(invalid.html,/value="keep"/);
  const collection=createStores(libraries.bind(context)).get('main').collection('users');assert.equal((await collection.query()).length,0);
  assert.equal((await post('name=No','wrong')).status,403);assert.equal((await collection.query()).length,0);
- activeContext=new ExecutionContext({...context,capabilities:context.capabilities.filter(x=>x!=='store.records.create')});const denied=await post('name=Denied');assert.doesNotMatch(denied.html,/Thank you/);assert.equal((await collection.query()).length,0);activeContext=context;
+ activeContext=new ExecutionContext({context:'FrontEnd',...context,capabilities:context.capabilities.filter(x=>x!=='store.records.create')});const denied=await post('name=Denied');assert.doesNotMatch(denied.html,/Thank you/);assert.equal((await collection.query()).length,0);activeContext=context;
  const valid=await post('name=Alice');assert.match(valid.html,/Thank you/);assert.doesNotMatch(valid.html,/<form/);assert.equal((await collection.get('submission')).get('name'),'Alice');
  const concurrent=await Promise.all([fetch(url),fetch(url)]);for(const response of concurrent)assert.match(await response.text(),/<form/);
  const later=await fetch(url,{headers:{cookie}});assert.match(await later.text(),/<form/);const independent=await fetch(url);assert.match(await independent.text(),/<form/);

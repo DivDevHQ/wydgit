@@ -9,7 +9,7 @@ export function executionPolicy(value){
   value=clean(value);shape(value,['publisher','package','packageVersion','installation','capabilities','visible','editable','traversal','scopes','limits','actions'],['publisher','installation','actions']);
   check(typeof value.installation==='string'&&value.installation.length>0&&Array.isArray(value.actions)&&value.actions.length<=128&&value.actions.every(a=>typeof a==='string'&&/^[A-Za-z][A-Za-z0-9_]*$/.test(a)),'SEAM.CONTEXT','Invalid execution approval');
   // Validate every grant now. self/app are supplied by the owning root, never the manifest.
-  new ExecutionContext({...value,self:'validation',app:'validation'});
+  new ExecutionContext({...value,runat:'Client',self:'validation',app:'validation'});
   return freeze(value);
 }
 export async function executableInstances({registry,page,entry,approval,regions,active,boundary,provenance}){
@@ -29,7 +29,7 @@ export async function executableInstances({registry,page,entry,approval,regions,
   };
   const child=envelope(entry.id,entry.type,entry.properties);
   const runtime=hydrate({...page,slots:{...page.slots,sections:[child]}},registry,{rootPrototype:'wydgit.core/page'});
-  const context=new ExecutionContext({...approval,self:page.id,app:page.id});
+  const context=new ExecutionContext({...approval,runat:'Client',self:page.id,app:page.id});
   regions.bottom.setAttribute('data-wydclient-context',page.id);
   let controller;
   const approved=method=>approval.actions.some(name=>name.toLowerCase()===method.toLowerCase());

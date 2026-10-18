@@ -1,9 +1,9 @@
-# WydClient — current alpha.9
+# WydClient — current alpha.10
 
-WydClient **0.1.0-alpha.9**, WydSUB **0.1**, includes native semantic controls and
+WydClient **0.1.0-alpha.10**, WydSUB **0.1**, includes native semantic controls and
 explicit CLIENT package authoring. See the [H4 contract](../../docs/milestones/0.3-H4/README.md)
 and [verification](../../docs/milestones/0.3-H4/verification.md). Load the versioned
-`dist/wydgit-client-0.1.0-alpha.9.min.js`. The [interactive Taskboard](examples/interactive.html)
+`dist/wydgit-client-0.1.0-alpha.10.min.js`. The [interactive Taskboard](examples/interactive.html)
 and [embedded Taskboards](examples/interactive-embedded.html) use authored controls,
 compiled SEWN and host policy only; they need no application-authored JavaScript.
 
@@ -434,7 +434,7 @@ The accidentally rebuilt alpha.3 files from `bb0af8e` are restored byte-for-byte
 from pre-0.19 H2 commit `15905895489e8db54cf3620d0d1ce1c0b5570fc1`.
 `dist/sizes-0.1.0-alpha.3.json` preserves that commit's exact size metadata.
 `dist/sizes.json` describes the current build, now snapshotted in
-`dist/sizes-0.1.0-alpha.9.json`. The alpha.4 snapshot remains historical. Do not treat the unversioned current
+`dist/sizes-0.1.0-alpha.10.json`. The alpha.4 snapshot remains historical. Do not treat the unversioned current
 size pointer as a historical artifact.
 
 `build.js` builds both forms in memory, verifies history with `artifact-policy.js`,

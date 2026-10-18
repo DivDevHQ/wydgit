@@ -106,7 +106,7 @@ test('delegation is bound to installation and Page, with no write capability acq
  const denied=await post(h.url,c,'dynamic-entry-a','a');assert.equal(denied.status,200);assert.match(await denied.text(),/Delete Alice/);assert.match((await client(h.url)).html,/Delete Alice/);
  const {loadRepository}=await import('../wydgine/repository.js');const {initializeHost}=await import('../wydgine/host.js');const {activatePackages}=await import('../wydgine/packages/index.js');const {ExecutionContext}=await import('../wydgine/seam/context.js');const {executePage}=await import('../wydgine/execution/page.js');
  const model=loadRepository(f.root),libraries=await initializeHost({root:f.root}),active=activatePackages(model,libraries,f.root),session={view:{app:'boilerplate',authenticated:false},identity:null,active:()=>true,authorize:async()=>{}};
- const original=active.context({pageId:'home',session:session.view,ids:[]}),context=new ExecutionContext({...original,installation:'unrelated'});
+ const original=active.context({pageId:'home',session:session.view,ids:[]}),context=new ExecutionContext({context:'FrontEnd',...original,installation:'unrelated'});
  const result=await executePage({model,pageId:'home',session,context,input:{method:'POST',path:'/',form:'recordId=a',action:{target:'dynamic-entry-a',type:'Submit',csrf:c.csrf}},csrf:c.csrf,handlers:active.handlers,actions:active.actions,libraries,serviceMappings:model.installed.packages[0].storageMappings});assert.equal(result.error.code,'EVENT.DENIED');
  const another=await post(h.url+'/about',c,'dynamic-entry-a','a');assert.ok([403,404,405].includes(another.status));
 });

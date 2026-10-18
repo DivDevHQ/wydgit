@@ -70,7 +70,7 @@ for(const provider of ['json','sqlite'])for(const defect of defects)test(`${prov
 
 for(const provider of ['json','sqlite'])for(const bound of ['records','history','bytes','mappings','steps','stagingBytes','work','time'])test(`${provider}: developer ${bound} ceiling terminates without effects`,async t=>{
   const f=await developerFixture(t,provider,{chain:true}),before=await fingerprint(f);let extra={};
-  if(bound==='work'||bound==='time')extra.installationContext=new ExecutionContext({...f.context,limits:{[bound==='work'?'packageWork':'packageTimeMs']:0}});
+  if(bound==='work'||bound==='time')extra.installationContext=new ExecutionContext({context:'FrontEnd',...f.context,limits:{[bound==='work'?'packageWork':'packageTimeMs']:0}});
   else f.request.declaration.limits[bound]=1;
   if(bound==='mappings'){
     const step=f.request.declaration.steps[0];step.validators.before.push({scope:'instance',name:'pkg-a',field:'setting',op:'present'});step.validators.after.push({scope:'instance',name:'pkg-a',field:'setting',op:'present'});step.requiredCapabilities.unshift('object.instances.edit');sealStep(step);approveRequest(f.request);
@@ -80,7 +80,7 @@ for(const provider of ['json','sqlite'])for(const bound of ['records','history',
 
 for(const provider of ['json','sqlite'])test(`${provider}: developer plans reject forgery, wrong authority, stale content and changed artifacts`,async t=>{
   const f=await developerFixture(t,provider),before=await fingerprint(f);
-  for(const context of [{...f.context},new ExecutionContext({...f.context,package:'acme/a'}),new ExecutionContext({...f.context,app:'other'}),new ExecutionContext({...f.context,capabilities:['packages.lifecycle.manage','object.instances.edit']})]){
+  for(const context of [{...f.context},new ExecutionContext({context:'FrontEnd',...f.context,package:'acme/a'}),new ExecutionContext({context:'FrontEnd',...f.context,app:'other'}),new ExecutionContext({context:'FrontEnd',...f.context,capabilities:['packages.lifecycle.manage','object.instances.edit']})]){
     await assert.rejects(planPackageOperation(f.operation({installationContext:context})),e=>/^(PACKAGE|SEAM)\./.test(e.code));
   }
   const plan=await planPackageOperation(f.operation());await assert.rejects(applyPackageOperation({...plan}),{code:'PACKAGE.PLAN'});
@@ -139,7 +139,7 @@ for(const provider of ['json','sqlite'])test(`${provider}: instance defaults and
   const f=await developerFixture(t,provider),step=f.request.declaration.steps[0];
   step.logic.instances=[{id:'pkg-a',fromPrototype:'acme/a',toPrototype:'acme/a',properties:[{op:'default',field:'setting',value:'Do not replace'}]}];
   step.validators.after.push({scope:'instance',name:'pkg-a',field:'setting',op:'equals',value:'package default'});step.requiredCapabilities.unshift('object.instances.edit');sealStep(step);approveRequest(f.request);
-  const before=await fingerprint(f),unscoped=new ExecutionContext({...f.context,editable:['home']});
+  const before=await fingerprint(f),unscoped=new ExecutionContext({context:'FrontEnd',...f.context,editable:['home']});
   await assert.rejects(packageOperation(f.operation({installationContext:unscoped})),{code:'SEAM.DENIED'});assert.deepEqual(await fingerprint(f),before);
   await packageOperation(f.operation());assert.equal(loadRepository(f.root).runtime.get('pkg-a').properties.setting,'package default');
 });

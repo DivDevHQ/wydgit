@@ -64,7 +64,7 @@ export async function createMultiAppHost(input,options={}){
     // Apply reductions after ordinary package/context resolution; never union grants.
     const execution={...options.execution?.[id]};
     const contextPolicy=context=>{checkContext(context);check(context.app===id,'HOST.OWNER','Wrong App context');return new ExecutionContext({...context,limits:{...context.limits,...Object.fromEntries(Object.entries(e.limits).map(([k,v])=>[k,Math.min(v,context.limits[k]??v)]))}});};
-    execution.lifecycleContext=contextPolicy(execution.lifecycleContext??new ExecutionContext({publisher:'wydgit.core',self:id,app:id}));
+    execution.lifecycleContext=contextPolicy(execution.lifecycleContext??new ExecutionContext({context:'FrontEnd',publisher:'wydgit.core',self:id,app:id}));
     check(Date.now()<deadline,'HOST.TIMEOUT','App startup deadline');
     const pending=createHostApp({root:e.root,implementationRoot:options.implementationRoot,appId:id,execution,contextPolicy,parking:inventory.routing?.parking.includes(id)??false,libraryAdapters:adapters(id),guard:()=>guard(e),strictStartup:true,logger:options.logger??{error(){}},admit:()=>admit(e),governance:e.meter});
     pending.then(app=>{if(e.retired)app.stop().catch(()=>{});},()=>{});

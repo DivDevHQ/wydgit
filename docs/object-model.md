@@ -6,7 +6,9 @@ HTTP or DOM dependency. The founding architecture remains unchanged.
 For proposed context-neutral prototypes, inherited execution restrictions, trusted
 instance placement and the deliberate 0.3 migration boundary, see
 [execution contexts and administrative domains](execution-contexts-and-administrative-domains.md).
-Those contracts are not fields accepted by the current closed envelope schema.
+The implemented first increment uses optional versioned declarations and the
+`wydgit/0.3` envelope; see [execution context foundation](execution-context-foundation.md).
+The original `wydgit/0.2` envelope remains closed and context-neutral.
 
 ## Prototypes
 

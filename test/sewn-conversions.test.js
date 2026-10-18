@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {execute} from '../wydgine/sewn/execute.js';import {validate} from '../wydgine/sewn/validate.js';import {ExecutionContext} from '../wydgine/seam/context.js';
 // Independent hand-authored wire tests; no compiler imports.
-const l=value=>({op:'literal',value}),convert=(type,value)=>({op:'convert',type,value}),doc=value=>({schema:'sewn/0.7',procedures:{},body:[{op:'return',value}]}),ctx=limits=>new ExecutionContext({publisher:'acme',self:'home',limits});
+const l=value=>({op:'literal',value}),convert=(type,value)=>({op:'convert',type,value}),doc=value=>({schema:'sewn/0.7',procedures:{},body:[{op:'return',value}]}),ctx=limits=>new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'home',limits});
 const run=(value,extra={})=>execute(doc(value),{context:ctx(),scope:{},...extra});
 
 test('CStr formats primitives deterministically without locale or object coercion',async()=>{

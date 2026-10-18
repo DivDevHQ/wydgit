@@ -1,3 +1,4 @@
+import {clientContext} from '../test-support/client-context.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {compile,compileModule,compilePrototype} from '../wydgine/wydbasic/index.js';
@@ -8,7 +9,7 @@ import {StaticLibraryRegistry} from '../wydgine/static-libraries/index.js';
 import {build} from 'esbuild';
 import {runInNewContext} from 'node:vm';
 import {gzipSync,brotliCompressSync} from 'node:zlib';
-const context=limits=>new ExecutionContext({publisher:'application',self:'home',limits});
+const context=limits=>new ExecutionContext({context:'FrontEnd',publisher:'application',self:'home',limits});
 const run=(p,limits={},scope={})=>execute(p,{context:context(limits),scope});
 const l=value=>({op:'literal',value});
 const loop=(mode='while',condition=l(true),body=[])=>({op:'do',mode,condition,body});
@@ -60,7 +61,7 @@ test('DO static linking promotes schema and retains caller iteration budgets and
  assert.equal((await run(compile('DO WHILE TRUE\nTRY\nRETURN RegexTest("a","(","")\nCATCH err\nEXIT DO\nEND TRY\nLOOP\nRETURN TRUE'))).value,true);
 });
 test('browser bundle executes identical DO fixtures without compiler or host modules',async()=>{
- const result=await build({stdin:{contents:"import {execute} from './wydgine/sewn/execute.js';import {ExecutionContext} from './wydgine/seam/context.js';export const run=(p,limits={},scope={})=>execute(p,{scope,context:new ExecutionContext({publisher:'application',self:'home',limits})});",resolveDir:process.cwd()},bundle:true,platform:'browser',target:'es2022',format:'iife',globalName:'PortableRuntime',minify:true,write:false,metafile:true});
+ const result=await build({stdin:{contents:"import {execute} from './wydgine/sewn/execute.js';import {ExecutionContext} from './wydgine/seam/context.js';export const run=(p,limits={},scope={})=>execute(p,{scope,context:new ExecutionContext({context:'FrontEnd',publisher:'application',self:'home',limits})});",resolveDir:process.cwd()},bundle:true,platform:'browser',target:'es2022',format:'iife',globalName:'PortableRuntime',minify:true,write:false,metafile:true});
  for(const input of Object.keys(result.metafile.inputs))assert.ok(!/wydbasic|static-libraries|node_modules|storage/.test(input),input);
  const sandbox={setTimeout,clearTimeout};runInNewContext(result.outputFiles[0].text,sandbox);
  await conformance((p,limits={},scope={})=>runInNewContext(`PortableRuntime.run(JSON.parse(${JSON.stringify(JSON.stringify(p))}),${JSON.stringify(limits)},${JSON.stringify(scope)})`,sandbox));
@@ -70,7 +71,7 @@ test('WydClient DO event cancellation and controlled limit failures',async()=>{
  const {mountClient}=await import('../wydclient/index.js');class Element extends EventTarget{}
  for(const infinite of [false,true]){
  const element=new Element(),workflow=compileModule(`EVENT Change\nDO WHILE TRUE\n${infinite?'':'EVENT.Cancel()\nEXIT DO'}\nLOOP\nEND EVENT`).events[0].workflow;
- const client=mountClient({nodes:[{id:'home',kind:'field',element,value:'old'}],context:context({sewnIterations:4}),handlers:[{owner:'home',type:'Change',workflow}]});await client.ready;element.value='new';element.dispatchEvent(new Event('change'));await client.idle();assert.equal(element.value,'old');assert.equal(client.error(),infinite?'SEWN.LIMIT':null);await client.unmount();
+ const client=mountClient({nodes:[{id:'home',kind:'field',element,value:'old'}],context:clientContext(context({sewnIterations:4})),handlers:[{owner:'home',type:'Change',workflow}]});await client.ready;element.value='new';element.dispatchEvent(new Event('change'));await client.idle();assert.equal(element.value,'old');assert.equal(client.error(),infinite?'SEWN.LIMIT':null);await client.unmount();
  }
 });
 test('condition calls reevaluate with shared costs; DO propagates EXIT FOR to enclosing FOR',async()=>{

@@ -1,10 +1,11 @@
+import {clientContext} from '../test-support/client-context.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {compile,compileModule,compilePrototype} from '../wydgine/wydbasic/index.js';
 import {execute} from '../wydgine/sewn/execute.js';
 import {validate} from '../wydgine/sewn/validate.js';
 import {ExecutionContext} from '../wydgine/seam/context.js';
-const context=limits=>new ExecutionContext({publisher:'acme',self:'home',limits});
+const context=limits=>new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'home',limits});
 const run=async(source,SESSION={},limits={})=>(await execute(compile(source),{scope:{SESSION},context:context(limits)})).value;
 const bad=source=>assert.rejects(run(source),{code:'SEWN.TYPE'});
 test('canonical conversion matrix, safe boundaries and legacy compatibility',async()=>{
@@ -45,7 +46,7 @@ test('procedure and collection contracts and selection retain typed identity',as
 });
 test('WydClient executes canonical wire operations and Change cancellation',async()=>{
  const {mountClient}=await import('../wydclient/index.js');class Element extends EventTarget{}const element=new Element();
- const client=mountClient({nodes:[{id:'home',kind:'field',element,value:'old'}],context:context(),handlers:[{owner:'home',type:'Change',workflow:compile('IF Contains(ToUpper("abc"),"B") AND Convert("True",Boolean) AND Round(-2.5,0)=-3 THEN\nEVENT.Cancel()\nEND IF')}]});
+ const client=mountClient({nodes:[{id:'home',kind:'field',element,value:'old'}],context:clientContext(context()),handlers:[{owner:'home',type:'Change',workflow:compile('IF Contains(ToUpper("abc"),"B") AND Convert("True",Boolean) AND Round(-2.5,0)=-3 THEN\nEVENT.Cancel()\nEND IF')}]});
  await client.ready;element.value='new';element.dispatchEvent(new Event('change'));await client.idle();assert.equal(element.value,'old');assert.equal(client.error(),null);await client.unmount();
 });
 

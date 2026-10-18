@@ -10,7 +10,7 @@ const ret=value=>({op:'return',value}),param=(name,type)=>({name,type});
 const fn=(params,returns,body)=>({kind:'function',params,returns,body}),sub=(params,body)=>({kind:'sub',params,body});
 const call=(name,args=[])=>({op:'procedureCall',name,args}),invoke=(name,args=[])=>({op:'functionCall',name,args});
 const doc=(procedures,body=[])=>({schema:'sewn/0.2',procedures,body});
-const ctx=limits=>new ExecutionContext({publisher:'acme',self:'home',limits});
+const ctx=limits=>new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'home',limits});
 const run=(document,limits={},scope={})=>execute(document,{context:ctx(limits),scope});
 const rejects=(document,code='SEWN.INVALID')=>assert.throws(()=>validate(document),e=>e.code===code);
 const fails=(document,code='SEWN.TYPE',limits={},scope={})=>assert.rejects(()=>run(document,limits,scope),e=>e.code===code);
@@ -77,7 +77,7 @@ test('hand-authored nested service functions retain the exact host-issued Execut
  const workflow=doc({save:fn([],'Object',[ret({op:'serviceCall',library:'wydstore',method:'create',input:l({})})]),outer:fn([],'Object',[ret(invoke('save'))])},[ret(invoke('outer'))]);
  const handlers=[{owner:'home',type:'Page.Load',workflow}];
  const result=await runPage({context,libraries,handlers});assert.equal(result.error.code,'SEAM.DENIED');assert.equal(captured,context);
- const allowed=new ExecutionContext({...context,capabilities:[...context.capabilities,'store.records.create']});assert.equal((await runPage({context:allowed,libraries,handlers})).error,null);assert.equal(captured,allowed);
+ const allowed=new ExecutionContext({context:'FrontEnd',...context,capabilities:[...context.capabilities,'store.records.create']});assert.equal((await runPage({context:allowed,libraries,handlers})).error,null);assert.equal(captured,allowed);
 });
 
 test('opaque handle parameters retain mutation authority and stale handle checks through nested frames',async()=>{

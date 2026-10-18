@@ -8,7 +8,7 @@ import {ExecutionContext} from '../wydgine/seam/context.js';
 import {execute} from '../wydgine/sewn/execute.js';
 import {compile} from '../wydgine/wydbasic/index.js';
 import {createDispatcher,EventRegistry} from '../wydgine/events/index.js';
-const context=limits=>new ExecutionContext({publisher:'acme',self:'owner',visible:['owner'],capabilities:['event.custom.raise'],scopes:{events:['Again']},limits});
+const context=limits=>new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'owner',visible:['owner'],capabilities:['event.custom.raise'],scopes:{events:['Again']},limits});
 test('opaque budgets authenticate contexts, share counters and fail terminally across executions',async()=>{
  const ctx=context({sewnSteps:8}),budget=createExecutionBudget(ctx),program=compile('DIM x = 1\nRETURN x');
  await execute(program,{context:ctx,scope:{},budget});await execute(program,{context:ctx,scope:{},budget});
@@ -28,7 +28,7 @@ test('service calls and construction counts remain shared; cancellation rejects 
  const ctx=context({sewnServiceCalls:1}),budget=createExecutionBudget(ctx);let calls=0;
  const scope={SERVICES:{Call:async()=>{calls++;return {};}}};const program=compile('DIM value AS Object = SERVICES.Call("wydstore","get",{})');
  await execute(program,{context:ctx,scope,budget});await assert.rejects(execute(program,{context:ctx,scope,budget}),{code:'SEWN.LIMIT'});assert.equal(calls,1);
- const constructionContext=new ExecutionContext({publisher:'acme',self:'owner',capabilities:['object.instances.construct'],scopes:{prototypes:['wydgit.core/block']},limits:{sewnDrafts:1}}),constructionBudget=createExecutionBudget(constructionContext),prototypeRegistry=new PrototypeRegistry(compileDefinitions(JSON.parse(readFileSync('prototypes/objects.json','utf8'))));
+ const constructionContext=new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'owner',capabilities:['object.instances.construct'],scopes:{prototypes:['wydgit.core/block']},limits:{sewnDrafts:1}}),constructionBudget=createExecutionBudget(constructionContext),prototypeRegistry=new PrototypeRegistry(compileDefinitions(JSON.parse(readFileSync('prototypes/objects.json','utf8'))));
  const construct=compile('DIM draft AS Wydgit = NEW "wydgit.core/block"("draft")');await execute(construct,{context:constructionContext,scope:{},budget:constructionBudget,prototypeRegistry});await assert.rejects(execute(construct,{context:constructionContext,scope:{},budget:constructionBudget,prototypeRegistry}),{code:'SEWN.LIMIT'});
  let cancel=false,release;const delayed=createExecutionBudget(ctx,{guard:()=>assert.equal(cancel,false)});
  const promise=execute(program,{context:ctx,budget:delayed,scope:{SERVICES:{Call:()=>new Promise(r=>release=r)}}});

@@ -1,3 +1,4 @@
+import {restrictExecution, checkPlacement} from '../execution/placement.js';
 import { bindMembers } from './members.js';
 import { matchesObjectGrant } from '../seam/context.js';
 import { formTree,publicProperties } from './forms.js';
@@ -12,7 +13,7 @@ const graphs = new WeakMap();
 export function hydrate(input, registry, { revision = 0, rootPrototype = 'wydgit.core/app' } = {}) {
   check(Number.isSafeInteger(revision) && revision >= 0, 'OBJECT.REVISION', 'Revision must be a non-negative safe integer');
   if (typeof input === 'string') input = parse(input);
-  const nodes = new Map(), parents = new Map(), positions = new Map(), active = new Set(), seen = new Set();
+  const schemas = new Map(), nodes = new Map(), parents = new Map(), positions = new Map(), active = new Set(), seen = new Set();
   function visit(raw, parent, slot, index, depth = 0) {
     check(depth <= 64 && nodes.size < 10000, 'OBJECT.LIMIT', 'Object tree limit exceeded');
     check(record(raw), 'OBJECT.ENVELOPE', 'Expected object envelope');
@@ -26,9 +27,10 @@ export function hydrate(input, registry, { revision = 0, rootPrototype = 'wydgit
     check(parent ? !registry.isA(definition.id, 'wydgit.core/app') : registry.isA(definition.id, rootPrototype), 'OBJECT.ROOT', 'Exactly one App must be the root');
     jsonKeys(raw.slots);
     const properties = resolveProperties(raw.properties, definition), provenance = clean(raw.provenance);
-    const node = { id: raw.id, prototype: definition.id, properties: freeze(properties), provenance: freeze(provenance), slots: Object.create(null) };
+    restrictExecution(raw.execution, definition.execution);
+    const node = { ...(raw.execution ? {execution: freeze(clean(raw.execution))} : {}), id: raw.id, prototype: definition.id, properties: freeze(properties), provenance: freeze(provenance), slots: Object.create(null) };
     Object.defineProperty(node,'toJSON',{value:()=>({...node,properties:publicProperties(node,registry)})});
-    nodes.set(node.id, node); parents.set(node.id, parent); positions.set(node.id, { slot, index });
+    schemas.set(node.id, raw.schema); nodes.set(node.id, node); parents.set(node.id, parent); positions.set(node.id, { slot, index });
     for (const key of Object.keys(raw.slots)) {
       check(!['__proto__','constructor','prototype'].includes(key), 'INPUT.DANGEROUS_KEY', 'Reserved slot key');
       check(Object.hasOwn(definition.slots, key), 'OBJECT.UNKNOWN_SLOT', `Unknown slot: ${key}`);
@@ -64,8 +66,10 @@ export function hydrate(input, registry, { revision = 0, rootPrototype = 'wydgit
         check(nodes.has(id), 'OBJECT.UNKNOWN', 'Unknown object');
         if (handles.has(id)) return handles.get(id);
         const node = nodes.get(id);
+        checkPlacement(node, registry.get(node.prototype), context);
         const result = Object.freeze({ id, prototype: node.prototype, properties: freeze(clean(publicProperties(node,registry))), provenance: node.provenance,
           related(relation, slotName) {
+            checkContext(context);
             check(context.traversal.includes(relation), 'SEAM.TRAVERSAL', 'Traversal denied');
             let ids;
             if (relation === 'children') {
@@ -82,20 +86,20 @@ export function hydrate(input, registry, { revision = 0, rootPrototype = 'wydgit
             }
             return target == null ? null : handle(target);
           },
-          requireCapability(capability) { check(context.capabilities.includes(capability), 'SEAM.DENIED', 'Capability denied'); return true; }
+          requireCapability(capability) { checkContext(context); check(context.capabilities.includes(capability), 'SEAM.DENIED', 'Capability denied'); return true; }
         });
-        bindMembers(result,{context,node:()=>{check(matchesObjectGrant(context.visible,id),'SEAM.VISIBILITY','Object is not visible');return node;},read:name=>name==='value'&&registry.isA(node.prototype,'wydgit.core/password-input')?'':node.properties[name]});
+        bindMembers(result,{context,node:()=>{checkContext(context);check(matchesObjectGrant(context.visible,id),'SEAM.VISIBILITY','Object is not visible');return node;},read:name=>name==='value'&&registry.isA(node.prototype,'wydgit.core/password-input')?'':node.properties[name]});
         handles.set(id, result); return result;
       };
       return handle(startId);
     }
   });
-  graphs.set(runtime, { nodes, root, registry }); return runtime;
+  graphs.set(runtime, { nodes, root, registry, schemas }); return runtime;
 }
 export function dehydrate(runtime, { includeSensitive = false } = {}) {
   check(graphs.has(runtime), 'OBJECT.RUNTIME', 'Expected hydrated runtime');
-  const { nodes, root, registry } = graphs.get(runtime);
-  const emit = node => ({ schema: 'wydgit/0.2', id: node.id, prototype: node.prototype, properties: clean(includeSensitive?node.properties:publicProperties(node,registry)), slots: Object.fromEntries(Object.entries(node.slots).map(([key, ids]) => [key, ids.map(id => emit(nodes.get(id)))])), provenance: clean(node.provenance) });
+  const { nodes, root, registry, schemas } = graphs.get(runtime);
+  const emit = node => ({ ...(node.execution ? {execution: clean(node.execution)} : {}), schema: schemas.get(node.id), id: node.id, prototype: node.prototype, properties: clean(includeSensitive?node.properties:publicProperties(node,registry)), slots: Object.fromEntries(Object.entries(node.slots).map(([key, ids]) => [key, ids.map(id => emit(nodes.get(id)))])), provenance: clean(node.provenance) });
   return emit(root);
 }
 export function serialize(runtime) { return JSON.stringify(dehydrate(runtime)); }

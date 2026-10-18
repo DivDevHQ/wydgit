@@ -8,7 +8,7 @@ export const writeJson=(file,value)=>fs.writeFile(file,JSON.stringify(value));
 export async function lifecycleFixture(t){
   const fixture=await packageFixture(t),model=loadRepository(fixture.root),ids=[];
   const walk=node=>{ids.push(node.id);Object.values(node.slots).flat().forEach(walk);};walk(dehydrate(model.runtime));
-  const context=new ExecutionContext({publisher:'operator',self:'home',app:'boilerplate',capabilities:['object.instances.edit','packages.lifecycle.manage'],visible:[...ids,'pkg-*','page-*'],editable:[...ids,'pkg-*','page-*']});
+  const context=new ExecutionContext({context:'FrontEnd',publisher:'operator',self:'home',app:'boilerplate',capabilities:['object.instances.edit','packages.lifecycle.manage'],visible:[...ids,'pkg-*','page-*'],editable:[...ids,'pkg-*','page-*']});
   const candidate=async(name,{version='1.0.0',dependencies={},publisher='acme'}={})=>{
     const packagePath=path.join(fixture.root,'candidate-'+name);await fs.mkdir(packagePath,{recursive:true});
     const permissions={capabilities:[],traversal:[],visible:['pkg-'+name],editable:[],scopes:{wydstore:[]}};

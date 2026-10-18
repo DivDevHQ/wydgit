@@ -1,7 +1,8 @@
 # Execution contexts, administrative domains, and WydStore isolation
 
-**Status:** Proposed implementation architecture, integrated for review; no runtime
-implementation or qualification is delivered by this document.  
+**Status:** Governing architecture. The [first execution-context increment](execution-context-foundation.md)
+is implemented in alpha.16; wider administrative domains, isolation and provisioning
+remain targets. This document’s matrix describes requirements, not completion.
 **Recorded:** 2026-10-18  
 **Scope:** Wydgine, WydClient/WydSUB, WydStore, WydGate, SEAM and WydHosting.  
 **Compatibility:** 0.3 is a deliberate migration boundary for server context resolution.

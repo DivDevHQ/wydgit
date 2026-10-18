@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {compile,compileModule,compilePrototype} from '../wydgine/wydbasic/index.js';import {execute} from '../wydgine/sewn/execute.js';import {ExecutionContext,PrototypeRegistry} from '../wydgine/object-model/index.js';import {fixture,runPage} from '../test-support/events.js';
-const context=new ExecutionContext({publisher:'acme',self:'home'}),run=source=>execute(compile(source),{context,scope:{}});
+const context=new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'home'}),run=source=>execute(compile(source),{context,scope:{}});
 
 test('conversion intrinsics work in bodies/modules with static types and one argument',async()=>{
  const source='DIM label AS String = cStR(42)\nDIM offset AS Number = vAl(" 10 ")\nRETURN [label, offset+1, CStr(FALSE)]';assert.equal(compile(source).schema,'sewn/0.7');assert.deepEqual((await run(source)).value,['42',11,'False']);

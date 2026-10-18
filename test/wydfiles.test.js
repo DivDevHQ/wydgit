@@ -16,7 +16,7 @@ import {ExecutionContext} from '../wydgine/seam/context.js';
 import {operation,boundedStream} from '../packages/wydfiles/src/operation.js';
 import platform from '../package.json' with {type:'json'};
 const caps=['read','write','delete','list'].map(a=>'files.storage.'+a);
-const ctx=(extra={})=>new ExecutionContext({app:'app-a',publisher:'acme',package:'acme/demo',principal:'acme/demo',installation:'receipt-a',self:'page',capabilities:caps,scopes:{wydfiles:[{path:'/'}]},...extra});
+const ctx=(extra={})=>new ExecutionContext({context:'FrontEnd',app:'app-a',publisher:'acme',package:'acme/demo',principal:'acme/demo',installation:'receipt-a',self:'page',capabilities:caps,scopes:{wydfiles:[{path:'/'}]},...extra});
 const temporary=async t=>{const root=await mkdtemp(path.join(os.tmpdir(),'wydfiles-'));t.after(()=>rm(root,{recursive:true,force:true}));return root;};
 import {simulatedS3} from '../test-support/s3.js';
 const s3config={endpoint:'https://storage.example',bucket:'bucket-test',namespace:'app-a-mount-a',region:'us-east-1',credentials:{accessKeyId:'test-key',secretAccessKey:'test-secret'}};

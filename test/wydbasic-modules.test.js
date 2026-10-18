@@ -1,3 +1,4 @@
+import {clientContext} from '../test-support/client-context.js';
 import {prepareHandlers as prepareClientHandlers} from '../wydgine/events/index.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -8,7 +9,7 @@ import {ExecutionContext} from '../wydgine/seam/context.js';
 import {EventRegistry,prepareHandlers,prepareAction,createDispatcher} from '../wydgine/events/index.js';
 import {runPage,fixture} from '../test-support/events.js';
 import {mountClient} from '../wydclient/index.js';
-const context=new ExecutionContext({publisher:'acme',self:'home'});
+const context=new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'home'});
 const run=async source=>execute(compileModule(source).events[0].workflow,{context,scope:{}});
 const moduleWith=(declarations,body='RETURN NULL')=>`${declarations}\nEVENT Page.Load\n${body}\nEND EVENT`;
 const error=(source,code)=>assert.throws(()=>compileModule(source),e=>e.code===`WYDBASIC.${code}`&&e.details.line>0&&e.details.column>0,source);
@@ -117,7 +118,7 @@ test('module registration is exclusive, setup-only and preserves explicit action
 });
 
 test('WydClient event modules share procedures and preserve semantic cancellation/default behavior',async()=>{
- const element=new EventTarget(),client=mountClient({nodes:[{id:'home',element,kind:'field',value:'old'}],context,handlers:prepareClientHandlers([{owner:'home',wydBasicModule:`
+ const element=new EventTarget(),client=mountClient({nodes:[{id:'home',element,kind:'field',value:'old'}],context:clientContext(context),handlers:prepareClientHandlers([{owner:'home',wydBasicModule:`
 FUNCTION IsOwner(value AS String) AS Boolean
  RETURN value="home"
 END FUNCTION
@@ -144,7 +145,7 @@ END FUNCTION`, 'DIM result AS Object={}\nresult=Save("first")\nRETURN {"a":resul
  const calls=[],scope={SERVICES:{async Call(library,method,input){calls.push([library,method,input.value]);return {ok:true,value:null};}}};
  const workflow=compileModule(source).events[0].workflow;assert.equal(workflow.procedures.save.body[0].value.op,'serviceCall');
  const result=await execute(workflow,{context,scope});assert.equal(result.value.a,true);assert.equal(result.value.b,true);assert.deepEqual(calls,[['test','save','first'],['test','save','second']]);
- await assert.rejects(()=>execute(workflow,{context:new ExecutionContext({...context,limits:{sewnServiceCalls:1}}),scope}),e=>e.code==='SEWN.LIMIT');
+ await assert.rejects(()=>execute(workflow,{context:new ExecutionContext({context:'FrontEnd',...context,limits:{sewnServiceCalls:1}}),scope}),e=>e.code==='SEWN.LIMIT');
  const dynamic=compileModule(moduleWith('FUNCTION Read() AS String\nRETURN REQUEST.Form.Get("value")\nEND FUNCTION','RETURN Read()')).events[0].workflow;
  await assert.rejects(()=>execute(dynamic,{context,scope:{REQUEST:{Form:{Get:()=>1}}}}),e=>e.code==='SEWN.TYPE');
  for(const body of ['CALL eval("x")','RETURN process.exit()','RETURN globalThis','RETURN CallByName("Save")','RETURN SERVICES.Call("fs", "read", ME)'])assert.throws(()=>compileModule(moduleWith('',body)),e=>e.code.startsWith('WYDBASIC.'));
@@ -152,7 +153,7 @@ END FUNCTION`, 'DIM result AS Object={}\nresult=Save("first")\nRETURN {"a":resul
 
 test('server lifecycle modules compile once during construction before Start and Stop dispatch',async()=>{
  const {createLifecycle}=await import('../wydgine/execution/lifecycle.js');let reads=0;
- const context=new ExecutionContext({publisher:'acme',self:'app',app:'app'});
+ const context=new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'app',app:'app'});
  const lifecycle=createLifecycle({app:'app',context,handlers:[{owner:'app',get wydBasicModule(){reads++;return `
 FUNCTION IsApp() AS Boolean
  RETURN SERVER.App="app"

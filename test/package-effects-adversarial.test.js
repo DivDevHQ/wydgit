@@ -51,7 +51,7 @@ for(const link of ['symlink','hardlink'])test(`${link}: purge refuses linked sto
 test('oversized migration approvals and package principals cannot reach adapter mutation',async t=>{
   const f=await storedFixture(t,'json'),candidate=await f.version('2.0.0',f.target),migration=f.migration();migration.storage[0].operations=[{op:'default',field:'large',value:'x'.repeat(65536)}];
   await assert.rejects(packageOperation(f.operation('upgrade','acme/a',[candidate],{migrations:[migration]})),{code:'PACKAGE.LIMIT'});
-  const denied=new ExecutionContext({publisher:'acme',package:'acme/a',app:'boilerplate',self:'pkg-a',capabilities:['packages.lifecycle.manage']});
+  const denied=new ExecutionContext({context:'FrontEnd',publisher:'acme',package:'acme/a',app:'boilerplate',self:'pkg-a',capabilities:['packages.lifecycle.manage']});
   await assert.rejects(packageOperation(f.operation('upgrade','acme/a',[candidate],{migrations:[f.migration()],installationContext:denied})),{code:'PACKAGE.DENIED'});
   assert.equal((await snapshotStore(f.store)).collections.records.records[0].data.text,'Customer edit');
 });

@@ -42,7 +42,7 @@ test('server presentation bindings render updated state and escape markup; indep
  const actual=build(),card=actual.definitions[0];
  const golden=JSON.parse(read('test/fixtures/families/card.json'));assert.deepEqual(normalize(card),golden);
  for(const definition of [card,golden]){
-  const context=new ExecutionContext({publisher:'caller',self:'card'}),properties={Title:'<script>alert(1)</script>',Status:'Pending'};
+  const context=new ExecutionContext({context:'FrontEnd',publisher:'caller',self:'card'}),properties={Title:'<script>alert(1)</script>',Status:'Pending'};
   const node={id:'card',prototype:definition.id,properties};const handle=bindMembers({id:node.id,prototype:node.prototype},{context,node:()=>node,set:(k,v)=>{properties[k]=v;}});
   const registry=new PrototypeRegistry([...core,definition]);
   const shown=()=>render({id:node.id,...properties,presentation:registry.get(definition.id).presentation});
@@ -56,7 +56,7 @@ test('source-generated package installs through existing planner and survives so
  await fs.writeFile(path.join(packagePath,'manifest.json'),JSON.stringify(actual.manifest));
  for(const [file,text] of Object.entries(actual.resources))await fs.writeFile(path.join(packagePath,file),text);
  const before=loadRepository(fixture.root),ids=[];const walk=id=>{ids.push(id);Object.values(before.runtime.get(id).slots).flat().forEach(walk);};walk(before.runtime.rootId);
- const options={...fixture.options,approvals:actual.manifest.permissions,storageMappings:{},verifiedPackages:{[manifest.id]:manifest.publisher},installationContext:new ExecutionContext({publisher:'operator',self:'home',app:before.runtime.rootId,visible:[...ids,...manifest.permissions.visible],editable:[...ids,...manifest.permissions.visible],capabilities:['object.instances.edit']})};
+ const options={...fixture.options,approvals:actual.manifest.permissions,storageMappings:{},verifiedPackages:{[manifest.id]:manifest.publisher},installationContext:new ExecutionContext({context:'FrontEnd',publisher:'operator',self:'home',app:before.runtime.rootId,visible:[...ids,...manifest.permissions.visible],editable:[...ids,...manifest.permissions.visible],capabilities:['object.instances.edit']})};
  const plan=await planPackageInstall(options);const receipt=await applyPackageInstall(plan);assert.equal(receipt.package,manifest.id);
  const after=loadRepository(fixture.root,{verifiedPackages:options.verifiedPackages});assert.deepEqual(after.runtime.get('source-panel').slots.blocks,['source-panel-First','source-panel-Second']);
  assert.equal(after.registry.get('divdev/source-card').presentation.template.children[0].text.get,'properties.Title');

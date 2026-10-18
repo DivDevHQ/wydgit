@@ -10,6 +10,7 @@ export function createPackageBudget(context,{signal,parentBudget}={}) {
   let work=0;
   const token=Object.freeze(Object.create(null));
   budgets.set(token,{context,take(count=1){
+    checkContext(context);
     check(!signal?.aborted,'PACKAGE.CANCELLED','Package operation cancelled');
     check(Date.now()<deadline&&Number.isSafeInteger(count)&&count>=0&&(work+=count)<=maxWork,'PACKAGE.LIMIT','Package execution budget exhausted');
     parent?.take('steps',count);

@@ -1,3 +1,4 @@
+import {validateRuntime, validateContext} from '../execution/placement.js';
 import { validId } from '../object-model/schema.js';
 import { isCapability } from './capabilities.js';
 import { clean, freeze, record, requireThat as check } from '../object-model/validation.js';
@@ -21,8 +22,15 @@ export function objectGrantCovers(grants, grant) {
   return grants.some(visible => validObjectGrant(visible) && visible.endsWith('*') && prefix.startsWith(visible.slice(0, -1)));
 }
 const contexts = new WeakSet();
+const lifetimes = new WeakMap();
+const LIFETIME = Symbol('execution lifetime');
+// Trusted host lifecycle boundary. All derived contexts share the same fence.
+export function endExecutionContext(context) {
+  check(contexts.has(context), 'SEAM.CONTEXT', 'Expected host-issued execution context');
+  lifetimes.set(context[LIFETIME], false);
+}
 export class ExecutionContext {
-  constructor({ publisher, package: packageId = null, self, app = null, scopes = {}, identity = null, installation = null, template = null, principal = packageId, capabilities = [], visible = [], editable = [], traversal = [], limits = {} }) {
+  constructor({ runat, context, placement, [LIFETIME]: lifetime, publisher, package: packageId = null, self, app = null, scopes = {}, identity = null, installation = null, template = null, principal = packageId, capabilities = [], visible = [], editable = [], traversal = [], limits = {} }) {
     check(typeof publisher === 'string' && validId(self), 'SEAM.CONTEXT', 'Context requires publisher and self');
     check(Array.isArray(capabilities) && capabilities.every(isCapability), 'SEAM.CAPABILITY', 'Invalid capability name');
     check(Array.isArray(visible) && visible.length <= 10000 && visible.every(validObjectGrant), 'SEAM.CONTEXT', 'Invalid visible scope');
@@ -46,10 +54,21 @@ export class ExecutionContext {
     if(subject&&['membershipId','membershipStatus','membershipRole'].some(k=>Object.hasOwn(subject,k)))check(typeof subject.membershipId==='string'&&subject.membershipStatus==='active'&&['owner','administrator','member'].includes(subject.membershipRole),'SEAM.CONTEXT','Invalid membership facts');
     const resources = clean(limits);
     check(record(resources) && Object.values(resources).every(n => Number.isSafeInteger(n) && n >= 0), 'SEAM.CONTEXT', 'Limits must be non-negative integers');
-    Object.assign(this, { publisher, package: packageId, self, app, identity: subject, installation, template, principal, scopes: scopeData, capabilities: [...new Set(capabilities)], visible: [...new Set([self, ...visible])], editable: [...new Set(editable)], traversal: [...new Set(traversal)], limits: resources });
+    if (placement !== undefined) checkContext(placement);
+    if (runat === undefined) runat = placement?.runat ?? 'Server';
+    validateRuntime(runat);
+    if (context === undefined) context = placement?.context ?? (runat === 'Client' ? 'SUB' : undefined);
+    validateContext(runat, context);
+    if (placement) check(runat === placement.runat && context === placement.context && app === placement.app,
+      'EXECUTION.PLACEMENT', 'Conflicting trusted parent placement');
+    lifetime ??= placement?.[LIFETIME];
+    if (lifetime === undefined) { lifetime = Object.freeze({}); lifetimes.set(lifetime, true); }
+    check(lifetimes.get(lifetime) === true && (!placement || lifetime === placement[LIFETIME]),
+      'SEAM.CONTEXT', 'Invalid or ended placement lifetime');
+    Object.assign(this, { runat, context, [LIFETIME]: lifetime, publisher, package: packageId, self, app, identity: subject, installation, template, principal, scopes: scopeData, capabilities: [...new Set(capabilities)], visible: [...new Set([self, ...visible])], editable: [...new Set(editable)], traversal: [...new Set(traversal)], limits: resources });
     contexts.add(this); freeze(this);
   }
-  allows(capability) { return this.capabilities.includes(capability); }
+  allows(capability) { checkContext(this); return this.capabilities.includes(capability); }
   require(capability) { check(this.allows(capability), 'SEAM.DENIED', 'Capability denied'); }
 }
-export function checkContext(context) { check(contexts.has(context), 'SEAM.CONTEXT', 'Expected host-issued execution context'); }
+export function checkContext(context) { check(contexts.has(context) && lifetimes.get(context[LIFETIME]) === true, 'SEAM.CONTEXT', 'Expected live host-issued execution context'); }

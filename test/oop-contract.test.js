@@ -58,7 +58,7 @@ RETURN other.[shared]
 END FUNCTION`)}];};
 const verified=defs=>Object.fromEntries(defs.map(d=>[d.id,d.publisher]));
 const registry=(defs=definitions(),extra={})=>new PrototypeRegistry(defs,{verifiedPrototypes:verified(defs),...extra});
-const ctx=(extra={})=>new ExecutionContext({publisher:'spoofed',app:'app',self:'app',capabilities:['object.instances.construct','object.instances.edit'],scopes:{prototypes:['acme/base','acme/derived','acme/friend','acme/friend-child']},visible:['target'],...extra});
+const ctx=(extra={})=>new ExecutionContext({context:'FrontEnd',publisher:'spoofed',app:'app',self:'app',capabilities:['object.instances.construct','object.instances.edit'],scopes:{prototypes:['acme/base','acme/derived','acme/friend','acme/friend-child']},visible:['target'],...extra});
 const setup=(type='acme/base',defs=definitions())=>{const reg=registry(defs),context=ctx();const runtime=hydrate(env('app',app.id,{}, {items:[env('target',type)]}),reg);return {reg,context,runtime,scope:{ME:runtime.scope(context,'target')}};};
 const run=(source,s)=>execute(compile(source),{scope:s.scope??{},context:s.context??ctx(),prototypeRegistry:s.reg??registry()});
 const denied=e=>e.code==='OBJECT.ACCESS';
@@ -181,11 +181,11 @@ test('installer requires independent publisher verification, retains private per
  await fs.writeFile(file,JSON.stringify(defs));await assert.rejects(planPackageInstall(options),e=>e.code==='PROTOTYPE.FRIEND');
  const verifiedPackages={'divdev/guestbook':'divdev'},plan=await planPackageInstall({...options,verifiedPackages});await applyPackageInstall(plan);
  assert.throws(()=>loadRepository(root),e=>e.code==='PROTOTYPE.FRIEND');assert.throws(()=>loadRepository(root,{verifiedPackages:{'divdev/guestbook':'acme'}}),e=>e.code==='PROTOTYPE.FRIEND');
- const model=loadRepository(root,{verifiedPackages}),context=new ExecutionContext({publisher:'divdev',package:'divdev/guestbook',installation:'receipt',app:model.runtime.rootId,self:'guestbook-form',visible:['guestbook','home']});
+ const model=loadRepository(root,{verifiedPackages}),context=new ExecutionContext({context:'FrontEnd',publisher:'divdev',package:'divdev/guestbook',installation:'receipt',app:model.runtime.rootId,self:'guestbook-form',visible:['guestbook','home']});
  const value=await execute(compile('RETURN Me.Peek(Page)'),{context,prototypeRegistry:model.registry,scope:{ME:model.runtime.scope(context),PAGE:model.runtime.scope(context,'guestbook')}});assert.equal(value.value,'INSTALL-FRIEND');
  assert.equal(model.runtime.get('guestbook').properties.internal,'INSTALL-SECRET');assert.ok(!serialize(model.runtime).includes('INSTALL-SECRET'));
  const ids=[];const walk=id=>{ids.push(id);Object.values(model.runtime.get(id).slots).flat().forEach(walk);};walk('home');
- const pageContext=new ExecutionContext({publisher:'divdev',app:model.runtime.rootId,self:'guestbook',visible:ids,editable:['guestbook'],capabilities:['object.instances.edit']});let observed;
+ const pageContext=new ExecutionContext({context:'FrontEnd',publisher:'divdev',app:model.runtime.rootId,self:'guestbook',visible:ids,editable:['guestbook'],capabilities:['object.instances.edit']});let observed;
  const result=await executePage({model,pageId:'home',context:pageContext,session:{view:{app:model.runtime.rootId},active:()=>true,authorize:async()=>{}},input:{method:'GET',path:'/'},handlers:[{owner:'guestbook',type:'Page.Load',wydBasic:'CALL Me.UpdateInternal()'}],render(projection,url,transport){observed=projection.runtime.get('guestbook').properties.internal;assert.ok(!JSON.stringify(projection.pages.get('home')).includes('PAGE-SECRET'));return renderSite(projection,url,transport);}});
  assert.equal(result.error,null);assert.equal(observed,'PAGE-SECRET');assert.equal(model.runtime.get('guestbook').properties.internal,'INSTALL-SECRET');await result.response.close();
 });

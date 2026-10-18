@@ -38,9 +38,9 @@ test('trusted peer HTTPS profile sets host-only Secure cookies; wrong peers/forw
 test('same installed WBasic Taskboard executes through shared hostnames with independent Gate and storage',async t=>{
  const {installTaskboards}=await import('../examples/hostname-host/taskboards.js'),{createGate}=await import('@wydgit/gate/client'),{manifest}=await import('@wydgit/gate'),{ExecutionContext}=await import('../wydgine/seam/context.js');
  const f=await fixture(t),execution=await installTaskboards(f.root);
- for(const id of ['app-alpha','app-beta'])execution[id].gateContext=new ExecutionContext({publisher:'host',package:'host:gate',app:id,self:'home',capabilities:manifest.capabilities,scopes:{wydgate:[id]}});
+ for(const id of ['app-alpha','app-beta'])execution[id].gateContext=new ExecutionContext({context:'FrontEnd',publisher:'host',package:'host:gate',app:id,self:'home',capabilities:manifest.capabilities,scopes:{wydgate:[id]}});
  const {host,server,tokens}=await f.start({execution});
- const gates=tokens.slice(0,2).map((token,i)=>createGate(host.bind(token,host.context(token,{publisher:'host',package:'host:gate',self:'home',capabilities:manifest.capabilities,scopes:{wydgate:[['app-alpha','app-beta'][i]]}}))));
+ const gates=tokens.slice(0,2).map((token,i)=>createGate(host.bind(token,host.context(token,{context:'FrontEnd',publisher:'host',package:'host:gate',self:'home',capabilities:manifest.capabilities,scopes:{wydgate:[['app-alpha','app-beta'][i]]}}))));
  await Promise.all(gates.map(g=>g.register({username:'same-user',password:'isolated sufficiently long password'})));
  const logins=await Promise.all(gates.map(g=>g.login('same-user','isolated sufficiently long password')));
  const [a,b]=await Promise.all([get(server,'alpha.localhost','/',{headers:{Cookie:'wydgit-auth='+logins[0].token}}),get(server,'beta.localhost','/',{headers:{Cookie:'wydgit-auth='+logins[1].token}})]);
@@ -52,7 +52,7 @@ test('same installed WBasic Taskboard executes through shared hostnames with ind
  assert.equal((await get(server,'beta.localhost','/',{method:'POST',headers:{...headers,Origin:'http://beta.localhost',Cookie:'wydgit-auth='+logins[1].token},body})).status,403);
  assert.equal((await get(server,'alpha.localhost','/',{method:'POST',headers:{...headers,Origin:'http://beta.localhost'},body})).status,400);
 
- const storage=tokens.slice(0,2).map(token=>host.bind(token,host.context(token,{publisher:'acme',package:'acme/demo',self:'home',capabilities:['store.records.create','store.records.read'],scopes:{wydstore:[{store:'main',collection:'records'}]}})));
+ const storage=tokens.slice(0,2).map(token=>host.bind(token,host.context(token,{context:'FrontEnd',publisher:'acme',package:'acme/demo',self:'home',capabilities:['store.records.create','store.records.read'],scopes:{wydstore:[{store:'main',collection:'records'}]}})));
  await Promise.all(storage.map((s,i)=>s.invoke('wydstore','1.0.0','create',{store:'main',collection:'records',id:'same',data:{name:'private-'+i}})));
  for(const [i,s]of storage.entries())assert.equal((await s.invoke('wydstore','1.0.0','get',{store:'main',collection:'records',id:'same'})).value.data.name,'private-'+i);
  await host.stop(tokens[0]);assert.equal((await get(server,'alpha.localhost')).status,503);assert.equal((await get(server,'beta.localhost')).status,200);assert.equal((await get(server,'soon.localhost')).status,200);

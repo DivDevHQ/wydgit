@@ -53,6 +53,7 @@
     }
   },
   "installationContext": {
+    "context": "FrontEnd",
     "publisher": "operator",
     "app": "boilerplate",
     "self": "home",

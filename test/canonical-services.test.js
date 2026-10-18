@@ -12,7 +12,7 @@ import {compile,compileModule,compilePrototype} from '../wydgine/wydbasic/index.
 import {validate} from '../wydgine/sewn/validate.js';
 import {manifest} from '../examples/canonical-diagnostic/index.js';
 import {fixture,runPage} from '../test-support/events.js';
-const ctx=(extra={})=>new ExecutionContext({publisher:'acme',package:'acme/example',principal:'acme/example',installation:'receipt-A',template:'panel',app:'site-A',self:'home',capabilities:['diagnostic.status.read'],...extra});
+const ctx=(extra={})=>new ExecutionContext({context:'FrontEnd',publisher:'acme',package:'acme/example',principal:'acme/example',installation:'receipt-A',template:'panel',app:'site-A',self:'home',capabilities:['diagnostic.status.read'],...extra});
 async function load(t, body, options={}) {
  const root=await fs.mkdtemp(path.join(os.tmpdir(),'wyd-canonical-'));
  t.after(()=>fs.rm(root,{recursive:true,force:true}));

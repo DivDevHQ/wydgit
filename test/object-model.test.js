@@ -85,7 +85,7 @@ test('malformed JSON and non-JSON input fail cleanly, without evaluating accesso
 
 test('self-only visibility denies parent, sibling, root and child traversal by default', () => {
  const runtime=hydrate(fixture(),registry());
- const context=new ExecutionContext({publisher:'acme',self:'a'}), a=runtime.scope(context);
+ const context=new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'a'}), a=runtime.scope(context);
  assert.equal(a.id,'a'); assert.equal(a.slots,undefined); assert.equal(a.parent,undefined);
  for (const relation of ['parent','root','previousSibling','nextSibling','children']) code(()=>a.related(relation),'SEAM.TRAVERSAL');
  code(()=>runtime.scope({self:'a'}),'SEAM.CONTEXT');
@@ -93,27 +93,27 @@ test('self-only visibility denies parent, sibling, root and child traversal by d
 
 test('traversal and visibility are independent; reached handles retain caller authority', () => {
  const runtime=hydrate(fixture(),registry());
- const hidden=runtime.scope(new ExecutionContext({publisher:'acme',self:'a',traversal:['root','nextSibling']}));
+ const hidden=runtime.scope(new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'a',traversal:['root','nextSibling']}));
  code(()=>hidden.related('root'),'SEAM.VISIBILITY'); code(()=>hidden.related('nextSibling'),'SEAM.VISIBILITY');
- const visible=runtime.scope(new ExecutionContext({publisher:'acme',self:'a',visible:['app','b']}));
+ const visible=runtime.scope(new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'a',visible:['app','b']}));
  code(()=>visible.related('root'),'SEAM.TRAVERSAL');
  const grant={publisher:'acme',self:'a',visible:['app','b'],traversal:['parent','root','nextSibling','previousSibling','children']};
- const a=runtime.scope(new ExecutionContext(grant));
+ const a=runtime.scope(new ExecutionContext({context:'FrontEnd',...grant}));
  assert.equal(a.related('root').id,'app'); assert.equal(a.related('parent').id,'app');
  assert.equal(a.related('nextSibling').related('previousSibling'),a);
  assert.deepEqual(a.related('root').related('children').map(x=>x.id),['a','b']);
- const privileged=runtime.scope(new ExecutionContext({publisher:'wydgit.core',self:'app',capabilities:['store.records.write']}));
+ const privileged=runtime.scope(new ExecutionContext({context:'FrontEnd',publisher:'wydgit.core',self:'app',capabilities:['store.records.write']}));
  assert.equal(privileged.requireCapability('store.records.write'),true);
  for (const target of [a,a.related('root'),a.related('nextSibling')]) code(()=>target.requireCapability('store.records.write'),'SEAM.DENIED');
- assert.equal(runtime.scope(new ExecutionContext({...grant,capabilities:['store.records.read']})).related('root').requireCapability('store.records.read'),true);
+ assert.equal(runtime.scope(new ExecutionContext({context:'FrontEnd',...grant,capabilities:['store.records.read']})).related('root').requireCapability('store.records.read'),true);
 });
 
 test('context grants are immutable and capability grammar is platform-neutral', () => {
- const capabilities=['client.storage.read']; const context=new ExecutionContext({publisher:'acme',self:'a',capabilities,limits:{steps:100}});
+ const capabilities=['client.storage.read']; const context=new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'a',capabilities,limits:{steps:100}});
  capabilities.push('store.records.write'); assert.equal(context.allows('store.records.write'),false);
  assert.throws(()=>context.visible.push('app'),TypeError);
  assert.throws(()=>{context.limits.steps=1000;},TypeError);
- for(const capability of ['*','storage.read','a.b.c.d','Store.records.write']) code(()=>new ExecutionContext({publisher:'acme',self:'a',capabilities:[capability]}),'SEAM.CAPABILITY');
+ for(const capability of ['*','storage.read','a.b.c.d','Store.records.write']) code(()=>new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'a',capabilities:[capability]}),'SEAM.CAPABILITY');
 });
 
 test('small generated trees round-trip and duplicate mutations always fail', () => {
@@ -142,6 +142,6 @@ test('hidden accessors, sparse child arrays and excessive depth fail without exe
  for(let i=0;i<66;i++) {const child=object(`depth-${i}`);cursor.slots.children=[child];cursor=child;}
  code(()=>hydrate(deep,registry()),'OBJECT.LIMIT');
  const runtime=hydrate(fixture(),registry());
- const root=runtime.scope(new ExecutionContext({publisher:'wydgit.core',self:'app',traversal:['children']}));
+ const root=runtime.scope(new ExecutionContext({context:'FrontEnd',publisher:'wydgit.core',self:'app',traversal:['children']}));
  assert.deepEqual(root.related('children'),[]);
 });

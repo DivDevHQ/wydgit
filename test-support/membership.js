@@ -20,12 +20,12 @@ export async function membershipFixture(t,provider='json',registration='open',in
   const config=configuration(gateRoot,provider,{registration});const gateConfig=config.libraries[0],store=config.libraries[1].options.stores[0];
   Object.assign(gateConfig.options,hostOptions.options??{});gateConfig.options.app='boilerplate';gateConfig.bindings[0].app='boilerplate';store.app='boilerplate';
   f.config={schema:'wydgit.host/0.1',libraries:config.libraries};await fs.writeFile(path.join(f.root,'wydgit.config.json'),JSON.stringify(f.config));
-  f.options={...f.options,packagePath:f.packagePath,approvals:f.manifest.permissions,storageMappings:{},installationContext:new ExecutionContext({publisher:'operator',self:'home',app:'boilerplate',visible:[...f.options.installationContext.visible,...f.manifest.permissions.visible],editable:[...f.options.installationContext.visible,...f.manifest.permissions.visible],capabilities:['object.instances.edit']})};
+  f.options={...f.options,packagePath:f.packagePath,approvals:f.manifest.permissions,storageMappings:{},installationContext:new ExecutionContext({context:'FrontEnd',publisher:'operator',self:'home',app:'boilerplate',visible:[...f.options.installationContext.visible,...f.manifest.permissions.visible],editable:[...f.options.installationContext.visible,...f.manifest.permissions.visible],capabilities:['object.instances.edit']})};
   if(install)f.receipt=await installPackage(f.options);
   f.libraries=await initializeHost({root:f.root,adapters:hostOptions.adapter?{wydgate:hostOptions.adapter}: {}});
-  f.gateContext=new ExecutionContext({publisher:'host',package:'host:gate',self:'home',app:'boilerplate',capabilities:manifest.capabilities,scopes:{wydgate:['boilerplate'],wydgateBootstrap:['boilerplate']}});
+  f.gateContext=new ExecutionContext({context:'FrontEnd',publisher:'host',package:'host:gate',self:'home',app:'boilerplate',capabilities:manifest.capabilities,scopes:{wydgate:['boilerplate'],wydgateBootstrap:['boilerplate']}});
   f.gate=createGate(f.libraries.bind(f.gateContext));
   f.password=randomBytes(24).toString('base64url');
-  f.memberGate=identity=>createGate(f.libraries.bind(new ExecutionContext({publisher:'divdev',package:'divdev/membership',installation:f.receipt?.id??'test-install',self:'membership',app:'boilerplate',identity,capabilities:['gate.accounts.use','gate.members.use'],scopes:{wydgate:['boilerplate']}})));
+  f.memberGate=identity=>createGate(f.libraries.bind(new ExecutionContext({context:'FrontEnd',publisher:'divdev',package:'divdev/membership',installation:f.receipt?.id??'test-install',self:'membership',app:'boilerplate',identity,capabilities:['gate.accounts.use','gate.members.use'],scopes:{wydgate:['boilerplate']}})));
   return f;
 }

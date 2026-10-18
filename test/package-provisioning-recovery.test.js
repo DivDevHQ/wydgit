@@ -47,7 +47,7 @@ test('live writers and unauthorized callers cannot recover provisioning',async t
   await assert.rejects(applyOperatorInstall(await planOperatorInstall(f.options),{atStage:stage=>{if(stage==='BEFORE_CONFIG'||stage==='COMPENSATING_RESOURCE_0')throw Error('Injected compensation failure');}}),{code:'PACKAGE.RECOVERY'});
   await assert.rejects(recoverPackageEffects({root:f.root,installationContext:f.options.installationContext}),{code:'PACKAGE.BUSY'});
   const {ExecutionContext}=await import('../wydgine/seam/context.js');
-  const denied=new ExecutionContext({publisher:'acme',package:'acme/a',app:'boilerplate',self:'home',capabilities:['packages.lifecycle.manage']});
+  const denied=new ExecutionContext({context:'FrontEnd',publisher:'acme',package:'acme/a',app:'boilerplate',self:'home',capabilities:['packages.lifecycle.manage']});
   await assert.rejects(recoverPackageEffects({root:f.root,installationContext:denied}),{code:'PACKAGE.DENIED'});
 });
 

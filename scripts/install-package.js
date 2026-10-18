@@ -101,7 +101,7 @@ export async function buildOperatorPolicy({root,packagePath,ask,write}) {
   // Grant only the selected parent/slot occupants and incoming object IDs/patterns.
   const template=JSON.parse(safeRead(packagePath,manifest.resources.template));
   const objectGrants=[...new Set([parent,...node.slots[slot],...idsOf(template),...manifest.permissions.visible,...manifest.permissions.editable])];
-  return {...(infrastructure.enableWydstore||infrastructure.stores.length?{infrastructure}:{}),placement,approvals:JSON.parse(JSON.stringify(manifest.permissions)),storageMappings,installationContext:{publisher:'operator',app,self:parent,capabilities:['object.instances.edit'],visible:objectGrants,editable:objectGrants}};
+  return {...(infrastructure.enableWydstore||infrastructure.stores.length?{infrastructure}:{}),placement,approvals:JSON.parse(JSON.stringify(manifest.permissions)),storageMappings,installationContext:{context:'FrontEnd',publisher:'operator',app,self:parent,capabilities:['object.instances.edit'],visible:objectGrants,editable:objectGrants}};
 }
 
 export async function runInstaller({args=process.argv.slice(2),input=stdin,output=stdout,ask}={}) {

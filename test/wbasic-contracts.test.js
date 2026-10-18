@@ -1,3 +1,4 @@
+import {clientContext} from '../test-support/client-context.js';
 import {prepareHandlers as prepareClientHandlers} from '../wydgine/events/index.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -5,7 +6,7 @@ import {compile,compileModule} from '../wydgine/wydbasic/index.js';
 import {execute} from '../wydgine/sewn/execute.js';
 import {validate} from '../wydgine/sewn/validate.js';
 import {ExecutionContext} from '../wydgine/object-model/index.js';
-const context=new ExecutionContext({publisher:'acme',self:'home'});
+const context=new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'home'});
 const run=async(source,scope={})=>(await execute(compile(source),{context,scope})).value;
 test('concrete inspection and descriptor equality',async()=>{
  for(const [v,t] of [['"Hello"','String'],['42','Integer'],['42.0','Integer'],['42.5','Float'],['9007199254740992','Float'],['TRUE','Boolean'],['NULL','Null'],['[]','Array'],['{}','Object'],['Integer','DataType']])assert.equal((await run(`RETURN TypeOf(${v})`)).type,t);
@@ -40,14 +41,14 @@ test('selection, closed schemas, forged values and budgets',async()=>{
  assert.throws(()=>validate({...p,body:[{op:'return',value:{op:'typeLiteral',type:'Host'}}]}));
  await assert.rejects(run('DIM x AS DataType=SESSION.x',{SESSION:{x:{type:'DataType',value:'Integer'}}}),{code:'SEWN.TYPE'});
  assert.throws(()=>compile('RETURN Integer IS Float'));
- await assert.rejects(execute(p,{scope:{},context:new ExecutionContext({publisher:'acme',self:'home',limits:{sewnSteps:1}})}),{code:'SEWN.LIMIT'});
+ await assert.rejects(execute(p,{scope:{},context:new ExecutionContext({context:'FrontEnd',publisher:'acme',self:'home',limits:{sewnSteps:1}})}),{code:'SEWN.LIMIT'});
 });
 
 test('WydClient executes the same datetime and inspection operations',async()=>{
  const {mountClient}=await import('../wydclient/index.js');
  class Element extends EventTarget {}
  const element=new Element();
- const client=mountClient({nodes:[{id:'home',kind:'field',element,value:'old'}],context,handlers:prepareClientHandlers([{owner:'home',type:'Change',wydBasic:'DIM d AS DateTime=DateTime("1970-01-01T00:00:00.000Z")\nIF TypeOf(d)=DateTime THEN\nEVENT.Cancel()\nEND IF'}])});
+ const client=mountClient({nodes:[{id:'home',kind:'field',element,value:'old'}],context:clientContext(context),handlers:prepareClientHandlers([{owner:'home',type:'Change',wydBasic:'DIM d AS DateTime=DateTime("1970-01-01T00:00:00.000Z")\nIF TypeOf(d)=DateTime THEN\nEVENT.Cancel()\nEND IF'}])});
  await client.ready;element.value='new';element.dispatchEvent(new Event('change'));await client.idle();assert.equal(element.value,'old');assert.equal(client.error(),null);await client.unmount();
 });
 
