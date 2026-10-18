@@ -216,7 +216,7 @@ export function inspectPackageEffects(root) {
 export async function rollbackPackageEffects({root,installationContext,budget:token,atStage}) {
   root=path.resolve(root);const record=inspectPackageEffects(root),checkpoint=await loadCheckpoint(root,record);
   authorizeLifecycle(installationContext,checkpoint.app);
-  check(record.status==='COMPLETED'&&['update','upgrade'].includes(checkpoint.action)&&checkpoint.stateBefore!==null,'PACKAGE.ROLLBACK_UNSUPPORTED','Only a completed checkpointed update or upgrade can be rolled back');
+  check(record.status==='COMPLETED'&&['update','upgrade','manual-migrate'].includes(checkpoint.action)&&checkpoint.stateBefore!==null,'PACKAGE.ROLLBACK_UNSUPPORTED','Only a completed checkpointed update, upgrade or manual migration can be rolled back');
   check(await read(path.join(root,LOCK),4096)===null&&await read(path.join(root,RECOVERY),4096)===null,'PACKAGE.BUSY','Lifecycle recovery must finish first');
   check(await read(path.join(root,'wydgit.config.json'))===checkpoint.configAfter&&await read(path.join(root,STATE))===checkpoint.stateAfter,'PACKAGE.STALE','Committed state changed; rollback would replace newer configuration or content');
   const state=JSON.parse(checkpoint.stateBefore);state.revision=JSON.parse(checkpoint.stateAfter).revision+1;

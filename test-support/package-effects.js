@@ -31,7 +31,7 @@ export async function provisionFixture(t,provider) {
     infrastructure:{enableWydstore:true,stores:[{id:'new-book',provider,location:'.wydgit-data/book',collections:[{id:'entries',fields:f.manifest.storage[0].fields}]}]}};
   return {...f,context,policy,options:{root:f.root,packagePath:f.packagePath,manifest:f.manifest,policy,installationContext:context}};
 }
-export async function storedFixture(t,provider,{extraCollection=false}={}) {
+export async function storedFixture(t,provider,{extraCollection=false,multiple=false}={}) {
   const f=await lifecycleFixture(t),candidate=await f.candidate('a');
   const fields={text:{type:'string',required:true}};
   const schema={name:'entries',schemaId:'entries',schemaVersion:1,fields};
@@ -42,6 +42,16 @@ export async function storedFixture(t,provider,{extraCollection=false}={}) {
     await writeJson(path.join(candidate.packagePath,'manifest.json'),manifest);
     if(renamedInstance)await writeJson(path.join(candidate.packagePath,'prototypes.json'),[{id:'acme/a',publisher:'acme',extends:'wydgit.core/section',properties:{setting2:{type:'string',default:'new default'}},slots:{}}]);
     return {...candidate,approvals:permissions,storageMappings:{entries:{store:'store-a',collection:'records'}}};
+  }
+  if(multiple){
+    const definitions=JSON.parse(await fs.readFile(path.join(candidate.packagePath,'prototypes.json'),'utf8'));
+    definitions.push({id:'acme/item',publisher:'acme',extends:'wydgit.core/block',properties:{note:{type:'string',default:'initial'}},slots:{}});
+    await writeJson(path.join(candidate.packagePath,'prototypes.json'),definitions);
+    const template=JSON.parse(await fs.readFile(path.join(candidate.packagePath,'section.json'),'utf8'));
+    template.slots.blocks.push({schema:'wydgit/0.2',id:'pkg-item',prototype:'acme/item',properties:{note:'Owner item',content:{type:'markdown',value:'Item content'}},slots:{},provenance:{}});
+    template.slots.blocks.push({...template.slots.blocks[0],id:'pkg-item2'});
+    await writeJson(path.join(candidate.packagePath,'section.json'),template);
+    permissions.visible.push('pkg-item','pkg-item2');
   }
   const initial=await version();
   const store={id:'store-a',app:'boilerplate',publisher:'acme',package:'acme/a',provider,root:path.join(f.root,'data'),collections:[{id:'records',schemaId:'entries',schemaVersion:1,fields},...(extraCollection?[{id:'foreign',fields:{text:{type:'string'}}}]:[])]};

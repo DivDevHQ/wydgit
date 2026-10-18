@@ -31,10 +31,11 @@ export function packageGraph(packages) {
   return {nodes,reverse,order};
 }
 export const protectedPackage=entry=>entry.protected===true||entry.manifest.publisher==='wydgit.core';
-export function removalOrder(packages,id,{prune=true}={}) {
+export function removalOrder(packages,id,{prune=true,reserved=[]}={}) {
   check(qualified(id),'PACKAGE.IDENTITY','Invalid package identity');
   const graph=packageGraph(packages),entry=graph.nodes.get(id);
   check(entry,'PACKAGE.NOT_INSTALLED','Package is not installed');
+  check(!reserved.includes(id),'PACKAGE.RESERVED','A replacement recovery reservation retains this dependency');
   check(!protectedPackage(entry),'PACKAGE.PROTECTED','Protected package cannot be removed');
   check(graph.reverse.get(id).length===0,'PACKAGE.DEPENDENTS','Installed packages require this package');
   const remaining=new Map(graph.nodes),removed=[id];remaining.delete(id);
@@ -42,7 +43,7 @@ export function removalOrder(packages,id,{prune=true}={}) {
   const eligible=new Set(),visit=[id];
   while(visit.length)for(const dep of Object.keys(graph.nodes.get(visit.pop()).manifest.dependencies??{}))if(!eligible.has(dep)){eligible.add(dep);visit.push(dep);}
   if(prune)for(const dep of [...graph.order].reverse()){
-    const candidate=remaining.get(dep);if(!eligible.has(dep)||!candidate||candidate.reason!=='automatic'||protectedPackage(candidate))continue;
+    const candidate=remaining.get(dep);if(!eligible.has(dep)||!candidate||candidate.reason!=='automatic'||protectedPackage(candidate)||reserved.includes(dep))continue;
     if([...remaining.values()].some(p=>Object.hasOwn(p.manifest.dependencies??{},dep)))continue;
     remaining.delete(dep);removed.push(dep);
   }

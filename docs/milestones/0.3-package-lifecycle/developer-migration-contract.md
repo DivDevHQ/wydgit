@@ -1,5 +1,9 @@
 # Developer migration declaration contract, increment 1
 
+Historical increment contract. The [manual replacement successor](manual-replacement-contract.md)
+adds durable retirement/staging and separately versioned prototype adoption while
+preserving the version 1 declaration behavior below.
+
 This is the bounded successor contract for the declaration/execution portion of
 [the authoritative plan](developer-defined-migrations.md). It does not implement
 retirement, durable replacement staging, reference adoption or qualify MIG-01

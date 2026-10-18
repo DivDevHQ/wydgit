@@ -42,7 +42,7 @@ export function readInstalledState(root) {
 }
 export function validateInstalledState(root,state) {
   try {
-  check(record(state)&&state.schema==='wydgit-installed/0.1'&&Array.isArray(state.packages)&&state.packages.length<=LIMITS.packages&&state.packages.every(p=>record(p)&&record(p.manifest))&&Number.isSafeInteger(state.revision)&&state.revision>0,'PACKAGE.CATALOG','Invalid installed state');
+  check(record(state)&&['wydgit-installed/0.1','wydgit-installed/0.2'].includes(state.schema)&&Array.isArray(state.packages)&&state.packages.length<=LIMITS.packages&&state.packages.every(p=>record(p)&&record(p.manifest))&&Number.isSafeInteger(state.revision)&&state.revision>0,'PACKAGE.CATALOG','Invalid installed state');
   check(state.baseFingerprint===baseFingerprint(root),'PACKAGE.DRIFT','Base repository changed after installation; reconcile accepted state explicitly');
   check(new Set(state.packages.map(p=>p.manifest.id)).size===state.packages.length,'PACKAGE.CATALOG','Duplicate installed package');
   check(typeof state.app==='string','PACKAGE.CATALOG','Missing accepted App');
@@ -81,6 +81,28 @@ export function validateInstalledState(root,state) {
     check(!(m.staticLibraries||m.interfaces)||entry.compiledSources&&Object.keys(entry.compiledSources).length===Object.keys(m.resources.sources).length&&Object.keys(m.resources.sources).every(id=>Object.hasOwn(entry.compiledSources,id)),'PACKAGE.CATALOG','Missing pinned static-library compilation');
     const definitions=JSON.parse(entry.resources[m.resources.prototypes]);
     check(Array.isArray(definitions)&&definitions.length<=LIMITS.prototypes&&definitions.every(d=>d.publisher===m.publisher&&d.id?.startsWith(m.publisher+'/')),'PACKAGE.CATALOG','Invalid catalog prototypes');
+  }
+  check(state.schema==='wydgit-installed/0.2'||state.manualReplacement===undefined&&state.replacementHistory===undefined,'PACKAGE.CATALOG','Manual lifecycle requires catalog version 0.2');
+  if(state.manualReplacement!==undefined) {
+    const m=state.manualReplacement,source=state.packages.find(p=>p.manifest.id===m.package),sha=v=>typeof v==='string'&&/^[a-f0-9]{64}$/.test(v);
+    check(record(m)&&m.schema==='wydgit.manual-replacement/1'&&typeof m.id==='string'&&source?.receipt.id===m.sourceReceipt&&sha(m.sourceCatalog)&&m.sourceApp===digest(state.app)&&['RETIRED','STAGED','REFERENCES_PREPARED'].includes(m.status),'PACKAGE.CATALOG','Invalid pending manual replacement');
+    if(m.preview!==undefined){
+      const p=m.preview;
+      check(m.previewHash===digest(JSON.stringify(clean(p))),'PACKAGE.CATALOG','Manual replacement preview integrity differs');
+      check(record(p)&&Array.isArray(p.artifacts)&&p.artifacts.length>0&&p.artifacts.length<=32&&p.artifacts.every(a=>record(a)&&a.manifest?.id===m.package&&a.manifest?.publisher===source.manifest.publisher&&a.sha256===digest(JSON.stringify(clean({manifest:a.manifest,resources:a.resources}))))&&p.artifacts.some(a=>a.sha256===p.candidate)&&record(p.developerRequest)&&p.request===digest(JSON.stringify(clean(p.developerRequest))),'PACKAGE.CATALOG','Staged artifacts or developer request differ from preview');
+      for(const a of p.artifacts)validatePackageManifest(a.manifest);
+    }
+    check(Object.keys(m).every(k=>['schema','id','package','sourceReceipt','sourceCatalog','sourceApp','status','preview','previewHash'].includes(k)),'PACKAGE.CATALOG','Unknown pending replacement field');
+    check(m.status==='RETIRED'?m.preview===undefined:record(m.preview)&&m.preview.schema==='wydgit.manual-replacement-preview/1'&&['candidate','request','approvals','targetApp'].every(k=>sha(m.preview[k]))&&Array.isArray(m.preview.resources)&&Array.isArray(m.preview.references)&&m.preview.references.length===source.instanceIds.length&&m.preview.references.every((r,i)=>r.id===source.instanceIds[i]&&typeof r.fromPrototype==='string'&&typeof r.toPrototype==='string')&&record(m.preview.lineage),'PACKAGE.CATALOG','Invalid staged replacement');
+  }
+  check(state.replacementHistory===undefined||Array.isArray(state.replacementHistory)&&state.replacementHistory.length<=32&&state.replacementHistory.every(h=>record(h)&&h.schema==='wydgit.manual-replacement/1'&&h.status==='ACTIVATED'&&h.sourceInstallation?.id===h.sourceReceipt&&typeof h.targetReceipt==='string'),'PACKAGE.CATALOG','Invalid replacement history');
+  for(const h of state.replacementHistory??[]) {
+    check(h.sourceInstallationHash===digest(JSON.stringify(clean(h.sourceInstallation)))&&h.previewHash===digest(JSON.stringify(clean(h.preview))),'PACKAGE.CATALOG','Replacement lineage integrity differs');
+    check(Array.isArray(h.reservations)&&h.reservations.length<=LIMITS.packages,'PACKAGE.CATALOG','Missing replacement dependency reservations');
+    for(const reservation of h.reservations){
+      const entry=state.packages.find(p=>p.manifest.id===reservation.package);
+      check(entry&&entry.receipt.id===reservation.receipt&&reservation.artifact===digest(JSON.stringify(clean({manifest:entry.manifest,resources:entry.resources}))),'PACKAGE.RESERVED','Replacement recovery dependency reservation changed');
+    }
   }
   packageGraph(state.packages);
   return state;

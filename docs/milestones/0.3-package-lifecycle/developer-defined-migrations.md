@@ -1,6 +1,6 @@
 # Developer-defined package and instance migrations
 
-**Status:** Agreed direction; planning only, not an implemented API or beta-readiness claim.
+**Status:** Original agreed plan. The [manual replacement contract](manual-replacement-contract.md) now implements its bounded stopped-App workflow; automatic orchestration and full beta qualification remain open.
 
 **Recorded:** 2026-10-18, for `develop/0.3`.
 

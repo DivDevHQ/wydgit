@@ -1,0 +1,115 @@
+{
+  "schema": "wydgit.manual-replacement-evidence/1",
+  "date": "2026-10-18",
+  "branch": "develop/0.3",
+  "sourceCommits": [
+    "3f801a3",
+    "659e29e"
+  ],
+  "node": "v24.21.0",
+  "qualification": "bounded stopped-App manual workflow; broader MIG/beta gates remain partial",
+  "protocols": {
+    "manualRequest": "wydgit.manual-replacement-request/1",
+    "manualPlan": "wydgit.manual-replacement-plan/1",
+    "inspection": "wydgit.manual-replacement-inspection/1",
+    "pending": "wydgit.manual-replacement/1",
+    "catalog": "wydgit-installed/0.2",
+    "developerDeclaration": "wydgit.developer-migrations/2"
+  },
+  "runtimeVersions": {
+    "wydgine": "0.3.0-alpha.15",
+    "wydclient": "0.1.0-alpha.9",
+    "wydstore": "0.1.0-alpha.3"
+  },
+  "newTests": {
+    "total": 128,
+    "json": 64,
+    "sqlite": 64,
+    "crashCases": 52,
+    "sigkillProcesses": 54
+  },
+  "results": [
+    {
+      "name": "full",
+      "command": "npm test",
+      "result": "passed",
+      "tests": 1327,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "logSha256": "b6d924a9496b019966c87c9dcc15229def5a3818eed6cf3ad7092730f12d560c"
+    },
+    {
+      "name": "focused",
+      "command": "node --test --test-reporter=tap test/manual-replacements.test.js test/developer-migrations.test.js test/packages.test.js test/package-lifecycle.test.js test/package-infrastructure.test.js test/package-provisioning-recovery.test.js test/package-migrations.test.js test/package-physical-purge.test.js test/package-effects-adversarial.test.js test/package-boundaries.test.js test/sewn-shared-budget.test.js",
+      "result": "passed",
+      "tests": 417,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "logSha256": "7507e5c69be0685f6c504b9460171f42a634595aa7a8e8fcee598312392cdf33"
+    },
+    {
+      "name": "content",
+      "command": "npm run check",
+      "result": "passed",
+      "tests": null,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "logSha256": "4e437bb4ebff45ddb9678e543f256b37dfaa0f4bca6969731a24c5ab84a7d1cd"
+    }
+  ],
+  "demonstration": {
+    "package": "acme/a",
+    "sources": [
+      "1.0.0",
+      "1.1.0"
+    ],
+    "target": "2.0.0",
+    "managedInstances": [
+      "pkg-a",
+      "pkg-item",
+      "pkg-item2"
+    ],
+    "authoredChild": "pkg-site-content",
+    "prototypeTransition": {
+      "from": "acme/a",
+      "to": "acme/replacement",
+      "instance": "pkg-a"
+    },
+    "property": "Site owner choice",
+    "recordHistoryVersions": [
+      1,
+      2,
+      3
+    ],
+    "tombstonePreserved": true,
+    "singleAndTwoStores": true
+  },
+  "failureBoundaries": [
+    "all five manual phases: PLANNED and CATALOG",
+    "each private adjacent migration step",
+    "RESOURCE_0",
+    "RESOURCE_1",
+    "CONFIG",
+    "CATALOG",
+    "COMPENSATING_RESOURCE_0",
+    "interrupted recovery CONFIG",
+    "UNLOCKED",
+    "native JSON replacement",
+    "native SQLite replacement transaction",
+    "native config/catalog rename before journal acknowledgement",
+    "store barrier unlink during cleanup",
+    "tampered private checkpoint"
+  ],
+  "remaining": [
+    "automatic orchestration and full MIG-07 equivalence",
+    "source dependency reservation release",
+    "destructive abandonment/checkpoint expiry/secure erasure",
+    "compiled artifacts, changed footprints, ownership/provider/installation-bound transitions",
+    "live/distributed writers and hardware/power-loss/network-filesystem qualification",
+    "historical intermittent HTTP SEWN.LIMIT reliability blocker",
+    "WydHosting qualification deferred to 0.4 under Decision 0003"
+  ]
+}

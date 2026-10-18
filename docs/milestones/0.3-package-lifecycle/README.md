@@ -100,3 +100,14 @@ not waive the unsupported/ambiguous cases above. Complex local 0.3 package work 
 exercise these bounded paths on disposable stopped Apps; full production lifecycle
 and complex production-site readiness are not declared. I/J assignments and the
 approved 0.4 managed-hosting deferral remain unchanged.
+
+
+## Manual replacement successor
+
+The [implemented manual contract](manual-replacement-contract.md) adds retire in
+place, durable staging, explicit fixed-ID reference preparation, approved data
+migration/activation and source-preserving cancellation. The
+[qualification record](manual-replacement-qualification-2026-10-18.md) distinguishes
+bounded JSON/SQLite evidence from outstanding beta gates. Automatic orchestration,
+reservation release, the HTTP reliability blocker and WydHosting 0.4 qualification
+remain separate work.

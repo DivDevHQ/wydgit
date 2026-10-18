@@ -369,3 +369,26 @@ infrastructure journals, hot lifecycle or distributed writers. Power loss, netwo
 filesystems and storage hardware remain unqualified. Historical HTTP reliability
 is still a release blocker. Managed WydHosting qualification remains deferred to
 0.4 under Decision 0003; none of its six obligations is waived or expanded here.
+
+
+## Manual retirement and replacement
+
+The trusted [manual replacement contract](milestones/0.3-package-lifecycle/manual-replacement-contract.md)
+implements the stopped-App sequence: retire in place, stage the exact replacement,
+explicitly prepare fixed-ID references, migrate/validate privately, and publish
+through the existing recoverable effects protocol. `planManualReplacement`,
+`manualReplacement` and `inspectManualReplacement` are host-only engine exports;
+no administration GUI or automatic orchestration is added. Pending state keeps the
+whole App unavailable and reserves source packages/data/dependencies. Unselected
+references remain parked. Cancellation revalidates and reactivates the unchanged
+source; committed rollback returns to a quarantined source and refuses newer data.
+
+Catalog `wydgit-installed/0.2` prevents older engines from ignoring pending
+replacement state or accepted recovery reservations. Version 0.1 catalogs remain
+readable. The separate `wydgit.developer-migrations/2` declaration admits exact
+one-to-one prototype transitions only through manual reference preparation. The
+original declaration/host migration APIs and safety ceilings remain intact.
+Source dependencies stay pinned after activation until a reviewed release-of-
+reservation cleanup contract exists. Missing dependencies must be provisioned
+before retirement. See [qualification evidence](milestones/0.3-package-lifecycle/manual-replacement-qualification-2026-10-18.md)
+for the supported JSON/SQLite workflow and remaining MIG/release boundaries.

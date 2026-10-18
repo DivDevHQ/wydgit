@@ -59,7 +59,7 @@ function capabilities(step) {
 
 export function validateDeveloperMigrationDeclaration(input) {
   const d=boundedJson(input);fields(d,['schema','package','supportedSources','limits','steps'],code);
-  check(d.schema==='wydgit.developer-migrations/1'&&qualified(d.package),code,'Unsupported developer migration declaration');
+  check(['wydgit.developer-migrations/1','wydgit.developer-migrations/2'].includes(d.schema)&&qualified(d.package),code,'Unsupported developer migration declaration');
   fields(d.limits,Object.keys(ceilings),code);
   for(const [key,max] of Object.entries(ceilings))check(Number.isSafeInteger(d.limits[key])&&d.limits[key]>0&&d.limits[key]<=max,'PACKAGE.LIMIT','Invalid developer migration bound');
   check(Array.isArray(d.supportedSources)&&d.supportedSources.length>0&&d.supportedSources.length<=32&&d.supportedSources.every(version)&&new Set(d.supportedSources).size===d.supportedSources.length,code,'Invalid exact source support set');
@@ -84,7 +84,7 @@ export function validateDeveloperMigrationDeclaration(input) {
     }
     for(const change of step.logic.instances){
       fields(change,['id','fromPrototype','toPrototype','properties'],code);
-      check(validId(change.id)&&!instances.has(change.id)&&qualified(change.fromPrototype)&&change.fromPrototype===change.toPrototype,code,'Developer increment supports fixed-ID property changes only');instances.add(change.id);operations(change.properties);
+      check(validId(change.id)&&!instances.has(change.id)&&qualified(change.fromPrototype)&&qualified(change.toPrototype)&&(d.schema==='wydgit.developer-migrations/2'||change.fromPrototype===change.toPrototype),code,'Invalid fixed-ID instance transition for declaration version');instances.add(change.id);operations(change.properties);
     }
     validators(step.validators);
     check(sha(step.logicHash)&&step.logicHash===hash(step.logic)&&sha(step.validatorsHash)&&step.validatorsHash===hash(step.validators),'PACKAGE.DRIFT','Migration logic or validator hash differs');
@@ -104,10 +104,11 @@ function counter(limits,meter) {
 }
 
 // Host-only admission: approvals are exact per-step and cannot be unioned.
-export function prepareDeveloperMigration(input,{prior,candidate,loadArtifact,context,meter}) {
+export function prepareDeveloperMigration(input,{prior,candidate,loadArtifact,context,meter,allowPrototypeTransitions=false}) {
   const request=boundedJson(input);fields(request,['schema','declaration','path','approvals','artifacts'],code);
   check(request.schema==='wydgit.developer-migration-request/1',code,'Unsupported developer migration request');
   const declaration=validateDeveloperMigrationDeclaration(request.declaration);
+  check(declaration.schema!=='wydgit.developer-migrations/2'||allowPrototypeTransitions,code,'Prototype transitions require the manual reference preparation contract');
   check(declaration.package===prior.manifest.id&&declaration.package===candidate.manifest.id,'PACKAGE.OWNERSHIP','Developer declaration must match the installed primary package');
   const byId=new Map(declaration.steps.map(step=>[step.id,step]));
   for(const step of declaration.steps)for(const lineage of prior.migrationLineage??[])for(const observed of lineage.steps)check(observed.id!==step.id||observed.sha256===hash(step),'PACKAGE.DRIFT','Migration step identity changed after acceptance');

@@ -2,11 +2,17 @@ import fs from 'node:fs/promises';
 import {syncBuiltinESMExports} from 'node:module';
 import { ExecutionContext } from '../wydgine/seam/context.js';
 import { planOperatorInstall, applyOperatorInstall } from '../scripts/package-infrastructure.js';
-import { planPackageOperation, applyPackageOperation, recoverPackageEffects } from '../wydgine/packages/index.js';
+import { planPackageOperation, planManualReplacement, applyPackageOperation, recoverPackageEffects } from '../wydgine/packages/index.js';
 const request=JSON.parse(await fs.readFile(process.argv[2],'utf8'));
 if(request.nativeBoundary){
   const pause=()=>{process.send({stage:request.pauseAt});Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0);};
-  if(request.nativeBoundary==='sqlite-schema'){
+  if(request.nativeBoundary==='store-unlock'){
+    const original=fs.unlink;
+    fs.unlink=async function(file){const result=await original.call(this,file);if(String(file).endsWith('.lifecycle'))pause();return result;};
+  }else if(['catalog-rename','config-rename'].includes(request.nativeBoundary)){
+    const original=fs.rename,target=request.nativeBoundary==='catalog-rename'?'installed-packages.json':'wydgit.config.json';
+    fs.rename=async function(from,to){const result=await original.call(this,from,to);if(String(to).endsWith('/'+target))pause();return result;};
+  }else if(request.nativeBoundary==='sqlite-schema'){
     const {default:Database}=await import('better-sqlite3'),original=Database.prototype.exec;
     Database.prototype.exec=function(sql){const value=original.call(this,sql);if(sql.startsWith('CREATE TABLE metadata'))pause();return value;};
   }else if(request.nativeBoundary==='sqlite-replace'){
@@ -29,7 +35,8 @@ try{
   if(request.kind==='provision'){
     const options={...request.options,installationContext:new ExecutionContext(request.options.installationContext)};
     await applyOperatorInstall(await planOperatorInstall(options),{atStage});
-  }else if(request.kind==='recover')await recoverPackageEffects({...request.options,installationContext:new ExecutionContext(request.options.installationContext),atStage});
+  }else if(request.kind==='manual')await applyPackageOperation(await planManualReplacement({...request.options,installationContext:new ExecutionContext(request.options.installationContext)},{atStage}),{atStage});
+  else if(request.kind==='recover')await recoverPackageEffects({...request.options,installationContext:new ExecutionContext(request.options.installationContext),atStage});
   else await applyPackageOperation(await planPackageOperation({...request.options,installationContext:new ExecutionContext(request.options.installationContext)}),{atStage});
 }catch(error){process.stderr.write(error.code+': '+error.message+'\n');process.exitCode=1;}
 finally{clearInterval(keepalive);}

@@ -11,8 +11,8 @@ export const sealStep=step=>{
 export const approveRequest=request=>{
   request.approvals=request.path.map(id=>{const step=request.declaration.steps.find(s=>s.id===id);return {step:id,sha256:migrationContentHash(step),capabilities:step.requiredCapabilities};});return request;
 };
-export async function developerFixture(t,provider,{chain=false}={}) {
-  const f=await storedFixture(t,provider),source=readInstalledState(f.root).packages[0];
+export async function developerFixture(t,provider,{chain=false,multiple=false}={}) {
+  const f=await storedFixture(t,provider,{multiple}),source=readInstalledState(f.root).packages[0];
   const endpoint=entry=>({version:entry.manifest.version,artifact:migrationContentHash({manifest:entry.manifest,resources:entry.resources})});
   const inspect=packagePath=>{const {version,artifact}=inspectPackageMigrationArtifact(packagePath);return {version,artifact};};
   const firstFields={text:{type:'string',required:true},label:{type:'string',default:'Imported'}};

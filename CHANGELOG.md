@@ -1,5 +1,16 @@
 ## Unreleased
 
+- Add host-only stopped-App manual replacement: retire instances in place,
+  checkpoint exact staged artifacts/previews, explicitly prepare one-to-one
+  references, then validate and publish approved developer data migrations through
+  existing JSON/SQLite recovery barriers. Preserve IDs, customization, authored
+  children, full history and source receipt/dependency reservations. Add safe
+  source-reactivating cancellation and checked manual rollback. Catalog 0.2 and
+  declaration version 2 keep older runtimes and ordinary upgrades from bypassing
+  pending prototype adoption. Automatic orchestration, reservation-release cleanup,
+  full beta qualification and the separate HTTP reliability blocker remain open;
+  runtime versions, safety ceilings and WydHosting's 0.4 deferral are unchanged.
+
 - Add a separate bounded developer migration declaration/request contract for
   installed-package updates/upgrades: exact artifact and per-step hash approvals,
   explicit adjacent/direct paths, scoped lossless transforms and semantic

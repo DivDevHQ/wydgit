@@ -17,7 +17,9 @@ export function compileDefinitions(definitions,options={}) {
   return definitions.map(({behaviorSource,...definition})=>{check(behaviorSource===undefined||definition.behavior===undefined,'PROTOTYPE.METHOD','Choose source or canonical behavior');if(definition.interface===true&&behaviorSource!==undefined)return declaration({behaviorSource,...definition});return {...definition,...(behaviorSource===undefined?{}:{behavior:compilePrototype(behaviorSource,{...options,prototypeRegistry,dependencies:definition.dependencies??options.dependencies,static:definition.static===true})})};});
 }
 export function loadRepository(root, { verifiedPackages = {} } = {}) {
-  return repositoryFromState(root,readInstalledState(root),{verifiedPackages});
+  const state=readInstalledState(root);
+  check(!state?.manualReplacement,'PACKAGE.PENDING','Manual replacement keeps the App unavailable');
+  return repositoryFromState(root,state,{verifiedPackages});
 }
 // Trusted lifecycle planning only: build a candidate without publishing it.
 export function repositoryFromState(root, installed, { verifiedPackages = {} } = {}) {
