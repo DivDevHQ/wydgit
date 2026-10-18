@@ -344,3 +344,10 @@ test('competing installs and uninstalls of a shared dependency reconcile without
  await applyPackageOperation(removeA);assert.deepEqual(packages(f),['acme/b','acme/c']);await assert.rejects(applyPackageOperation(removeB),{code:'PACKAGE.STALE'});
  await packageOperation(f.operation('uninstall','acme/b'));assert.deepEqual(packages(f),[]);assert.equal(state(f).retained.length,3);
 });
+
+test('dependency ranges retain standard semver prerelease exclusion unless explicitly requested',async t=>{
+ const f=await lifecycleFixture(t),b=await f.candidate('b',{version:'1.1.0-alpha.2'}),a=await f.candidate('a',{dependencies:{'acme/b':'^1'}});
+ await assert.rejects(packageOperation(f.operation('install','acme/a',[a,b])),{code:'PACKAGE.CONFLICT'});assert.equal(state(f),null);
+ await rewriteManifest(a,m=>m.dependencies={'acme/b':'^1.1.0-alpha.1'});await packageOperation(f.operation('install','acme/a',[a,b]));
+ assert.equal(state(f).packages.find(p=>p.manifest.id==='acme/b').manifest.version,'1.1.0-alpha.2');packageGraph(state(f).packages);
+});

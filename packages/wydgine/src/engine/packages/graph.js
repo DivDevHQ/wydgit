@@ -16,7 +16,7 @@ export function packageGraph(packages) {
   for(const entry of packages)for(const [id,range] of Object.entries(entry.manifest.dependencies??{})){
     const dependency=nodes.get(id);
     check(dependency,'PACKAGE.DEPENDENCY','Required package is missing');
-    check(semver.satisfies(dependency.manifest.version,range,{includePrerelease:true}),'PACKAGE.CONFLICT','Incompatible package dependency');
+    check(semver.satisfies(dependency.manifest.version,range),'PACKAGE.CONFLICT','Incompatible package dependency');
     reverse.get(id).push(entry.manifest.id);
   }
   // Iterative DFS bounds stack use even at the installed-package ceiling.

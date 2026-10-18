@@ -302,8 +302,8 @@ export async function planPackageOperation({root,action,package:id,candidates=[]
       visiting.add(packageId);selected.set(packageId,item);
       for(const [dependency,range] of Object.entries(item.candidate.manifest.dependencies??{})){
         const existing=state.packages.find(p=>p.manifest.id===dependency);
-        if(existing&&semver.satisfies(existing.manifest.version,range,{includePrerelease:true}))continue;
-        const candidate=inventory.get(dependency);check(candidate&&semver.satisfies(candidate.candidate.manifest.version,range,{includePrerelease:true}),'PACKAGE.CONFLICT','Missing or incompatible approved dependency');resolve(dependency);
+        if(existing&&semver.satisfies(existing.manifest.version,range))continue;
+        const candidate=inventory.get(dependency);check(candidate&&semver.satisfies(candidate.candidate.manifest.version,range),'PACKAGE.CONFLICT','Missing or incompatible approved dependency');resolve(dependency);
       }
       visiting.delete(packageId);ordered.push(packageId);
     };
@@ -320,7 +320,7 @@ export async function planPackageOperation({root,action,package:id,candidates=[]
       }
       if(old&&packageId===id&&!sameVersion)check(action!=='install','PACKAGE.ALREADY_INSTALLED','Use update or upgrade for an installed package');
       if(prior){
-        const major=!semver.satisfies(candidate.manifest.version,'^'+prior.manifest.version,{includePrerelease:true});
+        const major=!semver.satisfies(candidate.manifest.version,'^'+prior.manifest.version);
         check(sameVersion||semver.gt(candidate.manifest.version,prior.manifest.version)||retained&&candidate.manifest.version===prior.manifest.version,'PACKAGE.VERSION','Downgrades are unsupported');
         check(!major||action==='upgrade','PACKAGE.UPGRADE_REQUIRED','Major version change requires an explicit upgrade');
         check(equal(prior.manifest.storage,candidate.manifest.storage),'PACKAGE.MIGRATION_REQUIRED','Storage schema changes require a qualified migration contract');

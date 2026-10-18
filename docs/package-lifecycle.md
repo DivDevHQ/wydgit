@@ -51,7 +51,9 @@ hot-upgrade/drain orchestration or distributed writer lease in this API.
 ## Graph and installation reasons
 
 The closed server manifest accepts optional `dependencies`, a map of complete
-publisher-qualified package IDs to semver ranges. This is separate from
+publisher-qualified package IDs to standard semver ranges. Prerelease versions
+require an explicit matching prerelease series in the range; a stable range such
+as `^1` does not silently admit them. This is separate from
 `requires.libraries`, pinned static build libraries and pinned interfaces. Application dependencies are rejected for CLIENT authoring. Optional
 package dependencies, multiple installed versions, dependency aliases and registry
 selection are unsupported. Runtime libraries must already be host-enabled; their
