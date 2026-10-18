@@ -1,5 +1,10 @@
 # Native local packages — 0.2-P
 
+The [trusted package lifecycle](package-lifecycle.md) extends this installer with
+application dependency graphs, conservative updates, retained uninstall/reinstall
+and catalog recovery. Its qualification limitations supersede the historical
+install-only exclusions below.
+
 > I0 permits the same package to be installed independently in separate Apps, each
 > with its own catalog, receipts, approval and resource bindings. The one-package-
 > principal-per-Page rule remains. Installation/recovery changes require an App restart.
@@ -25,7 +30,8 @@ installation per package ID are supported. Placement belongs to the operator.
 Resource paths are relative, nonhidden and bounded; traversal, absolute paths,
 symlink resources/roots and JavaScript resources are rejected. Unlisted files are
 never loaded. Local package paths are explicitly supplied by trusted operator code;
-there is no package directory scan or automatic dependency installation.
+there is no package directory scan. The lifecycle API can install dependencies
+from an explicit host-approved candidate inventory.
 
 `requires` is the existing `wydgit.requirements/0.1` library envelope. Libraries must
 already be installed; trusted operator policy may approve enabling canonical
@@ -103,7 +109,8 @@ changes only under separately approved infrastructure policy.
 Receipts use `wydgit-install-receipt/0.1`: receipt ID, UTC installation time, revision,
 package identity/version, resource hashes, placement/IDs, libraries, approved grants,
 storage mappings, bindings and preceding state fingerprint. These establish durable
-upgrade/uninstall/drift/troubleshooting evidence; those operations are not implemented.
+upgrade/uninstall/drift/troubleshooting evidence. The conservative lifecycle
+operations are described in [the lifecycle contract](package-lifecycle.md).
 
 Core and all cataloged package definitions compile into one candidate
 PrototypeRegistry. Its existing duplicate, inheritance, public/private publisher,
@@ -116,8 +123,10 @@ Handled failure removes temporary files and retains the prior accepted state.
 A crash before rename leaves the old state; after rename the complete new state is
 accepted. A leftover lock blocks startup with `PACKAGE.RECOVERY`; concurrent apply fails with
 `PACKAGE.BUSY`. A stale lock after a crash needs operator inspection/removal once no writer
-remains. This targets a private local filesystem, not distributed writers. File
-fsync plus rename does not promise directory-entry survival through power loss.
+remains. This targets a private local filesystem, not distributed writers.
+Catalog-only publication now also fsyncs the content directory and records
+a recoverable journal; see the lifecycle contract. Power-loss qualification depends
+on the actual filesystem and hardware and has not been performed.
 
 Once installed, the catalog App snapshot is authoritative. Changes to base content,
 core definitions, host config, requirements or skins fail with `PACKAGE.DRIFT`;
@@ -167,9 +176,11 @@ Guestbook is server-authoritative and browser-POST-driven in the default web hos
 Automatic conversion of this server Guestbook into a client application is not
 implemented. The independent [WydClient loader](wydclient.md) now supports bootstrap
 and signed browser packages; those contracts do not add signatures or remote
-installation to this local server installer. Marketplace/discovery, uninstall,
-upgrade, migrations, remote provider provisioning, automatic ID rewriting and
-multiple instances/principals remain outside the local installer profile.
+installation to this local server installer. Marketplace/discovery, schema/data
+migrations, remote provider provisioning, automatic ID rewriting and multiple
+instances/principals remain outside the local installer profile. Updates and retained
+removal/reinstall
+are now available through the trusted lifecycle API, with the documented restrictions.
 
 
 Only `permissions.visible` / `editable` and the operator installation context's

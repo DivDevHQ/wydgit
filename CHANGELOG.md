@@ -1,5 +1,16 @@
 ## Unreleased
 
+- Extend the native package installer with approved local dependency graphs,
+  explicit/automatic installation reasons, shared-dependency protection, recursive
+  orphan pruning, conservative updates/upgrades and retained uninstall/reinstall.
+  Add catalog-only purge with explicit refusal for physical data, durable catalog
+  operation journals/recovery, bounded lifecycle accounting and trusted SEWN
+  exhaustion diagnostics. Add JSON/SQLite preservation, SIGKILL recovery, security,
+  concurrency and seeded graph regressions. Schema/data migrations, physical purge,
+  provisioning crash recovery and historical HTTP LIMIT attribution remain open
+  qualification gates. Wydgine stays 0.3.0-alpha.15; WydClient advances to
+  0.1.0-alpha.9 with new immutable artifacts for shared ledger changes. No hosting deferral change.
+
 - Record approved Decision 0003: defer managed multi-tenant WydHosting qualification
   and the Debian 13 VM trial to 0.4, retaining all six security work packages and
   qualification gates. Continue Wydgine 0.3 five-site goals through separate Node

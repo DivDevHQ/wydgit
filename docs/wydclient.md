@@ -1,13 +1,16 @@
 # WydClient
 
-The current runtime is **WydClient 0.1.0-alpha.8**, WydSUB **0.1**, with
-current Wydgine/platform **0.3.0-alpha.9** (the historical H4 reference is alpha.8). The [H4 contract](milestones/0.3-H4/README.md) adds semantic native controls, typed
+The current runtime is **WydClient 0.1.0-alpha.9**, WydSUB **0.1**, with
+current Wydgine/platform **0.3.0-alpha.15** (the historical H4 reference is alpha.8). The [H4 contract](milestones/0.3-H4/README.md) adds semantic native controls, typed
 form drafts/submission, explicit CLIENT family/package authoring and signing.
 The [H3 contract](milestones/0.3-H3/README.md)
 defines authenticated executable components, independent host SEAM approval,
 lifecycle, typed events, shared budgets, public scalar presentation and keyed
 repetition. The [verification](milestones/0.3-H3/verification.md) records static
 Taskboard/Chrome acceptance, conformance, bundle growth and unsupported capabilities.
+
+Alpha.9 adds trusted execution-meter diagnostics without changing execution limits
+or the WydSUB protocol. Historical versioned artifacts remain immutable.
 
 Alpha.8 corrects inert literal-data validation; see the [H5 findings](milestones/0.3-H5/review.md).
 

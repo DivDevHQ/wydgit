@@ -331,3 +331,16 @@ test('unreadable package sources and malformed retained metadata fail with struc
  await packageOperation(f.operation('install','acme/a',[a]));await packageOperation(f.operation('uninstall','acme/a'));const before=await readState(f);
  for(const retained of [[null],[{}],[{entry:{},attachments:[]}]]){const s=JSON.parse(before);s.retained=retained;await writeJson(path.join(f.root,STATE),s);assert.throws(()=>loadRepository(f.root),{code:'PACKAGE.CATALOG'});}
 });
+
+test('competing installs and uninstalls of a shared dependency reconcile without duplicate or premature removal',async t=>{
+ const f=await lifecycleFixture(t),c=await f.candidate('c'),a=await f.candidate('a',{dependencies:{'acme/c':'^1'}}),b=await f.candidate('b',{dependencies:{'acme/c':'^1'}});
+ const first=await planPackageOperation(f.operation('install','acme/a',[a,c])),competing=await planPackageOperation(f.operation('install','acme/b',[b,c]));
+ let enter,release;const ready=new Promise(r=>enter=r),hold=new Promise(r=>release=r);
+ const running=applyPackageOperation(first,{atStage:async s=>{if(s==='APPLYING'){enter();await hold;}}});await ready;
+ try{await assert.rejects(applyPackageOperation(competing),{code:'PACKAGE.BUSY'});}finally{release();}await running;
+ const receipt=state(f).packages.find(p=>p.manifest.id==='acme/c').receipt.id;
+ await packageOperation(f.operation('install','acme/b',[b]));assert.deepEqual(packages(f),['acme/a','acme/b','acme/c']);assert.equal(state(f).packages.find(p=>p.manifest.id==='acme/c').receipt.id,receipt);
+ const removeA=await planPackageOperation(f.operation('uninstall','acme/a')),removeB=await planPackageOperation(f.operation('uninstall','acme/b'));
+ await applyPackageOperation(removeA);assert.deepEqual(packages(f),['acme/b','acme/c']);await assert.rejects(applyPackageOperation(removeB),{code:'PACKAGE.STALE'});
+ await packageOperation(f.operation('uninstall','acme/b'));assert.deepEqual(packages(f),[]);assert.equal(state(f).retained.length,3);
+});

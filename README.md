@@ -122,7 +122,11 @@ This scheduling decision authorizes no deployment, VM creation or guest changes.
 
 ## Current capabilities and boundaries
 
-Current versions are **Wydgine/WydHosting/platform 0.3.0-alpha.15**, **WydClient 0.1.0-alpha.8**
+The [trusted local package lifecycle](docs/package-lifecycle.md) now supports
+dependency graphs, conservative updates and retained removal/reinstall.
+[Qualification blockers](docs/milestones/0.3-package-lifecycle/README.md) remain.
+
+Current versions are **Wydgine/WydHosting/platform 0.3.0-alpha.15**, **WydClient 0.1.0-alpha.9**
 and **WydSUB 0.1**. WBasic/component contracts are implemented through 0.20;
 the language reference also contains clearly marked future proposals. These are
 separate version axes. Historical browser artifacts remain immutable.
