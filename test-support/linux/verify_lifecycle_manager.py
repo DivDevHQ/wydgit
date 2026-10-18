@@ -39,16 +39,18 @@ class ManagerTests(unittest.TestCase):
         self.peer = m.Peer(os.getpid(), os.getuid(), os.getgid(),
                            'system_u:system_r:wydhosting_broker_t:s0')
 
-    def call(self, raw=None, verifier=lambda *_: True, peer=None, boots=None):
+    def call(self, raw=None, verifier=lambda *_: True, peer=None, boots=None,
+             preparation=lambda *_: True, now=150):
         left, right = socket.socketpair()
         try:
             left.sendall(c._canonical(f.request()) if raw is None else raw)
             left.shutdown(socket.SHUT_WR)
             with patch.object(m, '_peer', return_value=peer or self.peer), patch.object(
-                    m, '_boot', side_effect=boots or [BOOT, BOOT]):
-                return json.loads(m.handle(right, self.fd, self.afd, now=150,
+                    m, '_boot', side_effect=boots or [BOOT, BOOT, BOOT]):
+                return json.loads(m.handle(right, self.fd, self.afd, now=now,
                     installed_release_digest='c'*64, broker_uid=os.getuid(),
-                    broker_gid=os.getgid(), verify_session=verifier))
+                    broker_gid=os.getgid(), verify_session=verifier,
+                    verify_preparation=preparation))
         finally:
             left.close(); right.close()
 
@@ -166,5 +168,79 @@ class ManagerTests(unittest.TestCase):
             left.shutdown(socket.SHUT_WR)
             with self.assertRaises(m.c.Refused): m._frame(right)
         finally: left.close();right.close()
+
+    def test_locked_exact_scope_check_is_mandatory_and_veto_only(self):
+        for verifier in (None, lambda *_: False, lambda *_: 1):
+            self.assertEqual(self.call(preparation=verifier)['code'], 'SESSION_CHANGED')
+        def scoped(peer, request, boot, approval, history):
+            self.assertEqual(peer, self.peer)
+            self.assertEqual(boot, BOOT)
+            self.assertEqual(approval, c._canonical(f.approval()))
+            self.assertEqual(history, b'{}')
+            with self.assertRaises(m.j.Refused):
+                with m.j._locked(self.fd): pass
+            return True
+        self.assertEqual(self.call(preparation=scoped)['recordedState'], 'prepared')
+
+    def test_expiry_and_revocation_during_verification_do_not_prepare(self):
+        def revoke(*_):
+            self.write_auth('approval.json', dict(f.approval(), state='revoked'))
+            return True
+        self.assertEqual(self.call(preparation=revoke)['code'], 'SESSION_CHANGED')
+        self.write_auth('approval.json', f.approval())
+        ticks = iter([150, 150, 201])
+        self.assertEqual(self.call(now=lambda: next(ticks))['code'], 'SESSION_CHANGED')
+        self.assertEqual(m.j._decode((self.store/'journal.json').read_bytes()), {})
+
+    def test_response_loss_preserves_exact_preparation_for_retry(self):
+        left, right = socket.socketpair()
+        left.sendall(c._canonical(f.request())); left.shutdown(socket.SHUT_WR); left.close()
+        with patch.object(m, '_peer', return_value=self.peer), patch.object(m, '_boot', return_value=BOOT):
+            self.assertFalse(m.serve(right, m.Admission(), self.fd, self.afd, now=150,
+                installed_release_digest='c'*64, broker_uid=os.getuid(), broker_gid=os.getgid(),
+                verify_session=lambda *_: True, verify_preparation=lambda *_: True))
+        before = (self.store/'journal.json').read_bytes()
+        self.assertEqual(self.call()['recordedState'], 'prepared')
+        self.assertEqual((self.store/'journal.json').read_bytes(), before)
+        self.assertEqual(right.fileno(), -1)
+
+    def test_admission_capacity_closes_without_reading_or_writing_history(self):
+        gate = m.Admission(1)
+        self.assertTrue(gate._slots.acquire(False))
+        left, right = socket.socketpair()
+        try:
+            self.assertFalse(m.serve(right, gate, self.fd, self.afd))
+            self.assertEqual(left.recv(1), b'')
+            self.assertEqual(m.j._decode((self.store/'journal.json').read_bytes()), {})
+        finally:
+            left.close(); right.close(); gate._slots.release()
+
+    def test_correlated_response_over_real_stream_and_manager_authentication(self):
+        import threading
+        left, right = socket.socketpair()
+        manager = m.Peer(os.getpid(), os.getuid(), os.getgid(),
+                         'system_u:system_r:wydhosting_manager_t:s0')
+        def peers(connection): return manager if connection is left else self.peer
+        with patch.object(m, '_peer', side_effect=peers), patch.object(m, '_boot', return_value=BOOT):
+            task = threading.Thread(target=m.serve, args=(right, m.Admission(), self.fd, self.afd),
+                kwargs=dict(now=150, installed_release_digest='c'*64,
+                broker_uid=os.getuid(), broker_gid=os.getgid(), verify_session=lambda *_: True,
+                verify_preparation=lambda *_: True))
+            task.start()
+            try:
+                result = m.exchange(left, c._canonical(f.request()),
+                    manager_uid=os.getuid(), manager_gid=os.getgid())
+                self.assertEqual(result['recordedState'], 'prepared')
+            finally:
+                left.close(); task.join(3)
+            self.assertFalse(task.is_alive())
+        left, right = socket.socketpair()
+        try:
+            with patch.object(m, '_peer', return_value=self.peer):
+                with self.assertRaises(m.c.Refused):
+                    m.exchange(left, c._canonical(f.request()))
+            right.setblocking(False)
+            with self.assertRaises(BlockingIOError): right.recv(1)
+        finally: left.close(); right.close()
 
 if __name__ == '__main__': unittest.main()

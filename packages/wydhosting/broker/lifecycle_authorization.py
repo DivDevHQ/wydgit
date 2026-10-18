@@ -64,7 +64,7 @@ def _protected(info, directory=False):
 
 
 @contextmanager
-def _records(trusted_directory_fd):
+def _records(trusted_directory_fd, *, names=_NAMES):
     """Fixed basenames beneath an explicitly trusted, already opened directory.
 
     openat2 rejects symlinks, traversal and mount crossing, without fallback. No
@@ -80,7 +80,7 @@ def _records(trusted_directory_fd):
         baseline = os.fstat(directory)
         _protected(baseline, directory=True)
         data = []
-        for name in _NAMES:
+        for name in names:
             fd = s.open_relative(directory, name, os.O_RDONLY | os.O_CLOEXEC | os.O_NONBLOCK)
             held.append((name, fd, os.fstat(fd)))
             before = held[-1][2]

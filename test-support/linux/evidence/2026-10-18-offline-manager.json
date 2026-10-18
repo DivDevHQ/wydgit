@@ -1,0 +1,951 @@
+{
+  "schema": "wydhosting.offline-campaign/1",
+  "date": "2026-10-18",
+  "branch": "develop/0.3",
+  "startingHead": "646d1740004d9598c21bc8232099fb31ad8f3c92",
+  "startingTree": "clean",
+  "node": "v24.21.0",
+  "python": "3.12.3",
+  "context": "managed workspace-write/network-restricted sandbox; no escalation or guest access",
+  "logs": [
+    {
+      "log": "/tmp/wydgit-i56-overnight/artifacts-corrected.log",
+      "sha256": "383f31d99ac307591cb3c716f2e67681c1e5ac7ed38bdc54e03b170b9123f19d",
+      "summary": [
+        "Ran 5 tests in 0.068s",
+        "OK"
+      ],
+      "nativeAssertion": false,
+      "eperm": false
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/artifacts-first.log",
+      "sha256": "80781313e0f9dde4c68f691d5fd703602161ca95982ca91cefcb294b245418fd",
+      "summary": [
+        "Ran 5 tests in 0.028s",
+        "FAILED (errors=5)"
+      ],
+      "nativeAssertion": false,
+      "eperm": false
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/artifacts-reviewed.log",
+      "sha256": "c5482fc158fe87c8ab6b9c2e80b5a883e75b29d226d06ef73ad9ada708841100",
+      "summary": [
+        "Ran 5 tests in 0.051s",
+        "OK"
+      ],
+      "nativeAssertion": false,
+      "eperm": false
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/baseline-authorization.log",
+      "sha256": "ccde0597ea933a76b46a2563b0ef1e20d3beb2118a37bb31c669effc2f525a65",
+      "summary": [
+        "Ran 14 tests in 0.100s",
+        "OK"
+      ],
+      "nativeAssertion": false,
+      "eperm": false
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/baseline-contract.log",
+      "sha256": "33e851977e55debeb0cae04e71e5477649d2704a6f98c8ddf23e752504e67e5c",
+      "summary": [
+        "Ran 11 tests in 0.061s",
+        "OK"
+      ],
+      "nativeAssertion": false,
+      "eperm": false
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/handoff-kernel-identity.log",
+      "sha256": "36e9ca03ed5268c509b00d51dc0b9649a0ae3eaba9c46f38fd9b6895e3b130fd",
+      "summary": [],
+      "nativeAssertion": false,
+      "eperm": false
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/handoff-kernel.log",
+      "sha256": "ca7e7d3ba2d80d0f1ae2db18df28b9abca6e51033a98c7fa821504adc3caf7b7",
+      "summary": [],
+      "nativeAssertion": false,
+      "eperm": false
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/handoff-portable-corrected.log",
+      "sha256": "533131dad8973c589ae697ab1dd346cc55caa134cd1e536cedf26f1b057c0f1f",
+      "summary": [
+        "Ran 5 tests in 0.009s",
+        "OK"
+      ],
+      "nativeAssertion": false,
+      "eperm": false
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/handoff-portable.log",
+      "sha256": "899c246661b4e39547286741bf95f2c3ce32f1e8615b43056955a5e582f7e319",
+      "summary": [
+        "Ran 5 tests in 0.017s",
+        "FAILED (errors=3)"
+      ],
+      "nativeAssertion": false,
+      "eperm": true
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/handoff-reviewed.log",
+      "sha256": "464e0ee629edf74de09ef21e4232fbcedc26588ff7cc23c470f47fe2da88c255",
+      "summary": [
+        "Ran 5 tests in 0.007s",
+        "OK"
+      ],
+      "nativeAssertion": false,
+      "eperm": false
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/linux-focused.log",
+      "sha256": "5ddfb4f3e98b8d34fd82ae58f56bfe42709f539e96c254de8e04df512650a0e7",
+      "summary": [
+        "Assertion failed: (env_->execution_async_id()) == (0)",
+        "\u2139 tests 1",
+        "\u2139 pass 0",
+        "\u2139 fail 1",
+        "\u2139 skipped 0"
+      ],
+      "nativeAssertion": true,
+      "eperm": false
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/node-child.log",
+      "sha256": "8c3c00005c381ef29db10e50d98946a655cdf6c6048fa50cebc9bd06b941c895",
+      "summary": [
+        "\u2139 tests 1",
+        "\u2139 pass 1",
+        "\u2139 fail 0",
+        "\u2139 skipped 0"
+      ],
+      "nativeAssertion": false,
+      "eperm": false
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/node-plain.log",
+      "sha256": "cfa8952d713431cd63e4ef75b97741066e3974b41b30a59bf73536f341b8c8e6",
+      "summary": [
+        "\u2139 tests 1",
+        "\u2139 pass 1",
+        "\u2139 fail 0",
+        "\u2139 skipped 0"
+      ],
+      "nativeAssertion": false,
+      "eperm": false
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/node-unix.log",
+      "sha256": "8224bb6bdaebfaa9cc860f0f8d5d0626a6ad875e8d5f6f854b8b31d3699ca939",
+      "summary": [
+        "\u2139 tests 1",
+        "\u2139 pass 0",
+        "\u2139 fail 1",
+        "\u2139 skipped 0"
+      ],
+      "nativeAssertion": false,
+      "eperm": true
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/portable-first.log",
+      "sha256": "404b2c6b14cf12b286272fd6703ac0eda0c079573e567f0b5a83d249aa9d6857",
+      "summary": [
+        "Ran 22 tests in 0.252s",
+        "OK (skipped=5)"
+      ],
+      "nativeAssertion": false,
+      "eperm": false
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/portable-reviewed.log",
+      "sha256": "404b2c6b14cf12b286272fd6703ac0eda0c079573e567f0b5a83d249aa9d6857",
+      "summary": [
+        "Ran 22 tests in 0.252s",
+        "OK (skipped=5)"
+      ],
+      "nativeAssertion": false,
+      "eperm": false
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/slice-a-journal.log",
+      "sha256": "3d6b70ee210037b0423ceff79c39e5c2914e04d999d8b480cea475e80aadee0f",
+      "summary": [
+        "Ran 52 tests in 2.119s",
+        "OK"
+      ],
+      "nativeAssertion": false,
+      "eperm": false
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/slice-a-manager.log",
+      "sha256": "6afe4a17c866ade977630d1f9b380ea57753bfa3c2ffc2a9159341598ec64230",
+      "summary": [
+        "Ran 17 tests in 0.059s",
+        "FAILED (errors=16)"
+      ],
+      "nativeAssertion": false,
+      "eperm": true
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/final-artifacts.log",
+      "sha256": "0f40ff8f52499628ea6f0f59e75b43e13de6b7ef770873fd29d1e625a27308a5"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/final-authorization.log",
+      "sha256": "8fcd998b157584310cfdcd088a0cc239b4f12ab44f015e728d58a5119b41ae72"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/final-contract.log",
+      "sha256": "01f751b137328f97b5d440a4fc354b498d90b679c59f8ef3510d4161e8e01b0a"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/final-handoff-portable.log",
+      "sha256": "1f11b6e880045ee35de832b81b45d06257342e13b5c79bbf0034379d4ca220b9"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/final-journal.log",
+      "sha256": "b003802bd098331f9d36b0842b4994d599cd8751481faee9d63142e06a6dfad6"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/final-linux.log",
+      "sha256": "f5985fb4f6b10ebd9b502f1b985fc88a1b67fda639d9ec493072ee125f7a8a84"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/final-manager-portable.log",
+      "sha256": "1ddbf183dfbbce0deb8c44e4713295069040652ae2e487f3d87297a617fe2c52"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/final-manager-real.log",
+      "sha256": "96264bca62e1f9b8b35facce2cfd7363e93e1d07065b5f94852378dde9710ed2"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/final-npm-check.log",
+      "sha256": "4e437bb4ebff45ddb9678e543f256b37dfaa0f4bca6969731a24c5ab84a7d1cd"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/final-npm-test.log",
+      "sha256": "a65d33920ab7ab09dd8aae2cb46ea2fb6b4ca8f0a51a479eca08d4a08a73cc92"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/final-packed.log",
+      "sha256": "8374c876b006a19bdae4f2b98fd671d2e1f55bc9b5807cac80cafc44f92707cd"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/node-child-output.log",
+      "sha256": "ab9bdd9660e0186e51cc4a40fcc4733b878cc59f54a36de0330d2e1647911669"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/packed-after-close.log",
+      "sha256": "67f465d49423215d3764dc5e1689f0528561228c971620b7ffa47f169345d61c"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/packed-python-artifacts.log",
+      "sha256": "ac81381d59c5863de1aa31fbfb7c323d5660fcaf5b51c7b8f72eb54d7d4c9d80"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/packed-python-authorization.log",
+      "sha256": "b61f53143bfa04b898c58956ec5032769fb65d6f1f1de12f7c5f3df4444beeb8"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/packed-python-contract.log",
+      "sha256": "b046982b725e23fa19cde6fab38193e2a10b6daf021565bce6d57f9ce69981cb"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/packed-python-handoff.log",
+      "sha256": "1f11b6e880045ee35de832b81b45d06257342e13b5c79bbf0034379d4ca220b9"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/packed-python-journal.log",
+      "sha256": "e4e0b3038b3966fd5a7fe7318178248ddd3d54f0bb5ad057355bec94bee1dd27"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/packed-python-manager_portable.log",
+      "sha256": "3eaa5695a24162f05bc5dd5984f525720432e909936dfef7514a00e73f2a8d2c"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/last-artifacts.log",
+      "sha256": "bedc69ddc63d77b75aa91e9bcf59e11e843e0e5c863c8a442612f7e6ff898ba2"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/last-authorization.log",
+      "sha256": "8fcd998b157584310cfdcd088a0cc239b4f12ab44f015e728d58a5119b41ae72"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/last-contract.log",
+      "sha256": "e2b907d95a1063a8eeaa56bbe16fa5ae3e17a16c82b7ba15517423b726acc1bb"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/last-handoff-portable.log",
+      "sha256": "464e0ee629edf74de09ef21e4232fbcedc26588ff7cc23c470f47fe2da88c255"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/last-journal.log",
+      "sha256": "096adde59c23a14765c8c7a5998ace6820752302d338fc393a9fcae1230dd862"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/last-linux.log",
+      "sha256": "55218c04986cfa10d22dd9975f2270f2c59ef6fa6c979f9bfa5be82b9e9060e8"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/last-manager-portable.log",
+      "sha256": "87c4927113c69ecd85bdc6defe05f50e1186f4e8f92fd109a741fa66e00a4bba"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/last-manager-real.log",
+      "sha256": "ee14fbb2052516964b6dc55f96a47aca344b6649ec34c8cd6d251c3f2d64d2a7"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/last-npm-check.log",
+      "sha256": "4e437bb4ebff45ddb9678e543f256b37dfaa0f4bca6969731a24c5ab84a7d1cd"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/last-npm-test.log",
+      "sha256": "f90354faba9aba8cdb99c4399e0171f97b8ec1ebf47293d7c73b3c5d14c416ad"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/last-packed-python-artifacts.log",
+      "sha256": "357761de973a080051958068d7b5f0deecdc3b826c553a14de7fe86480760eff"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/last-packed-python-authorization.log",
+      "sha256": "c54fe4cb6e391693cce9c6a3cf101fc20de6d76dbcbd67c131a7a2cd5412da53"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/last-packed-python-contract.log",
+      "sha256": "61988d78c60ae612493a548ef74fdce802e5c3da8bc271acf721571288d8621b"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/last-packed-python-handoff.log",
+      "sha256": "464e0ee629edf74de09ef21e4232fbcedc26588ff7cc23c470f47fe2da88c255"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/last-packed-python-journal.log",
+      "sha256": "dbf7954721f7afbc3f9ab48e70225efb7cc86edbb51402e2bec08cc416803541"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/last-packed-python-manager_portable.log",
+      "sha256": "2980cf21ef547c6562e4510d9772e1fea357dc9bd6d6969579f6dad7b32e020c"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/portable-io-review.log",
+      "sha256": "4051179baa76732a698a2a7b04b5d265b25b027a8d03cf5cab50c7af42587b1d"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/post-review-npm-check.log",
+      "sha256": "4e437bb4ebff45ddb9678e543f256b37dfaa0f4bca6969731a24c5ab84a7d1cd"
+    },
+    {
+      "log": "/tmp/wydgit-i56-overnight/post-review-npm-test.log",
+      "sha256": "5dc989b78e6a3e0764320d45444c890b2f503f10331aebd3d2837af002d8cd77"
+    }
+  ],
+  "finalChecks": "Latest exact commands/exits in latestFinalChecks, plus latestPackedPythonConsumer; full raw logs under /tmp/wydgit-i56-overnight. No implementation/source/document edits after these final checks.",
+  "fixtureCorrections": [
+    "Artifact first run: 5 errors from nonexistent fixture authority() helper. Corrected fixture projection derives exact fields from existing approval; next/reviewed runs pass 5/5.",
+    "Handoff first portable run: 3 errors because socket.socket(fileno=...) is EPERM in sandbox. Portable suite now explicitly simulates wrapper reconstruction; actual descriptor close/inode checks remain. Complete real transfer remains unverified.",
+    "Manager real suite: 17 tests, 16 errors at sandbox socket IO; portable tests do not replace or suppress that suite."
+  ],
+  "demonstrated": [
+    "under-lock veto-only exact preparation scope",
+    "default-deny independently protected measurement contract",
+    "deterministic review-only artifact preparation; protected publication blocked",
+    "real seqpacket SCM_RIGHTS same inode and close-on-exec",
+    "portable rejection and descriptor cleanup contracts"
+  ],
+  "installedQualification": false,
+  "roadmapChanged": false,
+  "versionsChanged": false,
+  "reliability": {
+    "id": "I5.6-NODE-ASYNC-SANDBOX",
+    "status": "open",
+    "focusedLinux": {
+      "command": "node --test test/linux-isolation.test.js",
+      "exitCode": 1
+    },
+    "controls": {
+      "plain": "1/1 passed",
+      "child": "1/1 passed; Python stream sendall PermissionError errno 1",
+      "unix": "listen EPERM; 0/1 passed; no native assertion"
+    },
+    "nativeAssertion": "node::InternalCallbackScope::Close() Assertion failed: (env_->execution_async_id()) == (0)",
+    "conclusion": "Native assertion remains unresolved. Minimal no-Wydgit/no-addon Node child console.log exits 0 with no output reaching Node parent; Python-child output is received. Packed close-wait rerun still fails. Direct npm pack succeeds, extracted packaged Python consumers pass. No sandbox bypass or ordinary-user comparison.",
+    "nodeChildOutput": {
+      "command": "node test-support/linux/node-async-repro.mjs node-child",
+      "childExit": 0,
+      "receivedStdout": "",
+      "receivedStderr": "",
+      "controlExit": 1,
+      "nativeAssertion": false,
+      "waitedFor": "close",
+      "log": "/tmp/wydgit-i56-overnight/node-child-output.log"
+    }
+  },
+  "finalInitialChecks": {
+    "environmentOverrides": {
+      "npm_config_cache": "/tmp/wydgit-i56-overnight/npm-cache",
+      "npm_config_fetch_retries": "0",
+      "npm_config_fetch_timeout": "15000"
+    },
+    "results": [
+      {
+        "name": "contract",
+        "command": [
+          "python3",
+          "test-support/linux/verify_lifecycle_contract.py",
+          "packages/wydhosting/broker"
+        ],
+        "exitCode": 0,
+        "seconds": 0.165,
+        "log": "/tmp/wydgit-i56-overnight/final-contract.log"
+      },
+      {
+        "name": "authorization",
+        "command": [
+          "python3",
+          "test-support/linux/verify_lifecycle_authorization.py",
+          "packages/wydhosting/broker"
+        ],
+        "exitCode": 0,
+        "seconds": 0.265,
+        "log": "/tmp/wydgit-i56-overnight/final-authorization.log"
+      },
+      {
+        "name": "journal",
+        "command": [
+          "python3",
+          "test-support/linux/verify_lifecycle_journal.py",
+          "packages/wydhosting/broker"
+        ],
+        "exitCode": 0,
+        "seconds": 2.219,
+        "log": "/tmp/wydgit-i56-overnight/final-journal.log"
+      },
+      {
+        "name": "manager-real",
+        "command": [
+          "python3",
+          "test-support/linux/verify_lifecycle_manager.py",
+          "packages/wydhosting/broker"
+        ],
+        "exitCode": 1,
+        "seconds": 0.164,
+        "log": "/tmp/wydgit-i56-overnight/final-manager-real.log"
+      },
+      {
+        "name": "manager-portable",
+        "command": [
+          "python3",
+          "test-support/linux/verify_lifecycle_manager_portable.py",
+          "packages/wydhosting/broker"
+        ],
+        "exitCode": 0,
+        "seconds": 0.315,
+        "log": "/tmp/wydgit-i56-overnight/final-manager-portable.log"
+      },
+      {
+        "name": "artifacts",
+        "command": [
+          "python3",
+          "test-support/linux/verify_lifecycle_artifacts.py",
+          "packages/wydhosting/broker"
+        ],
+        "exitCode": 0,
+        "seconds": 0.165,
+        "log": "/tmp/wydgit-i56-overnight/final-artifacts.log"
+      },
+      {
+        "name": "handoff-portable",
+        "command": [
+          "python3",
+          "test-support/linux/verify_lifecycle_handoff.py",
+          "packages/wydhosting/broker"
+        ],
+        "exitCode": 0,
+        "seconds": 0.115,
+        "log": "/tmp/wydgit-i56-overnight/final-handoff-portable.log"
+      },
+      {
+        "name": "linux",
+        "command": [
+          "node",
+          "--test",
+          "test/linux-isolation.test.js"
+        ],
+        "exitCode": 1,
+        "seconds": 4.926,
+        "log": "/tmp/wydgit-i56-overnight/final-linux.log"
+      },
+      {
+        "name": "npm-test",
+        "command": [
+          "npm",
+          "test"
+        ],
+        "exitCode": 1,
+        "seconds": 38.65,
+        "log": "/tmp/wydgit-i56-overnight/final-npm-test.log"
+      },
+      {
+        "name": "npm-check",
+        "command": [
+          "npm",
+          "run",
+          "check"
+        ],
+        "exitCode": 0,
+        "seconds": 0.365,
+        "log": "/tmp/wydgit-i56-overnight/final-npm-check.log"
+      },
+      {
+        "name": "packed",
+        "command": [
+          "node",
+          "scripts/verify-packed-packages.js"
+        ],
+        "exitCode": 1,
+        "seconds": 0.365,
+        "log": "/tmp/wydgit-i56-overnight/final-packed.log"
+      }
+    ]
+  },
+  "packedPythonConsumer": [
+    {
+      "command": [
+        "python3",
+        "test-support/linux/verify_lifecycle_contract.py",
+        "/tmp/wydgit-i56-overnight/packed-python-consumer/package/broker"
+      ],
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "python3",
+        "test-support/linux/verify_lifecycle_authorization.py",
+        "/tmp/wydgit-i56-overnight/packed-python-consumer/package/broker"
+      ],
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "python3",
+        "test-support/linux/verify_lifecycle_journal.py",
+        "/tmp/wydgit-i56-overnight/packed-python-consumer/package/broker"
+      ],
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "python3",
+        "test-support/linux/verify_lifecycle_manager_portable.py",
+        "/tmp/wydgit-i56-overnight/packed-python-consumer/package/broker"
+      ],
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "python3",
+        "test-support/linux/verify_lifecycle_artifacts.py",
+        "/tmp/wydgit-i56-overnight/packed-python-consumer/package/broker"
+      ],
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "python3",
+        "test-support/linux/verify_lifecycle_handoff.py",
+        "/tmp/wydgit-i56-overnight/packed-python-consumer/package/broker"
+      ],
+      "exitCode": 0
+    }
+  ],
+  "packedAfterClose": {
+    "command": "node scripts/verify-packed-packages.js",
+    "exitCode": 1,
+    "reasonForRerun": "Wait for child close/drained output instead of exit after empty npm JSON despite successful tarball creation."
+  },
+  "endingHead": "646d1740004d9598c21bc8232099fb31ad8f3c92",
+  "localCommits": [],
+  "workingTree": "23 changed/untracked task files; uncommitted; baseline clean; no unrelated changes",
+  "latestFinalChecks": {
+    "environmentOverrides": {
+      "npm_config_cache": "/tmp/wydgit-i56-overnight/npm-cache",
+      "npm_config_fetch_retries": "0",
+      "npm_config_fetch_timeout": "15000"
+    },
+    "results": [
+      {
+        "name": "contract",
+        "command": [
+          "python3",
+          "test-support/linux/verify_lifecycle_contract.py",
+          "packages/wydhosting/broker"
+        ],
+        "exitCode": 0,
+        "seconds": 0.165,
+        "log": "/tmp/wydgit-i56-overnight/last-contract.log"
+      },
+      {
+        "name": "authorization",
+        "command": [
+          "python3",
+          "test-support/linux/verify_lifecycle_authorization.py",
+          "packages/wydhosting/broker"
+        ],
+        "exitCode": 0,
+        "seconds": 0.265,
+        "log": "/tmp/wydgit-i56-overnight/last-authorization.log"
+      },
+      {
+        "name": "journal",
+        "command": [
+          "python3",
+          "test-support/linux/verify_lifecycle_journal.py",
+          "packages/wydhosting/broker"
+        ],
+        "exitCode": 0,
+        "seconds": 2.168,
+        "log": "/tmp/wydgit-i56-overnight/last-journal.log"
+      },
+      {
+        "name": "manager-real",
+        "command": [
+          "python3",
+          "test-support/linux/verify_lifecycle_manager.py",
+          "packages/wydhosting/broker"
+        ],
+        "exitCode": 1,
+        "seconds": 0.165,
+        "log": "/tmp/wydgit-i56-overnight/last-manager-real.log"
+      },
+      {
+        "name": "manager-portable",
+        "command": [
+          "python3",
+          "test-support/linux/verify_lifecycle_manager_portable.py",
+          "packages/wydhosting/broker"
+        ],
+        "exitCode": 0,
+        "seconds": 0.365,
+        "log": "/tmp/wydgit-i56-overnight/last-manager-portable.log"
+      },
+      {
+        "name": "artifacts",
+        "command": [
+          "python3",
+          "test-support/linux/verify_lifecycle_artifacts.py",
+          "packages/wydhosting/broker"
+        ],
+        "exitCode": 0,
+        "seconds": 0.164,
+        "log": "/tmp/wydgit-i56-overnight/last-artifacts.log"
+      },
+      {
+        "name": "handoff-portable",
+        "command": [
+          "python3",
+          "test-support/linux/verify_lifecycle_handoff.py",
+          "packages/wydhosting/broker"
+        ],
+        "exitCode": 0,
+        "seconds": 0.114,
+        "log": "/tmp/wydgit-i56-overnight/last-handoff-portable.log"
+      },
+      {
+        "name": "linux",
+        "command": [
+          "node",
+          "--test",
+          "test/linux-isolation.test.js"
+        ],
+        "exitCode": 1,
+        "seconds": 4.976,
+        "log": "/tmp/wydgit-i56-overnight/last-linux.log"
+      },
+      {
+        "name": "npm-test",
+        "command": [
+          "npm",
+          "test"
+        ],
+        "exitCode": 1,
+        "seconds": 38.766,
+        "log": "/tmp/wydgit-i56-overnight/last-npm-test.log"
+      },
+      {
+        "name": "npm-check",
+        "command": [
+          "npm",
+          "run",
+          "check"
+        ],
+        "exitCode": 0,
+        "seconds": 0.365,
+        "log": "/tmp/wydgit-i56-overnight/last-npm-check.log"
+      }
+    ]
+  },
+  "postDiagnosticRequiredChecks": [
+    {
+      "command": [
+        "npm",
+        "test"
+      ],
+      "exitCode": 1,
+      "seconds": 38.857,
+      "log": "/tmp/wydgit-i56-overnight/post-review-npm-test.log"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "exitCode": 0,
+      "seconds": 0.365,
+      "log": "/tmp/wydgit-i56-overnight/post-review-npm-check.log"
+    }
+  ],
+  "latestPackedPythonConsumer": {
+    "packExit": 0,
+    "tarball": "/tmp/wydgit-i56-overnight/last-tarballs/wydhosting-0.3.0-alpha.15.tgz",
+    "closure": [
+      {
+        "path": "docs/accounts-and-filesystem.md",
+        "sha256": "2356218488de491200269e1d30ad8cb4682d73135a5777c90494b20e579a7c6c"
+      },
+      {
+        "path": "docs/broker-security.md",
+        "sha256": "31b947d4fc49644e0d8753c8caa5bce4e6fdfafef42368a076ff4e600edd7d0f"
+      },
+      {
+        "path": "docs/constrained-systemd-authority.md",
+        "sha256": "50d3a8783f653bdf4126953306ecde8113b2621d603a89c77df639dfd76ab9a9"
+      },
+      {
+        "path": "docs/continuation-2026-10-17.md",
+        "sha256": "3b9cbe5d7c7f1dffbd5bb8794c479f25f991874d66a7d485b89a786ba2462350"
+      },
+      {
+        "path": "docs/deployment-staging.md",
+        "sha256": "57109e69af8a32f70bba9565e1aedd4e1db4de632ac9851ab6e1da1b75d024dd"
+      },
+      {
+        "path": "docs/firewall-and-recovery.md",
+        "sha256": "28f8e80f6ad52abfdf8ba987defba9cc088e388af785f4fd2c374cca6ce5bd12"
+      },
+      {
+        "path": "docs/linux-support-matrix.md",
+        "sha256": "b1e62b609c3a3f5590d88294d4be86a6148154ac3a191b26ccada025b9d829a5"
+      },
+      {
+        "path": "docs/manager-candidate.md",
+        "sha256": "5a91a0197c2dc1c7246b71c048d108930011a290e7deada87bebebdfeecb0fca"
+      },
+      {
+        "path": "docs/offline-manager-protocol.md",
+        "sha256": "e94da1b0bfb7af9916016930d4f126776f6405e3c192a622d65c5cb6e1b3afb6"
+      },
+      {
+        "path": "docs/operation-completion.md",
+        "sha256": "520159b7722d6634676099a143f5871c24353952b14f634e0ae5a515801a83d5"
+      },
+      {
+        "path": "docs/private-ingress.md",
+        "sha256": "4f3666f7c65177c3cdb24298b60a8ae358e60611a52a7714d264595b728c15d7"
+      },
+      {
+        "path": "docs/README.md",
+        "sha256": "95734f31920ef3f6f0b87382b5620bd17483c4797255ef1ab994ae400b864c12"
+      },
+      {
+        "path": "docs/selinux.md",
+        "sha256": "34b9051e161d55da37de2886feb2e09cac88ecaa302f15716cd0c6f1bf52da63"
+      },
+      {
+        "path": "docs/service-and-cgroups.md",
+        "sha256": "bc0bf8b2152e824fddc2c255fb9682dc7f6004f5c927f3b94a6d8fefc8f5a19f"
+      },
+      {
+        "path": "docs/verification.md",
+        "sha256": "c8cd0d04561423d65e079868f3a3888725a8eacc4950f917cd67d2c20ec70e6f"
+      },
+      {
+        "path": "broker/lifecycle_artifacts.py",
+        "sha256": "ec7de8a3b9d052921df719d28711c2ad476663f2b11005f5ba007ce241c81648"
+      },
+      {
+        "path": "broker/lifecycle_authorization.py",
+        "sha256": "adf5fd5729777f9fd3bb55d82e0c89c65d02bc8c8e30f1aa54adbec5860ddd5a"
+      },
+      {
+        "path": "broker/lifecycle_contract.py",
+        "sha256": "83c7c38db3f5277a658e55e5b0c5a2aa02e246e1297c137620ef37ce20943617"
+      },
+      {
+        "path": "broker/lifecycle_handoff.py",
+        "sha256": "b4b3b8d57c5e5184f1d8a85c3163c1fba227e390d13c598206bb28c833bf2481"
+      },
+      {
+        "path": "broker/lifecycle_journal.py",
+        "sha256": "e13748ebbc97438a53ccc078bedbd48b44e4901548f08b99be39bf58f08289cf"
+      },
+      {
+        "path": "broker/lifecycle_manager.py",
+        "sha256": "45a63dbb3e232af136ae1354e962a63f8e49af18f35112344743cdfea98b292c"
+      },
+      {
+        "path": "broker/lifecycle_verifier.py",
+        "sha256": "cf1ad203fa093df4202d402d2be2c06ca5e003251f86ff4f2b5dee5ce3082bf9"
+      }
+    ],
+    "tests": [
+      {
+        "command": [
+          "python3",
+          "test-support/linux/verify_lifecycle_contract.py",
+          "/tmp/wydgit-i56-overnight/last-packed-python-consumer/package/broker"
+        ],
+        "exitCode": 0,
+        "log": "/tmp/wydgit-i56-overnight/last-packed-python-contract.log"
+      },
+      {
+        "command": [
+          "python3",
+          "test-support/linux/verify_lifecycle_authorization.py",
+          "/tmp/wydgit-i56-overnight/last-packed-python-consumer/package/broker"
+        ],
+        "exitCode": 0,
+        "log": "/tmp/wydgit-i56-overnight/last-packed-python-authorization.log"
+      },
+      {
+        "command": [
+          "python3",
+          "test-support/linux/verify_lifecycle_journal.py",
+          "/tmp/wydgit-i56-overnight/last-packed-python-consumer/package/broker"
+        ],
+        "exitCode": 0,
+        "log": "/tmp/wydgit-i56-overnight/last-packed-python-journal.log"
+      },
+      {
+        "command": [
+          "python3",
+          "test-support/linux/verify_lifecycle_manager_portable.py",
+          "/tmp/wydgit-i56-overnight/last-packed-python-consumer/package/broker"
+        ],
+        "exitCode": 0,
+        "log": "/tmp/wydgit-i56-overnight/last-packed-python-manager_portable.log"
+      },
+      {
+        "command": [
+          "python3",
+          "test-support/linux/verify_lifecycle_artifacts.py",
+          "/tmp/wydgit-i56-overnight/last-packed-python-consumer/package/broker"
+        ],
+        "exitCode": 0,
+        "log": "/tmp/wydgit-i56-overnight/last-packed-python-artifacts.log"
+      },
+      {
+        "command": [
+          "python3",
+          "test-support/linux/verify_lifecycle_handoff.py",
+          "/tmp/wydgit-i56-overnight/last-packed-python-consumer/package/broker"
+        ],
+        "exitCode": 0,
+        "log": "/tmp/wydgit-i56-overnight/last-packed-python-handoff.log"
+      }
+    ]
+  },
+  "latestFocusedCounts": {
+    "contract": {
+      "pass": 11
+    },
+    "authorization": {
+      "pass": 14
+    },
+    "journal": {
+      "pass": 52
+    },
+    "portableManager": {
+      "discovered": 24,
+      "pass": 19,
+      "skip": 5
+    },
+    "artifacts": {
+      "pass": 5
+    },
+    "portableHandoff": {
+      "pass": 5
+    },
+    "realManager": {
+      "discovered": 17,
+      "errors": 16,
+      "exit": 1
+    },
+    "linux": {
+      "failedFile": 1,
+      "exit": 1,
+      "validCaseTotal": false
+    },
+    "npmTest": {
+      "runnerTests": 96,
+      "runnerPass": 67,
+      "runnerFail": 29,
+      "cancelled": 0,
+      "skip": 0,
+      "exit": 1,
+      "validIndividualCaseTotal": false
+    },
+    "npmCheck": {
+      "exit": 0,
+      "pages": 3,
+      "links": 42
+    }
+  },
+  "verificationCycles": [
+    "Initial sequential full checks after implementation/docs: npm test 1, check 0, official packed 1.",
+    "One targeted packed rerun after close-wait change: still 1; no further official packed reruns.",
+    "Required npm checks after diagnostic/packed runner edits: npm test 1, check 0.",
+    "Final source fix classifies post-publication escaping errors as indeterminate; 2 portable regressions added. Final sequential focused/Linux/npm checks: same environment blockers, portable 19 pass/5 skip; npm test 1/check 0.",
+    "Direct final WydHosting pack succeeds and matches 22 current module/doc files; 6 extracted-package Python suites pass. No broader JS consumer installation reached."
+  ],
+  "sourceSHA256": {
+    "packages/wydhosting/broker/lifecycle_artifacts.py": "ec7de8a3b9d052921df719d28711c2ad476663f2b11005f5ba007ce241c81648",
+    "packages/wydhosting/broker/lifecycle_authorization.py": "adf5fd5729777f9fd3bb55d82e0c89c65d02bc8c8e30f1aa54adbec5860ddd5a",
+    "packages/wydhosting/broker/lifecycle_contract.py": "83c7c38db3f5277a658e55e5b0c5a2aa02e246e1297c137620ef37ce20943617",
+    "packages/wydhosting/broker/lifecycle_handoff.py": "b4b3b8d57c5e5184f1d8a85c3163c1fba227e390d13c598206bb28c833bf2481",
+    "packages/wydhosting/broker/lifecycle_journal.py": "e13748ebbc97438a53ccc078bedbd48b44e4901548f08b99be39bf58f08289cf",
+    "packages/wydhosting/broker/lifecycle_manager.py": "45a63dbb3e232af136ae1354e962a63f8e49af18f35112344743cdfea98b292c",
+    "packages/wydhosting/broker/lifecycle_verifier.py": "cf1ad203fa093df4202d402d2be2c06ca5e003251f86ff4f2b5dee5ce3082bf9"
+  },
+  "changedFiles": [
+    "CHANGELOG.md",
+    "docs/milestones/0.3-I5.6/README.md",
+    "docs/milestones/0.3-I5.6/manager-candidate.md",
+    "docs/milestones/0.3-I5.6/verification.md",
+    "packages/wydhosting/broker/lifecycle_authorization.py",
+    "packages/wydhosting/broker/lifecycle_journal.py",
+    "packages/wydhosting/broker/lifecycle_manager.py",
+    "packages/wydhosting/docs/README.md",
+    "packages/wydhosting/docs/manager-candidate.md",
+    "packages/wydhosting/docs/verification.md",
+    "scripts/verify-packed-packages.js",
+    "test-support/linux/verify_lifecycle_manager.py",
+    "test/linux-isolation.test.js",
+    "docs/milestones/0.3-I5.6/offline-manager-protocol.md",
+    "packages/wydhosting/broker/lifecycle_artifacts.py",
+    "packages/wydhosting/broker/lifecycle_handoff.py",
+    "packages/wydhosting/broker/lifecycle_verifier.py",
+    "packages/wydhosting/docs/offline-manager-protocol.md",
+    "test-support/linux/evidence/2026-10-18-offline-manager.json",
+    "test-support/linux/node-async-repro.mjs",
+    "test-support/linux/verify_lifecycle_artifacts.py",
+    "test-support/linux/verify_lifecycle_handoff.py",
+    "test-support/linux/verify_lifecycle_manager_portable.py"
+  ],
+  "changedFileCount": 23
+}

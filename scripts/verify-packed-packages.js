@@ -15,7 +15,8 @@ async function run(command,args,cwd,{env={},log,allowFailure=false}={}){
   const environment={...process.env};delete environment.NODE_PATH;delete environment.NODE_OPTIONS;
   const child=spawn(command,args,{cwd,env:{...environment,...env},stdio:['ignore','pipe','pipe']});let output='';
   child.stdout.on('data',chunk=>output+=chunk);child.stderr.on('data',chunk=>output+=chunk);
-  child.once('error',reject);child.once('exit',async(code,signal)=>{
+  // Completion includes drained stdout/stderr; exit alone can precede pipe close.
+  child.once('error',reject);child.once('close',async(code,signal)=>{
    try{if(log)await fs.writeFile(path.join(directory,log),output);if(code!==0&&!allowFailure)throw Error(`${command} ${args.join(' ')} failed (${code??signal}); ${log??output}`);resolve({code,output});}catch(error){reject(error);}
   });
  });
@@ -29,7 +30,7 @@ for(const name of ['wydgine','wydhosting','wydstore','wydgate','wydsearch','wydf
  // Every package is private/local verification; no publication occurs.
  assert.ok(!record.files.some(f=>/(^|\/)(test|node_modules|\.git|data|__pycache__)(\/|$)|\.py[co]$|\.pem$|private.key/.test(f.path)),name+' unexpected package contents');
  if(name==='wydgine')assert.ok(record.files.some(f=>f.path==='native/peercred.c'));
- if(name==='wydhosting')for(const asset of ['broker/lifecycle_manager.py','broker/lifecycle_journal.py','broker/lifecycle_authorization.py','broker/lifecycle_contract.py','broker/broker.py','broker/security.py','broker/worker.py','templates/wydhosting-broker.socket','templates/wydhosting-broker@.service','templates/wydhosting-broker.slice','templates/wydhosting-provider.service','templates/Caddyfile','docs/service-and-cgroups.md'])assert.ok(record.files.some(f=>f.path===asset),asset);
+ if(name==='wydhosting')for(const asset of ['broker/lifecycle_manager.py','broker/lifecycle_verifier.py','broker/lifecycle_artifacts.py','broker/lifecycle_handoff.py','broker/lifecycle_journal.py','broker/lifecycle_authorization.py','broker/lifecycle_contract.py','broker/broker.py','broker/security.py','broker/worker.py','templates/wydhosting-broker.socket','templates/wydhosting-broker@.service','templates/wydhosting-broker.slice','templates/wydhosting-provider.service','templates/Caddyfile','docs/service-and-cgroups.md','docs/offline-manager-protocol.md'])assert.ok(record.files.some(f=>f.path===asset),asset);
  await fs.writeFile(path.join(directory,name+'-pack.json'),JSON.stringify(record,null,2));
 }
 async function consumer(name,packages){

@@ -1,0 +1,589 @@
+{
+  "schema": "wydhosting.i56-recovery/1",
+  "date": "2026-10-18",
+  "branch": "develop/0.3",
+  "startingHead": "646d1740004d9598c21bc8232099fb31ad8f3c92",
+  "preservation": {
+    "directory": "/tmp/wydgit-i56-recovery-20261018T111944Z",
+    "archive": "overnight-files.tar.gz",
+    "archiveSha256": "442feb3f2f32d3ca1d6d03873799df9de8a20904e2a487ab40b493591af4d433",
+    "originalFiles": [
+      {
+        "path": "CHANGELOG.md",
+        "bytes": 72918,
+        "sha256": "dc3b6068e27dc25f55c7a915e797e9c2dbc9f05f1eccb8c8f785b49e6459f288",
+        "state": "modified"
+      },
+      {
+        "path": "docs/milestones/0.3-I5.6/README.md",
+        "bytes": 9236,
+        "sha256": "95734f31920ef3f6f0b87382b5620bd17483c4797255ef1ab994ae400b864c12",
+        "state": "modified"
+      },
+      {
+        "path": "docs/milestones/0.3-I5.6/manager-candidate.md",
+        "bytes": 22032,
+        "sha256": "5a91a0197c2dc1c7246b71c048d108930011a290e7deada87bebebdfeecb0fca",
+        "state": "modified"
+      },
+      {
+        "path": "docs/milestones/0.3-I5.6/verification.md",
+        "bytes": 147640,
+        "sha256": "c8cd0d04561423d65e079868f3a3888725a8eacc4950f917cd67d2c20ec70e6f",
+        "state": "modified"
+      },
+      {
+        "path": "packages/wydhosting/broker/lifecycle_authorization.py",
+        "bytes": 7311,
+        "sha256": "adf5fd5729777f9fd3bb55d82e0c89c65d02bc8c8e30f1aa54adbec5860ddd5a",
+        "state": "modified"
+      },
+      {
+        "path": "packages/wydhosting/broker/lifecycle_journal.py",
+        "bytes": 29761,
+        "sha256": "e13748ebbc97438a53ccc078bedbd48b44e4901548f08b99be39bf58f08289cf",
+        "state": "modified"
+      },
+      {
+        "path": "packages/wydhosting/broker/lifecycle_manager.py",
+        "bytes": 11542,
+        "sha256": "45a63dbb3e232af136ae1354e962a63f8e49af18f35112344743cdfea98b292c",
+        "state": "modified"
+      },
+      {
+        "path": "packages/wydhosting/docs/README.md",
+        "bytes": 9236,
+        "sha256": "95734f31920ef3f6f0b87382b5620bd17483c4797255ef1ab994ae400b864c12",
+        "state": "modified"
+      },
+      {
+        "path": "packages/wydhosting/docs/manager-candidate.md",
+        "bytes": 22032,
+        "sha256": "5a91a0197c2dc1c7246b71c048d108930011a290e7deada87bebebdfeecb0fca",
+        "state": "modified"
+      },
+      {
+        "path": "packages/wydhosting/docs/verification.md",
+        "bytes": 147640,
+        "sha256": "c8cd0d04561423d65e079868f3a3888725a8eacc4950f917cd67d2c20ec70e6f",
+        "state": "modified"
+      },
+      {
+        "path": "scripts/verify-packed-packages.js",
+        "bytes": 11965,
+        "sha256": "eaebfe608b172242074af54d54320d280795bc35b85a68dd52c80b0d6a598aed",
+        "state": "modified"
+      },
+      {
+        "path": "test-support/linux/verify_lifecycle_manager.py",
+        "bytes": 12947,
+        "sha256": "e75f6e96091dc2adc47f86f8e450aef4de57e271e9fc9503a5737527fe8b7e3b",
+        "state": "modified"
+      },
+      {
+        "path": "test/linux-isolation.test.js",
+        "bytes": 20292,
+        "sha256": "a5f64265b93a6e2bcb2e212639a70c82476dafb46f18485c558189dc099f6c5f",
+        "state": "modified"
+      },
+      {
+        "path": "docs/milestones/0.3-I5.6/offline-manager-protocol.md",
+        "bytes": 20155,
+        "sha256": "e94da1b0bfb7af9916016930d4f126776f6405e3c192a622d65c5cb6e1b3afb6",
+        "state": "untracked"
+      },
+      {
+        "path": "packages/wydhosting/broker/lifecycle_artifacts.py",
+        "bytes": 5290,
+        "sha256": "ec7de8a3b9d052921df719d28711c2ad476663f2b11005f5ba007ce241c81648",
+        "state": "untracked"
+      },
+      {
+        "path": "packages/wydhosting/broker/lifecycle_handoff.py",
+        "bytes": 6198,
+        "sha256": "b4b3b8d57c5e5184f1d8a85c3163c1fba227e390d13c598206bb28c833bf2481",
+        "state": "untracked"
+      },
+      {
+        "path": "packages/wydhosting/broker/lifecycle_verifier.py",
+        "bytes": 5158,
+        "sha256": "cf1ad203fa093df4202d402d2be2c06ca5e003251f86ff4f2b5dee5ce3082bf9",
+        "state": "untracked"
+      },
+      {
+        "path": "packages/wydhosting/docs/offline-manager-protocol.md",
+        "bytes": 20155,
+        "sha256": "e94da1b0bfb7af9916016930d4f126776f6405e3c192a622d65c5cb6e1b3afb6",
+        "state": "untracked"
+      },
+      {
+        "path": "test-support/linux/evidence/2026-10-18-offline-manager.json",
+        "bytes": 32125,
+        "sha256": "9f41e1fed08705464ea68395791d3d71cfb4c01293b52abc51525b9170dcc7e1",
+        "state": "untracked"
+      },
+      {
+        "path": "test-support/linux/node-async-repro.mjs",
+        "bytes": 2331,
+        "sha256": "4ed25942a6ccbcbc78b0c374967ea94d44678ef639d5a717f5682978a18874a9",
+        "state": "untracked"
+      },
+      {
+        "path": "test-support/linux/verify_lifecycle_artifacts.py",
+        "bytes": 5888,
+        "sha256": "d93ae53a18283289f3170f1447024488e52e5c9404db86d32c7404aa625b82a3",
+        "state": "untracked"
+      },
+      {
+        "path": "test-support/linux/verify_lifecycle_handoff.py",
+        "bytes": 6822,
+        "sha256": "b33890c53855d6984ca6f7b2a24c96fc358532afd3c2b25b06666863a7359a15",
+        "state": "untracked"
+      },
+      {
+        "path": "test-support/linux/verify_lifecycle_manager_portable.py",
+        "bytes": 9689,
+        "sha256": "4e6b6a8ce75e9ab971c7501e558c5eeb900a52e1d8ce8338a4687feeee146d23",
+        "state": "untracked"
+      }
+    ],
+    "audit": {
+      "all23Unchanged": true,
+      "secretSignatureMatches": [],
+      "review": "All 23 text sources/docs/test diagnostics; no generated binaries, credentials or unrelated files identified. Signature scan is not proof of absence."
+    }
+  },
+  "focusedSandbox": [
+    {
+      "command": [
+        "python3",
+        "test-support/linux/verify_lifecycle_contract.py",
+        "packages/wydhosting/broker"
+      ],
+      "exit": 0,
+      "seconds": 0.119,
+      "log": "focused-0.log"
+    },
+    {
+      "command": [
+        "python3",
+        "test-support/linux/verify_lifecycle_authorization.py",
+        "packages/wydhosting/broker"
+      ],
+      "exit": 0,
+      "seconds": 0.193,
+      "log": "focused-1.log"
+    },
+    {
+      "command": [
+        "python3",
+        "test-support/linux/verify_lifecycle_journal.py",
+        "packages/wydhosting/broker"
+      ],
+      "exit": 0,
+      "seconds": 2.253,
+      "log": "focused-2.log"
+    },
+    {
+      "command": [
+        "python3",
+        "test-support/linux/verify_lifecycle_manager.py",
+        "packages/wydhosting/broker"
+      ],
+      "exit": 1,
+      "seconds": 0.173,
+      "log": "focused-3.log"
+    },
+    {
+      "command": [
+        "python3",
+        "test-support/linux/verify_lifecycle_manager_portable.py",
+        "packages/wydhosting/broker"
+      ],
+      "exit": 0,
+      "seconds": 0.337,
+      "log": "focused-4.log"
+    },
+    {
+      "command": [
+        "python3",
+        "test-support/linux/verify_lifecycle_artifacts.py",
+        "packages/wydhosting/broker"
+      ],
+      "exit": 0,
+      "seconds": 0.164,
+      "log": "focused-5.log"
+    },
+    {
+      "command": [
+        "python3",
+        "test-support/linux/verify_lifecycle_handoff.py",
+        "packages/wydhosting/broker"
+      ],
+      "exit": 0,
+      "seconds": 0.095,
+      "log": "focused-6.log"
+    },
+    {
+      "command": [
+        "node",
+        "test-support/linux/node-async-repro.mjs",
+        "plain"
+      ],
+      "exit": 0,
+      "seconds": 0.042,
+      "log": "focused-7.log"
+    },
+    {
+      "command": [
+        "node",
+        "test-support/linux/node-async-repro.mjs",
+        "child"
+      ],
+      "exit": 0,
+      "seconds": 0.059,
+      "log": "focused-8.log"
+    },
+    {
+      "command": [
+        "node",
+        "test-support/linux/node-async-repro.mjs",
+        "node-child"
+      ],
+      "exit": 1,
+      "seconds": 0.077,
+      "log": "focused-9.log"
+    },
+    {
+      "command": [
+        "node",
+        "test-support/linux/node-async-repro.mjs",
+        "unix"
+      ],
+      "exit": 1,
+      "seconds": 0.041,
+      "log": "focused-10.log"
+    }
+  ],
+  "ordinaryControls": [
+    {
+      "command": [
+        "python3",
+        "test-support/linux/verify_lifecycle_manager.py",
+        "packages/wydhosting/broker"
+      ],
+      "exit": 0,
+      "log": "ordinary-0.log"
+    },
+    {
+      "command": [
+        "node",
+        "test-support/linux/node-async-repro.mjs",
+        "plain"
+      ],
+      "exit": 0,
+      "log": "ordinary-1.log"
+    },
+    {
+      "command": [
+        "node",
+        "test-support/linux/node-async-repro.mjs",
+        "child"
+      ],
+      "exit": 0,
+      "log": "ordinary-2.log"
+    },
+    {
+      "command": [
+        "node",
+        "test-support/linux/node-async-repro.mjs",
+        "node-child"
+      ],
+      "exit": 0,
+      "log": "ordinary-3.log"
+    },
+    {
+      "command": [
+        "node",
+        "test-support/linux/node-async-repro.mjs",
+        "unix"
+      ],
+      "exit": 0,
+      "log": "ordinary-4.log"
+    }
+  ],
+  "ordinaryRequiredChecks": [
+    {
+      "command": [
+        "npm",
+        "test"
+      ],
+      "exit": 0,
+      "seconds": 59.298,
+      "log": "ordinary-npm-test.log"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "exit": 0,
+      "seconds": 0.365,
+      "log": "ordinary-npm-check.log"
+    }
+  ],
+  "ordinaryLinux": {
+    "exit": 0,
+    "tests": 25,
+    "pass": 25,
+    "fail": 0,
+    "skip": 0,
+    "log": "ordinary-linux.log"
+  },
+  "ordinaryNpmTest": {
+    "tests": 944,
+    "pass": 944,
+    "fail": 0,
+    "cancelled": 0,
+    "skip": 0
+  },
+  "packedPython": {
+    "closure": [
+      {
+        "path": "broker/firewalld_probe.py",
+        "sha256": "28d742398e94033e896f291deb963017601b0157f6481e878136095807b3748b"
+      },
+      {
+        "path": "broker/security.py",
+        "sha256": "867fe0e52c81c7e37d054e87c93b3c08d64f0a4f645f04b31640226d116e7101"
+      },
+      {
+        "path": "broker/lifecycle_authorization.py",
+        "sha256": "adf5fd5729777f9fd3bb55d82e0c89c65d02bc8c8e30f1aa54adbec5860ddd5a"
+      },
+      {
+        "path": "broker/lifecycle_verifier.py",
+        "sha256": "cf1ad203fa093df4202d402d2be2c06ca5e003251f86ff4f2b5dee5ce3082bf9"
+      },
+      {
+        "path": "broker/lifecycle_artifacts.py",
+        "sha256": "ec7de8a3b9d052921df719d28711c2ad476663f2b11005f5ba007ce241c81648"
+      },
+      {
+        "path": "broker/lifecycle_journal.py",
+        "sha256": "e13748ebbc97438a53ccc078bedbd48b44e4901548f08b99be39bf58f08289cf"
+      },
+      {
+        "path": "broker/worker.py",
+        "sha256": "bd54fcbf3a203ae6b058b72abb28df60289efab8f69ef746a62efb5d65392073"
+      },
+      {
+        "path": "broker/provision_accounts.py",
+        "sha256": "48c601b97585f9450561bfc2a6dc03cc889f0dbf1bf40d0f0e4d4a4f16120e5a"
+      },
+      {
+        "path": "broker/lifecycle_contract.py",
+        "sha256": "83c7c38db3f5277a658e55e5b0c5a2aa02e246e1297c137620ef37ce20943617"
+      },
+      {
+        "path": "broker/broker.py",
+        "sha256": "e27e19d8b48b9523dde99d7f119c6b56f1e37c084a17a503845d31d016a7584f"
+      },
+      {
+        "path": "broker/lifecycle_handoff.py",
+        "sha256": "b4b3b8d57c5e5184f1d8a85c3163c1fba227e390d13c598206bb28c833bf2481"
+      },
+      {
+        "path": "broker/lifecycle_manager.py",
+        "sha256": "45a63dbb3e232af136ae1354e962a63f8e49af18f35112344743cdfea98b292c"
+      }
+    ],
+    "results": [
+      {
+        "suite": "contract",
+        "exit": 0,
+        "log": "packed-python-contract.log"
+      },
+      {
+        "suite": "authorization",
+        "exit": 0,
+        "log": "packed-python-authorization.log"
+      },
+      {
+        "suite": "journal",
+        "exit": 0,
+        "log": "packed-python-journal.log"
+      },
+      {
+        "suite": "manager",
+        "exit": 1,
+        "log": "packed-python-manager.log"
+      },
+      {
+        "suite": "manager_portable",
+        "exit": 0,
+        "log": "packed-python-manager_portable.log"
+      },
+      {
+        "suite": "artifacts",
+        "exit": 0,
+        "log": "packed-python-artifacts.log"
+      },
+      {
+        "suite": "handoff",
+        "exit": 0,
+        "log": "packed-python-handoff.log"
+      }
+    ]
+  },
+  "ordinaryPackedManager": {
+    "exit": 0,
+    "pass": 17,
+    "log": "ordinary-packed-python-manager.log"
+  },
+  "classification": {
+    "unixStream": "Sandbox-associated: independent socketpair sendall errno 1; identical ordinary-user control succeeds. No exact filter rule attribution.",
+    "stdout": "Independent Node child: exit 0, close observed, empty async stdout, success callback; socket-backed descriptor. Sync write and Python-parent pipe work. Ordinary controls deliver output.",
+    "nativeAssertion": "Reproduced current and HEAD Linux test in sandbox; ordinary current suite 25/25. Exact callback.cc async-ID cause remains unresolved; baseline uses unchanged current JS runtime, not a full historical checkout.",
+    "packedJavaScript": "Fresh consumer installation not executed under no-install instruction. Pack-only control reproduces successful archive/empty JSON in sandbox; ordinary wrapper receives 5609 bytes and valid JSON. No full packed JS pass claimed.",
+    "sourceReview": "No additional demonstrated in-scope source defect; offline protocols only, no installed security claim."
+  },
+  "operations": {
+    "installation": false,
+    "osReconfiguration": false,
+    "guestAccess": false,
+    "dependenciesChanged": false,
+    "versionsChanged": false,
+    "roadmapChanged": false
+  },
+  "verificationCycles": {
+    "initial": [
+      {
+        "command": [
+          "npm",
+          "test"
+        ],
+        "exit": 0,
+        "seconds": 59.298,
+        "log": "ordinary-npm-test.log"
+      },
+      {
+        "command": [
+          "npm",
+          "run",
+          "check"
+        ],
+        "exit": 0,
+        "seconds": 0.365,
+        "log": "ordinary-npm-check.log"
+      }
+    ],
+    "documentationCycle": [
+      {
+        "command": [
+          "npm",
+          "test"
+        ],
+        "exit": 0,
+        "seconds": 54.185,
+        "log": "final-npm-test.log"
+      },
+      {
+        "command": [
+          "npm",
+          "run",
+          "check"
+        ],
+        "exit": 0,
+        "seconds": 0.365,
+        "log": "final-npm-check.log"
+      }
+    ],
+    "postAudit": [
+      {
+        "command": [
+          "npm",
+          "test"
+        ],
+        "exit": 1,
+        "seconds": 70.753,
+        "log": "post-audit-npm-test.log"
+      },
+      {
+        "command": [
+          "npm",
+          "run",
+          "check"
+        ],
+        "exit": 0,
+        "seconds": 0.415,
+        "log": "post-audit-npm-check.log"
+      }
+    ]
+  },
+  "httpFollowup": {
+    "failedFullRun": {
+      "tests": 944,
+      "pass": 942,
+      "fail": 2,
+      "cancelled": 0,
+      "skip": 0,
+      "testsFailed": [
+        "JSON: clean interactive Contact install, concurrent HTTP submissions, restart and explicit base-site cleanup",
+        "shared dispatch drains accepted requests and isolates shutdown, asset validators and failed parking"
+      ],
+      "actualStatus": 500,
+      "expectedStatus": 200,
+      "diagnostics": [
+        {
+          "phase": "page",
+          "code": "SEWN.LIMIT"
+        },
+        {
+          "phase": "cleanup",
+          "code": "SEWN.LIMIT"
+        }
+      ]
+    },
+    "focused": [
+      {
+        "command": [
+          "node",
+          "--test",
+          "test/hardening.test.js",
+          "test/hostname-host.test.js"
+        ],
+        "exit": 0,
+        "seconds": 4.474,
+        "log": "http-focused.log"
+      },
+      {
+        "command": [
+          "node",
+          "--test",
+          "test-support/http-budget-probe.mjs"
+        ],
+        "exit": 0,
+        "seconds": 6.58,
+        "log": "http-controlled-budget.log"
+      }
+    ],
+    "focusedCounts": {
+      "implicatedFiles": {
+        "pass": 14
+      },
+      "controlledBudgetProbe": {
+        "pass": 6
+      }
+    },
+    "classification": "Real intermittent HTTP reliability limitation; precise delay causation and mitigation unresolved. Engine, implicated tests and controlled probes unchanged from starting HEAD; no budget/assertion/concurrency changes. Earlier full passes do not erase failure.",
+    "pressureSnapshot": {
+      "loadavg": "11.05 6.50 3.98 4/3904 3\n",
+      "pressure/cpu": "some avg10=1.92 avg60=13.38 avg300=6.78 total=515552429\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+      "pressure/memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=285\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=176\n",
+      "pressure/io": "some avg10=0.00 avg60=0.02 avg300=0.00 total=101244604\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=91125717\n",
+      "cpus": 16
+    }
+  }
+}

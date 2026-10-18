@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 import socket
 import struct
+import threading
 import time
 from typing import Protocol
 
@@ -17,6 +18,11 @@ _spec = importlib.util.spec_from_file_location('lifecycle_journal', Path(__file_
 j = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(j)
 c = j.c
+RESULT_CODES = frozenset('''REQUEST PEER SESSION_UNVERIFIED SESSION_CHANGED VERIFIER_FAILED
+    INSTALLED_REQUIRED RECONCILIATION_REQUIRED IO CHANGED APPROVAL REQUEST_BINDING
+    TEMPLATE RELEASE RESERVATION REVOKED TIME PROTECTION ACTIVE_START APPROVAL_CHANGED
+    BUSY CAPACITY CONFLICT CORRUPT EPOCH EVIDENCE LIFETIME_REUSED MISSING PREDECESSOR
+    REPLAY RESOURCE_BUSY RETIREMENT_REUSED SCOPE SEQUENCE TRANSITION VERSION'''.split())
 
 
 @dataclass(frozen=True)
@@ -88,10 +94,11 @@ def _frame(connection):
 
 
 def handle(connection, journal_fd, approval_fd, *, now, installed_release_digest,
-           broker_uid, broker_gid, verify_session: SessionVerifier = _unverified):
+           broker_uid, broker_gid, verify_session: SessionVerifier = _unverified,
+           verify_preparation=None):
     """Return bounded canonical candidate response; NEVER perform lifecycle effects.
 
-    After two independent session/boot observations and exact current authorization,
+    After fresh independent session/boot observations and exact current authorization,
     reserve via existing serialized journal preparation. No intent/completion, effect
     retry, receipt acceptance or reservation release. Embedding closes the connection.
     Same request recovers its existing state; all possible-effect states quarantine.
@@ -99,20 +106,23 @@ def handle(connection, journal_fd, approval_fd, *, now, installed_release_digest
     """
     response = dict(schema='wydhosting.lifecycle-candidate-result/1', outcome='refused',
                     code='REQUEST', requestDigest='', operationId='', recordedState='')
+    journal_entered = False
     try:
-        request = c.canonical_request(_frame(connection))
-        value = json.loads(request)
-        response.update(requestDigest=j.digest(request), operationId=value['operationId'])
         response['code'] = 'PEER'
         c.require(c.integer(broker_uid, 0, 2147483647) and c.integer(broker_gid, 0, 2147483647))
         peer = _peer(connection)
         c.require((peer.uid, peer.gid, peer.context) ==
                   (broker_uid, broker_gid, 'system_u:system_r:wydhosting_broker_t:s0'))
+        response['code'] = 'REQUEST'
+        request = c.canonical_request(_frame(connection))
+        value = json.loads(request)
+        response.update(requestDigest=j.digest(request), operationId=value['operationId'])
         boot = _boot()
         response['code'] = 'SESSION_UNVERIFIED'
         c.require(verify_session(peer, request, boot) is True)
         # Static authority is independently read again by journal admission.
-        decision = j.a.authorize(request, approval_fd, now=now,
+        clock = now if callable(now) else lambda: now
+        decision = j.a.authorize(request, approval_fd, now=clock(),
                                  installed_release_digest=installed_release_digest)
         if not decision.allowed:
             response['code'] = decision.code
@@ -120,18 +130,110 @@ def handle(connection, journal_fd, approval_fd, *, now, installed_release_digest
         response['code'] = 'SESSION_CHANGED'
         c.require(_peer(connection) == peer and _boot() == boot and
                   verify_session(peer, request, boot) is True)
-        state = j.transition(request, journal_fd, approval_fd, now=now,
+        def guard(approval, history):
+            # Under the SAME serialization as journal publication. A protected
+            # approval digest or broker verification result alone grants nothing.
+            if not (_peer(connection) == peer and _boot() == boot and
+                    verify_session(peer, request, boot) is True and
+                    callable(verify_preparation) and
+                    verify_preparation(peer, request, boot, approval, history) is True):
+                return False
+            # Evidence collection can take time; re-read current expiry/revocation
+            # and exact approval after it, before any durable preparation.
+            return c._canonical(j._approved(request, approval_fd, clock(),
+                installed_release_digest)) == approval
+
+        journal_entered = True
+        state = j.transition(request, journal_fd, approval_fd, now=clock(),
                              installed_release_digest=installed_release_digest,
-                             expected_state=None, state='prepared')
+                             expected_state=None, state='prepared', prepare_guard=guard)
         response.update(recordedState=state, outcome='indeterminate',
                         code='INSTALLED_REQUIRED' if state == 'prepared' else 'RECONCILIATION_REQUIRED')
     except j.Refused as error:
         # Journal codes are closed constants, never OS exception/path reflection.
-        response['code'] = error.code
-        if error.code in ('IO', 'CHANGED'):
+        response['code'] = error.code if type(error.code) is str and error.code in RESULT_CODES else 'VERIFIER_FAILED'
+        if error.code in ('IO', 'CHANGED', 'RECONCILIATION_REQUIRED'):
             response['outcome'] = 'indeterminate'
-    except (c.Refused, OSError, ValueError, UnicodeError):
+    except OSError:
+        # Includes a close/cleanup error escaping after journal rename/fsync.
+        # An IO exception cannot prove that preparation did not become durable.
+        if journal_entered:
+            response.update(code='IO', outcome='indeterminate')
+    except (c.Refused, ValueError, UnicodeError):
         pass
     except Exception:
-        response['code'] = 'VERIFIER_FAILED'
+        response.update(code='IO' if journal_entered else 'VERIFIER_FAILED',
+                        outcome='indeterminate' if journal_entered else 'refused')
     return c._canonical(response)
+
+
+class Admission:
+    """Embedding-owned bounded active connections; no waiting queue or listener.
+
+    One instance MUST cover all connections for a candidate process. Process/task
+    limits, accept backlog and per-peer rate limits remain installed obligations.
+    """
+    def __init__(self, capacity=4):
+        c.require(c.integer(capacity, 1, 16))
+        self._slots = threading.BoundedSemaphore(capacity)
+
+
+def serve(connection, admission, *args, **kwargs):
+    """Own/close one accepted stream and send one bounded EOF-delimited response.
+
+    False means no response was delivered: outcome MUST be reconciled using the
+    original operationId, never a new transaction. A lost response cannot undo a
+    durable preparation. No transport error appends intent, completion or rejection.
+    """
+    acquired = admission._slots.acquire(blocking=False)
+    try:
+        with connection:
+            if not acquired:
+                return False  # no unbounded rejection writer for unauthenticated peers
+            result = handle(connection, *args, **kwargs)
+            c.require(len(result) <= c.MAX_BYTES)
+            connection.settimeout(2)
+            connection.sendall(result)
+            connection.shutdown(socket.SHUT_WR)
+            return True
+    except (OSError, c.Refused):
+        return False
+    finally:
+        if acquired:
+            admission._slots.release()
+
+
+def exchange(connection, raw, *, manager_uid=0, manager_gid=0):
+    """Trusted client, one preconnected stream; authenticate before sending bytes.
+
+    No path opening, reconnect or automatic retry. Return is a candidate observation,
+    never an effect authorization. Any failure means unknown delivery/outcome.
+    Embedding owns connection lifetime and pins the manager's installed identity.
+    """
+    request = c.canonical_request(raw)
+    peer = _peer(connection)
+    c.require(c.integer(manager_uid, 0, 2147483647) and c.integer(manager_gid, 0, 2147483647))
+    c.require((peer.uid, peer.gid, peer.context) ==
+              (manager_uid, manager_gid, 'system_u:system_r:wydhosting_manager_t:s0'))
+    connection.settimeout(2)
+    connection.sendall(request)
+    connection.shutdown(socket.SHUT_WR)
+    result = c._decode(_frame(connection))
+    c.closed(result, ('schema', 'outcome', 'code', 'requestDigest', 'operationId', 'recordedState'))
+    c.require(all(type(value) is str for value in result.values()))
+    c.require(_peer(connection) == peer and result['schema'] == 'wydhosting.lifecycle-candidate-result/1')
+    c.require(result['requestDigest'] == j.digest(request) and
+              result['operationId'] == json.loads(request)['operationId'])
+    c.require(result['outcome'] in ('refused', 'indeterminate') and result['code'] in RESULT_CODES)
+    state = result['recordedState']
+    c.require(state == '' or state in j.NEXT)
+    c.require((state == '' or result['outcome'] == 'indeterminate') and
+              (state != 'completed') and
+              (result['code'] != 'INSTALLED_REQUIRED' or state == 'prepared') and
+              (result['code'] != 'RECONCILIATION_REQUIRED' or state in
+               ('', 'intent-recorded', 'outcome-unknown', 'reconciliation-required', 'rejected')) and
+              (result['outcome'] != 'indeterminate' or
+               result['code'] in ('IO', 'CHANGED', 'INSTALLED_REQUIRED', 'RECONCILIATION_REQUIRED')) and
+              (result['code'] not in ('IO', 'CHANGED', 'RECONCILIATION_REQUIRED') or
+               result['outcome'] == 'indeterminate'))
+    return result

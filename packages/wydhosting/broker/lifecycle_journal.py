@@ -352,7 +352,7 @@ def recover(raw, trusted_directory_fd, approval_fd, *, now, installed_release_di
 
 
 def transition(raw, trusted_directory_fd, approval_fd, *, now, installed_release_digest,
-               expected_state, state, evidence=b'', verify_evidence=None):
+               expected_state, state, evidence=b'', verify_evidence=None, prepare_guard=None):
     """CAS transition; state='prepared', expected_state=None creates once.
 
     New preparations reserve conflicting unfinished work across operation IDs and
@@ -361,20 +361,27 @@ def transition(raw, trusted_directory_fd, approval_fd, *, now, installed_release
     independent exact retirement verification. No rate or execution admission.
     Trusted offline callers only. No effects may be attached to successful return.
     Completion requires an independent trusted verifier, with no default acceptor.
+    prepare_guard is a trusted manager-only final check under the journal lock,
+    receiving canonical approval and the ORIGINAL canonical history. It can only
+    veto preparation, never authorize a transition or supply lifecycle evidence.
     """
     need(type(state) is str and state in NEXT and (expected_state is None or
          type(expected_state) is str and expected_state in NEXT), 'TRANSITION')
+    need(prepare_guard is None or (callable(prepare_guard) and
+         (expected_state, state) == (None, 'prepared')), 'TRANSITION')
     return _operate(raw, trusted_directory_fd, approval_fd, now, installed_release_digest,
-                    (expected_state, state), evidence, verify_evidence)
+                    (expected_state, state), evidence, verify_evidence, prepare_guard)
 
 
-def _operate(raw, trusted_directory_fd, approval_fd, now, release, change, evidence, verifier):
+def _operate(raw, trusted_directory_fd, approval_fd, now, release, change, evidence, verifier,
+             prepare_guard=None):
     try:
         request = c.canonical_request(raw)
         op = json.loads(request)['operationId']
         with _locked(trusted_directory_fd) as directory:
             directory_before = os.fstat(directory)
             entries, before = _read(directory)
+            original_history = c._canonical(entries)
             record = entries.get(op)
             if record is not None:
                 _, old_request = a._approval(record['approval'].encode())
@@ -407,6 +414,12 @@ def _operate(raw, trusted_directory_fd, approval_fd, now, release, change, evide
             for retirement in _history(entries).values():
                 if retirement is not record:
                     _verify(retirement, verifier, entries)
+            if prepare_guard is not None:
+                try:
+                    verified = prepare_guard(c._canonical(approval), original_history) is True
+                except Exception:
+                    verified = False
+                need(verified, 'SESSION_CHANGED')
             # Verify source did not drift while authorization/evidence were checked.
             need(a._stamp(os.stat('journal.json', dir_fd=directory, follow_symlinks=False)) == a._stamp(before), 'CHANGED')
             _names(directory)

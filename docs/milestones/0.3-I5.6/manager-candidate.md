@@ -1,12 +1,18 @@
 # Minimal manager candidate and installation decision gate
 
+**Current continuation (2026-10-18):** read [offline protocol, protected evidence,
+review staging, FD prototype and coordinated cutover](offline-manager-protocol.md).
+The original admission-only implementation snapshot below is retained for history;
+its statements that no transport sender or FD prototype exists are superseded.
+No installed manager, production integration or roadmap decision is implied.
+
 2026-10-17; starting `develop/0.3` HEAD
 `4c55bfb0b9d03b206062bca1a6f417b77ea1cdd1`, clean. Version remains
 0.3.0-alpha.15. No dependencies, installed files, policy or services change.
 This is an offline candidate, **not an installable lifecycle manager**. Nothing in
 this document authorizes guest access, installation or qualification.
 
-## Implemented boundary
+## Historical 2026-10-17 implemented boundary
 
 Private `broker/lifecycle_manager.py` has no CLI, listener, subprocess, public export
 or production caller. Its trusted embedding supplies an accepted Unix stream,
@@ -96,7 +102,7 @@ differs from reviewed assumptions. Do not reuse the historical 99-test harness.
 
 | Source / prerequisite | Reviewed destination for a later test | State now |
 | --- | --- | --- |
-| broker/lifecycle_manager.py, lifecycle_journal.py, lifecycle_authorization.py, lifecycle_contract.py, security.py | `/opt/wydhosting/i56-manager-candidate/broker/` | Existing offline modules; no daemon entry |
+| broker/lifecycle_manager.py, lifecycle_verifier.py, lifecycle_artifacts.py, lifecycle_handoff.py, lifecycle_journal.py, lifecycle_authorization.py, lifecycle_contract.py, security.py | `/opt/wydhosting/i56-manager-candidate/broker/` | Existing offline modules; no daemon entry |
 | This guide and matching package copy | `/opt/wydhosting/i56-manager-candidate/docs/manager-candidate.md` | Plan only |
 | Administrator-approved release manifest containing SHA256 of every above file and immutable launcher/runtime | `/etc/wydhosting/i56-manager/release.json` | Must generate/review after code freeze; not broker supplied |
 | Exact existing-schema approval.json and reservations.json | `/etc/wydhosting/i56-manager/approval/` | Synthetic fixtures must be administrator generated; no shipped credentials |

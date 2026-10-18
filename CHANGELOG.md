@@ -1,5 +1,21 @@
 ## Unreleased
 
+- Preserve and independently verify the overnight offline I5.6 continuation. Record
+  ordinary-user regression passes and intermittent HTTP deadline failures, isolated
+  sandbox socket/stdout failures and the unresolved native assertion. Add a Debian 13 versus Ubuntu 26.04 feasibility
+  assessment and approval-bound disposable VM plan; no installed qualification,
+  dependency/version change or roadmap deferral.
+
+- Extend the private offline I5.6 manager with bounded authenticated candidate
+  responses, exact verification under journal serialization and default-deny
+  independently protected measurement contracts. Add deterministic review-only
+  artifact staging and an isolated worker-control FD handoff prototype, portable
+  adversarial checks and a coordinated authority-cutover plan. Installed publication,
+  live observation, broker migration and recovery remain unqualified; preserve the
+  sandbox socket/native-assertion reliability limits, including a minimal Node child
+  stdout-loss reproducer. Wait for packed subprocess output to close before parsing;
+  the sandbox output loss remains unresolved. No version/dependency change.
+
 - Add a private non-effectful I5.6 manager admission candidate over the existing
   lifecycle approval/journal contracts: bounded Unix stream, kernel peer gate,
   default-deny session verification and exact retained preparation. Add boundary

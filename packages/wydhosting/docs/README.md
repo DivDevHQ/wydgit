@@ -29,6 +29,10 @@ SEAM enforces application authority. Wydgine does not import WydHosting. One app
 registry, one engine implementation, one SEAM graph per worker and the sixteen-App
 ceiling remain. No broker/control API is registered with SEAM, HTTP, WBasic or CLIENT.
 
+Current repository-only continuation: [offline manager protocol, evidence and
+authority cutover](offline-manager-protocol.md). This adds no installed effects or
+managed-hosting qualification.
+
 ## Delivered executable boundaries
 
 - Read-only `wydhosting setup` preflight and `setup --input <file>` candidate approval.

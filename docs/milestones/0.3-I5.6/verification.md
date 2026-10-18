@@ -2046,3 +2046,128 @@ required final post-edit reruns. Those reruns use `npm-test-final.log`,
 `check-final.log`, `packed-final.log`; final handoff records their outcome. No test
 count is an installed qualification claim. One local focused commit is authorized
 only after verification; no push, release, fallback activation or installed test.
+
+## Repository-only manager protocol continuation — 2026-10-18
+
+Baseline `develop/0.3` at expected HEAD
+`646d1740004d9598c21bc8232099fb31ad8f3c92`, clean. See
+[implemented offline scope and coordinated cutover](offline-manager-protocol.md) and
+[compact diagnostic evidence](../../../test-support/linux/evidence/2026-10-18-offline-manager.json).
+No installed state, guest, dependency, version, release criterion or roadmap changed.
+
+Focused contract **11/11**, authorization **14/14**, journal **52/52** pass.
+Portable manager/independent evidence: **17 passed, 5 explicit transport skips**
+(22 discovered); review artifacts **5/5**; portable FD contract **5/5**.
+The real manager run has **16 errors in 17 cases**, predominantly Unix stream
+EPERM; do not count portable passes as a successful real manager run. Initial artifact
+fixtures had five missing-helper errors; deriving their projection from the existing
+approval corrected them. Initial handoff portable tests had three EPERM errors when
+reconstructing sockets; explicit simulated wrappers allow portable contracts only.
+Both failures and corrected runs are retained. No assertion/timeout was weakened.
+
+A real current-user seqpacket/SCM_RIGHTS probe succeeds, including received inode
+identity and close-on-exec. Socket wrapper reconstruction and stream IO remain
+sandbox-denied, so full authenticated worker-channel transfer is unverified.
+`node --test test/linux-isolation.test.js` again exits **1**, one failed file, no
+valid individual-test total, with the same callback.cc:165 native async-ID assertion.
+Node v24.21.0, Python 3.12.3, UID/GID 1000/1000, NoNewPrivs=1, Seccomp=2, one filter.
+The new no-application-import plain and child probes each pass 1/1; child Python
+reports stream sendall errno 1. Unix-listen probe fails EPERM without the assertion.
+This does not distinguish a Node/native-addon/application failure interaction from
+the sandbox cause. **I5.6-NODE-ASYNC-SANDBOX remains open.** No unsandboxed comparison
+or restriction bypass was attempted.
+
+Diagnostic logs: `/tmp/wydgit-i56-overnight/`; focused hashes and signatures persist
+in the compact evidence record. Final sequential checks, including unchanged real
+manager/Linux suites, npm test, content check and packed consumer attempts, are
+recorded in that directory's `results.json` and `final-*.log`; final handoff reports
+the exact results. No failing suite is rerun merely hoping for a pass. Additional
+required npm checks after review are distinguished from earlier focused attempts.
+These results qualify offline contracts only. Current recommendation remains user
+review of managed-hosting deferral to 0.4; no deferral/fallback is activated.
+
+The first full `npm test` attempt exits 1: runner summary **96 tests, 67 pass,
+29 fail, zero cancelled/skipped**, including the native assertion; this is not a
+valid individual-case count for crashed/output-lost child files. `npm run check`
+passes **3 pages, 42 links**. Packed JS verification exits 1 before consumer
+installation: npm creates its first tarball but the Node wrapper receives empty
+JSON. Changing its output-completion wait from `exit` to `close` does not fix the
+failure; the one targeted rerun remains preserved. Direct Python-launched
+`npm pack` succeeds for WydHosting. The new minimal `node-child` control starts
+only `console.log("probe")`: child exit 0, parent stdout/stderr empty even on
+`close`, expected-output assertion fails. Python-child output is received. This
+isolates a subprocess-output symptom from Wydgit/N-API imports, not its cause or
+the native async-ID assertion. Broader packed JS consumers remain unexecuted.
+Extracted-tarball Python contract **11/11**, authorization **14/14**, journal
+**52/52**, portable manager **17 pass/5 skip**, artifacts **5/5** and portable
+handoff **5/5** pass against packaged modules. Final npm checks are repeated only
+because the diagnostic fixture and packed runner were edited afterward, not to
+seek a passing sandbox rerun. Exact follow-up output stays in the evidence directory.
+
+Final failure-classification review adds two portable regressions: errors escaping
+AFTER durable preparation return `indeterminate/IO`, retain the reservation and
+permit only exact-history observation on retry; unknown verifier exception codes
+cannot reflect private strings. The portable suite now discovers **24 cases:
+19 pass, 5 explicit real-transport skips**. Previous 17-pass/5-skip results above
+are retained as earlier checkpoints. Final verification after this source fix is
+recorded separately in `last-results.json`, `last-*.log` and the compact evidence;
+required npm reruns correspond to actual diagnostic/source edits, never a search
+for a passing environment. All changes remain uncommitted for review because real
+transport/full-suite qualification is blocked. No privileged operation is attempted.
+
+
+## Recovery and Debian-family feasibility — 2026-10-18
+
+The overnight 23-file working tree was preserved before edits in the new private
+`/tmp/wydgit-i56-recovery-20261018T111944Z` directory (binary diff, complete source
+archive including untracked files and prior `/tmp` logs, SHA-256 inventory). Historical
+failures above and `2026-10-18-offline-manager.json` are retained unchanged.
+See `docs/milestones/0.3-I5.6/recovery-and-debian-feasibility.md` in the
+repository and the compact `2026-10-18-recovery.json` evidence.
+
+Fresh sequential sandbox focused tests: contract **11/11**, authorization **14/14**,
+journal **52/52**, portable manager **19 pass / 5 skip**, artifacts **5/5**, simulated
+handoff **5/5**. Real manager remains **16 errors in 17 cases** in the sandbox.
+Controlled ordinary-user execution of the unchanged real manager passes **17/17**;
+Linux regression passes **25/25**. Required ordinary-user `npm test` passes **944/944**,
+zero failures/cancellations/skips; `npm run check` passes **3 pages / 42 links**.
+Final post-documentation required checks are reported separately in the handoff.
+All these are unprivileged offline/transport results, not installed MAC evidence.
+
+Independent controls demonstrate sandbox socket send/listen EPERM and asynchronous
+socket-backed Node child stdout loss despite successful exit/close/write callback;
+synchronous writes and Python-parent pipes work. Ordinary-user counterparts work.
+A writable-cache sandbox pack produces its tarball and exit 0 but empty JSON;
+ordinary Node-wrapped pack returns valid JSON. Extracted current broker bytes match,
+and all seven Python suites pass in appropriate contexts (real manager ordinary user).
+Fresh packed JavaScript consumer installations were not executed under the assignment's
+no-install restriction. No broader packed pass is claimed.
+
+The native callback.cc async-ID assertion reproduces in both current and HEAD-version
+Linux test files under the sandbox; no minimal native-cause reproduction was found.
+The passing ordinary-user run alone is not its diagnosis. Exact cause remains open;
+no runtime dependency, assertion or security filter was weakened.
+
+Debian 13 and Ubuntu 24.04 were original experimental targets, never qualified.
+Current Ubuntu LTS 26.04 is not admitted by current platform policy. Debian 13 is
+recommended for one separately approved portability VM trial. Manager publication,
+live verification, authority removal, confinement and recovery work remain; AppArmor
+is not a drop-in SELinux/MCS substitute. Recommendation B remains advisory only.
+No guest access, install, OS reconfiguration, version bump or roadmap change occurred.
+
+
+### Recovery follow-up: intermittent ordinary-user HTTP failures
+
+Two ordinary-user full cycles passed 944/944. The subsequent post-audit required
+cycle failed **2 of 944** (942 pass, zero cancelled/skipped): JSON Contact concurrent
+POST and shared dispatch held-request drain each returned 500 with `page` and
+`cleanup` / `SEWN.LIMIT`. Content check still passed. Both implicated test files
+then passed 14/14 focused; unchanged controlled budget probes passed 6/6. These
+focused passes do not erase the full-run failure. Engine/HTTP-test/probe source is
+unchanged from starting HEAD. Exact scheduling/IO attribution and mitigation remain
+unresolved; this is a real intermittent HTTP reliability limitation, not a claimed
+sandbox-only failure. No budget, assertion or concurrency policy was changed.
+See the recovery evidence/report for cycle metadata; final post-evidence required
+checks are recorded separately in `delivery-*.log` and reported at handoff. The local
+commit covers independently verified offline contracts, not general runtime or
+installed security qualification.
