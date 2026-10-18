@@ -1006,3 +1006,22 @@ remains credible because it avoids this dynamic privileged manager boundary; it
 still needs separate identities, storage, credentials and limits. These results
 neither activate that fallback nor change the release roadmap/decision log.
 **I5.6 remains incomplete, experimental and unqualified for production.**
+
+## Minimal constrained manager candidate and decision gate — 2026-10-17
+
+[Candidate, exact installed-test/rollback plan and recommendation](manager-candidate.md)
+adds one private non-effectful Unix-stream entry point over the existing lifecycle
+contract, current protected authorization and serialized journal. It observes kernel
+peer credentials/domain and current boot, requires an independent live-session
+verifier (default deny), rechecks before exact preparation, and returns only refusal
+or an explicitly indeterminate candidate result. It never records effect intent or
+completion, invokes systemd or publishes artifacts. Typed protected publication/
+effective-state obligations deterministically refuse in the offline implementation.
+No broker caller, OS right, installed asset or reconciliation semantic changes.
+
+The useful positive path is a simulated-authority admission rehearsal with retained
+reservations; it is not a runnable installed manager. Live verifier, publisher,
+effective-state collector, FD handoff, broker/worker migration and simultaneous
+policy transfer remain substantial work. The plan recommends **B**, managed hosting
+qualification in 0.4, for the user's decision; it neither makes that decision nor
+activates a fallback. Five real site migrations remain 0.3 release criteria.

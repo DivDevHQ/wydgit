@@ -1951,3 +1951,98 @@ next step is a concrete minimal constrained-manager candidate and reviewed AlmaL
 integration plan, followed by separately authorized installation and enforcing
 adversarial checks. Cross-boot or reservation-releasing reconciliation is not needed
 for that first test. No fallback/deferral decision has been made.
+
+## Minimal manager candidate — 2026-10-17
+
+Baseline confirmed `develop/0.3` at the expected
+`4c55bfb0b9d03b206062bca1a6f417b77ea1cdd1`, clean. Read AGENTS.md,
+DEVELOPMENT, founding architecture, I5.6 design/verification/continuation, current
+broker/authorization/journal/security/template/policy and Linux/packed harnesses,
+and existing decision records. No baseline reconciliation or unrelated changes.
+See [implemented scope, installed plan and decision recommendation](manager-candidate.md).
+No guest contact, installed test, privileged lifecycle, system configuration,
+dependency, package version, roadmap or decision-log change.
+
+### Reliability issue I5.6-NODE-ASYNC-SANDBOX (open)
+
+Bounded investigation: reviewed preserved Slice 6 diagnostics around line 1884 and
+made two Linux-suite sandbox attempts (normal isolation, then isolation=none), one
+small standard-library probe, and ordinary-user comparisons. Both Linux attempts
+hit the same native assertion at callback.cc:165, `node::InternalCallbackScope::Close`,
+`(env_->execution_async_id()) == (0)`. Default invocation exited 1, one failed file,
+no valid per-test total. No-isolation exited 134 (SIGABRT) after reporting primitive
+and new candidate failures plus passing offline Python suites. Thus the child-process
+test isolation wrapper is not necessary to reproduce it; the suite still compiles
+its N-API peer helper and uses spawnSync for Python. The existing native helper,
+application async paths, Node internals and denied syscalls are not isolated causes.
+
+| Controlled invocation | Managed sandbox | Ordinary user |
+| --- | --- | --- |
+| Python manager suite, initial 10 cases | 10 errors, socket sendall/shutdown EPERM | 10 passed, unchanged source |
+| node --test test/linux-isolation.test.js (before wrapper addition) | exit 1, native assertion, no per-test summary | Comparison uses final wrapper below |
+| node --test --test-isolation=none test/linux-isolation.test.js | exit 134, same assertion; primitive/candidate errors | Not repeated (bounded investigation) |
+| Minimal node:test + node:net Unix listen/close, no repo imports | exit 1, ordinary listen EPERM; **no native assertion** | exit 0, 1/1 passed |
+| Final Python candidate suite | Sandbox errors preserved, no suppression | 12/12 passed |
+
+Both environments use Node v24.21.0 at
+`/home/brian/.nvm/versions/node/v24.21.0/bin/node`, UID/GID 1000/1000 and this CWD.
+NODE_OPTIONS, NODE_PATH, LD_PRELOAD, LD_LIBRARY_PATH, UV_THREADPOOL_SIZE and TMPDIR
+are unset in both. Normal Linux invocation adds only --test; controlled comparison
+adds --test-isolation=none, no async-hook disabling or timeout relaxation.
+Sandbox `/proc/self/status`: NoNewPrivs=1, Seccomp=2, Seccomp_filters=1; ordinary:
+0/0/0. Different PID namespaces/denied syscalls are plausible harness differences,
+not a proven cause. Local Python Unix streams independently show sandbox EPERM.
+The minimal probe imports node:test, node:net and node:fs/promises, listens at
+`/tmp/wyd-i56-node-probe-<pid>.sock`, rejects on server error, then closes/removes its
+own exact socket. It reproduces the denial, **not** the assertion. No host settings
+changed and no alternate Node version installed. Evidence points toward a sandbox-
+triggered execution failure/native assertion interaction; application responsibility
+and a native Node defect are unresolved. Do not describe it as fixed or harmless.
+Installed lifecycle qualification cannot depend on this failing harness. Next
+reliability investigation should minimize the suite's failing native/async path
+under the same syscall restrictions, separately from installed manager work.
+
+Logs and minimal probe: `/tmp/wyd-i56-manager/{sandbox-linux.log,
+sandbox-no-isolation.log,sandbox-minimal.log,ordinary-minimal.log,socket-repro.mjs,
+sandbox-runtime.json,ordinary-runtime.json,sandbox-status.txt,ordinary-status.txt,
+manager-focused.log}`. This matrix and failure signatures persist here even if /tmp
+is lost. Initial errors are environment denials, not counted as passing tests.
+
+### Verification scope
+
+Fresh candidate focused suite passes **12/12** as ordinary user. Positive root owner,
+SELinux context and live session proof are simulated; actual current-user streams,
+peer credentials, filesystem and journal locking run. The candidate has no installed
+publication/effective-state verifier; completion evidence is refused rather than
+mocked into authority. Existing 52 journal regressions preserve quarantine,
+reconciliation, expiry/revocation, crash and predecessor invariants unchanged.
+Final sequential command results are recorded below after execution. New wrapper
+and packed asset/mirror checks include lifecycle_manager.py and manager-candidate.md.
+
+### Executed verification and final review
+
+Sequential ordinary-user verification (unmodified assertions/timeouts):
+
+| Command | Actual result |
+| --- | --- |
+| python3 test-support/linux/verify_lifecycle_contract.py packages/wydhosting/broker | 11/11 passed |
+| python3 test-support/linux/verify_lifecycle_authorization.py packages/wydhosting/broker | 14/14 passed |
+| python3 test-support/linux/verify_lifecycle_journal.py packages/wydhosting/broker | 52/52 passed |
+| python3 test-support/linux/verify_lifecycle_manager.py packages/wydhosting/broker | 12/12 passed |
+| node --test test/linux-isolation.test.js | 24/24 passed, zero skips/cancellations |
+| npm test | 943/943 passed, zero skips/cancellations |
+| npm run check | Passed: 3 complete pages, 42 internal links, unique anchors |
+| node scripts/verify-packed-packages.js | Passed: service-free, 156 five-library, 35 provider, 20 supervision, 24 Linux tests; one installed engine per consumer, repository runtime imports rejected |
+
+Repository logs: `/tmp/wyd-i56-manager/{contract,authorization,journal,
+manager-focused,ordinary-linux,npm-test,check,packed}.log`. Packed evidence:
+`/tmp/wyd-i54-packed-tBNZVE`. These passes do not erase either sandbox assertion or
+initial socket errors. They establish offline behavior only. All 11 changed files
+are candidate code/tests, package asset checking, CHANGELOG and authoritative/mirrored
+guides; original broker, worker, policy and lifecycle primitives remain unchanged.
+Full staged source/design/test diff and working-tree status inspected; no unrelated
+changes. Results documentation and package mirrors are synchronized before the
+required final post-edit reruns. Those reruns use `npm-test-final.log`,
+`check-final.log`, `packed-final.log`; final handoff records their outcome. No test
+count is an installed qualification claim. One local focused commit is authorized
+only after verification; no push, release, fallback activation or installed test.

@@ -1,5 +1,12 @@
 ## Unreleased
 
+- Add a private non-effectful I5.6 manager admission candidate over the existing
+  lifecycle approval/journal contracts: bounded Unix stream, kernel peer gate,
+  default-deny session verification and exact retained preparation. Add boundary
+  regressions and an explicit installed-test/rollback plan with a 0.3/0.4 decision
+  recommendation. Preserve the unresolved sandbox Node assertion diagnostics.
+  No installed manager, lifecycle effects, broker privilege transfer or version bump.
+
 - Add exact protected offline I5.6 reconciliation authorization for write-once
   acceptance of independently verified retirement evidence. Bind approval to the
   quarantined history, identity, action and current boot; retain quarantine and

@@ -29,7 +29,7 @@ for(const name of ['wydgine','wydhosting','wydstore','wydgate','wydsearch','wydf
  // Every package is private/local verification; no publication occurs.
  assert.ok(!record.files.some(f=>/(^|\/)(test|node_modules|\.git|data|__pycache__)(\/|$)|\.py[co]$|\.pem$|private.key/.test(f.path)),name+' unexpected package contents');
  if(name==='wydgine')assert.ok(record.files.some(f=>f.path==='native/peercred.c'));
- if(name==='wydhosting')for(const asset of ['broker/lifecycle_journal.py','broker/lifecycle_authorization.py','broker/lifecycle_contract.py','broker/broker.py','broker/security.py','broker/worker.py','templates/wydhosting-broker.socket','templates/wydhosting-broker@.service','templates/wydhosting-broker.slice','templates/wydhosting-provider.service','templates/Caddyfile','docs/service-and-cgroups.md'])assert.ok(record.files.some(f=>f.path===asset),asset);
+ if(name==='wydhosting')for(const asset of ['broker/lifecycle_manager.py','broker/lifecycle_journal.py','broker/lifecycle_authorization.py','broker/lifecycle_contract.py','broker/broker.py','broker/security.py','broker/worker.py','templates/wydhosting-broker.socket','templates/wydhosting-broker@.service','templates/wydhosting-broker.slice','templates/wydhosting-provider.service','templates/Caddyfile','docs/service-and-cgroups.md'])assert.ok(record.files.some(f=>f.path===asset),asset);
  await fs.writeFile(path.join(directory,name+'-pack.json'),JSON.stringify(record,null,2));
 }
 async function consumer(name,packages){
