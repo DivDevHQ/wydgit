@@ -1,3 +1,4 @@
+import {createPageDiagnostics} from './diagnostics.js';
 import {createInstanceController} from './instances.js';
 import {createCompletion} from './completion.js';
 import {createExecutionBudget,executionBudget} from '../sewn/budget.js';
@@ -16,12 +17,14 @@ import { renderSite,errorDocument } from '../index.js';
 import { prepareComponents,createPresentationLedger } from '../components.js';
 
 export async function executePage({model,pageId,session,input,context,runtimeSettings={},handlers=[],actions=[],events=new EventRegistry(),files,libraries,serviceMappings,csrf,render=renderSite,observe,cancelled=()=>false}) {
+  const diagnostics=createPageDiagnostics();
   handlers=prepareHandlers(handlers,events);actions=actions.map(record=>prepareAction(record,events));
   check(context.app===session.view.app&&session.active(),'EVENT.DENIED','Invalid owning Session');
   check((context.identity?.sessionId??null)===(session.identity?.sessionId??null),'EVENT.DENIED','Wrong Session identity');
   const presentationLedger=createPresentationLedger(context,pageId,runtimeSettings);
   let runtime=hydrate(dehydrate(model.runtime,{includeSensitive:true}),model.registry),alive=true,writable=true,unloading=false;
   const executionLedger=createExecutionBudget(context,{guard:()=>check(alive&&session.active()&&!cancelled(),'EVENT.DENIED','Page execution ended')});
+  diagnostics.budgetStarted();
   const completion=createCompletion(()=>executionBudget(executionLedger,context).check());
   const ledger=[],initialized=new Set(),archive=new Map(),errors=[];let failure;let resolving=false;
   const response=createResponse(context),requestData={...input,route:{page:pageId}};
@@ -69,7 +72,7 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
   };
   const contexts=guard=>({PAGE:handle(pageId,guard),SESSION:freeze(clean(session.view)),REQUEST:requestFacade(requestData,context,guard),...(resolving?{}:{RESPONSE:response.facade(guard)}),SERVER:Object.freeze({App:context.app}),
     ...(resolving?{}:{FILESYS:Object.freeze({Get(id){guard();check(files,'FILE.DENIED','No approved files');return files.get(id,context,guard);}})}),
-    SERVICES:Object.freeze({async Invoke(library,apiVersion,name,input){guard();check(!resolving||library==='wydstore'&&['get','query'].includes(name),'EVENT.DENIED','Resolvers may only read records');await session.authorize();guard();check(libraries,'SEAM.DENIED','No services');input=storageInput(library,name,input);return completion.run(operation=>libraries.bind(context,operation).invoke(library,apiVersion,name,input));},async Call(library,name,input){guard();check(!resolving||library==='wydstore'&&['get','query'].includes(name),'EVENT.DENIED','Resolvers may only read records');await session.authorize();guard();check(libraries,'SEAM.DENIED','No services');input=storageInput(library,name,input);return completion.run(operation=>libraries.bind(context,operation).call(library,name,input));}})
+    SERVICES:Object.freeze({async Invoke(library,apiVersion,name,input){guard();check(!resolving||library==='wydstore'&&['get','query'].includes(name),'EVENT.DENIED','Resolvers may only read records');await diagnostics.measure('authorization',()=>session.authorize());guard();check(libraries,'SEAM.DENIED','No services');input=storageInput(library,name,input);return diagnostics.measure('service',()=>completion.run(operation=>libraries.bind(context,operation).invoke(library,apiVersion,name,input)));},async Call(library,name,input){guard();check(!resolving||library==='wydstore'&&['get','query'].includes(name),'EVENT.DENIED','Resolvers may only read records');await diagnostics.measure('authorization',()=>session.authorize());guard();check(libraries,'SEAM.DENIED','No services');input=storageInput(library,name,input);return diagnostics.measure('service',()=>completion.run(operation=>libraries.bind(context,operation).call(library,name,input)));}})
   });
   const componentsRuntime=createInstanceController({runtime,registry:model.registry,context,rootId:pageId,budget:executionLedger,events,services:contexts(rootGuard).SERVICES,scope:contexts(rootGuard),canEdit:()=>writable&&!unloading&&response.state==='Open',canEmit:()=>writable&&!unloading,onRuntime:next=>{runtime=next;}});
   const executor=async(document,options)=>{const id=options.scope.ME.id;if(!exists(id))return executeWorkflow(document,options);const d=model.registry.get(runtime.get(id).prototype);if(!d.component&&!Object.keys(d.events).length)return executeWorkflow(document,options);componentsRuntime.adopt(runtime);if(!componentsRuntime.executable(id))await componentsRuntime.activate();return componentsRuntime.workflow(document,options.scope,id,options);};
@@ -78,14 +81,14 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
   const defaults={};
   if(action)defaults[action.type]=async()=>{
     if(action.delegation)verifyDelegation(action);
-    context.require(action.capability);await session.authorize();
+    context.require(action.capability);await diagnostics.measure('authorization',()=>session.authorize());
     // Default is a trusted registered adapter; receives the same safe contexts, no grants.
     const dispatcher=createDispatcher({budget:executionLedger,executor,dynamicHandlers:options=>{componentsRuntime.adopt(runtime);return componentsRuntime.handlers(options);},prototypeRegistry:model.registry,registry:events,handlers:[{type:action.type,owner:action.target,...(action.workflow!==undefined?{workflow:action.workflow}:{run:action.run})}],context,handle,contexts,exists});
     try{await dispatcher.dispatch({type:action.type,source:action.target,target:action.target,payload:input.action.payload??{}});}finally{dispatcher.close();}
   };
   const dispatcher=createDispatcher({budget:executionLedger,executor,dynamicHandlers:options=>{componentsRuntime.adopt(runtime);return componentsRuntime.handlers(options);},prototypeRegistry:model.registry,registry:events,handlers,context,handle,contexts,exists,canRaise:id=>initialized.has(id),defaults,completed:()=>response.explicit,identifiers:{session:session.view.id,page:pageId}});
   componentsRuntime.attachDispatcher(dispatcher);
-  const dispatch=(type,id,payload={},valid=true)=>dispatcher.dispatch({type,source:type.startsWith('Page.')?pageId:id,target:id,payload,valid});
+  const dispatch=(type,id,payload={},valid=true)=>diagnostics.measure('dispatch',()=>dispatcher.dispatch({type,source:type.startsWith('Page.')?pageId:id,target:id,payload,valid}));
   const initialize=async()=>{
     componentsRuntime.adopt(runtime);await componentsRuntime.activate();
     let rounds=0;
@@ -93,7 +96,7 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
       for(const id of pending){if(!exists(id))continue;initialized.add(id);if(!ledger.includes(id))ledger.push(id);archive.set(id,runtime.get(id));await dispatch('Page.Initialize',id);if(response.explicit)return;}
     }
   };
-  const phase=async name=>{componentsRuntime.adopt(runtime);const snapshot=tree();for(const id of snapshot){if(exists(id)){await dispatch(`Page.${name}`,id);if(response.explicit)return;}}await initialize();};
+  const phase=async name=>{diagnostics.phase(name.toLowerCase());componentsRuntime.adopt(runtime);const snapshot=tree();for(const id of snapshot){if(exists(id)){await dispatch(`Page.${name}`,id);if(response.explicit)return;}}await initialize();};
   const systemSet=(id,properties)=>{
     // Trusted input binding only touches declared semantic fields, not arbitrary data.
     const raw=dehydrate(runtime,{includeSensitive:true});const walk=node=>{if(node.id===id)Object.assign(node.properties,properties);Object.values(node.slots).flat().forEach(walk);};walk(raw);runtime=hydrate(raw,model.registry);
@@ -114,7 +117,7 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
       check(input.action.csrf===csrf&&typeof csrf==='string'&&csrf.length>=32,'REQUEST.FORGERY','Invalid action origin');
       check(session.active(),'EVENT.DENIED','Session ended');events.payload(action.type,input.action.payload??{});
       if(action.delegation){
-        context.require(action.capability);await session.authorize();
+        context.require(action.capability);await diagnostics.measure('authorization',()=>session.authorize());
         const d=action.delegation;
         check(context.package===d.package&&context.installation===d.installation&&exists(d.root),'EVENT.DENIED','Wrong delegation principal');
         requestData.route.target=input.action.target;
@@ -124,9 +127,10 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
         verifyDelegation(action);action={...action,target:input.action.target};
       }
     } else check(!input.action,'EVENT.DENIED','GET cannot invoke action');
+    diagnostics.phase('start');
     ledger.push(pageId);archive.set(pageId,runtime.get(pageId));
     await dispatch('Page.Start',pageId);
-    if(!response.explicit)await initialize();
+    if(!response.explicit){diagnostics.phase('initialize');await initialize();}
     if(!response.explicit) {
       if(input.method==='POST') {
         const values=parseMap(input.form),fields=model.registry.isA(runtime.get(action.target).prototype,'wydgit.core/form')?descendantFields(runtime,model.registry,action.target):[];
@@ -150,28 +154,32 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
       for(const id of tree())if(model.registry.isA(runtime.get(id).prototype,'wydgit.core/form'))systemSet(id,{valid:runtime.get(id).properties.valid&&descendantFields(runtime,model.registry,id).every(child=>child.properties.valid)});
     }
     if(!response.explicit&&input.action) {
+      diagnostics.phase('action');
       if(action.delegation)verifyDelegation(action);
-      context.require(action.capability);await session.authorize();
+      context.require(action.capability);await diagnostics.measure('authorization',()=>session.authorize());
       await dispatch(action.type,action.target,input.action.payload??{},action.type!=='Submit'||runtime.get(action.target).properties.valid!==false);
       await initialize();
     }
     if(!response.explicit)await phase('PreRender');
-    if(!response.explicit){componentsRuntime.adopt(runtime);await componentsRuntime.render();}
+    if(!response.explicit){diagnostics.phase('render');componentsRuntime.adopt(runtime);await componentsRuntime.render();}
     writable=false;
     if(!response.explicit){const projection=webModel(runtime,model);const components=await prepareComponents(projection,pageId,input,context,libraries,session,presentationLedger);const result=await render(projection,input.path,{csrf,components});response.tree(result.html,result.status);}
-  }catch(error){failure=safeError(error);}
+  }catch(error){diagnostics.failure();failure=safeError(error);}
   finally {
     try {
+    diagnostics.phase('cleanup');
     writable=false;unloading=true;response.beginCleanup();dispatcher.close();
     const cleanup=createDispatcher({budget:executionLedger,executor,dynamicHandlers:options=>componentsRuntime.handlers(options),prototypeRegistry:model.registry,registry:events,handlers,context,handle,contexts,canRaise:()=>false,exists:id=>exists(id)||archive.has(id)});
-    for(const id of [...ledger].reverse())try{await cleanup.dispatch({type:'Page.Unload',source:pageId,target:id,payload:{}});}catch(error){errors.push(safeError(error).toJSON());}
-    cleanup.close();await componentsRuntime.dispose();errors.push(...componentsRuntime.errors());const charges=executionBudget(executionLedger,context).snapshot();executionBudget(executionLedger,context).close();alive=false;observe?.({meter:executionBudget(executionLedger,context).meter(),steps:charges.steps??0,limited:[failure,...errors].some(error=>['SEWN.LIMIT','EVENT.LIMIT'].includes(error?.code))});
+    for(const id of [...ledger].reverse())try{await cleanup.dispatch({type:'Page.Unload',source:pageId,target:id,payload:{}});}catch(error){diagnostics.failure();errors.push(safeError(error).toJSON());}
+    cleanup.close();await componentsRuntime.dispose();errors.push(...componentsRuntime.errors());executionBudget(executionLedger,context).close();alive=false;
     }catch(error){failure??=safeError(error);}
     finally {
     executionBudget(executionLedger,context).close();alive=false;
     // Revocation stops new work; it does not cancel already submitted kernel I/O.
     // Keep the request in the host's drain set until every admitted call settles.
-    await completion.settle();
+    diagnostics.phase('settle');await completion.settle();
+    const charges=executionBudget(executionLedger,context).snapshot();
+    try{observe?.({meter:diagnostics.finish(executionBudget(executionLedger,context).meter()),steps:charges.steps??0,limited:[failure,...errors].some(error=>['SEWN.LIMIT','EVENT.LIMIT'].includes(error?.code))});}catch{}
     }
   }
   const outcome=completion.outcome(Boolean(failure));

@@ -1,5 +1,12 @@
 ## Unreleased
 
+- Add bounded trusted server Page diagnostics for first failing phase and settled
+  authorization/service/dispatch waits on the existing shared SEWN ledger.
+  Distinguish wall-time exhaustion from cancellation guards in six controlled HTTP
+  probes, retaining commit-uncertainty and sibling-survival assertions. Limits,
+  concurrency, HTTP error contracts and immutable client bundles are unchanged;
+  historical intermittent full-suite attribution remains unresolved.
+
 - Follow up package lifecycle qualification with durable local provisioning and
   adapter checkpoints, versioned lossless schema/data and managed-instance
   transformations, checked committed-upgrade rollback, and explicitly approved
