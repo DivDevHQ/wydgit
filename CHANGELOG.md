@@ -1,5 +1,12 @@
 ## Unreleased
 
+- Document the planned developer-defined migration framework: distinct
+  retire-in-place and replacement adoption, stable identity mappings, versioned
+  manual/automatic migration paths, SEAM-safe execution, content-preserving
+  recovery and proposed beta acceptance gates. Link from lifecycle contracts
+  and the workstream index. Documentation only; no runtime/version change,
+  milestone renumbering or change to the WydHosting 0.4 deferral.
+
 - Add bounded trusted server Page diagnostics for first failing phase and settled
   authorization/service/dispatch waits on the existing shared SEWN ledger.
   Distinguish wall-time exhaustion from cancellation guards in six controlled HTTP

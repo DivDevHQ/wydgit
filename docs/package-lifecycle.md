@@ -5,6 +5,12 @@ with release blockers below. This is not full production package lifecycle quali
 [audit and qualification record](milestones/0.3-package-lifecycle/README.md).
 The existing I hosting and J administration identifiers are unchanged.
 
+The [developer-defined migration plan](milestones/0.3-package-lifecycle/developer-defined-migrations.md)
+specifies a future retire-in-place, replacement-reference and Migrate Data
+framework, including automatic upgrades through complete compatible paths.
+It is planning only; the implemented host-approved lossless migration and
+retained-uninstall contracts below remain unchanged.
+
 ## Host API and approvals
 
 The native installer remains the package manager. Trusted host code imports

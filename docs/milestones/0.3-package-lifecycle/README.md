@@ -10,6 +10,16 @@ hosting deferral and six security work packages remain unchanged.
 The audit and implementation phases below retain the original foundation history.
 The acceptance-gate table and continuation record describe the current implementation.
 
+## Developer-defined migration planning
+
+The [developer-defined migration framework](developer-defined-migrations.md)
+records the agreed retire → stage replacement → update instance references →
+Migrate Data workflow and automatic upgrades through complete compatible paths.
+It defines developer/runtime responsibilities, stable identity, preservation,
+SEAM boundaries, proposed beta scope, acceptance tests and open questions.
+**Planning only:** it does not extend the implemented migration grammar,
+declare beta readiness, renumber I/J or change Decision 0003.
+
 ## Initial audit
 
 The starting branch was clean `develop/0.3` at `5da84b5`, version
