@@ -9,12 +9,12 @@ five-site migration goals continue in 0.3, without a managed-hosting qualificati
 claim. See repository `docs/milestones/0.3-release-status.md`; intermittent
 `SEWN.LIMIT` HTTP 500s remain open in `docs/milestones/0.3-reliability.md`.
 
-Private local development package 0.3.0-alpha.16, requiring exactly Wydgine
-0.3.0-alpha.16 and Node >=24.21.0. Wydgine runs Apps; WydHosting operates hosting
+Private local development package 0.3.0-alpha.17, requiring exactly Wydgine
+0.3.0-alpha.17 and Node >=24.21.0. Wydgine runs Apps; WydHosting operates hosting
 infrastructure. No public npm publication is claimed.
 
 ```sh
-npm install /verified/path/wydgine-0.3.0-alpha.16.tgz /verified/path/wydhosting-0.3.0-alpha.16.tgz
+npm install /verified/path/wydgine-0.3.0-alpha.17.tgz /verified/path/wydhosting-0.3.0-alpha.17.tgz
 ./node_modules/.bin/wydhosting inspect --directory /absolute/private/state --fixture-root /absolute/disposable/fixture
 ```
 

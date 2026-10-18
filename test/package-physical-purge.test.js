@@ -23,7 +23,7 @@ for(const provider of ['json','sqlite'])test(`${provider}: full lifecycle ends i
   assert.equal(readInstalledState(f.root).retained.length,0);await assert.rejects(fs.stat(storeFile(f.store)),{code:'ENOENT'});
   const config=JSON.parse(await fs.readFile(path.join(f.root,'wydgit.config.json'),'utf8'));assert.equal(config.libraries.find(l=>l.id==='wydstore').options.stores.length,0);
   const checkpoint=path.join(f.root,'content',result.checkpoint);assert.equal((await fs.stat(checkpoint)).mode&0o777,0o600);assert.match(await fs.readFile(checkpoint,'utf8'),/Customer edit/);
-  assert.equal(inspectPackageEffects(f.root).status,'COMPLETED');assert.equal((await service.call('wydstore','get',f.input)).ok,false);
+  assert.equal(inspectPackageEffects(f.root).status,'COMPLETED');await assert.rejects(service.call('wydstore','get',f.input),{code:'SEAM.CONTEXT'});
 });
 for(const provider of ['json','sqlite'])for(const stage of ['PLANNED','RESOURCE_0','CONFIG','CATALOG','COMPENSATING_RESOURCE_0'])test(`${provider}: purge SIGKILL at ${stage} preserves or deletes the complete owned store`,async t=>{
   const f=await storedFixture(t,provider),before=checkpointHash(await snapshotStore(f.store));

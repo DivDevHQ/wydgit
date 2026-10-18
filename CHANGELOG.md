@@ -1,5 +1,14 @@
 ## Unreleased
 
+- Add trusted BackOffice placement, same-context replacement, separately authorized
+  relocation and retained retirement on the existing stopped-App package lifecycle.
+  Bind exact App/installation generations; fence cached and asynchronous authority,
+  including manual retirement/cancellation. Reuse catalog recovery and JSON/SQLite
+  retention; reject wider replacement grants and public HTTP administrative execution.
+  Advance platform/Wydgine/WydHosting to alpha.17 and WydClient to alpha.11; preserve
+  historical bundles and existing SEAM/Gate/store boundaries. No administration UI,
+  live drain orchestration, broader storage domains or hosting qualification added.
+
 - Establish Wydgine/platform 0.3.0-alpha.16 execution contexts: exact Client/SUB,
   Server/FrontEnd and Server/BackOffice bindings, versioned optional prototype and
   instance restrictions, inherited validation and fail-closed trusted placement.

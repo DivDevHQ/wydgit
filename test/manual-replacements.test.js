@@ -8,17 +8,34 @@ import { readInstalledState } from '../wydgine/packages/state.js';
 import { loadRepository } from '../wydgine/repository.js';
 import { snapshotStore } from '../packages/wydstore/src/trusted-lifecycle.js';
 import { interruptedEffects } from '../test-support/package-effects.js';
+// Independent host maintenance writer deliberately changes source data while the
+// installed package is quarantined; stale package execution must remain fenced.
+async function maintenanceBinding(f){
+ const {ExecutionContext}=await import('../wydgine/seam/context.js');
+ const {initializeHost}=await import('../wydgine/host.js');
+ const e=readInstalledState(f.root).packages.find(p=>p.manifest.id==='acme/a');
+ return (await initializeHost({root:f.root})).bind(new ExecutionContext({context:'FrontEnd',publisher:e.manifest.publisher,package:e.manifest.id,installation:e.receipt.id,app:'boilerplate',self:e.instance,capabilities:e.approved.capabilities,scopes:{wydstore:e.storageScopes}}));
+}
 const request=(f,action,extra={})=>({schema:'wydgit.manual-replacement-request/1',root:f.root,package:'acme/a',installationContext:f.context,action,...(['stage','references','migrate'].includes(action)?{candidates:[f.candidate],developerMigrations:f.request}:{}),...extra});
 const inspect=f=>inspectManualReplacement({root:f.root,installationContext:f.context});
 const run=(f,action,extra)=>manualReplacement(request(f,action,extra));
 const refs=f=>inspect(f).pending.preview.references;
 async function staged(f){await run(f,'retire');await run(f,'stage');}
+function assertRetiredSource(actual,before){
+ const retired=actual.find(p=>p.manifest.id==='acme/a');
+ assert.match(retired.lifetimeGeneration,/^[a-f0-9-]{36}$/);
+ assert.equal(retired.receipt.lifetimeGeneration,retired.lifetimeGeneration);
+ assert.notEqual(retired.lifetimeGeneration,before.find(p=>p.manifest.id==='acme/a').lifetimeGeneration);
+ const normalized=JSON.parse(JSON.stringify(actual));
+ const entry=normalized.find(p=>p.manifest.id==='acme/a');delete entry.lifetimeGeneration;delete entry.receipt.lifetimeGeneration;
+ assert.deepEqual(normalized,JSON.parse(JSON.stringify(before)));
+}
 const image=async f=>({state:readInstalledState(f.root),data:await snapshotStore(f.store),config:await fs.readFile(path.join(f.root,'wydgit.config.json'),'utf8')});
 
 for(const provider of ['json','sqlite'])test(`${provider}: manual retire, stage, prepare, migrate, activate and rollback`,async t=>{
  const f=await developerFixture(t,provider,{chain:true}),before=await image(f);
  await run(f,'retire');const retired=readInstalledState(f.root);
- assert.equal(retired.app,before.state.app);assert.deepEqual(retired.packages,before.state.packages);assert.deepEqual(await snapshotStore(f.store),before.data);
+ assert.equal(retired.app,before.state.app);assertRetiredSource(retired.packages,before.state.packages);assert.deepEqual(await snapshotStore(f.store),before.data);
  assert.throws(()=>loadRepository(f.root),{code:'PACKAGE.PENDING'});
  await run(f,'stage');assert.equal(inspect(f).pending.status,'STAGED');assert.equal(readInstalledState(f.root).app,before.state.app);
  await assert.rejects(run(f,'migrate'),{code:'PACKAGE.PENDING'});
@@ -35,7 +52,7 @@ for(const provider of ['json','sqlite'])test(`${provider}: manual retire, stage,
 
 for(const provider of ['json','sqlite'])for(const phase of ['retire','stage','references'])test(`${provider}: cancellation after ${phase} restores execution without changing source`,async t=>{
  const f=await developerFixture(t,provider),before=await image(f);await run(f,'retire');if(phase!=='retire')await run(f,'stage');if(phase==='references')await run(f,'references',{references:refs(f)});
- await run(f,'cancel');const after=await image(f);assert.equal(after.state.app,before.state.app);assert.deepEqual(after.state.packages,before.state.packages);assert.deepEqual(after.data,before.data);loadRepository(f.root);
+ await run(f,'cancel');const after=await image(f);assert.equal(after.state.app,before.state.app);assertRetiredSource(after.state.packages,before.state.packages);assert.deepEqual(after.data,before.data);loadRepository(f.root);
 });
 
 for(const provider of ['json','sqlite'])for(const defect of ['mapping','forged','artifact','source','uninstall','purge','wrong-schema','extra-field','replay'])test(`${provider}: manual refuses ${defect} safely`,async t=>{
@@ -43,7 +60,7 @@ for(const provider of ['json','sqlite'])for(const defect of ['mapping','forged',
  if(defect==='mapping')await assert.rejects(run(f,'references',{references:[{id:'foreign',fromPrototype:'acme/a',toPrototype:'acme/a'}]}),{code:'PACKAGE.REFERENCE'});
  if(defect==='forged'){const plan=await planManualReplacement(request(f,'references',{references:refs(f)}));await assert.rejects(applyPackageOperation({...plan}),{code:'PACKAGE.PLAN'});}
  if(defect==='artifact'){const file=path.join(f.candidate.packagePath,'prototypes.json');await fs.appendFile(file,' ');await assert.rejects(run(f,'references',{references:refs(f)}),e=>['PACKAGE.MIGRATION_ORDER','PACKAGE.STALE'].includes(e.code));}
- if(defect==='source'){assert.equal((await service.call('wydstore','update',{...f.input,version:2,data:{text:'Newer content'}})).ok,true);await assert.rejects(run(f,'references',{references:refs(f)}),{code:'PACKAGE.STALE'});assert.equal((await snapshotStore(f.store)).collections.records.records[0].data.text,'Newer content');return;}
+ if(defect==='source'){await assert.rejects(service.call('wydstore','get',f.input),{code:'SEAM.CONTEXT'});const writer=await maintenanceBinding(f);assert.equal((await writer.call('wydstore','update',{...f.input,version:2,data:{text:'Newer content'}})).ok,true);await assert.rejects(run(f,'references',{references:refs(f)}),{code:'PACKAGE.STALE'});assert.equal((await snapshotStore(f.store)).collections.records.records[0].data.text,'Newer content');return;}
  if(['uninstall','purge'].includes(defect))await assert.rejects(packageOperation(f.operation({action:defect})),{code:'PACKAGE.PENDING'});
  if(defect==='wrong-schema')await assert.rejects(manualReplacement({...request(f,'references'),schema:'unknown'}),{code:'PACKAGE.MANUAL'});
  if(defect==='extra-field')await assert.rejects(manualReplacement({...request(f,'references'),shell:'no'}),{code:'PACKAGE.MANUAL'});
@@ -159,7 +176,7 @@ for(const provider of ['json','sqlite'])test(`${provider}: manual preserves shar
  const state=readInstalledState(f.root),a=state.packages.find(p=>p.manifest.id==='acme/a');a.manifest.dependencies={'acme/b':'^1.0.0'};a.receipt.dependencies=a.manifest.dependencies;
  await fs.writeFile(path.join(f.root,'content/installed-packages.json'),JSON.stringify(state));
  const step=f.request.declaration.steps[0];step.from.artifact=(await import('../wydgine/packages/index.js')).migrationContentHash({manifest:a.manifest,resources:a.resources});sealStep(step);approveRequest(f.request);
- const before=readInstalledState(f.root).packages;await staged(f);assert.deepEqual(readInstalledState(f.root).packages,before);
+ const before=readInstalledState(f.root).packages;await staged(f);assertRetiredSource(readInstalledState(f.root).packages,before);
  await run(f,'references',{references:refs(f)});await run(f,'migrate');
  const packages=readInstalledState(f.root).packages;for(const id of ['acme/b','acme/c'])assert.equal(packages.find(p=>p.manifest.id===id).reason,'automatic');assert.ok(packages.find(p=>p.manifest.id==='acme/d'));
  await packageOperation({root:f.root,action:'uninstall',package:'acme/d',installationContext:f.context});
@@ -199,7 +216,8 @@ for(const provider of ['json','sqlite'])test(`${provider}: explicit no-op migrat
  const f=await developerFixture(t,provider),source=readInstalledState(f.root).packages[0];f.candidate=await f.version('2.0.0',source.manifest.storage[0]);
  const step=f.request.declaration.steps[0];step.to.artifact=(await import('../wydgine/packages/index.js')).inspectPackageMigrationArtifact(f.candidate.packagePath).artifact;step.logic.storage=[];step.validators={before:[],after:[]};step.requiredCapabilities=[];sealStep(step);approveRequest(f.request);
  const service=await f.binding();await staged(f);assert.equal(inspect(f).pending.preview.resources.length,1);assert.equal(inspect(f).pending.preview.resources[0].before,inspect(f).pending.preview.resources[0].after);
- assert.equal((await service.call('wydstore','update',{...f.input,version:2,data:{text:'New after preview'}})).ok,true);
+ await assert.rejects(service.call('wydstore','get',f.input),{code:'SEAM.CONTEXT'});
+ const writer=await maintenanceBinding(f);assert.equal((await writer.call('wydstore','update',{...f.input,version:2,data:{text:'New after preview'}})).ok,true);
  await assert.rejects(run(f,'references',{references:refs(f)}),{code:'PACKAGE.STALE'});
  await fs.rm(f.candidate.packagePath,{recursive:true});await run(f,'cancel');assert.equal(inspect(f).pending,null);
  const current=await (await f.binding()).call('wydstore','get',f.input);assert.equal(current.value.data.text,'New after preview');
@@ -233,11 +251,11 @@ for(const provider of ['json','sqlite'])test(`${provider}: manual committed roll
  const file=path.join(f.root,'wydgit.config.json'),text=await fs.readFile(file,'utf8');await fs.writeFile(file,text+' ');
  await assert.rejects(rollbackPackageEffects({root:f.root,installationContext:f.context}),{code:'PACKAGE.STALE'});assert.equal(await fs.readFile(file,'utf8'),text+' ');
 });
-for(const provider of ['json','sqlite'])test(`${provider}: legacy install preserves catalog 0.2 and replacement evidence`,async t=>{
+for(const provider of ['json','sqlite'])test(`${provider}: legacy install preserves catalog 0.3 and replacement evidence`,async t=>{
  const f=await developerFixture(t,provider);await staged(f);await run(f,'references',{references:refs(f)});await run(f,'migrate');
  const before=readInstalledState(f.root),candidate=await f.newCandidate('extra');const {installPackage}=await import('../wydgine/packages/index.js');
  await installPackage({...candidate,root:f.root,installationContext:f.context});const after=readInstalledState(f.root);
- assert.equal(after.schema,'wydgit-installed/0.2');assert.deepEqual(after.replacementHistory,before.replacementHistory);assert.equal(after.packages.length,before.packages.length+1);
+ assert.equal(after.schema,'wydgit-installed/0.3');assert.deepEqual(after.replacementHistory,before.replacementHistory);assert.equal(after.packages.length,before.packages.length+1);
 });
 
 for(const provider of ['json','sqlite'])for(const boundary of ['store-unlock','catalog-rename','config-rename'])test(`${provider}: manual death inside ${boundary} reconciles the commit boundary`,async t=>{

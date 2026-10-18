@@ -1,5 +1,9 @@
 # Execution context foundation — implemented contract
 
+The [second increment](backoffice-placement-lifecycle.md) supersedes this historical
+alpha.16 checkpoint’s placement/lifecycle deferrals; its remaining domain and
+provider-cancellation limitations still apply.
+
 Wydgine/platform **0.3.0-alpha.16**, WydClient **0.1.0-alpha.10**.
 WydSUB remains 0.1; WBasic, SEWN wire versions and package runtime targets are
 unchanged. This implements the first context increment of the

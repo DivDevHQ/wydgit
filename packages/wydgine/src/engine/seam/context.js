@@ -23,11 +23,20 @@ export function objectGrantCovers(grants, grant) {
 }
 const contexts = new WeakSet();
 const lifetimes = new WeakMap();
+const validators = new WeakMap();
 const LIFETIME = Symbol('execution lifetime');
 // Trusted host lifecycle boundary. All derived contexts share the same fence.
 export function endExecutionContext(context) {
   check(contexts.has(context), 'SEAM.CONTEXT', 'Expected host-issued execution context');
   lifetimes.set(context[LIFETIME], false);
+}
+// Trusted host-only guard; derivations retain the same revocable lifetime.
+export function guardExecutionContext(context, validate) {
+  checkContext(context);
+  check(typeof validate === 'function' && !validators.has(context[LIFETIME]), 'SEAM.CONTEXT', 'Lifetime already guarded');
+  validators.set(context[LIFETIME], validate);
+  checkContext(context);
+  return context;
 }
 export class ExecutionContext {
   constructor({ runat, context, placement, [LIFETIME]: lifetime, publisher, package: packageId = null, self, app = null, scopes = {}, identity = null, installation = null, template = null, principal = packageId, capabilities = [], visible = [], editable = [], traversal = [], limits = {} }) {
@@ -71,4 +80,9 @@ export class ExecutionContext {
   allows(capability) { checkContext(this); return this.capabilities.includes(capability); }
   require(capability) { check(this.allows(capability), 'SEAM.DENIED', 'Capability denied'); }
 }
-export function checkContext(context) { check(contexts.has(context) && lifetimes.get(context[LIFETIME]) === true, 'SEAM.CONTEXT', 'Expected live host-issued execution context'); }
+export function checkContext(context) { check(contexts.has(context) && lifetimes.get(context[LIFETIME]) === true, 'SEAM.CONTEXT', 'Expected live host-issued execution context');
+  const validate = validators.get(context[LIFETIME]);
+  if (validate) {
+    try { validate(); } catch { lifetimes.set(context[LIFETIME], false); check(false, 'SEAM.CONTEXT', 'Placement lifetime is no longer current'); }
+  }
+}

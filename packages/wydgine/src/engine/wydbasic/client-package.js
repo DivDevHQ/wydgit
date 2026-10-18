@@ -10,7 +10,7 @@ export function buildClientPackage(sources,options){
  const packageText=JSON.stringify(payload,null,2)+'\n';
  check(Buffer.byteLength(packageText)<=262144,'PACKAGE.LIMIT','Browser package exceeds loader bound');
  const registry={schema:'wydgit.registry/0.1',protocol:'0.1',prototypes:result.definitions,entry:clean(options.entry)};
- return freeze({...result,payload,packageText,registry,registryText:JSON.stringify(registry,null,2)+'\n',integrity:'sha256-'+createHash('sha256').update(packageText).digest('base64'),clientVersion:'0.1.0-alpha.10'});
+ return freeze({...result,payload,packageText,registry,registryText:JSON.stringify(registry,null,2)+'\n',integrity:'sha256-'+createHash('sha256').update(packageText).digest('base64'),clientVersion:'0.1.0-alpha.11'});
 }
 export function signClientPackage(result,{privateKey,keyId,url}){
  check(typeof keyId==='string'&&/^[A-Za-z0-9._-]{1,64}$/.test(keyId)&&typeof url==='string','PACKAGE.SIGNATURE','Invalid signing configuration');

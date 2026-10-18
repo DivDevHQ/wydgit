@@ -392,3 +392,12 @@ Source dependencies stay pinned after activation until a reviewed release-of-
 reservation cleanup contract exists. Missing dependencies must be provisioned
 before retirement. See [qualification evidence](milestones/0.3-package-lifecycle/manual-replacement-qualification-2026-10-18.md)
 for the supported JSON/SQLite workflow and remaining MIG/release boundaries.
+
+## Trusted execution placement
+
+The [BackOffice placement lifecycle](backoffice-placement-lifecycle.md) adds host-only
+placement/replacement/relocation/retirement and automatic execution fencing. Catalog
+0.3 preserves trusted placement and retirement generations; older 0.1/0.2 remain
+readable. Manual retirement now advances to 0.3 and fences cached source authority
+even after cancellation. Existing stopped-App, recovery, data and dependency rules
+remain authoritative.

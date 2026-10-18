@@ -1,5 +1,11 @@
 # Stopped-App manual replacement contract
 
+The [BackOffice lifecycle increment](../../backoffice-placement-lifecycle.md)
+advances manual retirement to catalog 0.3 and adds durable lifetime generations.
+Source artifacts, data and installation identity remain preserved; retirement
+metadata changes, and cancellation/committed rollback cannot revive an old execution.
+The original 0.2 checkpoint description below is superseded on these points.
+
 Implemented on `develop/0.3`, continuing `3f801a3` / `659e29e`.
 This is the bounded manual successor to the [migration plan](developer-defined-migrations.md)
 and [declaration contract](developer-migration-contract.md). Automatic orchestration

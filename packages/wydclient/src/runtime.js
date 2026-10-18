@@ -5,7 +5,7 @@ import { loadPackage, identityPattern, publisherPattern } from './packages.js';
 import {executionPolicy,executableInstances} from './execution.js';
 import { instances } from './instances.js';
 import { approveRegistry } from './registry.js';
-export const VERSION = '0.1.0-alpha.10';
+export const VERSION = '0.1.0-alpha.11';
 export const PROTOCOL = Object.freeze({ name: 'WydSUB', version: '0.1' });
 // Retain the approved read-only registry and canonical Page for later trusted adapters.
 // There is intentionally no host/portable accessor for this private runtime state.

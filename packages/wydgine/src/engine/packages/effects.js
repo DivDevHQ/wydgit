@@ -221,6 +221,16 @@ export async function rollbackPackageEffects({root,installationContext,budget:to
   check(await read(path.join(root,'wydgit.config.json'))===checkpoint.configAfter&&await read(path.join(root,STATE))===checkpoint.stateAfter,'PACKAGE.STALE','Committed state changed; rollback would replace newer configuration or content');
   const state=JSON.parse(checkpoint.stateBefore);state.revision=JSON.parse(checkpoint.stateAfter).revision+1;
   check(Number.isSafeInteger(state.revision),'PACKAGE.LIMIT','Catalog revision exhausted');
+  // Restoring data/definitions must never restore an old execution generation.
+  // Even callers which slept through both cutovers must acquire fresh authority.
+  const after=JSON.parse(checkpoint.stateAfter);
+  for(const entry of state.packages){
+    const current=after.packages.find(p=>p.manifest.id===entry.manifest.id);
+    if(current?.receipt.id===entry.receipt.id&&same(current.executionPlacement??null,entry.executionPlacement??null)&&current.lifetimeGeneration===entry.lifetimeGeneration)continue;
+    if(entry.executionPlacement){installationContext.require('packages.placement.manage');entry.executionPlacement.generation=randomUUID();entry.receipt.executionPlacement=clean(entry.executionPlacement);}
+    entry.lifetimeGeneration=randomUUID();entry.receipt.lifetimeGeneration=entry.lifetimeGeneration;
+    state.schema='wydgit-installed/0.3';
+  }
   const plan={action:'rollback',package:checkpoint.package,baseFingerprint:baseFingerprint(root),catalogFingerprint:stateFingerprint(root),changes:[{package:checkpoint.package,action:'rollback'}]};
   token??=createPackageBudget(installationContext);const budget=packageBudget(token,installationContext);budget.take();
   const resources=checkpoint.resources.map(r=>({beforeDefinition:r.afterDefinition,afterDefinition:r.beforeDefinition,before:r.after,after:r.before}));
