@@ -1,7 +1,7 @@
 # Trusted local package lifecycle
 
-Status: implemented **conservative local catalog lifecycle**, with release blockers
-below. This is not full production package lifecycle qualification. See the
+Status: implemented **bounded local catalog and checkpointed storage lifecycle**,
+with release blockers below. This is not full production package lifecycle qualification. See the
 [audit and qualification record](milestones/0.3-package-lifecycle/README.md).
 The existing I hosting and J administration identifiers are unchanged.
 
@@ -9,7 +9,8 @@ The existing I hosting and J administration identifiers are unchanged.
 
 The native installer remains the package manager. Trusted host code imports
 `planPackageOperation`, `applyPackageOperation`, `packageOperation`,
-`createPackageBudget`, `inspectPackageOperation` and `recoverPackageOperation` from
+`createPackageBudget`, `inspectPackageOperation`, `recoverPackageOperation`,
+`inspectPackageEffects`, `recoverPackageEffects` and `rollbackPackageEffects` from
 `wydgine/packages/index.js` (repository compatibility path). No package-facing
 service, HTTP administrative endpoint, automatic download, package scan, npm
 installation or arbitrary cleanup hook is added.
@@ -97,18 +98,63 @@ Definitions, bindings and separately approved permissions can change. Existing
 App-owned instance trees and properties are preserved, then hydrated/validated
 against the new registry. New prototype defaults can fill missing values through
 ordinary hydration. The instance footprint and placement must stay compatible;
-renaming/removing instances, arbitrary transformations and incompatible definitions
-fail before publication. Package templates never overwrite administrator settings
+renaming/removing instances and arbitrary transformations fail before publication.
+Incompatible definitions need an explicit versioned migration as described below. Package templates never overwrite administrator settings
 or authored content. Created Pages remain App-owned and are reused on reinstall.
 Navigation removal only removes one exact original item; ambiguous/customized items
 remain, with a plan warning.
 
-**Storage schemas must remain identical.** A schema change returns
-`PACKAGE.MIGRATION_REQUIRED`. WydStore record transactions are implemented on JSON
-and SQLite, but neither adapter supplies a package schema-migration/checkpoint
-contract. This work does not simulate migrations with raw SQL or rewrite record
-history. Ordered data/schema migrations, cross-store checkpoints and irreversible
-migration approval remain unimplemented release blockers.
+### Versioned, lossless migrations
+
+An unchanged schema still needs no migration. A changed schema requires explicit
+host-approved `migrations` on `planPackageOperation`; ordinary package code cannot
+supply or execute a migration hook. Each bounded `wydgit.package-migration/1`
+approval names the exact package, source/target package versions, storage changes
+and managed-instance changes. The supplied versions must form one ordered chain
+from the installed version to the accepted candidate. Gaps, duplicates, unrelated
+steps and unused approvals fail before publication. The dependency graph is
+validated before any migration; reverse dependents can veto an upgrade.
+
+Storage declarations may carry paired `schemaId` and positive integer
+`schemaVersion`. Legacy unversioned collections start at version 1. Each storage
+step advances exactly one schema version and specifies the resulting fields.
+Only lossless field renames and defaults for missing values are supported:
+
+```js
+const migrations = [{
+  schema: 'wydgit.package-migration/1', package: 'acme/book',
+  from: '1.0.0', to: '2.0.0',
+  storage: [{name: 'entries', from: 1, to: 2,
+    fields: {body: {type: 'string', required: true}},
+    operations: [{op: 'rename', from: 'message', to: 'body'}]}],
+  instances: []
+}];
+```
+
+Renames refuse an occupied destination; defaults never overwrite values. Current
+records and every historical value are transformed and validated under the target
+schema; record IDs, revisions, tombstones and history ordering are retained. The
+private recovery checkpoint retains the original historical values and schemas.
+The final schema must exactly match the candidate manifest and configured mapping.
+Ownership, uniqueness, record-byte, work and aggregate checkpoint ceilings apply.
+New stores/providers/ownership or unmapped collection removal are not migrations.
+
+An instance step names an exact managed instance ID, its current and target
+prototype, and the same bounded property operations. IDs, placements and the
+managed footprint remain fixed. Normal candidate hydration validates the complete
+result, including site additions. Explicit property/prototype transitions can
+therefore support incompatible definitions without replacing owner customization.
+Arbitrary restructuring, destructive operations, coercions, JavaScript/SQL, hooks
+and installation-bound store identity transitions fail closed. They need separately
+reviewed contracts; no irreversible transformation is currently supported.
+
+Checkpointed upgrades can be undone with `rollbackPackageEffects` only while the
+catalog, configuration and every affected store still match their committed
+checkpoints. New content or configuration makes rollback fail stale before effects;
+no newer data is discarded. Rollback is a fresh serialized operation with an
+increasing catalog revision. It is not an unconditional downgrade or rollback of
+an arbitrary older operation. Catalog-only operations without a checkpoint have
+no committed rollback guarantee.
 
 ## Uninstall, retention and purge
 
@@ -127,14 +173,29 @@ trees, reuses existing Pages and validates the resulting App. Compatible version
 may be installed over retained data; incompatible versions require separate recovery
 or migration rather than silently destroying that data.
 
-`purge` is a separate explicit host-authorized action after uninstall. It currently
-supports deleting retained catalog instance/configuration snapshots only when the
-package declares no physical storage/library scopes and the snapshots contain no
-foreign site additions. The created App Page remains site-owned. Physical data
-purge returns `PACKAGE.PURGE_UNSUPPORTED` without changing state. Site additions
-return `PACKAGE.OWNERSHIP`. No raw filesystem or SQL deletion exists here; ordinary
-uninstall never authorizes content destruction. This restricted purge does not meet
-the complete physical-purge milestone requirement.
+`purge` is separate from uninstall. Catalog-only retained snapshots remain
+purgeable when they contain no site-owned additions or physical resources.
+Physical WydStore purge additionally requires
+`purgeAuthorization: {package: 'publisher/package', content: true}` and an original
+host plan. Plans expose provider, exact owner, collection definitions and before/
+after checkpoint hashes. The plan labels active-store deletion and checkpoint
+retention explicitly. Ordinary uninstall never grants content deletion.
+
+Both JSON and SQLite can purge an entire, exclusively owned store. Every configured
+collection must be mapped by the retained package. App, publisher, package,
+principal, schema and persisted adapter ownership are checked. Another installed/
+retained package reference or runtime-library binding vetoes deletion. Linked or
+corrupt files, ambiguous ownership, unknown sidecars, installation-bound storage
+and shared canonical-library scopes refuse safely. No broad filesystem or SQL
+cleanup is used. Other files and the store's directory remain intact.
+
+The active adapter file and its host mapping are removed within the recoverable
+effects workflow. A precommit interruption restores the complete store, including
+history. An interruption after catalog publication finishes the purge. Private
+0600 recovery checkpoints remain intentionally retained under `content/`; purge
+is **not secure erasure**, backup deletion, encryption or a retention-expiry
+service. Checkpoint retention/removal needs explicit administrator policy. Existing
+App Pages remain site-owned. Shared media/search/files resources remain unsupported.
 
 ## Publication, failure and recovery
 
@@ -176,15 +237,62 @@ matching lock. It never replays package code, infers a destructive rollback, rem
 unknown files, or discards an unrecognized catalog. PID reuse can conservatively
 block recovery. Interrupted recovery itself requires manual inspection of its marker.
 
-The older host-configuration/provisioning installer still uses
-`.package-infrastructure.json` with saved config/catalog state. It now has synced
-lock metadata, directory fsync at publication and bounded checkpoints, but it is a
-multi-resource compensating workflow. **It is not covered by automatic catalog
-recovery.** On an infrastructure interruption, stop writers, inspect the saved
-configuration/catalog, compare actual ownership/provider state and restore or
-explicitly reconcile before removing recovery markers. Preserve ambiguous/new data.
-Never delete locks merely to retry. Fully automated provisioning crash recovery and
-qualification of failed compensation remain release blockers.
+### Recoverable local provisioning and adapter effects
+
+The operator installer now passes durable infrastructure descriptors instead of an
+in-memory preparation/cleanup callback. New schema stores, instance trees, grants,
+configuration, initial properties and navigation are provisioned before activation.
+New directories receive operation-bound ownership claims; prospective roots must
+still be unused on apply. Private provider staging avoids publishing a partially
+initialized SQLite file. Recovery never adopts an unrelated existing directory.
+
+`content/package-effects.json` records the latest resource operation and references
+an immutable, checksum-bound, 0600 `content/package-checkpoint-<uuid>.json`. That
+checkpoint includes exact before/after configuration, catalog and adapter documents,
+plus the directories this operation may create. The **combined** checkpoint is
+limited to 4 MiB, including both catalog versions and all adapter data; each
+migration approval is limited to 64 KiB. Larger operations refuse rather than losing
+recovery coverage. Checkpoints contain plaintext user data and configuration;
+they must receive the same access and backup protection as authoritative content.
+
+The existing package writer lock serializes catalog and effects operations.
+Per-store lifecycle barriers reject ordinary adapter calls while reconciliation is
+pending. JSON replacement is fsynced atomic rename using an operation-specific
+temporary name. SQLite replacement uses its fixed native transaction/schema;
+package code never receives SQL or provider handles. Each store may be old or new
+while the App is blocked; this is compensating multi-resource consistency, not a
+cross-database atomic transaction. Catalog publication is the commit point.
+
+A handled precommit error restores the recorded store/config/catalog state. Failed
+compensation retains barriers and checkpoint evidence. Unknown content, changed
+ownership or state outside the two recorded boundaries is preserved and requires
+explicit reconciliation. Cleanup removes only exact owned files, claims and empty
+owned directories; a durable per-directory cleanup record covers interrupted claim
+removal. An old root is never recursively deleted. Cancellation before commit
+compensates; cancellation after commit cannot turn success into an uncommitted retry.
+
+After the writer exits, trusted host code can call:
+
+```js
+await recoverPackageEffects({root, installationContext}); // abort before commit
+await recoverPackageEffects({root, installationContext, direction: 'resume'});
+```
+
+Recovery authenticates the App/host context, rejects live/indeterminate writer PIDs,
+validates checksum/base/config/catalog/adapter boundaries and compares actual data
+before every retry. It does not replay package code. An interrupted recovery can
+be resumed, including its final cleanup. Recovery admission uses live chooser/ticket
+claims so two reclaimers cannot steal each other's marker. PID reuse can still
+conservatively block recovery. Host recovery accepts an optional authenticated
+shared `budget`; otherwise it creates one bounded maintenance budget. Mandatory
+precommit compensation is size-bounded maintenance, not new package execution.
+
+`recoverPackageOperation` routes an effects writer lock to this recovery path;
+`inspectPackageEffects` exposes its sanitized resource summary and checkpoint hash.
+New catalog-only operations keep the original smaller journal/recovery path.
+Old unversioned `.package-infrastructure.json` records still block startup and need
+manual ownership reconciliation: this implementation does not invent missing
+resource ownership evidence for an older interrupted installer.
 
 Power-loss behavior depends on actual filesystem fsync/rename guarantees. Tests kill
 ordinary processes; they do not qualify storage hardware, network filesystems or
@@ -216,20 +324,25 @@ Stable failures distinguish `PACKAGE.CANCELLED`, `PACKAGE.LIMIT`, `PACKAGE.DENIE
 and purge refusals have their own codes above. These trusted APIs do not introduce
 an HTTP status mapping; J administration must preserve their distinctions.
 
-The shared SEWN ledger additionally exposes `wydgit.execution-meter/1` through its
-trusted `meter()` and optional host `execution.observeBudget` callback. It records
-elapsed time, charges and the first terminal resource (`timeMs`, counter name,
-`guard`, or `closed`). The observer receives no context, authority, storage handle,
-identity or secrets; observer exceptions cannot change HTTP outcomes. HTTP error
-responses/log envelopes retain their existing sanitized contracts. See the still
-[open HTTP limit investigation](milestones/0.3-reliability.md).
+The shared SEWN ledger exposes `wydgit.execution-meter/1` to trusted observers.
+Server Page meters now add bounded `wydgit.page-diagnostics/1`: phase durations,
+first failing phase, authorization/service/dispatch wait totals and the static
+shared accounting path (Page → events/components/workflows/services). Observers
+run after admitted I/O settles, so failed-request service waits are represented.
+No identity, context, capability, input, path or provider handle is retained.
+Observer exceptions cannot change the HTTP outcome. HTTP errors remain sanitized.
+No execution limit or browser bundle changed. Controlled probes distinguish
+`timeMs` exhaustion from a connection-cancellation `guard`; these probes do not
+attribute the unreproduced historical full-suite delays. The
+[HTTP reliability issue](milestones/0.3-reliability.md) remains open.
 
 ## Qualification limits
 
-The passing local tests qualify the catalog operations described here, graph
-invariants, retention and JSON/SQLite content preservation. They do not qualify
-schema/data migrations, physical data purge, multi-resource provisioning recovery,
-automatic committed-upgrade rollback, arbitrary instance migrations, hot lifecycle
-or distributed writers. The historical intermittent HTTP failure remains a release
-blocker. Managed WydHosting qualification remains deferred to 0.4 under Decision
-0003; none of its six security obligations is waived or pulled into this work.
+The tests qualify the bounded contracts above on cooperating local stopped-App
+writers, JSON and SQLite. They do not qualify destructive/arbitrary migrations,
+changed instance footprints, installation-bound store identity transitions, shared
+canonical-library purge, secure erasure/checkpoint retention policy, older ambiguous
+infrastructure journals, hot lifecycle or distributed writers. Power loss, network
+filesystems and storage hardware remain unqualified. Historical HTTP reliability
+is still a release blocker. Managed WydHosting qualification remains deferred to
+0.4 under Decision 0003; none of its six obligations is waived or expanded here.

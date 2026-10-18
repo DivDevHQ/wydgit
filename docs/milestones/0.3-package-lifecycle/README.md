@@ -1,11 +1,14 @@
 # Wydgine 0.3 package lifecycle hardening
 
-Commissioned 2026-10-18. **Status: partial implementation; production milestone
-acceptance remains blocked.** This named workstream does not renumber 0.3-I
+Commissioned 2026-10-18. **Status: bounded checkpointed local lifecycle implemented;
+production milestone acceptance remains blocked.** This named workstream does not renumber 0.3-I
 (Multi-App/hosting), I0–I5.6, or 0.3-J (administration). No earlier package lifecycle
 milestone identifier was found in the current milestone records. The mission's
 provisional 0.3I conflicts with established hosting records. Decision 0003's managed
 hosting deferral and six security work packages remain unchanged.
+
+The audit and implementation phases below retain the original foundation history.
+The acceptance-gate table and continuation record describe the current implementation.
 
 ## Initial audit
 
@@ -68,14 +71,16 @@ retention, errors, budgets, publication and recovery details.
 | Required/shared/transitive dependency safety | Implemented with recomputed graph, proposed-state validation and atomic publication; deterministic and integration regressions. |
 | Catalog lifecycle recovery | Implemented/tested old/new publication boundaries with SIGKILL for install/update/uninstall. Local cooperating writer model only. |
 | Configuration/content retention | Implemented, including real Guestbook JSON/SQLite records, navigation and exact authority. |
-| Schema/data migrations | **Blocked for qualification**: design/version a trusted WydStore schema migration + checkpoint contract; validate record history, ordered versions, idempotency, commit uncertainty and destructive-change recovery on both adapters. Do not write SQL/files from package code. |
-| Physical purge | **Blocked for qualification**: trusted adapter-scoped owner verification, explicit content authorization, recovery checkpoint and restart-safe purge completion. Current API refuses physical purge. |
-| Provisioning crash recovery | **Incomplete**: qualify the existing host config/provider compensation journal, durable created-resource ownership, partial preparation and failed compensation. Current automatic recovery is catalog-only. |
-| Incompatible instance migration / committed rollback | **Unsupported**: preserve/fail before publication; needs reviewed versioned transformations/checkpoints. Old accepted state is preserved on prepublication failure; no arbitrary rollback promise. |
-| HTTP resource reliability | **Open release blocker**: versioned meters now expose first cause to trusted observers; controlled deadline probes and passing focused runs do not identify historical full-suite delays. |
+| Schema/data migrations | Implemented/tested bounded ordered lossless transitions, source/target versions, all-history validation, private checkpoints and restart-safe JSON/SQLite reconciliation. Destructive transformations and arbitrary migrations still refuse. |
+| Physical purge | Implemented/tested explicit package-specific approval for exclusively owned whole JSON/SQLite stores, shared-reference protection and interruption recovery. Private checkpoints remain; secure erasure and shared-library purge are unsupported. |
+| Provisioning crash recovery | Implemented/tested for new versioned operator operations: directory claims, private schema staging, config/catalog/resources, failed compensation and recovery interruption. Legacy unversioned journals remain manual. |
+| Incompatible instance migration / committed rollback | Explicit lossless property/prototype transitions retain managed IDs/placement. Checkpointed upgrade rollback requires unchanged accepted content/configuration. Arbitrary footprint changes and rollback over newer content refuse. |
+| HTTP resource reliability | **Open release blocker**: Page phase and settled-service timing now supplement the shared meter. Controlled probes identify timeMs versus cancellation guard, but do not establish historical full-suite causation. |
 | Deployment/storage durability | No network filesystem, power-loss, hardware or live-site qualification. No deployment performed. |
 
-These require substantive storage/runtime contracts and qualification, not an
-acceptance waiver. 0.3-J may design against the conservative API and structured
-refusals, but cannot safely advertise full production lifecycle support until the
-open gates close. No managed WydHosting qualification is implied.
+See the [continuation qualification record](qualification-2026-10-18.md) for exact
+commands, guarantees, counterexamples and remaining blockers. A passing suite does
+not waive the unsupported/ambiguous cases above. Complex local 0.3 package work can
+exercise these bounded paths on disposable stopped Apps; full production lifecycle
+and complex production-site readiness are not declared. I/J assignments and the
+approved 0.4 managed-hosting deferral remain unchanged.

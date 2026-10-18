@@ -659,3 +659,27 @@ implementation dependencies retain their own library counts. No second storage
 quota ledger or durable cross-provider allocation guarantee is added. Temporary
 files, journals, external writers and peak physical allocation remain subject to
 the provider's documented boundary. Host snapshots do not grant service authority.
+
+## Trusted package lifecycle checkpoints
+
+`@wydgit/store/trusted/lifecycle` is a versioned host-only export
+(`wydstore.lifecycle/1`), absent from the canonical service registry. Wydgine loads
+it only for explicitly requested storage lifecycle work; WydStore remains optional
+for other applications. Ordinary Wydgits cannot import npm modules or obtain
+adapter handles, raw SQL, filenames or this API through SEAM.
+
+The host contract validates complete owned-store checkpoints, including all record
+history and tombstones. JSON publishes a bounded document through synced atomic
+rename and an operation-specific temporary file. SQLite validates its fixed
+platform schema and changes collections/records/history inside one native
+transaction. Per-store barriers stop ordinary adapter calls during package
+reconciliation. Exact package ownership, schema and before/after checkpoint
+comparison are mandatory. A different owner, linked file, ambiguous collection,
+unknown sidecar or changed content refuses safely.
+
+The [package lifecycle contract](package-lifecycle.md) specifies approval,
+lossless migration syntax, multi-resource compensation, committed-upgrade rollback,
+whole-store purge and the intentionally retained private recovery copy. This is
+not distributed atomicity, secure erasure or a generic provider migration facility.
+Earlier future-work notes in this document describe broader adapters and migration
+forms that remain unsupported; the bounded local contract above is implemented.

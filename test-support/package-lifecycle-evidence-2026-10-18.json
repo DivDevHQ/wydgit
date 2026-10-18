@@ -1,0 +1,621 @@
+{
+  "schema": "wydgit.package-qualification-evidence/1",
+  "date": "2026-10-18",
+  "node": "v24.21.0",
+  "branch": "develop/0.3",
+  "baseline": "69820aca5e3bceba3758f811bdddd7fe2151a67f",
+  "implementationCommits": [
+    "eb98ff344269550684d4b4cbdd19589b1e5f00ac",
+    "e9769ec5abc660e972b0b7d7f671a100c26857c9"
+  ],
+  "productionQualified": false,
+  "historicalHttpLimitResolved": false,
+  "runs": [
+    {
+      "command": "npm test",
+      "result": {
+        "tests": 1086,
+        "pass": 1086,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "logSHA256": "eb38bd7df457a4497c3a9af0c0faed3592a63a24891eb4efc549f1eb0b1e17a1"
+    },
+    {
+      "command": "node --test test/packages.test.js test/package-lifecycle.test.js test/package-infrastructure.test.js test/package-provisioning-recovery.test.js test/package-migrations.test.js test/package-physical-purge.test.js test/package-effects-adversarial.test.js test/package-boundaries.test.js test/sewn-shared-budget.test.js",
+      "result": {
+        "tests": 176,
+        "pass": 176,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "logSHA256": "95adadefd65853bfa13a451e64bf1ffa04c91a85ca1ed414745e1f1c42c549ff"
+    },
+    {
+      "command": "node --test test-support/http-budget-probe.mjs",
+      "result": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "logSHA256": "790479895400b33fbed6f54b2431d44369439adc47e5e351726b4d13694c0322"
+    }
+  ],
+  "checks": {
+    "content": {
+      "command": "npm run check",
+      "pages": 3,
+      "links": 42,
+      "uniqueAnchors": true
+    },
+    "whitespace": {
+      "command": "git diff --check",
+      "passed": true
+    }
+  },
+  "controlledHttpTraces": [
+    {
+      "provider": "JSON",
+      "boundary": "open",
+      "controlledWaitMs": 1100,
+      "status": 500,
+      "diagnostics": [
+        {
+          "schema": "wydgine.http-event/1",
+          "phase": "page",
+          "code": "SEWN.LIMIT"
+        },
+        {
+          "schema": "wydgine.http-event/1",
+          "phase": "cleanup",
+          "code": "SEWN.LIMIT"
+        }
+      ],
+      "meter": {
+        "schema": "wydgit.execution-meter/1",
+        "elapsedMs": 1121,
+        "timeLimitMs": 1000,
+        "charges": {
+          "eventDispatches": 54,
+          "eventHandlers": 1,
+          "steps": 25,
+          "procedureCalls": 2,
+          "serviceCalls": 1
+        },
+        "exhaustion": {
+          "resource": "timeMs",
+          "used": 1001,
+          "limit": 1000
+        },
+        "diagnostics": {
+          "schema": "wydgit.page-diagnostics/1",
+          "execution": "page",
+          "accountingPath": [
+            "page",
+            "events",
+            "components",
+            "workflow",
+            "services"
+          ],
+          "phaseAtFailure": "action",
+          "preparationMs": 2.039445999999998,
+          "phases": {
+            "prepare": {
+              "calls": 1,
+              "elapsedMs": 3.321
+            },
+            "start": {
+              "calls": 1,
+              "elapsedMs": 0.175
+            },
+            "initialize": {
+              "calls": 1,
+              "elapsedMs": 7.325
+            },
+            "load": {
+              "calls": 1,
+              "elapsedMs": 5.589
+            },
+            "validate": {
+              "calls": 1,
+              "elapsedMs": 2.887
+            },
+            "action": {
+              "calls": 1,
+              "elapsedMs": 983.4
+            },
+            "cleanup": {
+              "calls": 1,
+              "elapsedMs": 0.659
+            },
+            "settle": {
+              "calls": 1,
+              "elapsedMs": 120.029
+            }
+          },
+          "spans": {
+            "dispatch": {
+              "calls": 53,
+              "elapsedMs": 990.105
+            },
+            "authorization": {
+              "calls": 3,
+              "elapsedMs": 0.042
+            },
+            "service": {
+              "calls": 1,
+              "elapsedMs": 1101.841
+            }
+          }
+        }
+      },
+      "recoveryStatus": 200,
+      "completedBeforeRelease": false,
+      "committedRecordVisibleAfterFailure": false,
+      "historicalAttribution": false
+    },
+    {
+      "provider": "SQLite",
+      "boundary": "lstat",
+      "controlledWaitMs": 1100,
+      "status": 500,
+      "diagnostics": [
+        {
+          "schema": "wydgine.http-event/1",
+          "phase": "page",
+          "code": "SEWN.LIMIT"
+        },
+        {
+          "schema": "wydgine.http-event/1",
+          "phase": "cleanup",
+          "code": "SEWN.LIMIT"
+        }
+      ],
+      "meter": {
+        "schema": "wydgit.execution-meter/1",
+        "elapsedMs": 1115,
+        "timeLimitMs": 1000,
+        "charges": {
+          "eventDispatches": 54,
+          "eventHandlers": 1,
+          "steps": 25,
+          "procedureCalls": 2,
+          "serviceCalls": 1
+        },
+        "exhaustion": {
+          "resource": "timeMs",
+          "used": 1001,
+          "limit": 1000
+        },
+        "diagnostics": {
+          "schema": "wydgit.page-diagnostics/1",
+          "execution": "page",
+          "accountingPath": [
+            "page",
+            "events",
+            "components",
+            "workflow",
+            "services"
+          ],
+          "phaseAtFailure": "action",
+          "preparationMs": 1.0026049999999032,
+          "phases": {
+            "prepare": {
+              "calls": 1,
+              "elapsedMs": 1.547
+            },
+            "start": {
+              "calls": 1,
+              "elapsedMs": 0.081
+            },
+            "initialize": {
+              "calls": 1,
+              "elapsedMs": 3.078
+            },
+            "load": {
+              "calls": 1,
+              "elapsedMs": 3.568
+            },
+            "validate": {
+              "calls": 1,
+              "elapsedMs": 3.858
+            },
+            "action": {
+              "calls": 1,
+              "elapsedMs": 988.953
+            },
+            "cleanup": {
+              "calls": 1,
+              "elapsedMs": 1.4
+            },
+            "settle": {
+              "calls": 1,
+              "elapsedMs": 112.798
+            }
+          },
+          "spans": {
+            "dispatch": {
+              "calls": 53,
+              "elapsedMs": 991.894
+            },
+            "authorization": {
+              "calls": 3,
+              "elapsedMs": 0.036
+            },
+            "service": {
+              "calls": 1,
+              "elapsedMs": 1101.564
+            }
+          }
+        }
+      },
+      "recoveryStatus": 200,
+      "completedBeforeRelease": false,
+      "committedRecordVisibleAfterFailure": false,
+      "historicalAttribution": false
+    },
+    {
+      "provider": "JSON",
+      "boundary": "rename",
+      "controlledWaitMs": 1100,
+      "status": 500,
+      "diagnostics": [
+        {
+          "schema": "wydgine.http-event/1",
+          "phase": "page",
+          "code": "SEWN.LIMIT"
+        },
+        {
+          "schema": "wydgine.http-event/1",
+          "phase": "cleanup",
+          "code": "SEWN.LIMIT"
+        }
+      ],
+      "meter": {
+        "schema": "wydgit.execution-meter/1",
+        "elapsedMs": 1129,
+        "timeLimitMs": 1000,
+        "charges": {
+          "eventDispatches": 54,
+          "eventHandlers": 1,
+          "steps": 25,
+          "procedureCalls": 2,
+          "serviceCalls": 1
+        },
+        "exhaustion": {
+          "resource": "timeMs",
+          "used": 1002,
+          "limit": 1000
+        },
+        "diagnostics": {
+          "schema": "wydgit.page-diagnostics/1",
+          "execution": "page",
+          "accountingPath": [
+            "page",
+            "events",
+            "components",
+            "workflow",
+            "services"
+          ],
+          "phaseAtFailure": "action",
+          "preparationMs": 0.9673490000000129,
+          "phases": {
+            "prepare": {
+              "calls": 1,
+              "elapsedMs": 1.523
+            },
+            "start": {
+              "calls": 1,
+              "elapsedMs": 0.098
+            },
+            "initialize": {
+              "calls": 1,
+              "elapsedMs": 5.269
+            },
+            "load": {
+              "calls": 1,
+              "elapsedMs": 4.903
+            },
+            "validate": {
+              "calls": 1,
+              "elapsedMs": 3.928
+            },
+            "action": {
+              "calls": 1,
+              "elapsedMs": 987.126
+            },
+            "cleanup": {
+              "calls": 1,
+              "elapsedMs": 1.478
+            },
+            "settle": {
+              "calls": 1,
+              "elapsedMs": 126.182
+            }
+          },
+          "spans": {
+            "dispatch": {
+              "calls": 53,
+              "elapsedMs": 993.011
+            },
+            "authorization": {
+              "calls": 3,
+              "elapsedMs": 0.014
+            },
+            "service": {
+              "calls": 1,
+              "elapsedMs": 1113.392
+            }
+          }
+        }
+      },
+      "recoveryStatus": 200,
+      "completedBeforeRelease": false,
+      "committedRecordVisibleAfterFailure": true,
+      "historicalAttribution": false
+    },
+    {
+      "provider": "JSON",
+      "boundary": "connection-loss",
+      "client": "ECONNRESET",
+      "serverCloseObserved": true,
+      "meter": {
+        "schema": "wydgit.execution-meter/1",
+        "elapsedMs": 14,
+        "timeLimitMs": 1000,
+        "charges": {
+          "eventDispatches": 54,
+          "eventHandlers": 1,
+          "steps": 25,
+          "procedureCalls": 2,
+          "serviceCalls": 1
+        },
+        "exhaustion": {
+          "resource": "guard",
+          "used": 0,
+          "limit": 0
+        },
+        "diagnostics": {
+          "schema": "wydgit.page-diagnostics/1",
+          "execution": "page",
+          "accountingPath": [
+            "page",
+            "events",
+            "components",
+            "workflow",
+            "services"
+          ],
+          "phaseAtFailure": "action",
+          "preparationMs": 2.726525000000038,
+          "phases": {
+            "prepare": {
+              "calls": 1,
+              "elapsedMs": 3.284
+            },
+            "start": {
+              "calls": 1,
+              "elapsedMs": 0.069
+            },
+            "initialize": {
+              "calls": 1,
+              "elapsedMs": 2.637
+            },
+            "load": {
+              "calls": 1,
+              "elapsedMs": 3.809
+            },
+            "validate": {
+              "calls": 1,
+              "elapsedMs": 2.234
+            },
+            "action": {
+              "calls": 1,
+              "elapsedMs": 3.951
+            },
+            "cleanup": {
+              "calls": 1,
+              "elapsedMs": 0.783
+            },
+            "settle": {
+              "calls": 1,
+              "elapsedMs": 0.013
+            }
+          },
+          "spans": {
+            "dispatch": {
+              "calls": 53,
+              "elapsedMs": 6.552
+            },
+            "authorization": {
+              "calls": 3,
+              "elapsedMs": 0.046
+            },
+            "service": {
+              "calls": 1,
+              "elapsedMs": 2.234
+            }
+          }
+        }
+      },
+      "committed": false,
+      "recoveryStatus": 200
+    },
+    {
+      "provider": "SQLite",
+      "boundary": "connection-loss",
+      "client": "ECONNRESET",
+      "serverCloseObserved": true,
+      "meter": {
+        "schema": "wydgit.execution-meter/1",
+        "elapsedMs": 13,
+        "timeLimitMs": 1000,
+        "charges": {
+          "eventDispatches": 54,
+          "eventHandlers": 1,
+          "steps": 25,
+          "procedureCalls": 2,
+          "serviceCalls": 1
+        },
+        "exhaustion": {
+          "resource": "guard",
+          "used": 0,
+          "limit": 0
+        },
+        "diagnostics": {
+          "schema": "wydgit.page-diagnostics/1",
+          "execution": "page",
+          "accountingPath": [
+            "page",
+            "events",
+            "components",
+            "workflow",
+            "services"
+          ],
+          "phaseAtFailure": "action",
+          "preparationMs": 0.9868659999992815,
+          "phases": {
+            "prepare": {
+              "calls": 1,
+              "elapsedMs": 1.478
+            },
+            "start": {
+              "calls": 1,
+              "elapsedMs": 0.073
+            },
+            "initialize": {
+              "calls": 1,
+              "elapsedMs": 2.71
+            },
+            "load": {
+              "calls": 1,
+              "elapsedMs": 3.726
+            },
+            "validate": {
+              "calls": 1,
+              "elapsedMs": 2.331
+            },
+            "action": {
+              "calls": 1,
+              "elapsedMs": 2.704
+            },
+            "cleanup": {
+              "calls": 1,
+              "elapsedMs": 0.775
+            },
+            "settle": {
+              "calls": 1,
+              "elapsedMs": 0.011
+            }
+          },
+          "spans": {
+            "dispatch": {
+              "calls": 53,
+              "elapsedMs": 5.615
+            },
+            "authorization": {
+              "calls": 3,
+              "elapsedMs": 0.023
+            },
+            "service": {
+              "calls": 1,
+              "elapsedMs": 1.075
+            }
+          }
+        }
+      },
+      "committed": false,
+      "recoveryStatus": 200
+    },
+    {
+      "boundary": "held Page.Load during drain",
+      "controlledWaitMs": 1100,
+      "status": 500,
+      "diagnostics": [
+        {
+          "schema": "wydgine.http-event/1",
+          "phase": "page",
+          "code": "SEWN.LIMIT"
+        },
+        {
+          "schema": "wydgine.http-event/1",
+          "phase": "cleanup",
+          "code": "SEWN.LIMIT"
+        }
+      ],
+      "meter": {
+        "schema": "wydgit.execution-meter/1",
+        "elapsedMs": 1449,
+        "timeLimitMs": 1000,
+        "charges": {
+          "eventDispatches": 17,
+          "eventHandlers": 1
+        },
+        "exhaustion": {
+          "resource": "timeMs",
+          "used": 1447,
+          "limit": 1000
+        },
+        "diagnostics": {
+          "schema": "wydgit.page-diagnostics/1",
+          "execution": "page",
+          "accountingPath": [
+            "page",
+            "events",
+            "components",
+            "workflow",
+            "services"
+          ],
+          "phaseAtFailure": "load",
+          "preparationMs": 1.71411100000023,
+          "phases": {
+            "prepare": {
+              "calls": 1,
+              "elapsedMs": 2.528
+            },
+            "start": {
+              "calls": 1,
+              "elapsedMs": 0.397
+            },
+            "initialize": {
+              "calls": 1,
+              "elapsedMs": 5.03
+            },
+            "load": {
+              "calls": 1,
+              "elapsedMs": 1441.376
+            },
+            "cleanup": {
+              "calls": 1,
+              "elapsedMs": 1.208
+            },
+            "settle": {
+              "calls": 1,
+              "elapsedMs": 0.036
+            }
+          },
+          "spans": {
+            "dispatch": {
+              "calls": 18,
+              "elapsedMs": 1445.799
+            }
+          }
+        }
+      },
+      "siblingStatus": 200,
+      "historicalAttribution": false
+    }
+  ],
+  "limits": [
+    "local cooperating stopped-App writers only",
+    "4 MiB aggregate recovery checkpoint; 64 KiB migration approval",
+    "lossless rename/default and fixed managed instance footprint only",
+    "no installation-bound store rebinding",
+    "private recovery copies remain after purge; no secure erasure or expiry policy",
+    "legacy ambiguous infrastructure records require manual reconciliation",
+    "no power-loss, network-filesystem, distributed-writer or managed-hosting qualification"
+  ]
+}

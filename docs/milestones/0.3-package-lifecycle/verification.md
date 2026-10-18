@@ -1,10 +1,24 @@
 # Package lifecycle verification — 2026-10-18
 
+The entries below retain the **initial catalog-foundation evidence**. The later
+[continuation qualification record](qualification-2026-10-18.md) supersedes its
+implementation-status statements and records the checkpointed storage follow-up.
+
 Implementation commit: `cbaad61` (`feat(packages): add recoverable local catalog
 lifecycle`). Node **v24.21.0**. Tests use temporary local fixtures; no production
 site/data, privileged system operation, VM, deployment, tag, release or push.
 
-## Executed checks
+## Continuation handoff
+
+Local commits `eb98ff3` and `e9769ec` add the bounded checkpointed contracts.
+Completed final checks: **1,086/1,086** root, **176/176** focused,
+**6/6** controlled HTTP probes; all have zero failed/cancelled/skipped cases.
+Content validation passed for 3 Pages, 42 links and unique anchors; whitespace
+checks passed. Exact commands, corrected failures, guarantees, retained checkpoint
+semantics and remaining production blockers are in the continuation record above.
+No version, immutable artifact, hosting deferral or deployment change occurred.
+
+## Initial foundation executed checks
 
 | Command | Recorded result |
 | --- | --- |
