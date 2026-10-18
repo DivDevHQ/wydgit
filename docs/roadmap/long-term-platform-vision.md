@@ -231,6 +231,25 @@ The platform remains usable independently of DivDev-managed infrastructure. Pote
 
 ## 11. Relationship to the 0.3 roadmap
 
+**Approved update — 2026-10-18:**
+[Decision 0003](../decisions/0003-defer-managed-hosting-qualification-to-0.4.md)
+defers managed, multi-tenant WydHosting qualification and the Debian 13 VM experiment
+to **0.4**. I5.6 stays **incomplete, experimental and not security qualified**, with
+all six outstanding work packages, acceptance criteria and evidence requirements
+preserved. Debian remains a supported target; no VM creation/guest changes are
+authorized. The [feasibility assessment and trial plan](../milestones/0.3-I5.6/recovery-and-debian-feasibility.md)
+remain the basis for later separately approved work.
+
+Wydgine **0.3 continues toward five-site migrations** through independent Node
+processes, separate OS users, secrets and storage behind a conventional reverse
+proxy. This operator-managed path does not qualify managed WydHosting. Track
+intermittent `SEWN.LIMIT` HTTP 500s separately as the open
+[0.3 reliability issue](../milestones/0.3-reliability.md). The
+[current release record](../milestones/0.3-release-status.md) governs this split;
+the original sequence below is retained as historical planning, not a requirement
+to qualify managed hosting before standalone 0.3 migrations. No security gates are
+waived and no deployment is authorized by the decision.
+
 This document is a **long-term plan**. It should not expand active milestones by accident.
 
 - **0.3-I3:** Continue its already-established operational scope unchanged; do not reopen the work order because of these ideas.
@@ -280,6 +299,10 @@ isolation and provisioning remain future work. The preceding strategic snapshot
 is preserved; it is not evidence that those capabilities already exist.
 
 ## I5.6 implementation status
+
+Managed, multi-tenant qualification and the Debian 13 VM trial are deferred to 0.4
+by Decision 0003 above. I5.6 is incomplete and unqualified. The original technical
+status below is preserved; its outstanding security gates remain required.
 
 I5.4/I5.5 delivered independent packed packages and actual same-UID supervision.
 The [I5.6 candidate](../milestones/0.3-I5.6/README.md) adds executable Linux

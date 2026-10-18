@@ -1,5 +1,19 @@
 # I5 implementation specification
 
+**Current release scope — 2026-10-18:** accepted
+[Decision 0003](../../decisions/0003-defer-managed-hosting-qualification-to-0.4.md)
+defers managed, multi-tenant WydHosting qualification to **0.4**. I5.6 is incomplete,
+experimental and not security qualified; its six outstanding security work packages
+and all acceptance/evidence requirements remain. The Debian 13 VM trial is also
+scheduled for 0.4, without guest authorization; Debian remains a supported target.
+Wydgine's five-site migrations continue toward **0.3** using independent Node
+processes, OS users, secrets and storage behind a conventional reverse proxy.
+These deployments do not satisfy managed hosting gates. See the
+[current release record](../0.3-release-status.md) and separate unresolved
+[0.3 HTTP reliability issue](../0.3-reliability.md). The original technical plan
+below is retained; managed qualification is no longer a prerequisite for the
+standalone 0.3 migration path, and no acceptance criteria are removed.
+
 Design baseline alpha.12, I4 contracts version 1. Implement in gated subphases; do not
 attempt package extraction, privileged setup and every provider migration at once.
 Wydgine runs Apps; WydHosting operates infrastructure. Preserve I0–I3 throughout.

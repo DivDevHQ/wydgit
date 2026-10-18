@@ -1,5 +1,15 @@
 # Hosting operations (I3 local profile)
 
+**Current 0.3 migration direction:** accepted
+[Decision 0003](decisions/0003-defer-managed-hosting-qualification-to-0.4.md)
+uses independent Node processes, OS users, secrets and storage behind a conventional
+reverse proxy for the five-site goals. The shared-process local example below is
+retained for development and is not that deployment plan or managed-hosting
+qualification. Managed multi-tenant qualification and the Debian 13 VM trial are
+deferred to 0.4; I5.6 remains incomplete/unqualified. The separate
+[0.3 HTTP reliability issue](milestones/0.3-reliability.md) remains open.
+No migration, deployment or OS operation is authorized here.
+
 This non-production profile requires Node >=22.12, installed workspace dependencies
 and a trusted operator shell. `npm ci` installs the workspace. On Linux, provision
 native library prerequisites as described by the canonical provider packages. Keep

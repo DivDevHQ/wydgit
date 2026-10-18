@@ -1,5 +1,15 @@
 # Wydgine
 
+**0.3 release direction (2026-10-18):** continue the five-site migration goals
+using independent Node processes, separate OS users, secrets and storage behind a
+conventional reverse proxy. Managed, multi-tenant WydHosting qualification and the
+Debian 13 VM experiment are deferred to 0.4; I5.6 remains incomplete and unqualified.
+Debian remains a supported target. These standalone deployments do not qualify
+managed WydHosting. Intermittent `SEWN.LIMIT` HTTP 500s remain an unresolved 0.3
+reliability issue. See repository `docs/decisions/0003-defer-managed-hosting-qualification-to-0.4.md`
+and `docs/milestones/0.3-release-status.md`. No deployment or guest changes are
+authorized by this documentation decision.
+
 Wydgine runs canonical Wydgit Apps. Version 0.3.0-alpha.15 is a private,
 locally packed development artifact; it has not been published to npm.
 Requires Node >=24.21.0. No WydHosting or Linux hosting installation is required.

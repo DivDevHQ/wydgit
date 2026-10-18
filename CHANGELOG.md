@@ -1,5 +1,12 @@
 ## Unreleased
 
+- Record approved Decision 0003: defer managed multi-tenant WydHosting qualification
+  and the Debian 13 VM trial to 0.4, retaining all six security work packages and
+  qualification gates. Continue Wydgine 0.3 five-site goals through separate Node
+  processes, OS users, secrets and storage behind a conventional reverse proxy.
+  Track intermittent SEWN.LIMIT HTTP 500s separately as unresolved 0.3 reliability;
+  I5.6 remains incomplete and unqualified. Documentation only; no runtime/version change.
+
 - Preserve and independently verify the overnight offline I5.6 continuation. Record
   ordinary-user regression passes and intermittent HTTP deadline failures, isolated
   sandbox socket/stdout failures and the unresolved native assertion. Add a Debian 13 versus Ubuntu 26.04 feasibility

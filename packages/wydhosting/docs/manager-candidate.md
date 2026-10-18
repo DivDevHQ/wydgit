@@ -1,5 +1,19 @@
 # Minimal manager candidate and installation decision gate
 
+**Approved roadmap decision — 2026-10-18:** managed, multi-tenant WydHosting
+qualification and the Debian 13 VM experiment are deferred to **0.4**. I5.6 remains
+**incomplete, experimental and not security qualified**. All six outstanding work
+packages, acceptance criteria and evidence requirements below remain in force.
+Debian remains a supported target; no VM creation, installation or guest changes
+are authorized. Wydgine 0.3 continues toward five-site migrations using independent
+Node processes, OS users, secrets and storage behind a conventional reverse proxy;
+these deployments do not qualify managed WydHosting. Intermittent `SEWN.LIMIT`
+HTTP 500 failures remain a separate unresolved **0.3 reliability issue**.
+Authoritative records: `docs/decisions/0003-defer-managed-hosting-qualification-to-0.4.md`,
+`docs/milestones/0.3-release-status.md` and `docs/milestones/0.3-reliability.md`.
+Pending-decision/next-approval language in the historical sections below is superseded
+on scheduling only; technical contracts, trial plans and recorded evidence are retained.
+
 **Current continuation (2026-10-18):** read [offline protocol, protected evidence,
 review staging, FD prototype and coordinated cutover](offline-manager-protocol.md).
 The original admission-only implementation snapshot below is retained for history;
@@ -291,7 +305,8 @@ The five real website migrations are 0.3 Alpha release criteria, not I5.6 criter
 No fallback is activated and no decision log/roadmap is changed. Standalone Wydgine
 security/portability remain unchanged.
 
-**Single next approval:** decide whether to authorize deferring managed WydHosting
+**Historical next approval (now superseded by Decision 0003):** decide whether to
+authorize deferring managed WydHosting
 qualification to 0.4. That decision would precede any separately scoped fallback or
 guest-test authorization. No installation approval is requested for this non-runnable
 candidate, and no existing permission is treated as authorizing installed tests.

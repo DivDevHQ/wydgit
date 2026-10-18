@@ -1,5 +1,14 @@
 # WydHosting
 
+**Roadmap status (2026-10-18):** managed, multi-tenant qualification is deferred
+to **0.4** under accepted Decision 0003. I5.6 remains incomplete, experimental
+and not security qualified; all six security work packages and acceptance/evidence
+gates are retained. The Debian 13 VM trial is deferred to 0.4; Debian remains a
+supported target, with no VM/guest operations authorized. Standalone Wydgine's
+five-site migration goals continue in 0.3, without a managed-hosting qualification
+claim. See repository `docs/milestones/0.3-release-status.md`; intermittent
+`SEWN.LIMIT` HTTP 500s remain open in `docs/milestones/0.3-reliability.md`.
+
 Private local development package 0.3.0-alpha.15, requiring exactly Wydgine
 0.3.0-alpha.15 and Node >=24.21.0. Wydgine runs Apps; WydHosting operates hosting
 infrastructure. No public npm publication is claimed.

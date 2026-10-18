@@ -104,6 +104,22 @@ real worker lifecycle, bounded recovery and explicit I5.6 security gates.
 See [I5.4 independent local packages](docs/milestones/0.3-I5.4/README.md) for
 verified tarball installation, trusted exports and packaging boundaries.
 
+## Approved 0.3 / 0.4 release scope
+
+[Decision 0003](docs/decisions/0003-defer-managed-hosting-qualification-to-0.4.md)
+defers managed, multi-tenant WydHosting qualification and the Debian 13 VM experiment
+to **0.4**. I5.6 remains **incomplete, experimental and not security qualified**;
+all six security work packages and acceptance/evidence requirements remain. Debian
+remains a supported target, without a new managed-hosting qualification claim.
+
+Wydgine **0.3 continues toward its five-site migration goals** using independent
+Node processes, separate OS users, secrets and storage behind a conventional reverse
+proxy. These standalone deployments do not qualify managed WydHosting. Intermittent
+`SEWN.LIMIT` HTTP 500 failures remain a separate unresolved
+[0.3 reliability issue](docs/milestones/0.3-reliability.md). See the
+[current release-status record](docs/milestones/0.3-release-status.md).
+This scheduling decision authorizes no deployment, VM creation or guest changes.
+
 ## Current capabilities and boundaries
 
 Current versions are **Wydgine/WydHosting/platform 0.3.0-alpha.15**, **WydClient 0.1.0-alpha.8**

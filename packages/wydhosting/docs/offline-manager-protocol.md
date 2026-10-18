@@ -1,5 +1,19 @@
 # I5.6 offline manager protocol continuation — 2026-10-18
 
+**Approved roadmap decision — 2026-10-18:** managed, multi-tenant WydHosting
+qualification and the Debian 13 VM experiment are deferred to **0.4**. I5.6 remains
+**incomplete, experimental and not security qualified**. All six outstanding work
+packages, acceptance criteria and evidence requirements below remain in force.
+Debian remains a supported target; no VM creation, installation or guest changes
+are authorized. Wydgine 0.3 continues toward five-site migrations using independent
+Node processes, OS users, secrets and storage behind a conventional reverse proxy;
+these deployments do not qualify managed WydHosting. Intermittent `SEWN.LIMIT`
+HTTP 500 failures remain a separate unresolved **0.3 reliability issue**.
+Authoritative records: `docs/decisions/0003-defer-managed-hosting-qualification-to-0.4.md`,
+`docs/milestones/0.3-release-status.md` and `docs/milestones/0.3-reliability.md`.
+Pending-decision/next-approval language in the historical sections below is superseded
+on scheduling only; technical contracts, trial plans and recorded evidence are retained.
+
 Starting branch `develop/0.3`, HEAD
 `646d1740004d9598c21bc8232099fb31ad8f3c92`, clean; origin is
 `DivDevHQ/wydgit`. Version stays **0.3.0-alpha.15**. No dependency, release criterion,

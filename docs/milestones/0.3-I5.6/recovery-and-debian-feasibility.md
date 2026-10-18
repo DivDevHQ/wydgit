@@ -1,5 +1,16 @@
 # I5.6 recovery and Debian-family feasibility — 2026-10-18
 
+**Subsequent approved decision — 2026-10-18:**
+[Decision 0003](../../decisions/0003-defer-managed-hosting-qualification-to-0.4.md)
+accepts recommendation B and defers managed WydHosting qualification **and this
+Debian 13 VM experiment to 0.4**. I5.6 remains incomplete, experimental and not
+security qualified. Debian remains a supported target; no VM or guest operation
+is authorized. Wydgine's five-site migration goals continue in 0.3 through independent
+Node processes, OS users, secrets and storage behind a conventional reverse proxy.
+[HTTP reliability](../0.3-reliability.md) remains an unresolved 0.3 issue. The original
+assessment, recommendation, feasibility evidence and trial plan below are preserved
+as the historical basis for that decision; their pending-approval language is superseded.
+
 Recommendation **B**: Debian-family integration is useful as a bounded portability
 experiment; managed WydHosting qualification should move to 0.4 **if the user elects
 that deferral**. This report neither activates deferral nor changes the roadmap.
