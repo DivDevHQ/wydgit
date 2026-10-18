@@ -5,6 +5,7 @@ import { clean, record, parse, WydgitError, requireThat as check } from '../obje
 import { LIMITS, validatePackageManifest } from './manifest.js';
 import { packageGraph } from './graph.js';
 import { copyEnvelope } from '../object-model/schema.js';
+import { version } from '../libraries/contracts.js';
 export const STATE='content/installed-packages.json';
 const present=file=>Boolean(lstatSync(file,{throwIfNoEntry:false}));
 export const digest=text=>createHash('sha256').update(text).digest('hex');
@@ -63,7 +64,18 @@ export function validateInstalledState(root,state) {
         Object.hasOwn(entry,key)&&Object.hasOwn(entry.receipt,key)&&JSON.stringify(clean(entry[key]))===JSON.stringify(clean(entry.receipt[key])))&&
       JSON.stringify(clean(entry.receipt.bindings))===JSON.stringify(m.bindings),'PACKAGE.CATALOG','Catalog differs from installation receipt');
     check(paths.every(file=>entry.receipt.resources?.[file]?.sha256===digest(entry.resources[file])),'PACKAGE.DRIFT','Installed resource hash differs from receipt');
-    for(const key of ['additions','page','navigation','properties','libraryScopes','compiledSources'])check(Object.hasOwn(entry,key)===Object.hasOwn(entry.receipt,key)&&(!Object.hasOwn(entry,key)||JSON.stringify(clean(entry[key]))===JSON.stringify(clean(entry.receipt[key]))),'PACKAGE.CATALOG','Initial attachment differs from receipt');
+    for(const key of ['additions','page','navigation','properties','libraryScopes','compiledSources','migrationLineage'])check(Object.hasOwn(entry,key)===Object.hasOwn(entry.receipt,key)&&(!Object.hasOwn(entry,key)||JSON.stringify(clean(entry[key]))===JSON.stringify(clean(entry.receipt[key]))),'PACKAGE.CATALOG','Initial attachment or migration lineage differs from receipt');
+    if(entry.migrationLineage!==undefined){
+      const hash=x=>typeof x==='string'&&/^[a-f0-9]{64}$/.test(x),observed=new Map();
+      check(Array.isArray(entry.migrationLineage)&&entry.migrationLineage.length>0&&entry.migrationLineage.length<=32,'PACKAGE.CATALOG','Invalid migration lineage');
+      for(const lineage of entry.migrationLineage){
+        check(record(lineage)&&Object.keys(lineage).length===4&&lineage.schema==='wydgit.developer-migration-lineage/1'&&hash(lineage.declaration)&&typeof lineage.sourceReceipt==='string'&&lineage.sourceReceipt.length<=128&&Array.isArray(lineage.steps)&&lineage.steps.length>0&&lineage.steps.length<=32,'PACKAGE.CATALOG','Invalid migration lineage envelope');
+        for(const step of lineage.steps){
+          check(record(step)&&Object.keys(step).length===6&&typeof step.id==='string'&&/^[a-z][a-z0-9-]{0,63}$/.test(step.id)&&hash(step.sha256)&&hash(step.sourceArtifact)&&hash(step.targetArtifact)&&version(step.from)&&version(step.to),'PACKAGE.CATALOG','Invalid migration step evidence');
+          check(!observed.has(step.id)||observed.get(step.id)===step.sha256,'PACKAGE.DRIFT','Accepted migration step identity changed');observed.set(step.id,step.sha256);
+        }
+      }
+    }
     for(const key of ['reason','protected'])check(Object.hasOwn(entry,key)===Object.hasOwn(entry.receipt,key)&&(!Object.hasOwn(entry,key)||JSON.stringify(entry[key])===JSON.stringify(entry.receipt[key])),'PACKAGE.CATALOG','Lifecycle metadata differs from receipt');
     check(entry.receipt.dependencies===undefined?!Object.keys(m.dependencies??{}).length:JSON.stringify(clean(entry.receipt.dependencies))===JSON.stringify(clean(m.dependencies??{})),'PACKAGE.CATALOG','Dependency receipt drift');
     check(!(m.staticLibraries||m.interfaces)||entry.compiledSources&&Object.keys(entry.compiledSources).length===Object.keys(m.resources.sources).length&&Object.keys(m.resources.sources).every(id=>Object.hasOwn(entry.compiledSources,id)),'PACKAGE.CATALOG','Missing pinned static-library compilation');

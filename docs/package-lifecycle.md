@@ -8,8 +8,12 @@ The existing I hosting and J administration identifiers are unchanged.
 The [developer-defined migration plan](milestones/0.3-package-lifecycle/developer-defined-migrations.md)
 specifies a future retire-in-place, replacement-reference and Migrate Data
 framework, including automatic upgrades through complete compatible paths.
-It is planning only; the implemented host-approved lossless migration and
-retained-uninstall contracts below remain unchanged.
+The retire/stage/adopt workflow remains unimplemented. A bounded
+[developer declaration increment](milestones/0.3-package-lifecycle/developer-migration-contract.md)
+now adds exact artifact/path approvals, lossless transformations and semantic
+predicates to installed-package updates/upgrades. It does not qualify the full
+MIG acceptance matrix. The host-approved migration and retained-uninstall
+contracts below remain supported.
 
 ## Host API and approvals
 
@@ -54,6 +58,19 @@ principal as the installation context. No SEAM scope or runtime authority is uni
 Use this API on a **stopped App**, under the same trusted local root/writer model as
 the installer. A running host rejects catalog changes until restarted. There is no
 hot-upgrade/drain orchestration or distributed writer lease in this API.
+
+Developer-authored JSON uses the separate `developerMigrations` request contract;
+it cannot add manifest fields or authorize itself. Trusted helpers
+`inspectPackageMigrationArtifact(packagePath)`, `migrationContentHash(value)` and
+`validateDeveloperMigrationDeclaration(value)` support authoring and review.
+Each selected step requires an exact per-step host approval and the host's actual
+read/write/edit capabilities. Every intermediate state receives schema, graph,
+binding and App hydration validation. Frozen plans retain the selected path and
+receipt lineage; apply rechecks local artifacts and uses the same checkpointed
+effects/recovery path. The new interpreter only accepts rename/default operations
+and scoped `present`/`absent`/`equals`/JSON-`type` predicates. It cannot dispatch
+general SEWN or native code. Prototype/structural changes in this developer
+contract refuse; the older explicit host contract below is unchanged.
 
 ## Graph and installation reasons
 

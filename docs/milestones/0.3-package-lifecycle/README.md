@@ -17,8 +17,14 @@ records the agreed retire → stage replacement → update instance references �
 Migrate Data workflow and automatic upgrades through complete compatible paths.
 It defines developer/runtime responsibilities, stable identity, preservation,
 SEAM boundaries, proposed beta scope, acceptance tests and open questions.
-**Planning only:** it does not extend the implemented migration grammar,
+The original plan remains authoritative. The
+[bounded declaration contract](developer-migration-contract.md) implements a first
+increment through installed-package updates/upgrades: artifact-bound developer
+steps, semantic predicates, explicit paths, host approvals and existing recovery.
+Retire/stage/adopt and full MIG-01–MIG-15 qualification remain open; this does not
 declare beta readiness, renumber I/J or change Decision 0003.
+See the [increment qualification record](developer-migration-qualification-2026-10-18.md)
+for actual test evidence and the remaining gates for every MIG scenario.
 
 ## Initial audit
 

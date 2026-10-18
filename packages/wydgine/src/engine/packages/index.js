@@ -23,6 +23,8 @@ import { publishPackageState } from './transaction.js';
 import { publishPackageEffects, resourceSummary } from './effects.js';
 import { migrationInventory, migratePackage, planPhysicalPurge } from './migrations.js';
 import { storeLifecycle } from './store-lifecycle.js';
+import { prepareDeveloperMigration, validateDeveloperPredicates, packageMigrationArtifactHash } from './developer-migrations.js';
+export { validateDeveloperMigrationDeclaration, migrationContentHash } from './developer-migrations.js';
 export { createPackageBudget } from './budget.js';
 export { recoverPackageEffects, inspectPackageEffects, rollbackPackageEffects } from './effects.js';
 export { inspectPackageOperation, recoverPackageOperation } from './transaction.js';
@@ -51,6 +53,10 @@ function loadPackage(packagePath) {
   const template=JSON.parse(resources[manifest.resources.template]);let count=0;const walk=(n,d=0)=>{check(d<=LIMITS.templateDepth&&++count<=LIMITS.templateNodes,'PACKAGE.LIMIT','Template too large');check(n&&n.slots&&typeof n.slots==='object','PACKAGE.TEMPLATE','Invalid template');for(const children of Object.values(n.slots)){check(Array.isArray(children),'PACKAGE.TEMPLATE','Invalid children');children.forEach(c=>walk(c,d+1));}};walk(template);
   return {manifest,resources,definitions,template};
   }catch(error){if(error instanceof WydgitError)throw error;throw new WydgitError('PACKAGE.SOURCE','Package resources are missing, unreadable or invalid');}
+}
+export function inspectPackageMigrationArtifact(packagePath) {
+  const entry=loadPackage(packagePath);
+  return freeze({package:entry.manifest.id,version:entry.manifest.version,artifact:packageMigrationArtifactHash(entry)});
 }
 export function packageBindings(entry,registry,runtime) {
   const handlers=[],actions=[],events=new EventRegistry(),m=validatePackageManifest(entry.manifest);
@@ -240,7 +246,7 @@ function validateCandidateState(root,state,verifiedPackages,hostConfig) {
 
 // Trusted, stopped-App API. Candidate paths, grants, contexts and protection are
 // operator policy, never package input. There are no executable lifecycle hooks.
-export async function planPackageOperation({root,action,package:id,candidates=[],installationContext,budget:token,signal,parentBudget,prune=true,protectedPackages=[],verifiedPackages={},migrations:rawMigrations=[],purgeAuthorization}) {
+export async function planPackageOperation({root,action,package:id,candidates=[],installationContext,budget:token,signal,parentBudget,prune=true,protectedPackages=[],verifiedPackages={},migrations:rawMigrations=[],developerMigrations,purgeAuthorization}) {
   root=path.resolve(root);
   check(['install','update','upgrade','uninstall','promote','purge'].includes(action),'PACKAGE.ACTION','Unsupported lifecycle action');
   check(qualified(id),'PACKAGE.IDENTITY','Invalid package identity');
@@ -254,6 +260,12 @@ export async function planPackageOperation({root,action,package:id,candidates=[]
   state.retained??=[];const changes=[],warnings=[],installations=[],retention=[],inventory=new Map();
   for(const options of candidates){meter.take();check(!options.hostConfig,'PACKAGE.INFRASTRUCTURE','Provision libraries separately before lifecycle operations');const candidate=loadPackage(options.packagePath);check(!inventory.has(candidate.manifest.id),'PACKAGE.CONFLICT','Duplicate candidate identity');inventory.set(candidate.manifest.id,{options,candidate});}
   const original=state.packages.find(p=>p.manifest.id===id);
+  let developer;
+  if(developerMigrations!==undefined){
+    check(['update','upgrade'].includes(action)&&original&&inventory.has(id)&&migrations.length===0,'PACKAGE.MIGRATION','Developer migrations require an installed primary update/upgrade and cannot mix host approvals');
+    developer=prepareDeveloperMigration(developerMigrations,{prior:original,candidate:inventory.get(id).candidate,loadArtifact:loadPackage,context:installationContext,meter});
+    migrations.push(...developer.selected.map(({step})=>step.logic));
+  }
   const remove=packageId=>{
     meter.take();const entry=state.packages.find(p=>p.manifest.id===packageId);
     check(!protectedPackage(entry),'PACKAGE.PROTECTED','Protected package cannot be removed');
@@ -317,7 +329,29 @@ export async function planPackageOperation({root,action,package:id,candidates=[]
       }
       let preserved=state.app;
       const migrating=prior&&migrations.some(step=>step.package===packageId);
-      if(migrating)preserved=await migratePackage({root,prior,candidate,app:preserved,config,resources,migrations,used:usedMigrations,meter});
+      if(migrating&&developer&&packageId===id){
+        let source=prior;
+        // No intermediate code activates. Every edge validates the complete App
+        // and proposed dependency graph before the next edge can see its data.
+        const footprint=node=>({id:node.id,type:node.prototype,slots:Object.fromEntries(Object.entries(node.slots).map(([slot,children])=>[slot,children.map(footprint)]))});
+        for(const {step,artifact} of developer.selected){
+          developer.controls.take('steps');
+          check(equal(footprint(JSON.parse(source.resources[source.manifest.resources.template])),footprint(artifact.template)),'PACKAGE.MIGRATION_REQUIRED','Developer migration cannot change template identities, prototypes or placement');
+          const predicateOptions={root,app:preserved,entry:source,config,resources,meter,controls:developer.controls,context:installationContext};
+          await validateDeveloperPredicates({...predicateOptions,predicates:step.validators.before});
+          preserved=await migratePackage({root,prior:source,candidate:artifact,app:preserved,config,resources,migrations:[step.logic],used:usedMigrations,meter,controls:developer.controls});
+          const intermediate={...source,manifest:artifact.manifest,resources:artifact.resources};
+          const staged={...state,app:preserved,packages:state.packages.map(p=>p===old?intermediate:p)};
+          packageGraph(proposed.map(p=>p.manifest.id===id?intermediate:p));
+          await resolveLibraries(root,artifact.manifest,config);
+          mapStorage(artifact.manifest,config,prior.storageMappings,initial.runtime.rootId);
+          const model=repositoryFromState(root,staged,{verifiedPackages});
+          packageBindings(intermediate,model.registry,model.runtime);
+          preserved=JSON.stringify(dehydrate(model.runtime,{includeSensitive:true}));
+          await validateDeveloperPredicates({...predicateOptions,app:preserved,entry:intermediate,predicates:step.validators.after});
+          developer.controls.staging(resources,preserved);source=intermediate;
+        }
+      }else if(migrating)preserved=await migratePackage({root,prior,candidate,app:preserved,config,resources,migrations,used:usedMigrations,meter});
       let saved=retained;
       if(old){const detached=detachPackage(root,state,old,installationContext,verifiedPackages);saved=detached.retained;state.app=detached.app;state.packages=state.packages.filter(p=>p!==old);}
       state.retained=state.retained.filter(r=>r!==retained);
@@ -336,8 +370,13 @@ export async function planPackageOperation({root,action,package:id,candidates=[]
       if(prior&&prior.manifest.version===data.entry.manifest.version)check(equal(prior.manifest,data.entry.manifest)&&equal(prior.resources,data.entry.resources)&&equal(prior.compiledSources??null,data.entry.compiledSources??null),'PACKAGE.VERSION','Same-version package resources changed');
       data.entry.reason=prior?(action==='install'&&packageId===id?'explicit':prior.reason??'explicit'):(packageId===id?'explicit':'automatic');
       data.entry.protected=prior?.protected??protectedPackages.includes(packageId);
+      if(prior?.migrationLineage||developer&&packageId===id){
+        data.entry.migrationLineage=[...(prior?.migrationLineage??[]),...(developer&&packageId===id?[developer.summary.lineage]:[])];
+        check(data.entry.migrationLineage.length<=32,'PACKAGE.LIMIT','Migration lineage ceiling reached');
+      }
       const receiptPlan={...subplan,...Object.fromEntries(['page','navigation'].filter(key=>Object.hasOwn(data.entry,key)).map(key=>[key,data.entry[key]]))};
       data.entry.receipt=sameVersion?{...old.receipt,reason:data.entry.reason,protected:data.entry.protected,dependencies:data.entry.manifest.dependencies??{}}:installationReceipt(receiptPlan,data,state.revision+1);
+      if(data.entry.migrationLineage)data.entry.receipt.migrationLineage=data.entry.migrationLineage;
       state.packages.push(data.entry);state.app=data.app;
       if(old)state.app=preserved;
       else if(retained){
@@ -368,13 +407,14 @@ export async function planPackageOperation({root,action,package:id,candidates=[]
   check(Buffer.byteLength(JSON.stringify(state,null,2)+'\n')<=LIMITS.state,'PACKAGE.LIMIT','Installed state too large');meter.take();
   check(base===baseFingerprint(root)&&head===stateFingerprint(root),'PACKAGE.STALE','State changed during lifecycle planning');
   const graphSummary=packages=>packages.map(p=>({package:p.manifest.id,version:p.manifest.version,dependencies:p.manifest.dependencies??{},reason:p.reason??'explicit',protected:protectedPackage(p)}));
-  const plan=freeze({schema:'wydgit.package-operation-plan/1',action,package:id,changes,warnings,installations,retention,beforeGraph:graphSummary(accepted?.packages??[]),afterGraph:graphSummary(state.packages),baseFingerprint:base,catalogFingerprint:head,revision:state.revision,migrations:[...usedMigrations],resources:await resourceSummary([...resources.values()],root),dataRetention:action==='purge'&&resources.size?'remove-active-stores-retain-private-recovery-checkpoint':'preserve-unless-explicit-purge',meter:meter.snapshot()});
-  operationPlans.set(plan,{root,state,meter,...(resources.size||usedMigrations.size?{effects:{resources:[...resources.values()],configAfter:configChanged?configText:undefined}}:{})});return plan;
+  const plan=freeze({schema:'wydgit.package-operation-plan/1',action,package:id,changes,warnings,installations,retention,beforeGraph:graphSummary(accepted?.packages??[]),afterGraph:graphSummary(state.packages),baseFingerprint:base,catalogFingerprint:head,revision:state.revision,migrations:[...usedMigrations],...(developer?{developerMigration:{...developer.summary,counts:developer.controls.snapshot()}}:{}),resources:await resourceSummary([...resources.values()],root),dataRetention:action==='purge'&&resources.size?'remove-active-stores-retain-private-recovery-checkpoint':'preserve-unless-explicit-purge',meter:meter.snapshot()});
+  operationPlans.set(plan,{root,state,meter,...(developer?{artifactChecks:[...developer.checks,{packagePath:inventory.get(id).options.packagePath,sha256:packageMigrationArtifactHash(inventory.get(id).candidate)}]}:{}),...(resources.size||usedMigrations.size?{effects:{resources:[...resources.values()],configAfter:configChanged?configText:undefined}}:{})});return plan;
 }
 export async function applyPackageOperation(plan,options={}){
   check(operationPlans.has(plan),'PACKAGE.PLAN','Expected an original host lifecycle plan');const data=operationPlans.get(plan);
   // Consume before apply: even an ambiguous storage error cannot replay this plan.
   operationPlans.delete(plan);
+  for(const artifact of data.artifactChecks??[]){data.meter.take();check(packageMigrationArtifactHash(loadPackage(artifact.packagePath))===artifact.sha256,'PACKAGE.STALE','Migration artifact changed after preview');}
   if(data.effects)return publishPackageEffects({...data,...data.effects,plan,budget:data.meter,atStage:options.atStage});
   return publishPackageState({...data,plan,budget:data.meter,atStage:options.atStage});
 }

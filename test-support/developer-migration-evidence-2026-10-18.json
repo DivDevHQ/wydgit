@@ -1,0 +1,33 @@
+{
+  "schema": "wydgit.developer-migration-qualification/1",
+  "date": "2026-10-18",
+  "sourceCommit": "227f3afaf4b8d7b9757d7e4164864678679e4095",
+  "contractCommit": "3f801a3",
+  "node": "v24.21.0",
+  "adapters": [
+    "json",
+    "sqlite"
+  ],
+  "newTests": 113,
+  "betaQualified": false,
+  "runs": [
+    {
+      "name": "full",
+      "command": "npm test",
+      "passed": 1199,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "sha256": "320585cadd78d779f164ac115b683315a747c088e5ecf0490a16048de2565388"
+    },
+    {
+      "name": "focused",
+      "command": "node --test --test-reporter=tap test/developer-migrations.test.js test/packages.test.js test/package-lifecycle.test.js test/package-infrastructure.test.js test/package-provisioning-recovery.test.js test/package-migrations.test.js test/package-physical-purge.test.js test/package-effects-adversarial.test.js test/package-boundaries.test.js test/sewn-shared-budget.test.js",
+      "passed": 289,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "sha256": "09b58e2693a83a2b0c1146ce0e92f3437e55966b368e5f8e681ca2fe6fb091dd"
+    }
+  ]
+}

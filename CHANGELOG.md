@@ -1,5 +1,14 @@
 ## Unreleased
 
+- Add a separate bounded developer migration declaration/request contract for
+  installed-package updates/upgrades: exact artifact and per-step hash approvals,
+  explicit adjacent/direct paths, scoped lossless transforms and semantic
+  predicates, cumulative resource limits and receipt lineage. Validate every
+  selected intermediate App/schema/graph; reuse private checkpoints and checked
+  recovery/rollback on JSON and SQLite. Retire-in-place, durable candidate staging,
+  reference adoption and full MIG beta qualification remain open. Versions,
+  existing host approvals, safety ceilings and WydHosting's 0.4 deferral are unchanged.
+
 - Document the planned developer-defined migration framework: distinct
   retire-in-place and replacement adoption, stable identity mappings, versioned
   manual/automatic migration paths, SEAM-safe execution, content-preserving

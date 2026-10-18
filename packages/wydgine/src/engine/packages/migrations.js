@@ -34,11 +34,11 @@ export function migrationInventory(input) {
   }
   return inventory;
 }
-function verifyOwner(store,entry,app) {
+export function verifyMigrationOwner(store,entry,app) {
   check(store&&store.app===app&&store.publisher===entry.manifest.publisher&&store.package===entry.manifest.id&&(store.principal===undefined||store.principal===entry.manifest.id),'PACKAGE.OWNERSHIP','Storage is not exclusively owned by this package principal');
   check(store.installation===undefined,'PACKAGE.MIGRATION_REQUIRED','Installation-bound storage needs a separately approved identity transition');
 }
-export async function migratePackage({root,prior,candidate,app,config,resources,migrations,used,meter}) {
+export async function migratePackage({root,prior,candidate,app,config,resources,migrations,used,meter,controls}) {
   const steps=migrations.filter(step=>step.package===prior.manifest.id);
   check(steps.length,'PACKAGE.MIGRATION_REQUIRED','Storage or instance transition needs an explicit versioned migration');
   let version=prior.manifest.version;
@@ -51,11 +51,11 @@ export async function migratePackage({root,prior,candidate,app,config,resources,
     const seen=new Set();
     for(const change of step.storage){
       const {snapshotStore,storeFile,emptyStore,validateStoreConfig,validateStoreCheckpoint,storeRecordByteLimit}=await storeLifecycle(root);
-      meter.take();fields(change,['name','from','to','fields','operations'],'PACKAGE.MIGRATION');
+      meter.take();controls?.take('mappings');fields(change,['name','from','to','fields','operations'],'PACKAGE.MIGRATION');
       const previous=schemas.get(change.name),mapping=prior.storageMappings[change.name];
       check(previous&&mapping&&!seen.has(change.name)&&change.from===(previous.schemaVersion??1)&&change.to===change.from+1,'PACKAGE.MIGRATION_ORDER','Storage versions must advance one version at a time');seen.add(change.name);
       const store=config.libraries.find(l=>l.id==='wydstore'&&l.enabled)?.options?.stores?.find(s=>s.id===mapping.store);
-      verifyOwner(store,prior,result.id);
+      verifyMigrationOwner(store,prior,result.id);
       const collection=store.collections.find(c=>c.id===mapping.collection);
       check(collection&&equal(collection.fields,previous.fields)&&(collection.schemaVersion??1)===change.from&&(previous.schemaId===undefined||collection.schemaId===previous.schemaId),'PACKAGE.MIGRATION_ORDER','Configured storage differs from its source schema');
       const key=storeFile(store);let resource=resources.get(key);
@@ -65,12 +65,13 @@ export async function migratePackage({root,prior,candidate,app,config,resources,
       if(resource.after===null){resource.after=emptyStore(target);}
       const document=clean(resource.after),records=document.collections[collection.id].records;
       let bytes=Buffer.byteLength(JSON.stringify(document));
-      const transformRecord=data=>{const transformed=transform(data,change.operations,meter),size=Buffer.byteLength(JSON.stringify(transformed));bytes+=size-Buffer.byteLength(JSON.stringify(data));check(size<=storeRecordByteLimit(store)&&bytes<=LIMITS.state,'PACKAGE.LIMIT','Migrated content exceeds the recovery or record ceiling');return transformed;};
+      const transformRecord=data=>{const transformed=transform(data,change.operations,meter),size=Buffer.byteLength(JSON.stringify(transformed));controls?.bytes(data,transformed);bytes+=size-Buffer.byteLength(JSON.stringify(data));check(size<=storeRecordByteLimit(store)&&bytes<=LIMITS.state,'PACKAGE.LIMIT','Migrated content exceeds the recovery or record ceiling');return transformed;};
       for(const record of records){
-        meter.take();if(!record.deleted)record.data=transformRecord(record.data);
-        for(const history of record.history)history.data=transformRecord(history.data);
+        meter.take();controls?.take('records');if(!record.deleted)record.data=transformRecord(record.data);
+        for(const history of record.history){controls?.take('history');history.data=transformRecord(history.data);}
       }
       document.collections[collection.id].definition=next;
+      controls?.bytes(resource.after,document);
       validateStoreCheckpoint(target,document);
       resource.after=document;resource.afterDefinition=target;
       check(Buffer.byteLength(JSON.stringify([...resources.values()]))<=LIMITS.state,'PACKAGE.LIMIT','Combined adapter checkpoints exceed the recovery ceiling');
@@ -78,10 +79,10 @@ export async function migratePackage({root,prior,candidate,app,config,resources,
     }
     const instanceIds=new Set();
     for(const change of step.instances){
-      meter.take();fields(change,['id','fromPrototype','toPrototype','properties'],'PACKAGE.MIGRATION');
+      meter.take();controls?.take('mappings');fields(change,['id','fromPrototype','toPrototype','properties'],'PACKAGE.MIGRATION');
       const node=nodes.get(change.id);
       check(managed.has(change.id)&&node&&node.prototype===change.fromPrototype&&declared.has(change.fromPrototype)&&typeof change.toPrototype==='string'&&change.toPrototype.startsWith(prior.manifest.publisher+'/')&&!instanceIds.has(change.id),'PACKAGE.OWNERSHIP','Instance transition must match one managed package object');instanceIds.add(change.id);
-      node.properties=transform(node.properties,change.properties,meter);node.prototype=change.toPrototype;
+      const properties=transform(node.properties,change.properties,meter);controls?.bytes(node.properties,properties);node.properties=properties;node.prototype=change.toPrototype;
     }
   }
   check(version===candidate.manifest.version,'PACKAGE.MIGRATION_ORDER','Migration chain does not end at the approved candidate');
@@ -97,7 +98,7 @@ export async function planPhysicalPurge({root,entry,state,config,authorization,r
   const library=config.libraries.find(l=>l.id==='wydstore'&&l.enabled);
   check(mapped.size===new Set(entry.manifest.storage.map(s=>entry.storageMappings[s.name]?.store)).size,'PACKAGE.OWNERSHIP','Incomplete physical ownership mapping');
   for(const [id,collections] of mapped){
-    meter.take();const store=library?.options?.stores?.find(s=>s.id===id);verifyOwner(store,entry,JSON.parse(state.app).id);
+    meter.take();const store=library?.options?.stores?.find(s=>s.id===id);verifyMigrationOwner(store,entry,JSON.parse(state.app).id);
     check(store.collections.length===collections.size&&store.collections.every(c=>collections.has(c.id)),'PACKAGE.OWNERSHIP','Unmapped collections must be retained');
     check(![...state.packages,...state.retained.map(r=>r.entry)].some(other=>other!==entry&&Object.values(other.storageMappings).some(m=>m.store===id)),'PACKAGE.OWNERSHIP','Another installation retains a storage reference');
     check(!config.libraries.some(l=>(l.bindings??[]).some(b=>(b.scopes?.wydstore??[]).some(s=>s.store===id))),'PACKAGE.OWNERSHIP','A runtime library retains a storage reference');
