@@ -55,8 +55,10 @@ def digest(raw):
 
 def _evidence(raw, approval):
     value = c._decode(raw)
+    extra = ('predecessorApprovalDigest', 'predecessorEvidenceDigest') if approval['operation'] == 'stop-and-retire' else ()
     c.closed(value, ('schema', 'approvalDigest', 'requestDigest', 'tenantId', 'generation',
-                     'reservationDigest', 'postcondition', 'referenceDigest'))
+                     'reservationDigest', 'postcondition', 'referenceDigest', *extra))
+    c.require(all(c.matches(r'[0-9a-f]{64}', value[key]) for key in extra))
     c.require(value['schema'] == 'wydhosting.lifecycle-evidence/1')
     c.require(value['approvalDigest'] == digest(c._canonical(approval)))
     c.require(all(value[k] == approval[k] for k in
@@ -90,6 +92,7 @@ def _validate(entries):
     # histories created before admission checks existed. Never silently repair them.
     for index, binding in enumerate(bindings):
         c.require(all(_conflict(binding, other) is None for other in bindings[:index]))
+    _history(entries)
 
 
 def _shares_resource(approval, other):
@@ -109,15 +112,76 @@ def _conflict(left, right):
     return None
 
 
+# A retirement inherits the exact start identity, not merely a pool/service name.
+LIFETIME_KEYS = (*c.TUPLE_KEYS, 'uid', 'gid', 'category', 'service',
+                 'templateId', 'templateDigest', 'releaseDigest')
+
+
+def _history(entries, *, admission=False):
+    """Reconstruct a unique contiguous pool chain; dictionary order is irrelevant.
+
+    Each durable preparation consumes one sequence, including rejected operations.
+    Every start consumes the next epoch, including a rejected start tombstone.
+    No persisted pointer or checksum is treated as external retirement proof.
+    """
+    def check(ok, code):
+        need(ok, code if admission else 'CORRUPT')
+    pools = {}
+    for record in entries.values():
+        approval, _ = a._approval(record['approval'].encode())
+        pools.setdefault(approval['poolId'], []).append((approval, record))
+    retired = {}
+    starts, retirement_attempts = [], set()
+    for chain in pools.values():
+        chain.sort(key=lambda pair: pair[0]['expectedSequence'])
+        start = previous = None
+        epoch = 0
+        for sequence, (approval, record) in enumerate(chain):
+            check(approval['expectedSequence'] == sequence, 'SEQUENCE')
+            check(previous is None or previous['transitions'][-1] in ('completed', 'rejected'), 'RESOURCE_BUSY')
+            if approval['operation'] == 'start':
+                for original in starts:
+                    if original['poolId'] == approval['poolId']:
+                        check(all(original[key] == approval[key] for key in c.IDENTITY_KEYS), 'PREDECESSOR')
+                    else:
+                        check(not _shares_resource(original, approval), 'RESOURCE_BUSY')
+                starts.append(approval)
+                check(start is None or start['transitions'][-1] == 'rejected' or
+                      start['approvalDigest'] in retired, 'ACTIVE_START')
+                epoch += 1
+                check(approval['epoch'] == epoch, 'EPOCH')
+                start = record
+            else:
+                check(start is not None and start['transitions'][-1] == 'completed' and
+                      start['approvalDigest'] not in retired, 'PREDECESSOR')
+                original, _ = a._approval(start['approval'].encode())
+                check(all(approval[key] == original[key] for key in LIFETIME_KEYS), 'PREDECESSOR')
+                if approval['operation'] == 'stop-and-retire':
+                    check(start['approvalDigest'] not in retirement_attempts, 'RETIREMENT_REUSED')
+                    retirement_attempts.add(start['approvalDigest'])
+                if approval['operation'] == 'stop-and-retire' and record['transitions'][-1] == 'completed':
+                    receipt = _evidence(record['evidence'].encode(), approval)
+                    check(receipt['predecessorApprovalDigest'] == start['approvalDigest'] and
+                          receipt['predecessorEvidenceDigest'] == digest(start['evidence'].encode()), 'PREDECESSOR')
+                    retired[start['approvalDigest']] = record
+            previous = record
+    return retired
+
+
 def _admit(entries, approval, verifier):
     for record in entries.values():
         other, _ = a._approval(record['approval'].encode())
         code = _conflict((approval, 'prepared'), (other, record['transitions'][-1]))
         need(code is None, code)
-        if _shares_resource(approval, other):
-            # Completion releases a reservation only after fresh independent proof.
-            # This does not attest that a worker is absent or grant another start.
-            _verify(record, verifier)
+    candidate = dict(approval=c._canonical(approval).decode(),
+                     approvalDigest=digest(c._canonical(approval)),
+                     transitions=['prepared'], evidence='')
+    _history({**entries, approval['operationId']: candidate}, admission=True)
+    retired = _history(entries)
+    for record in entries.values():
+        other, _ = a._approval(record['approval'].encode())
+        if _shares_resource(approval, other) and record['approvalDigest'] not in retired:
+            _verify(record, verifier, entries)
 
 
 def _encode(entries):
@@ -250,13 +314,21 @@ def _approved(raw, approval_fd, now, release):
     return approval
 
 
-def _verify(record, verifier):
+def _verify(record, verifier, entries):
     if record['transitions'][-1] == 'completed':
         # Trusted verifier must independently load authoritative reference and prove
         # operation-specific external postcondition. Receipt/digest alone proves none.
         try:
-            verified = callable(verifier) and verifier(record['approval'].encode(),
-                       record['evidence'].encode()) is True
+            approval, _ = a._approval(record['approval'].encode())
+            args = (record['approval'].encode(), record['evidence'].encode())
+            if approval['operation'] == 'stop-and-retire':
+                receipt = _evidence(args[1], approval)
+                starts = [item for item in entries.values()
+                          if item['approvalDigest'] == receipt['predecessorApprovalDigest']]
+                need(len(starts) == 1, 'EVIDENCE')
+                start = starts[0]
+                args = (start['approval'].encode(), start['evidence'].encode(), *args)
+            verified = callable(verifier) and verifier(*args) is True
         except Exception:
             verified = False
         need(verified, 'EVIDENCE')
@@ -275,7 +347,8 @@ def transition(raw, trusted_directory_fd, approval_fd, *, now, installed_release
 
     New preparations reserve conflicting unfinished work across operation IDs and
     never reuse start lifetimes. Completion release needs fresh trusted evidence.
-    This is NOT active-worker, epoch/sequence or rate admission.
+    Pool history consumes exact sequences/epochs and retains active starts until
+    independent exact retirement verification. No rate or execution admission.
     Trusted offline callers only. No effects may be attached to successful return.
     Completion requires an independent trusted verifier, with no default acceptor.
     """
@@ -320,7 +393,10 @@ def _operate(raw, trusted_directory_fd, approval_fd, now, release, change, evide
                     else:
                         need(evidence == b'', 'EVIDENCE')
             _validate(entries)
-            _verify(record, verifier)
+            _verify(record, verifier, entries)
+            for retirement in _history(entries).values():
+                if retirement is not record:
+                    _verify(retirement, verifier, entries)
             # Verify source did not drift while authorization/evidence were checked.
             need(a._stamp(os.stat('journal.json', dir_fd=directory, follow_symlinks=False)) == a._stamp(before), 'CHANGED')
             _names(directory)

@@ -737,3 +737,117 @@ After that foundation, independently verify live provisioning/session/boot evide
 and design the isolated manager's authenticated response boundary. Protected artifact
 publication/FD handoff, coordinated broker authority removal and installed enforcing
 adversarial/crash validation remain separate required gates.
+
+## Implementation Slice 5 — offline exact pool history and retirement, 2026-10-17
+
+Starting HEAD `e4caf618b63ffdb4af8d84cb6ab4fb99c204d850` had the eight expected
+Slice 4 files modified, with no unrelated changes. Complete diff review and fresh
+focused verification preceded separate Slice 4 commit `be5920b`. This slice extends
+only the private journal and tests. All host effects remain disabled. Version,
+dependencies, fixed templates, broker rights and installed configuration are unchanged.
+Earlier slice descriptions above remain historical; these stricter rules supersede
+Slice 4 admission limits.
+
+### History rules
+
+The existing request/approval fields now enforce a unique history, independently of
+JSON object order. For each exact pool ID, `expectedSequence` is the number of earlier
+durable preparations: genesis is zero, and each new operation consumes exactly one
+sequence, including rejected operations. Duplicate same-ID/same-request preparation
+returns recorded state without consumption or effect permission. A different ID at
+an occupied, stale, skipped or reordered sequence refuses. Every predecessor operation
+must be completed or rejected before the next operation is prepared; unknown outcomes
+and reconciliation-required histories remain reserved.
+
+Genesis must be a start at epoch 1. Each subsequent start consumes exactly the next
+epoch, including rejected starts; status/retirement retain their start's epoch. Start
+UUIDs remain permanent namespace-wide tombstones. A start requires its exact latest
+start predecessor to be either rejected before intent or completed and independently
+retired. A completed start, completed status, approval, checksum or sequence alone
+cannot establish retirement. There is no wraparound, eviction or history reset.
+
+Status and retirement bind the latest completed, unretired start: exact tenant,
+account, pool, deployment generation, lifetime UUID, epoch, UID/GID, category, derived
+service and template/release identity. They consume the next pool sequence, even when
+status operations intervene between start and retirement. A retirement targets that
+start, not just the immediately preceding status operation. The whole chain determines
+this relationship; callers cannot choose an older predecessor. New starts retain the
+pool's tenant/account/UID/GID/category binding. Cross-pool reuse of any start resource
+(including derived pool-name hash collision) is refused even after retirement;
+cross-pool reallocation has no qualified authorization/history mechanism in this slice.
+
+Only one distinct retirement operation may target a start, including a rejected
+retirement attempt. Identical duplicate preparation may retrieve its state but never
+repeat a retirement transition or an effect. Completed retirement makes further
+status/retirement of that lifetime invalid. A rejected/indeterminate retirement never
+releases the start. Further attempts need separately specified administrator
+reconciliation, which is not implemented; a fresh ordinary approval is insufficient.
+
+Every snapshot read and write reconstructs these invariants. Missing genesis/start,
+gaps, duplicate sequences, incompatible epochs, unresolved predecessors, duplicate
+retirements, overlapping pool allocations and contradictory predecessor bindings
+quarantine as `CORRUPT` even with individually valid record/envelope checksums. New
+admission failures use bounded `SEQUENCE`, `EPOCH`, `PREDECESSOR`, `ACTIVE_START`,
+`RETIREMENT_REUSED` or existing conflict codes. Rejected admissions publish nothing.
+The private journal envelope stays `/1`; no migration or permissive fallback exists.
+Older snapshots satisfying the stronger rules remain readable; others quarantine.
+
+### Independent exact retirement verification
+
+The existing closed `lifecycle-evidence/1` receipt now requires two additional keys
+**only for stop-and-retire**: `predecessorApprovalDigest` is the exact canonical start
+approval digest; `predecessorEvidenceDigest` is the digest of that start's recorded
+completion receipt. Missing keys, extra keys, wrong bindings or malformed values
+refuse. Retirement's own approval digest binds its operation ID, exact identity,
+epoch, pool sequence, policy, reservation and authorization revision. These digests
+provide binding only; they are never external proof.
+
+The same trusted `verify_evidence` callback remains the independent evidence boundary.
+For start/status it receives `(approval_bytes, receipt_bytes)`. For retirement it
+receives `(start_approval_bytes, start_receipt_bytes, retirement_approval_bytes,
+retirement_receipt_bytes)`. It must independently obtain authoritative evidence for
+all four exact inputs and prove the original owned invocation, terminal state, no
+pending job, zero MainPID, empty descendant cgroup, exact artifact retirement,
+boot/session continuity and applicable protected retirement authorization. Recorded
+approval text, a broker lease, a reference digest or a journal postcondition label
+cannot supply that proof. It must reject stale evidence, revoked/inapplicable authority,
+wrong pool/lifetime/invocation/boot or contradictory/ambiguous external observations.
+There is no default implementation, caller-selected verifier, new authority issuer,
+privilege, live host probe or installed evidence source in this offline slice.
+
+Only exact boolean True permits publication; missing/false/non-True/throwing verifiers
+refuse `EVIDENCE`. Retirement is independently verified on completion, on successor
+admission and on every subsequent call/recovery, including disjoint operations
+(conservative namespace quarantine). Missing external evidence therefore retains the
+reservation even when metadata claims completed retirement. Retired starts no longer
+require fresh *running* evidence to admit successors; the four-input retirement
+verification supplies historical ownership and exact retirement instead. Admission,
+authorization, evidence consumption, source drift checks and durable publication all
+use the existing directory flock. No API return authorizes an external effect.
+
+### Assumptions, evidence and remaining gates
+
+The tests use a labelled independent-evidence registry matching exact byte tuples;
+it simulates external authority and root ownership, not a production verifier. Real
+current-user descriptor/lock/fsync/rename calls and fault injection establish bounded
+offline behavior. Interrupted retirement before rename leaves the pending marker and
+quarantines; visible completion after final-directory-sync failure requires fresh exact
+verification and successful directory sync before recognition. Unknown retirement
+never admits a successor. Existing assertions, timeouts and security regressions remain.
+
+All operations must remain in one complete, independently protected namespace.
+Trusted FD/ancestor/release/clock provenance, root-only authorization, enforcing
+SELinux/mount writer exclusion, serialized administrator maintenance, honest local
+flock/fsync/storage and external evidence provenance remain assumptions. Valid older
+snapshot rollback, missing tombstones, store splitting and malicious privileged writers
+are not solved by checksums. The callback must be trusted platform code with an
+independent evidence source, never supplied by the broker or ordinary Wydgit code.
+The 128-operation/1-MiB limits still fail closed; no compaction or repair is added.
+
+Next bounded slice: specify and test offline administrator reconciliation authorization
+for one exact quarantined lifetime/history, including revocation and boot-change
+handling, without enabling effects or recycling history. Live provisioning/session/
+boot evidence verification, rate limits, authenticated transport/responses, protected
+artifact publication/FD handoff, effect-boundary serialization, broker authority
+removal and installed enforcing/crash qualification remain production blockers.
+I5.6 remains incomplete and unqualified for production.

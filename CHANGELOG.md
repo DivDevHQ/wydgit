@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Enforce private offline I5.6 per-pool sequences/epochs and exact start predecessor
+  identity. Retain active reservations until independently verified, history-bound
+  retirement; reject stale, conflicting and replayed histories. Host effects remain
+  disabled; no version, dependency or broker privilege changes.
+
 - Extend the private offline I5.6 journal with cross-operation conflict admission,
   permanent start-lifetime tombstones and fresh evidence checks before completed
   reservations release. Quarantine incompatible histories; no execution grant,

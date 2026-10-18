@@ -287,7 +287,8 @@ class JournalTests(unittest.TestCase):
         self.refuses(lambda:self.call(('rejected','intent-recorded')), 'TRANSITION')
         with patch.object(j,'MAX_BYTES',1): self.refuses(lambda:self.call(), 'PROTECTION')
         with patch.object(j,'MAX_OPERATIONS',0): self.refuses(lambda:self.call(), 'CORRUPT')
-        other=dict(f.request(),operationId='1'*32,generation='22345678-1234-1234-1234-123456789abc')
+        other=dict(f.request(),operationId='1'*32,generation='22345678-1234-1234-1234-123456789abc',
+                   expectedSequence=1,epoch=2)
         self.approve(other)
         with patch.object(j,'MAX_OPERATIONS',1):
             self.refuses(lambda:self.call((None,'prepared'),request=other), 'CAPACITY')
@@ -311,18 +312,18 @@ class JournalTests(unittest.TestCase):
         other=dict(f.request(),operationId='1'*32)
         self.approve(other)
         self.refuses(lambda:self.call((None,'prepared'),request=other), 'LIFETIME_REUSED')
-        # Completion releases only the unfinished-operation reservation. This is
-        # explicitly NOT an active-worker limit or permission to start a new worker.
-        other=dict(other,generation='22345678-1234-1234-1234-123456789abc')
+        # Completed start retains the active reservation even with a valid next
+        # sequence/epoch and fresh running evidence. Retirement is mandatory.
+        other=dict(other,generation='22345678-1234-1234-1234-123456789abc',expectedSequence=1,epoch=2)
         self.approve(other)
-        self.assertEqual(self.call((None,'prepared'),request=other,verify_evidence=lambda *_:True),'prepared')
+        self.refuses(lambda:self.call((None,'prepared'),request=other,verify_evidence=lambda *_:True),'ACTIVE_START')
 
     def test_completed_reservation_requires_fresh_verification_to_release(self):
         self.intent()
         evidence=self.evidence()
         self.call(('intent-recorded','completed'),evidence=evidence,verify_evidence=lambda *_:True)
         old_approval=c._canonical(f.approval())
-        other=dict(f.request(),operationId='1'*32,operation='status')
+        other=dict(f.request(),operationId='1'*32,operation='status',expectedSequence=1)
         self.approve(other); before=(self.store/'journal.json').read_bytes()
         for verifier in [None,lambda *_:False,lambda *_:1]:
             self.refuses(lambda:self.call((None,'prepared'),request=other,verify_evidence=verifier),'EVIDENCE')
@@ -370,7 +371,8 @@ class JournalTests(unittest.TestCase):
         self.approve(other,uid=62000,gid=62000,category=18)
         self.assertEqual(self.call((None,'prepared'),request=other),'prepared')
         self.approve(f.request()); self.call(('prepared','rejected'))
-        replacement=dict(f.request(),operationId='2'*32,operation='status')
+        replacement=dict(f.request(),operationId='2'*32,expectedSequence=1,epoch=2,
+                         generation='32345678-1234-1234-1234-123456789abc')
         self.approve(replacement)
         self.assertEqual(self.call((None,'prepared'),request=replacement),'prepared')
 
@@ -416,6 +418,232 @@ class JournalTests(unittest.TestCase):
             self.refuses(lambda:self.call((None,'prepared'),request=other),code)
         self.approve(f.request())
         self.assertEqual(self.prepare(),'prepared')  # sync/recover only; never effect permission
+
+    # The following registry simulates independently held authoritative evidence.
+    # Receipt syntax alone never adds an entry; positive retirement requires the
+    # verifier to recognize all four exact bytestrings, including original start.
+    def verified(self, *args):
+        return args in self.proofs
+
+    def completed_start(self):
+        self.proofs = set()
+        self.intent()
+        self.start_approval = (self.auth/'approval.json').read_bytes()
+        self.start_receipt = self.evidence()
+        self.proofs.add((self.start_approval, self.start_receipt))
+        self.call(('intent-recorded','completed'), evidence=self.start_receipt,
+                  verify_evidence=self.verified)
+        return f.request()
+
+    def retirement(self, **changes):
+        request = dict(f.request(), operationId='1'*32, operation='stop-and-retire',
+                       expectedSequence=1, **changes)
+        self.approve(request)
+        self.call((None,'prepared'), request=request, verify_evidence=self.verified)
+        self.call(('prepared','intent-recorded'), request=request, verify_evidence=self.verified)
+        approval = (self.auth/'approval.json').read_bytes()
+        receipt = self.evidence(approvalDigest=j.digest(approval), requestDigest=f.digest(request),
+                                postcondition='exact-generation-retired', referenceDigest='e'*64,
+                                predecessorApprovalDigest=j.digest(self.start_approval),
+                                predecessorEvidenceDigest=j.digest(self.start_receipt))
+        self.proofs.add((self.start_approval, self.start_receipt, approval, receipt))
+        return request, receipt
+
+    def complete_retirement(self):
+        request, receipt = self.retirement()
+        self.call(('intent-recorded','completed'), request=request, evidence=receipt,
+                  verify_evidence=self.verified)
+        return request, receipt
+
+    def successor(self, **changes):
+        return dict(f.request(), **{**dict(operationId='2'*32, expectedSequence=2, epoch=2,
+                    generation='22345678-1234-1234-1234-123456789abc'), **changes})
+
+    def test_exact_retirement_then_successor_and_fresh_recovery_proof(self):
+        self.completed_start(); retire, receipt = self.complete_retirement()
+        successor = self.successor(); self.approve(successor)
+        self.assertEqual(self.call((None,'prepared'),request=successor,verify_evidence=self.verified),'prepared')
+        before=(self.store/'journal.json').read_bytes()
+        # Running evidence may now be stale; release relies on the exact retirement.
+        self.proofs.remove((self.start_approval,self.start_receipt))
+        self.assertEqual(self.call(request=successor,verify_evidence=self.verified).recorded_state,'prepared')
+        self.proofs.clear()
+        self.refuses(lambda:self.call(request=successor,verify_evidence=self.verified),'EVIDENCE')
+        self.assertEqual((self.store/'journal.json').read_bytes(),before)
+
+    def test_stale_skipped_and_reordered_sequences_and_epochs(self):
+        self.completed_start(); self.complete_retirement()
+        before=(self.store/'journal.json').read_bytes()
+        for field, values in [('expectedSequence',[0,1,3,99]),('epoch',[1,3,99])]:
+            for value in values:
+                request=self.successor(**{field:value}); self.approve(request)
+                self.refuses(lambda:self.call((None,'prepared'),request=request,verify_evidence=self.verified),
+                             'SEQUENCE' if field=='expectedSequence' else 'EPOCH')
+                self.assertEqual((self.store/'journal.json').read_bytes(),before)
+
+    def test_first_operation_requires_genesis_start(self):
+        for changes, code in [({'expectedSequence':1},'SEQUENCE'),({'epoch':2},'EPOCH'),
+                              ({'operation':'status'},'PREDECESSOR'),
+                              ({'operation':'stop-and-retire'},'PREDECESSOR')]:
+            request=dict(f.request(),**changes); self.approve(request)
+            self.refuses(lambda:self.call((None,'prepared'),request=request),code)
+
+    def test_retirement_requires_exact_pool_lifetime_epoch_and_identity(self):
+        self.completed_start(); before=(self.store/'journal.json').read_bytes()
+        for key, value in [('poolId','foreign'),('generation','22345678-1234-1234-1234-123456789abc'),
+                           ('epoch',2),('deploymentGeneration',2),('tenantId','other'),('accountId','other')]:
+            request=dict(f.request(),operationId='1'*32,operation='stop-and-retire',expectedSequence=1)
+            request[key]=value; self.approve(request)
+            self.refuses(lambda:self.call((None,'prepared'),request=request,verify_evidence=self.verified),
+                         'SEQUENCE' if key=='poolId' else 'PREDECESSOR')
+            self.assertEqual((self.store/'journal.json').read_bytes(),before)
+        for identity in [dict(uid=62000,gid=62000),dict(category=18)]:
+            self.approve(request:=dict(f.request(),operationId='1'*32,operation='stop-and-retire',expectedSequence=1),**identity)
+            self.refuses(lambda:self.call((None,'prepared'),request=request,verify_evidence=self.verified),'PREDECESSOR')
+
+    def test_forged_or_insufficient_retirement_receipts_never_release(self):
+        self.completed_start(); request, receipt=self.retirement()
+        before=(self.store/'journal.json').read_bytes()
+        for key in ['approvalDigest','requestDigest','generation','predecessorApprovalDigest','predecessorEvidenceDigest']:
+            forged=json.loads(receipt); forged[key]='f'*64
+            self.refuses(lambda:self.call(('intent-recorded','completed'),request=request,
+                         evidence=c._canonical(forged),verify_evidence=self.verified),'CORRUPT')
+            self.assertEqual((self.store/'journal.json').read_bytes(),before)
+        forged=json.loads(receipt); forged['referenceDigest']='f'*64
+        self.refuses(lambda:self.call(('intent-recorded','completed'),request=request,
+                     evidence=c._canonical(forged),verify_evidence=self.verified),'EVIDENCE')
+        for verifier in [None,lambda *_:False,lambda *_:1]:
+            self.refuses(lambda:self.call(('intent-recorded','completed'),request=request,
+                         evidence=receipt,verify_evidence=verifier),'EVIDENCE')
+        def unavailable(*_): raise RuntimeError('no external authority')
+        self.refuses(lambda:self.call(('intent-recorded','completed'),request=request,
+                     evidence=receipt,verify_evidence=unavailable),'EVIDENCE')
+        self.assertEqual((self.store/'journal.json').read_bytes(),before)
+
+    def test_replayed_retirement_under_another_operation_id(self):
+        self.completed_start(); request, receipt=self.complete_retirement()
+        self.approve(request)
+        self.assertEqual(self.call((None,'prepared'),request=request,verify_evidence=self.verified),'completed')
+        self.refuses(lambda:self.call(('completed','completed'),request=request,evidence=receipt,
+                     verify_evidence=self.verified),'TRANSITION')
+        duplicate=dict(request,operationId='3'*32,expectedSequence=2); self.approve(duplicate)
+        self.refuses(lambda:self.call((None,'prepared'),request=duplicate,verify_evidence=self.verified),'PREDECESSOR')
+
+    def test_rejected_retirement_cannot_be_retried_with_new_id(self):
+        self.completed_start()
+        request=dict(f.request(),operationId='1'*32,operation='stop-and-retire',expectedSequence=1)
+        self.approve(request)
+        self.call((None,'prepared'),request=request,verify_evidence=self.verified)
+        self.call(('prepared','rejected'),request=request,verify_evidence=self.verified)
+        duplicate=dict(request,operationId='3'*32,expectedSequence=2); self.approve(duplicate)
+        self.refuses(lambda:self.call((None,'prepared'),request=duplicate,verify_evidence=self.verified),'RETIREMENT_REUSED')
+        successor=self.successor(); self.approve(successor)
+        self.refuses(lambda:self.call((None,'prepared'),request=successor,verify_evidence=self.verified),'ACTIVE_START')
+
+    def test_interrupted_retirement_retains_reservation_until_verified_recovery(self):
+        self.completed_start(); request, receipt=self.retirement()
+        sync=j.os.fsync; original=(self.store/'journal.json').read_bytes()
+        for boundary in [1,2,3]:
+            (self.store/'journal.json').write_bytes(original)
+            pending=self.store/'pending.json'
+            if pending.exists(): pending.unlink()  # isolated fault fixture only
+            calls=[]
+            def fail(fd):
+                calls.append(fd)
+                if len(calls)==boundary: raise OSError(errno.EIO,'retirement sync')
+                return sync(fd)
+            self.approve(request)
+            with patch.object(j.os,'fsync',side_effect=fail):
+                self.refuses(lambda:self.call(('intent-recorded','completed'),request=request,evidence=receipt,
+                             verify_evidence=self.verified),'IO')
+            successor=self.successor(); self.approve(successor)
+            self.refuses(lambda:self.call((None,'prepared'),request=successor),
+                         'RECONCILIATION_REQUIRED' if boundary<3 else 'EVIDENCE')
+            if boundary==3:
+                self.approve(request)
+                self.assertEqual(self.call(request=request,verify_evidence=self.verified).recorded_state,'completed')
+                self.approve(successor)
+                self.assertEqual(self.call((None,'prepared'),request=successor,verify_evidence=self.verified),'prepared')
+
+    def test_ambiguous_retirement_blocks_successor_and_duplicate_attempt(self):
+        self.completed_start(); request, _=self.retirement()
+        self.call(('intent-recorded','outcome-unknown'),request=request,verify_evidence=self.verified)
+        self.call(('outcome-unknown','reconciliation-required'),request=request,verify_evidence=self.verified)
+        for other in [self.successor(),dict(request,operationId='4'*32,expectedSequence=2)]:
+            self.approve(other)
+            self.refuses(lambda:self.call((None,'prepared'),request=other,verify_evidence=self.verified),'RESOURCE_BUSY')
+
+    def test_concurrent_successor_admission_and_retirement_completion(self):
+        self.completed_start(); request, receipt=self.retirement()
+        publish=j._publish; successor=self.successor(); seen=[]
+        def compete(*args):
+            self.refuses(lambda:self.call((None,'prepared'),request=successor,verify_evidence=self.verified),'BUSY')
+            seen.append(True); return publish(*args)
+        with patch.object(j,'_publish',side_effect=compete):
+            self.call(('intent-recorded','completed'),request=request,evidence=receipt,verify_evidence=self.verified)
+        self.assertEqual(seen,[True]); self.approve(successor)
+        self.call((None,'prepared'),request=successor,verify_evidence=self.verified)
+        competitor=dict(successor,operationId='3'*32,generation='32345678-1234-1234-1234-123456789abc'); self.approve(competitor)
+        self.refuses(lambda:self.call((None,'prepared'),request=competitor,verify_evidence=self.verified),'RESOURCE_BUSY')
+
+    def test_valid_checksum_cannot_manufacture_retirement_or_ordering(self):
+        self.completed_start(); retire, _=self.complete_retirement()
+        path=self.store/'journal.json'; good=path.read_bytes()
+        for mutation in ['gap','duplicate-sequence','wrong-predecessor','forged-reference','missing-start']:
+            entries=json.loads(json.loads(good)['payload'])
+            record=entries[retire['operationId']]
+            if mutation in ['gap','duplicate-sequence']:
+                approval=json.loads(record['approval']); approval['expectedSequence']=3 if mutation=='gap' else 0
+                request={key:approval[key] for key in c.REQUEST_KEYS}; request['schema']='wydhosting.lifecycle/1'
+                approval['requestDigest']=f.digest(request)
+                record['approval']=c._canonical(approval).decode(); record['approvalDigest']=j.digest(record['approval'].encode())
+                receipt=json.loads(record['evidence']); receipt.update(approvalDigest=record['approvalDigest'],requestDigest=approval['requestDigest'])
+                record['evidence']=c._canonical(receipt).decode()
+            elif mutation=='missing-start': del entries[f.request()['operationId']]
+            else:
+                receipt=json.loads(record['evidence'])
+                receipt['predecessorApprovalDigest' if mutation=='wrong-predecessor' else 'referenceDigest']='f'*64
+                record['evidence']=c._canonical(receipt).decode()
+            payload=c._canonical(entries)
+            path.write_bytes(c._canonical(dict(schema=j.SCHEMA,payload=payload.decode(),digest=j.digest(payload))))
+            self.approve(retire)
+            self.refuses(lambda:self.call(request=retire,verify_evidence=self.verified),
+                         'EVIDENCE' if mutation=='forged-reference' else 'CORRUPT')
+        path.write_bytes(good)
+
+    def test_status_sequence_continuity_keeps_exact_start_predecessor(self):
+        self.completed_start()
+        status=dict(f.request(),operationId='5'*32,operation='status',expectedSequence=1)
+        self.approve(status)
+        self.call((None,'prepared'),request=status,verify_evidence=self.verified)
+        self.call(('prepared','intent-recorded'),request=status,verify_evidence=self.verified)
+        approval=(self.auth/'approval.json').read_bytes()
+        receipt=self.evidence(approvalDigest=j.digest(approval),requestDigest=f.digest(status),
+                              postcondition='exact-state-observed')
+        self.proofs.add((approval,receipt))
+        self.call(('intent-recorded','completed'),request=status,evidence=receipt,verify_evidence=self.verified)
+        retire=dict(f.request(),operationId='1'*32,operation='stop-and-retire',expectedSequence=2)
+        self.approve(retire)
+        self.call((None,'prepared'),request=retire,verify_evidence=self.verified)
+        self.call(('prepared','intent-recorded'),request=retire,verify_evidence=self.verified)
+        approval=(self.auth/'approval.json').read_bytes()
+        receipt=self.evidence(approvalDigest=j.digest(approval),requestDigest=f.digest(retire),
+                             postcondition='exact-generation-retired',
+                             predecessorApprovalDigest=j.digest(self.start_approval),
+                             predecessorEvidenceDigest=j.digest(self.start_receipt))
+        self.proofs.add((self.start_approval,self.start_receipt,approval,receipt))
+        self.call(('intent-recorded','completed'),request=retire,evidence=receipt,verify_evidence=self.verified)
+        successor=self.successor(expectedSequence=3); self.approve(successor)
+        self.assertEqual(self.call((None,'prepared'),request=successor,verify_evidence=self.verified),'prepared')
+
+
+    def test_cross_pool_reservations_and_pool_identity_cannot_be_reallocated(self):
+        self.completed_start(); self.complete_retirement()
+        for changes, identity, code in [({'poolId':'other','expectedSequence':0,'epoch':1},{},'RESOURCE_BUSY'),
+                                       ({'accountId':'other'},{},'PREDECESSOR'),
+                                       ({},{'uid':62000,'gid':62000},'PREDECESSOR')]:
+            request=self.successor(**changes); self.approve(request,**identity)
+            self.refuses(lambda:self.call((None,'prepared'),request=request,verify_evidence=self.verified),code)
 
 
 if __name__ == '__main__': unittest.main()

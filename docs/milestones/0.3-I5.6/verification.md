@@ -1819,3 +1819,64 @@ admission in the same journal, keeping all effects disabled and requiring indepe
 verified exact retirement to release active starts. Do not use a completed start as
 proof that its worker stopped. Later installed integration requires coordinated
 authority transfer, not incremental broker rights alongside manager validation.
+
+## Offline per-pool epoch and exact retirement admission — 2026-10-17
+
+Starting HEAD: `e4caf618b63ffdb4af8d84cb6ab4fb99c204d850`, `develop/0.3`, exactly
+the eight expected Slice 4 modifications. Complete prior diff review found no unrelated
+changes; both documentation mirrors matched. Fresh sequential prior-slice verification:
+
+```sh
+python3 test-support/linux/verify_lifecycle_contract.py packages/wydhosting/broker
+python3 test-support/linux/verify_lifecycle_authorization.py packages/wydhosting/broker
+python3 test-support/linux/verify_lifecycle_journal.py packages/wydhosting/broker
+node --test test/linux-isolation.test.js
+```
+
+Python **11/11**, **14/14**, **24/24** passed. Sandboxed Linux execution failed with a
+Node v24.21.0 native `InternalCallbackScope::Close` assertion, before a valid suite
+summary (one failed file, exit 1). Unchanged ordinary-user rerun passed **23/23**,
+zero skips/cancellations, `/tmp/wyd-i56-epoch-prior-linux.log`. No timeout/assertion
+was weakened. Reviewed prior slice committed separately as `be5920b`.
+
+[Slice 5](constrained-systemd-authority.md#implementation-slice-5--offline-exact-pool-history-and-retirement-2026-10-17)
+enforces contiguous pool preparation sequences, exact incremental start epochs,
+permanent lifetimes, exact completed start identity for status/retirement, and active
+reservation continuity until independently verified exact retirement. The existing
+trusted verifier receives all four original-start/retirement approval/receipt inputs.
+Pool allocation remains fixed; cross-pool recycling and retirement retry/reconciliation
+are unsupported and fail closed. Journal metadata/checksums never prove retirement.
+
+The focused journal suite now contains **37 tests** (13 added). Existing corruption,
+authorization, filesystem substitution, short-I/O, crash-boundary and process-lock
+regressions remain. Four earlier fixture expectations were tightened for new sequence/
+epoch/active-start requirements; no assertion or timeout was weakened. Added cases:
+stale/skipped/reordered sequence/epoch; genesis requirements; wrong pool, UUID,
+deployment, epoch and numeric identity; forged/insufficient predecessor/evidence;
+retirement replay and duplicates; rejected/ambiguous retirement; each retirement sync
+boundary and reverified recovery; lock contention at retirement publication and
+successor admission; conflicting checksum-valid histories; retained pool allocations;
+intervening status continuity; valid retirement followed by admitted successor and
+subsequent loss of independent proof. Positive root ownership and external authority
+are explicitly simulated; filesystem/locking operations are real current-user calls.
+No real systemd operation, guest contact, OS/SELinux change, helper installation,
+service restart, deployment, dependency or version change occurs.
+
+Final source/docs are frozen for sequential verification using these exact commands:
+
+```sh
+python3 test-support/linux/verify_lifecycle_contract.py packages/wydhosting/broker
+python3 test-support/linux/verify_lifecycle_authorization.py packages/wydhosting/broker
+python3 test-support/linux/verify_lifecycle_journal.py packages/wydhosting/broker
+node --test test/linux-isolation.test.js > /tmp/wyd-i56-epoch-linux.log 2>&1
+npm test > /tmp/wyd-i56-epoch-test.log 2>&1
+npm run check > /tmp/wyd-i56-epoch-check.log 2>&1
+node scripts/verify-packed-packages.js > /tmp/wyd-i56-epoch-packed.log 2>&1
+```
+
+Actual final results and fresh packed evidence location are recorded in the delivery
+handoff; this command list is not itself a claim that a suite passed. Packed source/
+document bytes must match frozen repository bytes. Remaining assumptions and production
+blockers are listed in Slice 5: protected filesystem and writer provenance, complete
+namespace/rollback protection, honest storage and independent external evidence remain
+unqualified. No installed enforcing/crash or production qualification is claimed.
