@@ -1,8 +1,10 @@
 import { readFileSync, existsSync, lstatSync, realpathSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
-import { clean, record, parse, requireThat as check } from '../object-model/validation.js';
+import { clean, record, parse, WydgitError, requireThat as check } from '../object-model/validation.js';
 import { LIMITS, validatePackageManifest } from './manifest.js';
+import { packageGraph } from './graph.js';
+import { copyEnvelope } from '../object-model/schema.js';
 export const STATE='content/installed-packages.json';
 const present=file=>Boolean(lstatSync(file,{throwIfNoEntry:false}));
 export const digest=text=>createHash('sha256').update(text).digest('hex');
@@ -19,19 +21,36 @@ export function baseFingerprint(root,configText) {
   return digest([...new Set(names)].sort().map(name=>name+'\0'+(name==='wydgit.config.json'&&configText!==undefined?configText:safeRead(root,name,LIMITS.state))).join('\0'));
 }
 export function checkInstallationRecovery(root) {
+  check(!present(path.join(root,'content/.package-recovery.lock')),'PACKAGE.RECOVERY','Recovery in progress or interrupted');
   check(!present(path.join(root,'content/.package-install.lock')),'PACKAGE.RECOVERY','Installation in progress or interrupted; inspect the install lock before startup');
   check(!present(path.join(root,'content/.package-infrastructure.json')),'PACKAGE.RECOVERY','Interrupted infrastructure install; recover saved host state before startup');
+  if(present(path.join(root,'content/package-operation.json'))){
+    const operation=clean(parse(safeRead(root,'content/package-operation.json',LIMITS.state)));
+    check(operation.schema==='wydgit.package-operation/1'&&['COMPLETED','FAILED'].includes(operation.status),'PACKAGE.RECOVERY','Lifecycle operation is incomplete or unrecognized; inspect recovery records');
+  }
 }
 export function readInstalledState(root) {
   checkInstallationRecovery(root);
   if(!present(path.join(root,STATE)))return null;
   const state=clean(parse(safeRead(root,STATE,LIMITS.state)));
+  return validateInstalledState(root,state);
+}
+export function validateInstalledState(root,state) {
+  try {
   check(record(state)&&state.schema==='wydgit-installed/0.1'&&Array.isArray(state.packages)&&state.packages.length<=LIMITS.packages&&state.packages.every(p=>record(p)&&record(p.manifest))&&Number.isSafeInteger(state.revision)&&state.revision>0,'PACKAGE.CATALOG','Invalid installed state');
   check(state.baseFingerprint===baseFingerprint(root),'PACKAGE.DRIFT','Base repository changed after installation; reconcile accepted state explicitly');
   check(new Set(state.packages.map(p=>p.manifest.id)).size===state.packages.length,'PACKAGE.CATALOG','Duplicate installed package');
   check(typeof state.app==='string','PACKAGE.CATALOG','Missing accepted App');
-  for(const entry of state.packages){
+  check(state.retained===undefined||Array.isArray(state.retained)&&state.retained.length<=LIMITS.packages&&new Set(state.retained.map(r=>r.entry?.manifest?.id)).size===state.retained.length,'PACKAGE.CATALOG','Invalid retained packages');
+  for(const retained of state.retained??[])check(record(retained)&&record(retained.entry)&&Array.isArray(retained.attachments)&&retained.attachments.length<=33&&retained.attachments.every(a=>record(a)&&record(a.placement)&&typeof a.instance==='string'&&Buffer.byteLength(a.instance)<=LIMITS.state)&&!state.packages.some(p=>p.manifest.id===retained.entry.manifest.id),'PACKAGE.CATALOG','Invalid retained installation');
+  for(const retained of state.retained??[]){
+    const roots=[retained.entry.instance,...(retained.entry.additions??[]).map(a=>JSON.parse(a.instance).id)];
+    const snapshots=retained.attachments.map(a=>copyEnvelope(parse(a.instance)));
+    check(snapshots.length===roots.length&&snapshots.every((n,i)=>n.id===roots[i]),'PACKAGE.CATALOG','Retained attachment identity differs from receipt');
+  }
+  for(const entry of [...state.packages,...(state.retained??[]).map(r=>r.entry)]){
     const m=validatePackageManifest(entry.manifest);
+    check((entry.reason===undefined||['explicit','automatic'].includes(entry.reason))&&(entry.protected===undefined||typeof entry.protected==='boolean'),'PACKAGE.CATALOG','Invalid lifecycle metadata');
     const paths=[m.resources.prototypes,m.resources.template,...Object.values(m.resources.sources)];
     check(entry.resources&&Object.keys(entry.resources).length===paths.length&&paths.every(file=>typeof entry.resources[file]==='string'&&Buffer.byteLength(entry.resources[file])<=LIMITS.resource),'PACKAGE.CATALOG','Invalid catalog resources');
     check(entry.receipt?.schema==='wydgit-install-receipt/0.1'&&entry.receipt.package===m.id&&entry.receipt.version===m.version,'PACKAGE.CATALOG','Invalid receipt');
@@ -41,10 +60,14 @@ export function readInstalledState(root) {
       JSON.stringify(clean(entry.receipt.bindings))===JSON.stringify(m.bindings),'PACKAGE.CATALOG','Catalog differs from installation receipt');
     check(paths.every(file=>entry.receipt.resources?.[file]?.sha256===digest(entry.resources[file])),'PACKAGE.DRIFT','Installed resource hash differs from receipt');
     for(const key of ['additions','page','navigation','properties','libraryScopes','compiledSources'])check(Object.hasOwn(entry,key)===Object.hasOwn(entry.receipt,key)&&(!Object.hasOwn(entry,key)||JSON.stringify(clean(entry[key]))===JSON.stringify(clean(entry.receipt[key]))),'PACKAGE.CATALOG','Initial attachment differs from receipt');
+    for(const key of ['reason','protected'])check(Object.hasOwn(entry,key)===Object.hasOwn(entry.receipt,key)&&(!Object.hasOwn(entry,key)||JSON.stringify(entry[key])===JSON.stringify(entry.receipt[key])),'PACKAGE.CATALOG','Lifecycle metadata differs from receipt');
+    check(entry.receipt.dependencies===undefined?!Object.keys(m.dependencies??{}).length:JSON.stringify(clean(entry.receipt.dependencies))===JSON.stringify(clean(m.dependencies??{})),'PACKAGE.CATALOG','Dependency receipt drift');
     check(!(m.staticLibraries||m.interfaces)||entry.compiledSources&&Object.keys(entry.compiledSources).length===Object.keys(m.resources.sources).length&&Object.keys(m.resources.sources).every(id=>Object.hasOwn(entry.compiledSources,id)),'PACKAGE.CATALOG','Missing pinned static-library compilation');
     const definitions=JSON.parse(entry.resources[m.resources.prototypes]);
     check(Array.isArray(definitions)&&definitions.length<=LIMITS.prototypes&&definitions.every(d=>d.publisher===m.publisher&&d.id?.startsWith(m.publisher+'/')),'PACKAGE.CATALOG','Invalid catalog prototypes');
   }
+  packageGraph(state.packages);
   return state;
+  }catch(error){if(error instanceof WydgitError)throw error;throw new WydgitError('PACKAGE.CATALOG','Invalid installed or retained package record');}
 }
 export function stateFingerprint(root) {return present(path.join(root,STATE))?digest(safeRead(root,STATE,LIMITS.state)):null;}

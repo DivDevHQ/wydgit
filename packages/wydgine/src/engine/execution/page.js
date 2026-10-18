@@ -165,7 +165,7 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
     writable=false;unloading=true;response.beginCleanup();dispatcher.close();
     const cleanup=createDispatcher({budget:executionLedger,executor,dynamicHandlers:options=>componentsRuntime.handlers(options),prototypeRegistry:model.registry,registry:events,handlers,context,handle,contexts,canRaise:()=>false,exists:id=>exists(id)||archive.has(id)});
     for(const id of [...ledger].reverse())try{await cleanup.dispatch({type:'Page.Unload',source:pageId,target:id,payload:{}});}catch(error){errors.push(safeError(error).toJSON());}
-    cleanup.close();await componentsRuntime.dispose();errors.push(...componentsRuntime.errors());const charges=executionBudget(executionLedger,context).snapshot();executionBudget(executionLedger,context).close();alive=false;observe?.({steps:charges.steps??0,limited:[failure,...errors].some(error=>['SEWN.LIMIT','EVENT.LIMIT'].includes(error?.code))});
+    cleanup.close();await componentsRuntime.dispose();errors.push(...componentsRuntime.errors());const charges=executionBudget(executionLedger,context).snapshot();executionBudget(executionLedger,context).close();alive=false;observe?.({meter:executionBudget(executionLedger,context).meter(),steps:charges.steps??0,limited:[failure,...errors].some(error=>['SEWN.LIMIT','EVENT.LIMIT'].includes(error?.code))});
     }catch(error){failure??=safeError(error);}
     finally {
     executionBudget(executionLedger,context).close();alive=false;

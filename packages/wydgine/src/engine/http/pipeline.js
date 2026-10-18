@@ -79,7 +79,7 @@ export function createPipeline({root,libraries,execution={},lifecycle,guard=()=>
         input.action={target:single('_target'),type:single('_action'),csrf:single('_csrf'),payload:{}};
         if(input.action.type==='Change')input.action.payload={OldValue:model.runtime.get(input.action.target).properties.value,NewValue:single('value')};
       }
-      result=await executePage({model,pageId:page.id,session,input,context,runtimeSettings,handlers:execution.handlers,actions:execution.actions,events:execution.events,files:execution.files,libraries,serviceMappings:packages?.pages.get(page.id)?.storageMappings,observe:governance?data=>governance.page(data):undefined,csrf:session.csrf,cancelled:()=>res.destroyed});
+      result=await executePage({model,pageId:page.id,session,input,context,runtimeSettings,handlers:execution.handlers,actions:execution.actions,events:execution.events,files:execution.files,libraries,serviceMappings:packages?.pages.get(page.id)?.storageMappings,observe:data=>{governance?.page(data);try{execution.observeBudget?.(data.meter);}catch{}},csrf:session.csrf,cancelled:()=>res.destroyed});
       // executePage returns structured failures rather than throwing. Preserve
       // their diagnostic boundary without logging requests, messages or details.
       for(const [phase,error]of [['page',result.error],['cleanup',result.cleanupErrors[0]]])if(error){

@@ -36,3 +36,12 @@ test('service calls and construction counts remain shared; cancellation rejects 
 });
 
 test('nested native dispatchers and defaults share effective event depth',async()=>{const ctx=context({eventDepth:1}),budget=createExecutionBudget(ctx),registry=new EventRegistry().define('Again',{family:'Custom',cancelable:true,fields:{}});let entered=0;const nested=()=>createDispatcher({context:ctx,budget,registry,handle:(id,guard)=>Object.freeze({get id(){guard();return id;}}),handlers:[{owner:'owner',type:'Again',run:async function(){entered++;const next=nested();try{await next.dispatch({type:'Again',source:'owner',target:'owner',payload:{}});}finally{next.close();}}}]});const dispatcher=nested();await assert.rejects(dispatcher.dispatch({type:'Again',source:'owner',target:'owner',payload:{}}),{code:'EVENT.LIMIT'});assert.equal(entered,2);assert.throws(()=>executionBudget(budget,ctx).check(),{code:'SEWN.LIMIT'});dispatcher.close();});
+
+test('versioned trusted meters identify the exhausted resource and preserve the first terminal cause',()=>{
+ const ctx=context({sewnSteps:1}),token=createExecutionBudget(ctx),ledger=executionBudget(token,ctx);
+ ledger.take('steps');assert.throws(()=>ledger.take('steps'),e=>e.code==='SEWN.LIMIT'&&e.details.resource==='steps'&&e.details.limit===1&&e.details.used===2);
+ const meter=ledger.meter();assert.equal(meter.schema,'wydgit.execution-meter/1');assert.equal(meter.exhaustion.resource,'steps');assert.equal(Object.isFrozen(meter),true);assert.equal(Object.isFrozen(meter.charges),true);
+ assert.throws(()=>ledger.check(),e=>e.details.resource==='steps');ledger.close();assert.equal(ledger.meter().exhaustion.resource,'steps');
+ const expired=createExecutionBudget(ctx,{deadline:0});assert.throws(()=>executionBudget(expired,ctx).check(),e=>e.details.resource==='timeMs');
+ const cancelled=createExecutionBudget(ctx,{guard:()=>{throw Error('cancelled');}});assert.throws(()=>executionBudget(cancelled,ctx).check(),/cancelled/);assert.equal(executionBudget(cancelled,ctx).meter().exhaustion.resource,'guard');
+});

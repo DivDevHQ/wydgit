@@ -17,6 +17,10 @@ export function compileDefinitions(definitions,options={}) {
   return definitions.map(({behaviorSource,...definition})=>{check(behaviorSource===undefined||definition.behavior===undefined,'PROTOTYPE.METHOD','Choose source or canonical behavior');if(definition.interface===true&&behaviorSource!==undefined)return declaration({behaviorSource,...definition});return {...definition,...(behaviorSource===undefined?{}:{behavior:compilePrototype(behaviorSource,{...options,prototypeRegistry,dependencies:definition.dependencies??options.dependencies,static:definition.static===true})})};});
 }
 export function loadRepository(root, { verifiedPackages = {} } = {}) {
+  return repositoryFromState(root,readInstalledState(root),{verifiedPackages});
+}
+// Trusted lifecycle planning only: build a candidate without publishing it.
+export function repositoryFromState(root, installed, { verifiedPackages = {} } = {}) {
   const prototypes = new Map();
   for (const name of ['site', 'navigation', 'page', 'section', 'block', 'skin']) {
     const definition = read(path.join(root, 'prototypes', `${name}.json`));
@@ -27,7 +31,6 @@ export function loadRepository(root, { verifiedPackages = {} } = {}) {
   const navigation = read(path.join(root, 'content/navigation.json'));
   app.slots.pages = readdirSync(path.join(root, 'content/pages')).filter(f => f.endsWith('.json')).sort().map(file => read(path.join(root, 'content/pages', file)));
   app.slots.navigation = navigation;
-  const installed=readInstalledState(root);
   const packages=installed?.packages??[];
   const definitions=read(path.join(root,'prototypes/objects.json'));
   const verifiedPrototypes=Object.fromEntries(definitions.map(d=>[d.id,d.publisher]));
