@@ -7,8 +7,7 @@ import { safeRoot } from '../packages/wydstore/src/local-root.js';
 import { validateConfig, fields } from '../wydgine/libraries/contracts.js';
 import { importNodePackage } from '../wydgine/libraries/node-package.js';
 import { requireThat as check, clean } from '../wydgine/object-model/validation.js';
-import { validateStoreConfig, openStores } from '../packages/wydstore/src/core.js';
-import { checkJsonBudget } from '../wydgine/libraries/limits.js';
+import { validateStoreConfig } from '../packages/wydstore/src/core.js';
 import { planPackageInstall, applyPackageInstall } from '../wydgine/packages/index.js';
 export const physicalStoreId=id=>id.replace(/[^a-z0-9-]/g,'-');
 export function storageLocation(root,relative) {
@@ -96,20 +95,5 @@ export async function planOperatorInstall({policy,...options}) {
  return {plan,infrastructure:policy.infrastructure??null,hostConfig,roots,root:options.root};
 }
 export async function applyOperatorInstall(resolved,hooks={}) {
- const created=[];
- const rollback=async()=>{for(const directory of [...created].reverse()){if(resolved.roots.includes(directory))await fs.rm(directory,{recursive:true,force:true});else await fs.rmdir(directory).catch(error=>{if(!['ENOENT','ENOTEMPTY'].includes(error.code))throw error;});}};
- return applyPackageInstall(resolved.plan,{...hooks,prepareInfrastructure:async()=>{
-  try{
-   for(const root of resolved.roots){
-    // Track only directories created by this operation; never remove reused data.
-    const missing=[];let cursor=root;while(!existsSync(cursor)){missing.unshift(cursor);cursor=path.dirname(cursor);}
-    storageLocation(resolved.root,path.relative(resolved.root,root));
-    for(const directory of missing){await fs.mkdir(directory,{mode:0o700});created.push(directory);}
-   }
-   if(hooks.beforeProviderSetup)await hooks.beforeProviderSetup();
-   const stores=resolved.hostConfig.libraries.find(l=>l.id==='wydstore').options.stores.filter(s=>resolved.roots.includes(s.root));
-   if(stores.length)await openStores({stores},checkJsonBudget);
-   return rollback;
-  }catch(error){await rollback();throw error;}
- }});
+ return applyPackageInstall(resolved.plan,{...hooks,infrastructure:{roots:resolved.roots}});
 }

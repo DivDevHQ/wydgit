@@ -32,6 +32,7 @@ test('legacy engine consists exclusively of re-exports and cross-package integra
  const root=path.resolve('packages/wydgine');
  for(const file of await files(root)){
   const text=await fs.readFile(file,'utf8');assert.doesNotMatch(text,/from\s*['"][^'"]*wydhosting|import\s*\(['"][^'"]*wydhosting/);
+  assert.doesNotMatch(text,/from\s*['"][^'"]*@wydgit\/store/,file+': WydStore must remain an optional lazy provider');
   for(const match of text.matchAll(/(?:from\s*|import\s*\(\s*)['"](\.[^'"]+)['"]/g))assert.ok(path.resolve(path.dirname(file),match[1]).startsWith(root+path.sep),file+': '+match[1]);
  }
 });

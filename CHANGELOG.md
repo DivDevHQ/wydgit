@@ -1,5 +1,16 @@
 ## Unreleased
 
+- Follow up package lifecycle qualification with durable local provisioning and
+  adapter checkpoints, versioned lossless schema/data and managed-instance
+  transformations, checked committed-upgrade rollback, and explicitly approved
+  physical purge of exclusively owned JSON/SQLite stores. Preserve unknown data,
+  checkpoints, shared resources and recovery barriers on ambiguity. Add real
+  process-death probes inside native SQLite schema/replacement transactions and
+  staged JSON replacement, plus recovery, concurrency and ownership attacks.
+  Historical HTTP LIMIT attribution, destructive/arbitrary
+  migrations and unqualified deployment/storage environments remain open; no
+  production milestone, hosting deferral, version or release change.
+
 - Extend the native package installer with approved local dependency graphs,
   explicit/automatic installation reasons, shared-dependency protection, recursive
   orphan pruning, conservative updates/upgrades and retained uninstall/reinstall.

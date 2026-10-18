@@ -10,7 +10,8 @@
   "exports": {
     ".": "./src/index.js",
     "./client": "./src/client.js",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./trusted/lifecycle": "./src/trusted-lifecycle.js"
   },
   "dependencies": {
     "better-sqlite3": "13.0.3"

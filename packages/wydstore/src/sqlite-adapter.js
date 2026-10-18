@@ -6,6 +6,8 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { safeRoot } from './local-root.js';
 import { check, StoreError, json, equal } from './data.js';
+import { documentContract } from './json-records.js';
+import { checkLifecycleLock } from './lifecycle-lock.js';
 import { MAX_COLLECTION_RECORDS, snapshot, historical, validateStored, changeRecord, selectRecords, enforceUnique, validateUnique } from './adapter-contract.js';
 
 const MAX_DATA = 16 * 1024 * 1024;
@@ -30,7 +32,7 @@ function providerError(error) {
   return new StoreError('STORE.IO');
 }
 
-export async function openSqliteAdapter(root, owner, definitions, metadata, limits, checkJson) {
+export async function openSqliteAdapter(root, owner, definitions, metadata, limits, checkJson, {lifecycle = false, existingOnly = false} = {}) {
   try { await safeRoot(root); } catch { throw new StoreError('STORE.INVALID_CONFIG'); }
   const name = createHash('sha256').update(JSON.stringify(owner)).digest('hex');
   const file = path.join(root, `${name}.sqlite`);
@@ -96,6 +98,31 @@ export async function openSqliteAdapter(root, owner, definitions, metadata, limi
     for (const row of db.prepare('SELECT collection,id,version,data,0 AS deleted FROM history').iterate()) decode(row);
   }
   function execute(db, operation, request) {
+    if (operation === '$checkpoint') {
+      validateAll(db);
+      const document = documentContract(owner,definitions,metadata).initial;
+      for (const row of db.prepare('SELECT collection,id,version,data,deleted FROM records ORDER BY collection,id').all()) {
+        const entry = decode(row);
+        const history = db.prepare('SELECT version,data FROM history WHERE collection = ? AND id = ? ORDER BY version').all(row.collection,row.id).map(h=>({version:h.version,data:parseData(h.data),deleted:false}));
+        document.collections[row.collection].records.push({id:entry.id,version:entry.version,data:entry.data,deleted:entry.deleted,history});
+      }
+      checkJson(document,{maxBytes:limits.sqliteDatabaseBytes,maxDepth:64,maxNodes:Number.MAX_SAFE_INTEGER});
+      return json(document);
+    }
+    if (operation === '$replace') {
+      const {document,collections:target} = request;
+      const contract = documentContract(owner,new Map(target.map(c=>[c.id,c.fields])),new Map(target.map(c=>[c.id,c])));
+      contract.validate(document);
+      db.prepare('DELETE FROM history').run();
+      db.prepare('DELETE FROM records').run();
+      const persisted = Object.fromEntries([...target].sort((a,b)=>a.id<b.id?-1:1).map(c=>[c.id,c.schemaId?c:c.fields]));
+      db.prepare('UPDATE metadata SET collections = ? WHERE singleton = 1').run(stringify(persisted));
+      for (const [collection,value] of Object.entries(document.collections)) for (const entry of value.records) {
+        db.prepare('INSERT INTO records (collection,id,version,data,deleted) VALUES (?,?,?,?,?)').run(collection,entry.id,entry.version,entry.deleted?null:stringify(entry.data),Number(entry.deleted));
+        for (const h of entry.history) db.prepare('INSERT INTO history (collection,id,version,data) VALUES (?,?,?,?)').run(collection,entry.id,h.version,stringify(h.data));
+      }
+      return null;
+    }
     if (['query','count'].includes(operation)) {
       const rows=db.prepare('SELECT collection,id,version,data,deleted FROM records WHERE collection = ? ORDER BY id COLLATE BINARY').iterate(request.collection);
       try {
@@ -131,6 +158,7 @@ export async function openSqliteAdapter(root, owner, definitions, metadata, limi
     let db;
     try {
       await inspectFiles();
+      await checkLifecycleLock(root,name,lifecycle);
       completion?.check();
       db = new Database(file, {fileMustExist:true, timeout:1000});
       db.pragma('trusted_schema = OFF');
@@ -144,13 +172,13 @@ export async function openSqliteAdapter(root, owner, definitions, metadata, limi
         const result=operation==='transaction' ? request.operations.map(item=>{
           const value=execute(db,item.operation,item.request);request.addResult(value);return value;
         }) : execute(db,operation,request);
-        if(operation!=='transaction')request.checkResult(result);
+        if(!operation.startsWith('$') && operation!=='transaction')request.checkResult(result);
         // Throwing here rolls back the entire synchronous transaction. After
         // return the native COMMIT cannot be interrupted by a JavaScript timer.
         try{completion?.check();}catch(error){completion?.cancelled();throw error;}
         return result;
       });
-      if(initialize || ['get','query','count','history'].includes(operation))return run.deferred();
+      if(initialize || ['get','query','count','history','$checkpoint'].includes(operation))return run.deferred();
       completion?.begin();
       let value;
       value=run.immediate();
@@ -162,11 +190,14 @@ export async function openSqliteAdapter(root, owner, definitions, metadata, limi
   // or incompatible database is never silently reinitialized.
   let created = false, handle;
   try {
+    await checkLifecycleLock(root,name,lifecycle);
+    if (!existingOnly) {
     try {
       handle = await open(file,constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW,0o600);
       created = true;
     } catch(error) { if(error.code !== 'EEXIST') throw error; }
     finally { await handle?.close(); }
+    }
     if (created) {
       await inspectFiles();
       const db = new Database(file,{fileMustExist:true,timeout:1000});
@@ -183,5 +214,9 @@ export async function openSqliteAdapter(root, owner, definitions, metadata, limi
     }
     await transaction(null,null,true);
   } catch (error) { throw providerError(error); }
-  return Object.freeze({execute(operation,request,completion) { return transaction(operation,request,false,completion); }});
+  return Object.freeze({
+    checkpoint() { return transaction('$checkpoint',null); },
+    replace(document,collections) { return transaction('$replace',{document,collections}); },
+    execute(operation,request,completion) { return transaction(operation,request,false,completion); }
+  });
 }

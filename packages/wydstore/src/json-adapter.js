@@ -6,12 +6,13 @@ import { constants } from 'node:fs';
 import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { check, StoreError, json } from './data.js';
+import { checkLifecycleLock } from './lifecycle-lock.js';
 
 // Serialize cooperating handles in this process; an exclusive local lock file
 // prevents another process from overlapping a read-modify-rename operation.
 const queues = new Map();
 const safeIO = error => error instanceof StoreError ? error : new StoreError('STORE.IO');
-export async function openJsonAdapter(root, owner, definitions, metadata, limits, checkJson) {
+export async function openJsonAdapter(root, owner, definitions, metadata, limits, checkJson, {lifecycle = false, existingOnly = false, lifecycleId} = {}) {
   try { await safeRoot(root); } catch (error) { throw error instanceof StoreError ? error : new StoreError('STORE.INVALID_CONFIG'); }
   const { initial, validate } = documentContract(owner,definitions,metadata);
   const name = createHash('sha256').update(JSON.stringify(owner)).digest('hex');
@@ -31,12 +32,12 @@ export async function openJsonAdapter(root, owner, definitions, metadata, limits
     } catch (error) { if (error.code === 'ENOENT') return null; throw error; }
     finally { await handle?.close(); }
   }
-  async function write(data, completion) {
+  async function write(data, completion, validator = validate) {
     // Retain the legacy whole-document depth limit without cloning the document.
     checkJson(data,{maxBytes:limits.jsonDocumentBytes,maxDepth:64,maxNodes:Number.MAX_SAFE_INTEGER});
-    validate(data);
+    validator(data);
     const text = JSON.stringify(data); check(Buffer.byteLength(text) <= limits.jsonDocumentBytes,'STORE.LIMIT');
-    const temporary = path.join(root, `${name}.${randomUUID()}.tmp`);
+    const temporary = path.join(root, `${name}.${lifecycleId ?? randomUUID()}.tmp`);
     let handle;
     try {
       handle = await open(temporary, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW, 0o600);
@@ -59,13 +60,14 @@ export async function openJsonAdapter(root, owner, definitions, metadata, limits
       try {
         completion?.check();
         await safeRoot(root);
-        try { lockHandle = await open(lock, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW, 0o600); }
+        await checkLifecycleLock(root,name,lifecycle);
+        try { if(!lifecycle)lockHandle = await open(lock, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW, 0o600); }
         catch(error) { if(error.code === 'EEXIST') throw new StoreError('STORE.BUSY'); throw error; }
         let data = await read();
         if (data === null) { check(initialize, 'STORE.CORRUPT'); data = json(initial); await write(data); }
         completion?.check();
         const result = operation(data);
-        if (result.changed) await write(data,completion);
+        if (result.changed) await write(result.document ?? data,completion,result.validate);
         return result.value;
       } catch (error) { throw safeIO(error); }
       finally { if(lockHandle) { await lockHandle.close(); await unlink(lock).catch(() => {}); } }
@@ -73,7 +75,7 @@ export async function openJsonAdapter(root, owner, definitions, metadata, limits
     queues.set(file,next);
     try { return await next; } finally { if(queues.get(file) === next) queues.delete(file); }
   }
-  await transaction(() => ({changed:false,value:null}), true);
+  await transaction(() => ({changed:false,value:null}), !existingOnly);
   const checkOperation=(operation,value)=>{
     if(operation==='query')checkJson(value,budget(limits,limits.queryResultBytes),'STORE.LIMIT');
     if(operation==='history'){
@@ -81,7 +83,14 @@ export async function openJsonAdapter(root, owner, definitions, metadata, limits
       for(const entry of value){bytes+=checkJson(entry.data,budget(limits,limits.historyDataBytes),'STORE.LIMIT').bytes;check(bytes<=limits.historyDataBytes,'STORE.LIMIT');}
     }
   };
-  return Object.freeze({ execute(operation, request, completion) { return transaction(document => {
+  return Object.freeze({
+    checkpoint() { return transaction(document => ({changed:false,value:json(document)})); },
+    replace(document, collections) {
+      const target = documentContract(owner,new Map(collections.map(c=>[c.id,c.fields])),new Map(collections.map(c=>[c.id,c])));
+      target.validate(document);
+      return transaction(() => ({changed:true,value:null,document:json(document),validate:target.validate}));
+    },
+    execute(operation, request, completion) { return transaction(document => {
       if (operation !== 'transaction') {
         const result=applyOperation(document,operation,request);
         checkOperation(operation,result.value);

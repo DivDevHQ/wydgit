@@ -52,6 +52,8 @@ export function inspectPackageOperation(root){
   try{return JSON.parse(safeRead(root,JOURNAL,LIMITS.state));}catch(e){if(e.code==='ENOENT')return null;throw e;}
 }
 export async function recoverPackageOperation({root,installationContext}){
+  const existing=JSON.parse(await readLock(root));
+  if(existing?.type==='effects')return (await import('./effects.js')).recoverPackageEffects({root,installationContext});
   // The accepted App ID is validated below without bypassing catalog integrity.
   let state;try{state=JSON.parse(safeRead(root,STATE,LIMITS.state));}catch(e){if(e.code!=='ENOENT')throw e;}
   authorizeLifecycle(installationContext,state?JSON.parse(state.app).id:JSON.parse(safeRead(root,'content/app.json',LIMITS.state)).id);

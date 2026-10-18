@@ -63,6 +63,8 @@ for(const provider of ['JSON','SQLite'])test(`${provider}: clean interactive Con
  await stop();await start();const persisted=await (await fetch(host.url+'/contact/')).text();for(const name of ['Ada','Grace','Linus','Margaret'])assert.match(persisted,new RegExp(name+' —'));
  await stop();
  // Fixture cleanup is deliberate restoration, not a supported uninstall API.
+ const effects=JSON.parse(await fs.readFile(path.join(f.root,'content/package-effects.json'),'utf8'));
+ await fs.unlink(path.join(f.root,'content',effects.checkpoint));await fs.unlink(path.join(f.root,'content/package-effects.json'));
  await fs.writeFile(configPath,baseline);await fs.unlink(path.join(f.root,'content/installed-packages.json'));await fs.rm(path.join(f.root,'.wydgit-data'),{recursive:true});
  assert.equal(loadRepository(f.root).installed,null);assert.equal((await fs.readdir(path.join(f.root,'content'))).some(n=>n.includes('package')),false);
  await assert.rejects(fs.stat(path.join(f.root,'.wydgit-data')),{code:'ENOENT'});

@@ -24,6 +24,10 @@ export function checkInstallationRecovery(root) {
   check(!present(path.join(root,'content/.package-recovery.lock')),'PACKAGE.RECOVERY','Recovery in progress or interrupted');
   check(!present(path.join(root,'content/.package-install.lock')),'PACKAGE.RECOVERY','Installation in progress or interrupted; inspect the install lock before startup');
   check(!present(path.join(root,'content/.package-infrastructure.json')),'PACKAGE.RECOVERY','Interrupted infrastructure install; recover saved host state before startup');
+  if(present(path.join(root,'content/package-effects.json'))){
+    const operation=clean(parse(safeRead(root,'content/package-effects.json',LIMITS.state)));
+    check(operation.schema==='wydgit.package-effects/1'&&['COMPLETED','ROLLED_BACK'].includes(operation.status),'PACKAGE.RECOVERY','Resource operation is incomplete or unrecognized');
+  }
   if(present(path.join(root,'content/package-operation.json'))){
     const operation=clean(parse(safeRead(root,'content/package-operation.json',LIMITS.state)));
     check(operation.schema==='wydgit.package-operation/1'&&['COMPLETED','FAILED'].includes(operation.status),'PACKAGE.RECOVERY','Lifecycle operation is incomplete or unrecognized; inspect recovery records');
