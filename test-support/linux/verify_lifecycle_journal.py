@@ -53,6 +53,15 @@ class JournalTests(unittest.TestCase):
     def prepare(self): return self.call((None, 'prepared'))
     def intent(self): self.prepare(); return self.call(('prepared', 'intent-recorded'))
 
+    def approve(self, request, **identity):
+        reservation = dict(f.reservations()[0], tenantId=request['tenantId'],
+                           accountId=request['accountId'], **identity)
+        self.write_auth('reservations.json', [reservation])
+        self.write_auth('approval.json', dict(f.approval(), **{
+            **request, **reservation, 'schema':'wydhosting.lifecycle-approval/1',
+            'requestDigest':f.digest(request), 'reservationDigest':f.digest([reservation]),
+            'service':c._unit(request)}))
+
     def evidence(self, **kw):
         value = dict(schema='wydhosting.lifecycle-evidence/1', approvalDigest=j.digest(c._canonical(f.approval())),
                      requestDigest=f.digest(f.request()), tenantId='tenant', generation=f.request()['generation'],
@@ -278,14 +287,135 @@ class JournalTests(unittest.TestCase):
         self.refuses(lambda:self.call(('rejected','intent-recorded')), 'TRANSITION')
         with patch.object(j,'MAX_BYTES',1): self.refuses(lambda:self.call(), 'PROTECTION')
         with patch.object(j,'MAX_OPERATIONS',0): self.refuses(lambda:self.call(), 'CORRUPT')
-        other=dict(f.request(),operationId='1'*32)
-        self.write_auth('approval.json',dict(f.approval(),operationId=other['operationId'],requestDigest=f.digest(other)))
+        other=dict(f.request(),operationId='1'*32,generation='22345678-1234-1234-1234-123456789abc')
+        self.approve(other)
         with patch.object(j,'MAX_OPERATIONS',1):
             self.refuses(lambda:self.call((None,'prepared'),request=other), 'CAPACITY')
         self.assertEqual(self.call((None,'prepared'),request=other),'prepared')
         entries=json.loads(json.loads((self.store/'journal.json').read_bytes())['payload'])
         self.assertEqual(len(entries),2)
         self.assertEqual(entries[f.request()['operationId']]['transitions'],['prepared','rejected'])
+
+    def test_start_lifetime_tombstone_survives_rejection_and_different_pool(self):
+        self.prepare(); self.call(('prepared','rejected'))
+        before=(self.store/'journal.json').read_bytes()
+        for pool in ['pool','foreign-pool']:
+            other=dict(f.request(),operationId='1'*32,poolId=pool,epoch=2)
+            self.approve(other)
+            self.refuses(lambda:self.call((None,'prepared'),request=other), 'LIFETIME_REUSED')
+            self.assertEqual((self.store/'journal.json').read_bytes(),before)
+
+    def test_completed_start_is_still_a_lifetime_tombstone(self):
+        self.intent()
+        self.call(('intent-recorded','completed'),evidence=self.evidence(),verify_evidence=lambda *_:True)
+        other=dict(f.request(),operationId='1'*32)
+        self.approve(other)
+        self.refuses(lambda:self.call((None,'prepared'),request=other), 'LIFETIME_REUSED')
+        # Completion releases only the unfinished-operation reservation. This is
+        # explicitly NOT an active-worker limit or permission to start a new worker.
+        other=dict(other,generation='22345678-1234-1234-1234-123456789abc')
+        self.approve(other)
+        self.assertEqual(self.call((None,'prepared'),request=other,verify_evidence=lambda *_:True),'prepared')
+
+    def test_completed_reservation_requires_fresh_verification_to_release(self):
+        self.intent()
+        evidence=self.evidence()
+        self.call(('intent-recorded','completed'),evidence=evidence,verify_evidence=lambda *_:True)
+        old_approval=c._canonical(f.approval())
+        other=dict(f.request(),operationId='1'*32,operation='status')
+        self.approve(other); before=(self.store/'journal.json').read_bytes()
+        for verifier in [None,lambda *_:False,lambda *_:1]:
+            self.refuses(lambda:self.call((None,'prepared'),request=other,verify_evidence=verifier),'EVIDENCE')
+            self.assertEqual((self.store/'journal.json').read_bytes(),before)
+        def broken(*_): raise RuntimeError('unavailable evidence')
+        self.refuses(lambda:self.call((None,'prepared'),request=other,verify_evidence=broken),'EVIDENCE')
+        seen=[]
+        def verify(approval,receipt):
+            seen.append((approval,receipt)); return (approval,receipt)==(old_approval,evidence)
+        self.assertEqual(self.call((None,'prepared'),request=other,verify_evidence=verify),'prepared')
+        self.assertEqual(seen,[(old_approval,evidence)])
+
+    def test_all_operations_block_on_unresolved_pool_or_reservation(self):
+        self.prepare(); before=(self.store/'journal.json').read_bytes()
+        # Disjoint tenant/account/pool and numeric reservation, except one dimension.
+        for key in j.CONFLICT_KEYS:
+            for operation in c.OPERATIONS:
+                other=dict(f.request(),operationId='1'*32,operation=operation,
+                           tenantId='other-tenant',accountId='other-account',poolId='other-pool',
+                           generation='22345678-1234-1234-1234-123456789abc')
+                identity=dict(uid=62000,gid=62000,category=18)
+                if key in other: other[key]=f.request()[key]
+                elif key in ('uid','gid'): identity.update(uid=61000,gid=61000)
+                else: identity[key]=17
+                self.approve(other,**identity)
+                self.refuses(lambda:self.call((None,'prepared'),request=other), 'RESOURCE_BUSY')
+                self.assertEqual((self.store/'journal.json').read_bytes(),before)
+
+    def test_ambiguity_remains_reserved_and_new_approval_cannot_override_it(self):
+        self.intent()
+        other=dict(f.request(),operationId='1'*32,operation='stop-and-retire')
+        for change in [None,('intent-recorded','outcome-unknown'),
+                       ('outcome-unknown','reconciliation-required')]:
+            self.approve(f.request())
+            if change: self.call(change)
+            self.approve(other)
+            self.refuses(lambda:self.call((None,'prepared'),request=other), 'RESOURCE_BUSY')
+        self.approve(f.request())
+        self.assertEqual(self.prepare(),'reconciliation-required')  # duplicate, no reset
+
+    def test_disjoint_operations_and_rejected_reservation_release(self):
+        self.prepare()
+        other=dict(f.request(),operationId='1'*32,tenantId='other-tenant',accountId='other-account',
+                   poolId='other-pool',generation='22345678-1234-1234-1234-123456789abc')
+        self.approve(other,uid=62000,gid=62000,category=18)
+        self.assertEqual(self.call((None,'prepared'),request=other),'prepared')
+        self.approve(f.request()); self.call(('prepared','rejected'))
+        replacement=dict(f.request(),operationId='2'*32,operation='status')
+        self.approve(replacement)
+        self.assertEqual(self.call((None,'prepared'),request=replacement),'prepared')
+
+    def test_conflicting_histories_quarantine_even_with_valid_checksum(self):
+        self.prepare(); path=self.store/'journal.json'; good=path.read_bytes()
+        for lifetime in [f.request()['generation'],'22345678-1234-1234-1234-123456789abc']:
+            entries=json.loads(json.loads(good)['payload'])
+            other=dict(f.request(),operationId='1'*32,generation=lifetime)
+            self.approve(other)
+            approval=(self.auth/'approval.json').read_bytes()
+            entries[other['operationId']]=dict(approval=approval.decode(),approvalDigest=j.digest(approval),
+                                               transitions=['prepared'],evidence='')
+            # Bypass the production encoder to model incompatible/corrupted history.
+            payload=c._canonical(entries)
+            path.write_bytes(c._canonical(dict(schema=j.SCHEMA,payload=payload.decode(),digest=j.digest(payload))))
+            self.refuses(lambda:self.call(request=other), 'CORRUPT')
+            self.refuses(lambda:self.call((None,'prepared'),request=other), 'CORRUPT')
+
+    def test_competing_admission_before_and_after_durable_publication(self):
+        publish=j._publish; seen=[]
+        other=dict(f.request(),operationId='1'*32,operation='status')
+        def competing(*args):
+            self.refuses(lambda:self.call((None,'prepared'),request=other), 'BUSY')
+            seen.append(True)
+            return publish(*args)
+        with patch.object(j,'_publish',side_effect=competing): self.prepare()
+        self.assertEqual(seen,[True])
+        self.approve(other)
+        self.refuses(lambda:self.call((None,'prepared'),request=other), 'RESOURCE_BUSY')
+
+    def test_interrupted_prepare_cannot_admit_an_overlapping_successor(self):
+        sync=j.os.fsync; calls=[]
+        def fail(fd):
+            calls.append(fd)
+            if len(calls)==3: raise OSError(errno.EIO,'post-rename sync')
+            sync(fd)
+        with patch.object(j.os,'fsync',side_effect=fail):
+            self.refuses(lambda:self.prepare(),'IO')
+        for generation,code in [(f.request()['generation'],'LIFETIME_REUSED'),
+                                ('22345678-1234-1234-1234-123456789abc','RESOURCE_BUSY')]:
+            other=dict(f.request(),operationId='1'*32,generation=generation)
+            self.approve(other)
+            self.refuses(lambda:self.call((None,'prepared'),request=other),code)
+        self.approve(f.request())
+        self.assertEqual(self.prepare(),'prepared')  # sync/recover only; never effect permission
 
 
 if __name__ == '__main__': unittest.main()

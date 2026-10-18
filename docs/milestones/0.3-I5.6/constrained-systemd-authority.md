@@ -4,8 +4,8 @@ Date: 2026-10-17. Baseline: `develop/0.3` at
 `a0ff09f8a433e18ae82aad308cdfa105a94af23b`, clean, tracking ref and live
 `origin/develop/0.3` equal. Version stays **0.3.0-alpha.15**.
 
-**Offline contract/candidate renderer (Slice 1) and protected static authorization
-(Slice 2) implemented below; no active
+**Offline contract/candidate renderer (Slice 1), protected static authorization
+(Slice 2), journal/recovery (Slice 3) and conflict admission (Slice 4) implemented below; no active
 manager, installed protocol, policy or runtime change is implemented.**
 The current broker remains experimental and is not fully compromise contained.
 This document specifies an internal migration contract, not a new public API or
@@ -640,3 +640,100 @@ postcondition verifiers, independent provisioning/live sessions, rate/active-cou
 admission, reconciliation authority, effect integration, retention/recovery tooling,
 complete broker authority removal and enforcing installed adversarial qualification
 remain activation gates. No guest or privileged configuration was touched.
+
+## Implementation Slice 4 — offline conflicting-operation admission, 2026-10-17
+
+Baseline: clean `develop/0.3` at `e4caf618b63ffdb4af8d84cb6ab4fb99c204d850`.
+The historical `96ac409` and `d45c50b` commits are present; the latter remains the
+latest lifecycle implementation before this slice. HEAD also contains unrelated
+WydOS design documentation, which this work does not change. No commit, version,
+dependency, manifest, lockfile, installed service or broker privilege changes.
+
+This extends the existing private journal rather than introducing another store or
+authority model. Preparing a new operation reloads exact protected authorization,
+then checks all existing records under the same directory flock before any journal
+publication. Matching operation IDs retain the previous duplicate/conflict semantics.
+For distinct operation IDs:
+
+- A start UUID already present in **any** start record refuses `LIFETIME_REUSED`,
+  including rejected/completed records and different pools/tenants. UUID-only runtime
+  paths require lifetime uniqueness across the manager namespace. Rejection does
+  not recycle the UUID; the retained record is a permanent tombstone.
+- `prepared`, `intent-recorded`, `outcome-unknown` and `reconciliation-required`
+  reserve their pool, account ID, UID/GID and category. Sharing any one field with
+  another unfinished operation refuses `RESOURCE_BUSY`, for all three operations.
+  Derived pool-name hash collisions also serialize. A different tenant, pool,
+  approval revision, lifetime or operation ID cannot override a shared reservation.
+- `reconciliation-required` remains reserved although it is terminal in the
+  transition graph. No recovery lookup, expiration, new approval or process exit
+  frees that reservation. Separately authorized reconciliation remains unimplemented.
+- Rejected records release the unfinished-operation reservation, retaining start
+  tombstones. A completed record sharing resources requires fresh independent
+  `verify_evidence` verification of its original approval/receipt before another
+  preparation is recorded. Missing/false/non-True/throwing verifiers deny `EVIDENCE`.
+  This is the existing trusted callback contract, not broker-selected attestation.
+- Disjoint resources may retain separate unfinished operations; publication remains
+  globally serialized by the existing journal lock. Contention during a call returns
+  `BUSY`; a persisted overlapping reservation returns `RESOURCE_BUSY` afterward.
+
+Every snapshot read and write also validates cross-record lifetime and unfinished
+reservation consistency. Otherwise well-formed, checksummed conflicting histories,
+including older offline snapshots, refuse `CORRUPT` as a whole. No migration, deletion,
+reset, implicit repair or schema-format change is added. A denied admission does not
+publish a new record. Interrupted publications retain Slice 3 quarantine/durability
+rules; a visible prepared record after final-sync failure still blocks a successor.
+
+### Trust assumptions and precise limits
+
+One independently protected journal namespace must contain **all** operations sharing
+these resources and lifetime names. Splitting stores, discarding tombstones or using
+a fresh empty directory to evade reservations invalidates the guarantee. Existing
+128-operation/1-MiB bounds remain; retention/rotation needs a separately reviewed
+preservation and reconciliation design. No automatic eviction exists.
+
+Trusted bootstrap must supply root-controlled descriptor ancestry, installed code/
+release pin and clock. Broker-passed descriptors, broker leases and broker-writable
+account/category markers are not proof. SELinux/mount writer exclusion, serialized
+administrator updates/backup restore and local filesystem flock/fsync behavior remain
+mandatory provenance assumptions, **not installed guarantees**. Metadata checks cannot
+exclude a compromised root writer or rollback to a valid older snapshot. The verifier
+must independently obtain authoritative external evidence; tests simulate that proof.
+
+This reserves unfinished **operations**, not running workers. A completed start can
+still leave a worker running. Fresh completion verification does not establish an
+empty cgroup, retirement or permission for another start. Active-count/start-rate
+limits, per-pool sequence consumption, monotonic epochs, exact predecessor/retirement
+admission, live provisioning/account/session/boot identity, approval/effect atomicity
+and authenticated transport remain unimplemented. Successful preparation/transition/
+recovery never grants execution, retry or reconciliation authority. In particular,
+the existing journal cannot yet be connected to a privileged effect runner safely.
+
+Fixed renderer/request/approval checks, publication confinement and corruption/race
+regressions remain intact; this slice publishes journal bytes only. It renders no new
+unit, accepts no command or directive, and adds no systemd, filesystem-artifact or
+account operation. The active broker's unrestricted unit-authoring/manager authority
+and the historical retirement replacement window remain production blockers. There
+is no installed containment, power-loss or enforcing-host qualification from this work.
+No host/guest OS package, configuration, running service or network changed. Packed
+consumer tests install npm dependencies only in temporary verification directories.
+
+### Evidence and next bounded slice
+
+See the [verification record](verification.md#offline-foundation-reverification-and-conflict-admission--2026-10-17)
+for exact commands and baseline results. Focused post-edit Python request/renderer
+**11/11**, authorization **14/14**, journal **24/24**, and ordinary-user Linux **23/23**
+passed sequentially. Nine added journal tests cover permanent tombstones, independently
+approved conflicts across each resource and operation, unresolved-state retention,
+fresh completion verification, disjoint operations/rejection release, internally
+checksummed incompatible histories, lock contention and post-rename interrupted
+admission. Original corruption, short-I/O, source/pending substitution, authorization
+mutation, cross-process lock and abrupt-exit tests remain. Current-user filesystem
+calls are real; positive root ownership and external evidence are explicitly simulated.
+
+Next: implement offline per-pool sequence/epoch and exact predecessor admission in
+this same journal, with active-start reservations released only by independently
+verified exact retirement and explicit reconciliation authority. Keep effects disabled.
+After that foundation, independently verify live provisioning/session/boot evidence
+and design the isolated manager's authenticated response boundary. Protected artifact
+publication/FD handoff, coordinated broker authority removal and installed enforcing
+adversarial/crash validation remain separate required gates.

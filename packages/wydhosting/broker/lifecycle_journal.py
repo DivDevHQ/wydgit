@@ -27,6 +27,9 @@ NEXT = {'prepared': ('intent-recorded', 'rejected'),
         'completed': (), 'rejected': (), 'reconciliation-required': ()}
 POSTCONDITIONS = {'start': 'exact-invocation-running', 'status': 'exact-state-observed',
                   'stop-and-retire': 'exact-generation-retired'}
+# Reconciliation is terminal in NEXT, but still represents possible external effects.
+UNRESOLVED = ('prepared', 'intent-recorded', 'outcome-unknown', 'reconciliation-required')
+CONFLICT_KEYS = ('poolId', 'accountId', 'uid', 'gid', 'category')
 
 
 class Recovery(NamedTuple):
@@ -65,6 +68,7 @@ def _evidence(raw, approval):
 
 def _validate(entries):
     c.require(type(entries) is dict and len(entries) <= MAX_OPERATIONS)
+    bindings = []
     for op, record in entries.items():
         c.closed(record, ('approval', 'approvalDigest', 'transitions', 'evidence'))
         c.require(type(record['approval']) is str)
@@ -81,6 +85,39 @@ def _validate(entries):
             _evidence(record['evidence'].encode('utf-8'), approval)
         else:
             c.require(record['evidence'] == '')
+        bindings.append((approval, states[-1]))
+    # Recheck the entire snapshot on read, including self-consistently checksummed
+    # histories created before admission checks existed. Never silently repair them.
+    for index, binding in enumerate(bindings):
+        c.require(all(_conflict(binding, other) is None for other in bindings[:index]))
+
+
+def _shares_resource(approval, other):
+    return (any(approval[key] == other[key] for key in CONFLICT_KEYS) or
+            c._key(approval['poolId']) == c._key(other['poolId']))
+
+
+def _conflict(left, right):
+    approval, state = left
+    other, other_state = right
+    # Runtime paths contain the UUID alone: lifetimes are globally never reused,
+    # even across pools, rejected requests, or independently approved operation IDs.
+    if approval['operation'] == other['operation'] == 'start' and approval['generation'] == other['generation']:
+        return 'LIFETIME_REUSED'
+    if state in UNRESOLVED and other_state in UNRESOLVED and _shares_resource(approval, other):
+        return 'RESOURCE_BUSY'
+    return None
+
+
+def _admit(entries, approval, verifier):
+    for record in entries.values():
+        other, _ = a._approval(record['approval'].encode())
+        code = _conflict((approval, 'prepared'), (other, record['transitions'][-1]))
+        need(code is None, code)
+        if _shares_resource(approval, other):
+            # Completion releases a reservation only after fresh independent proof.
+            # This does not attest that a worker is absent or grant another start.
+            _verify(record, verifier)
 
 
 def _encode(entries):
@@ -236,6 +273,9 @@ def transition(raw, trusted_directory_fd, approval_fd, *, now, installed_release
                expected_state, state, evidence=b'', verify_evidence=None):
     """CAS transition; state='prepared', expected_state=None creates once.
 
+    New preparations reserve conflicting unfinished work across operation IDs and
+    never reuse start lifetimes. Completion release needs fresh trusted evidence.
+    This is NOT active-worker, epoch/sequence or rate admission.
     Trusted offline callers only. No effects may be attached to successful return.
     Completion requires an independent trusted verifier, with no default acceptor.
     """
@@ -261,6 +301,7 @@ def _operate(raw, trusted_directory_fd, approval_fd, now, release, change, evide
             if record is None:
                 need(change == (None, 'prepared') and evidence == b'', 'MISSING')
                 need(len(entries) < MAX_OPERATIONS, 'CAPACITY')
+                _admit(entries, approval, verifier)
                 record = dict(approval=c._canonical(approval).decode(),
                               approvalDigest=digest(c._canonical(approval)),
                               transitions=['prepared'], evidence='')

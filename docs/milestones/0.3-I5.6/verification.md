@@ -1716,3 +1716,106 @@ including journal **15/15**. Preserve timing assertions and rerun required repos
 and freshly packed suites sequentially after this evidence edit. The earlier review
 packed run `/tmp/wyd-i54-packed-clLnPc` also passed all stages, but predates the final
 recovery-sync edit and does not substitute for final verification.
+
+## Offline foundation reverification and conflict admission — 2026-10-17
+
+Starting HEAD `e4caf618b63ffdb4af8d84cb6ab4fb99c204d850`, clean `develop/0.3`.
+Historical Slice 2 (`96ac409`) and Slice 3 (`d45c50b`) are ancestors, not assumed HEADs.
+Inspection found no manager/socket/adapter integration beyond the private offline
+contract, renderer, authorization and journal. The final Slice 3 directory-metadata
+and recovery-sync changes are present. No guest contact, host/guest OS changes,
+service operation, privilege expansion, dependency/version change or commit occurred.
+
+### Baseline, before source edits
+
+Commands ran from the repository root:
+
+```sh
+python3 test-support/linux/verify_lifecycle_contract.py packages/wydhosting/broker
+python3 test-support/linux/verify_lifecycle_authorization.py packages/wydhosting/broker
+python3 test-support/linux/verify_lifecycle_journal.py packages/wydhosting/broker
+npm test
+npm run check
+node scripts/verify-packed-packages.js
+```
+
+Sequential Python results: **11/11**, **14/14**, **15/15**. Repository `npm test`
+as the ordinary user: **942/942**, zero failures/skips/cancellations, retained in
+`/tmp/wyd-i56-baseline-ordinary-test.log`. Content validation passed: **3 pages,
+42 internal links**, `/tmp/wyd-i56-baseline-check.log`. Fresh packed verification
+followed the repository run, with sources/tests/docs unchanged throughout packing
+and test staging. `/tmp/wyd-i54-packed-DQES9I` passed service-free binary/HTTP/restart,
+canonical **156/156**, provider **35/35**, subprocess **20/20**, Linux **23/23**, one
+installed engine per consumer and repository-import rejection. Top-level log:
+`/tmp/wyd-i56-baseline-packed.log`; per-stage logs and `result.json` are in that
+evidence directory. These are actual local tarballs, not workspace runtime imports.
+
+The first sandboxed `npm test` stalled after a file-level artifact-policy failure
+without a final summary (`/tmp/wyd-i56-baseline-test.log`). Only this session's stuck
+test container was terminated. The ordinary-user rerun passed unchanged assertions;
+no precise cause of the sandbox stall is claimed. Ordinary-user execution is used for
+subsequent Node/packed verification, matching the previous campaign's environment.
+No test timeout, assertion or security check was weakened.
+
+The earlier mixed-snapshot packed failure is resolved for this baseline by frozen,
+fresh packing; installed journal **15/15** includes the final recovery-sync regression.
+The historical startupMs=500 and FILES.TIMEOUT failures did not recur in these
+repository/packed runs. This supports sequential verification, not a proven diagnosis
+or a guarantee against all scheduling-sensitive failures. Historical failure records
+above remain unchanged. No foundational implementation defect required repair.
+
+### Selected implementation and focused evidence
+
+[Slice 4](constrained-systemd-authority.md#implementation-slice-4--offline-conflicting-operation-admission-2026-10-17)
+extends only the private journal. Distinct operation IDs cannot reuse a retained start
+UUID or bypass unfinished pool/account/UID/GID/category reservations. Reconciliation
+stays reserved. Completed overlapping reservations need fresh trusted external
+verification; mutually inconsistent histories quarantine even with a valid checksum.
+All checks and publication use the existing protected-store lock; no effect grant or
+manager service exists. Rejected records release unfinished reservations, never start
+tombstones. Active-worker/sequence/epoch admission is explicitly still absent.
+
+Post-edit focused commands (sequential):
+
+```sh
+python3 test-support/linux/verify_lifecycle_contract.py packages/wydhosting/broker
+python3 test-support/linux/verify_lifecycle_authorization.py packages/wydhosting/broker
+python3 test-support/linux/verify_lifecycle_journal.py packages/wydhosting/broker
+node --test test/linux-isolation.test.js
+```
+
+Results: **11/11**, **14/14**, **24/24** Python and **23/23** Linux, no skips or
+cancellations. Logs: `/tmp/wyd-i56-admission-{contract,authorization,journal,linux}.log`.
+The initial incremental journal run passed **22/22**; adding independent completion
+release and interrupted-prepare cases raised it to **24/24**, which passed again.
+Positive root ownership and authoritative external evidence are simulated explicitly;
+file/descriptor/lock/publication calls and hostile filesystem substitutions are real
+current-user operations. The existing independently spawned process-contention and
+abrupt-exit lock tests remain. No real power loss or privileged systemd effect ran.
+
+Post-documentation delivery verification uses the following commands **sequentially**,
+with source/tests/docs frozen through fresh packing. Actual outcomes are recorded in
+the delivery handoff and logs; the baseline results above are not post-edit evidence:
+
+```sh
+npm test > /tmp/wyd-i56-admission-delivery-test.log 2>&1
+npm run check > /tmp/wyd-i56-admission-delivery-check.log 2>&1
+node scripts/verify-packed-packages.js > /tmp/wyd-i56-admission-delivery-packed.log 2>&1
+```
+
+Independent protected ancestry, one complete manager namespace, root-only code/clock/
+release provenance, SELinux/mount writer exclusion, serialized administrator changes
+and honest flock/fsync storage remain assumptions. Tombstone loss/store splitting/
+rollback invalidate admission; there is no automatic compaction or recovery repair.
+The active broker retains the documented indirect systemd authority and retirement
+replacement window. Live host/session/account verification, exact active predecessor
+and retirement admission, rate/active-count limits, reconciliation authorization,
+effect-boundary serialization, publication/FD handoff and full broker authority removal
+remain production blockers. Installed enforcing and crash qualification has not been
+performed for this slice. I5.6 remains experimental and incomplete.
+
+Next recommended slice: offline per-pool sequence/epoch and exact predecessor
+admission in the same journal, keeping all effects disabled and requiring independently
+verified exact retirement to release active starts. Do not use a completed start as
+proof that its worker stopped. Later installed integration requires coordinated
+authority transfer, not incremental broker rights alongside manager validation.

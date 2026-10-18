@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Extend the private offline I5.6 journal with cross-operation conflict admission,
+  permanent start-lifetime tombstones and fresh evidence checks before completed
+  reservations release. Quarantine incompatible histories; no execution grant,
+  manager activation, broker privilege change or version bump.
+
 - Specify the proposed WydOS platform independence foundation: reuse canonical
   services and SEAM, define portable service/discovery contracts, portability
   validation tiers and a phased adapter roadmap. Cross-reference architecture and
