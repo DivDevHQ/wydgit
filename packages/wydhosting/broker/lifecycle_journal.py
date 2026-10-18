@@ -72,7 +72,8 @@ def _validate(entries):
     c.require(type(entries) is dict and len(entries) <= MAX_OPERATIONS)
     bindings = []
     for op, record in entries.items():
-        c.closed(record, ('approval', 'approvalDigest', 'transitions', 'evidence'))
+        c.closed(record, ('approval', 'approvalDigest', 'transitions', 'evidence',
+                          *(('reconciliation',) if 'reconciliation' in record else ())))
         c.require(type(record['approval']) is str)
         raw = record['approval'].encode('utf-8')
         approval, _ = a._approval(raw)
@@ -93,6 +94,15 @@ def _validate(entries):
     for index, binding in enumerate(bindings):
         c.require(all(_conflict(binding, other) is None for other in bindings[:index]))
     _history(entries)
+    reconciliation_ids = set()
+    for op, record in entries.items():
+        if 'reconciliation' in record:
+            try:
+                approved = _reconciliation_binding(entries, op, record['reconciliation'])
+            except Refused:
+                raise c.Refused() from None
+            c.require(approved['reconciliationId'] not in reconciliation_ids)
+            reconciliation_ids.add(approved['reconciliationId'])
 
 
 def _shares_resource(approval, other):
@@ -412,6 +422,139 @@ def _operate(raw, trusted_directory_fd, approval_fd, now, release, change, evide
                 return Recovery(state, 'reconciliation-required' if state in (
                     'intent-recorded', 'outcome-unknown') else state)
             return state
+    except a._Denied as error:
+        raise Refused(error.code) from None
+    except (c.Refused, ValueError, UnicodeError, TypeError, KeyError, RecursionError):
+        raise Refused('CORRUPT') from None
+
+
+# This slice authorizes evidence acceptance only. Quarantine remains terminal and
+# reserved: this audit is neither completion nor permission to perform retirement.
+_RECON_KEYS = ('schema', 'reconciliationId', 'action', 'operationId', 'bootId',
+               'historyDigest', 'startApprovalDigest', 'startEvidenceDigest',
+               'retirementApprovalDigest', 'evidenceDigest', *LIFETIME_KEYS,
+               'expectedSequence', 'policyRevision', 'reservationDigest')
+_RECON_KEYS = tuple(dict.fromkeys(_RECON_KEYS))
+
+
+def _reconciliation_approval(raw):
+    value = c._decode(raw)
+    c.closed(value, (*_RECON_KEYS, 'notBefore', 'expiresAt', 'state'))
+    c.require(value['schema'] == 'wydhosting.lifecycle-reconciliation/1')
+    c.require(value['action'] == 'accept-retirement-evidence')
+    c.require(c.matches(r'[0-9a-f]{32}', value['reconciliationId']))
+    c.require(c.matches(r'[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}', value['bootId']))
+    c.require(all(c.matches(r'[0-9a-f]{64}', value[key]) for key in
+                  ('historyDigest', 'startApprovalDigest', 'startEvidenceDigest',
+                   'retirementApprovalDigest', 'evidenceDigest')))
+    c.require(value['state'] in ('active', 'revoked') and
+              c.integer(value['notBefore'], 0) and c.integer(value['expiresAt']) and
+              value['notBefore'] < value['expiresAt'])
+    return value
+
+
+def _reconciliation_scope(entries, op, evidence, boot_id, reconciliation_id):
+    record = entries[op]
+    retirement, _ = a._approval(record['approval'].encode())
+    need(retirement['operation'] == 'stop-and-retire' and
+         record['transitions'][-1] == 'reconciliation-required', 'SCOPE')
+    starts = [item for item in entries.values() if
+              item['approvalDigest'] == _evidence(evidence, retirement)['predecessorApprovalDigest']]
+    need(len(starts) == 1, 'EVIDENCE')
+    start = starts[0]
+    original, _ = a._approval(start['approval'].encode())
+    need(original['operation'] == 'start' and start['transitions'][-1] == 'completed' and
+         all(original[key] == retirement[key] for key in LIFETIME_KEYS) and
+         _evidence(evidence, retirement)['predecessorEvidenceDigest'] == digest(start['evidence'].encode()),
+         'EVIDENCE')
+    # Exact affected pool prefix, including status history. Other pools cannot be
+    # changed by this operation. Strip only this target's write-once audit.
+    history = {}
+    for key, item in entries.items():
+        approved, _ = a._approval(item['approval'].encode())
+        if approved['poolId'] == retirement['poolId']:
+            history[key] = {k: v for k, v in item.items() if k != 'reconciliation' or key != op}
+    return dict(schema='wydhosting.lifecycle-reconciliation/1', reconciliationId=reconciliation_id,
+                action='accept-retirement-evidence', operationId=op, bootId=boot_id,
+                historyDigest=digest(c._canonical(history)), startApprovalDigest=start['approvalDigest'],
+                startEvidenceDigest=digest(start['evidence'].encode()),
+                retirementApprovalDigest=record['approvalDigest'], evidenceDigest=digest(evidence),
+                **{key: retirement[key] for key in (*LIFETIME_KEYS, 'expectedSequence',
+                                                   'policyRevision', 'reservationDigest')})
+
+
+def _reconciliation_binding(entries, op, audit):
+    c.closed(audit, ('approval', 'evidence'))
+    c.require(type(audit['approval']) is str and type(audit['evidence']) is str)
+    approval = _reconciliation_approval(audit['approval'].encode())
+    c.require(approval['state'] == 'active' and c._canonical(approval).decode() == audit['approval'])
+    scope = _reconciliation_scope(entries, op, audit['evidence'].encode(),
+                                  approval['bootId'], approval['reconciliationId'])
+    c.require(c._canonical({key: approval[key] for key in _RECON_KEYS}) == c._canonical(scope))
+    return approval
+
+
+def reconcile(raw, trusted_directory_fd, approval_fd, *, now, installed_release_digest,
+              current_boot_id, evidence, verify_evidence=None, recover=False):
+    """Accept exact independently verified retirement evidence, retaining quarantine.
+
+    Private trusted offline callers only. Uses the SAME protected administrator
+    approval/reservation loader and directory lock as normal lifecycle operations.
+    No retry, completion, release, history rewrite or OS effect is authorized.
+    Recovery revalidates current approval/evidence/boot and syncs; it never reapplies.
+    current_boot_id comes from trusted kernel observation, never broker input.
+    The verifier receives start approval/receipt, retirement approval/receipt,
+    reconciliation approval and current boot. It must prove cross-boot continuity
+    independently or refuse; a new receipt/reference digest is not that proof.
+    """
+    try:
+        request = c._decode(raw)
+        c.closed(request, _RECON_KEYS)
+        with _locked(trusted_directory_fd) as directory:
+            directory_before = os.fstat(directory)
+            entries, before = _read(directory)
+            op = request['operationId']
+            need(op in entries and type(evidence) is bytes, 'SCOPE')
+            record = entries[op]
+            scope = _reconciliation_scope(entries, op, evidence, current_boot_id,
+                                          request['reconciliationId'])
+            need(c._canonical(request) == c._canonical(scope), 'SCOPE')
+            # Keep descriptors held through proof validation/publication. Serialized
+            # administrator maintenance/writer exclusion remains a precondition.
+            with a._records(approval_fd) as (approval_raw, reservations_raw):
+                approval = _reconciliation_approval(approval_raw)
+                need(approval['state'] == 'active', 'REVOKED')
+                need(c.integer(now, 0) and approval['notBefore'] <= now < approval['expiresAt'], 'TIME')
+                need(c._canonical({key: approval[key] for key in _RECON_KEYS}) == c._canonical(scope), 'APPROVAL_CHANGED')
+                need(c.matches(r'[0-9a-f]{64}', installed_release_digest) and
+                     approval['releaseDigest'] == installed_release_digest, 'RELEASE')
+                reservations = c.validate_reservations(reservations_raw)
+                need(digest(c._canonical(reservations)) == approval['reservationDigest'] and
+                     {key: approval[key] for key in c.IDENTITY_KEYS} in reservations, 'RESERVATION')
+                audit = dict(approval=c._canonical(approval).decode(), evidence=evidence.decode())
+                need(not any(item.get('reconciliation') and key != op and
+                             _reconciliation_approval(item['reconciliation']['approval'].encode())['reconciliationId']
+                             == request['reconciliationId'] for key, item in entries.items()), 'REPLAY')
+                existing = record.get('reconciliation')
+                need((existing == audit) if recover else existing is None, 'REPLAY')
+                start = next(item for item in entries.values() if
+                             item['approvalDigest'] == scope['startApprovalDigest'])
+                try:
+                    verified = callable(verify_evidence) and verify_evidence(
+                        start['approval'].encode(), start['evidence'].encode(),
+                        record['approval'].encode(), evidence, c._canonical(approval), current_boot_id) is True
+                except Exception:
+                    verified = False
+                need(verified, 'EVIDENCE')
+            need(a._stamp(os.stat('journal.json', dir_fd=directory, follow_symlinks=False)) ==
+                 a._stamp(before) and a._stamp(os.fstat(directory)) == a._stamp(directory_before), 'CHANGED')
+            _names(directory)
+            if recover:
+                os.fsync(directory)
+            else:
+                record['reconciliation'] = audit
+                _publish(directory, entries, before)
+            return Recovery('reconciliation-required', 'retirement-evidence-accepted')
     except a._Denied as error:
         raise Refused(error.code) from None
     except (c.Refused, ValueError, UnicodeError, TypeError, KeyError, RecursionError):

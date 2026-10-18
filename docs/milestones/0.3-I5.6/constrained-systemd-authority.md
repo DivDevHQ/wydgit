@@ -851,3 +851,158 @@ boot evidence verification, rate limits, authenticated transport/responses, prot
 artifact publication/FD handoff, effect-boundary serialization, broker authority
 removal and installed enforcing/crash qualification remain production blockers.
 I5.6 remains incomplete and unqualified for production.
+
+## Implementation Slice 6 — exact offline reconciliation authorization (2026-10-17)
+
+Starting HEAD `85fdd68b9322f58509380b9c3f730de4a7d6a75e`, clean
+`develop/0.3`. Version remains **0.3.0-alpha.15**. This is an authorization and
+evidence-acceptance slice, not a production reconciler or manager activation.
+
+The single supported action is **accept-retirement-evidence** for an exact
+`stop-and-retire` record already in `reconciliation-required`, whose exact start
+has completed in the same valid pool chain. It durably adds one write-once audit
+containing canonical protected reconciliation approval and the proposed independent
+retirement receipt. The original approval, transitions, evidence, sequences, epochs
+and lifetime tombstones remain intact. The state remains quarantined and all
+reservations remain retained. Acceptance is an audit result, **not completed
+retirement or a release credential**. This deliberate limit avoids inferring
+boot-independent external truth from the existing digest-only receipt format.
+Unknown start/status outcomes, rejected retirements, broken stores/pending markers,
+retirement retries, automatic completion, reservation release and all OS effects
+remain unsupported. There is no repair/reset/override interface.
+
+### Exact scope and protected authority
+
+Private `lifecycle_journal.reconcile` accepts a closed, bounded
+`wydhosting.lifecycle-reconciliation/1` request. Required keys are:
+`reconciliationId`, `action`, target `operationId`, `bootId`, `historyDigest`,
+`startApprovalDigest`, `startEvidenceDigest`, `retirementApprovalDigest`,
+`evidenceDigest`, all `LIFETIME_KEYS`, `expectedSequence`, `policyRevision`,
+`reservationDigest`, and `schema`. LIFETIME_KEYS include pool, tenant/account,
+UID/GID/category, deployment generation, lifetime, epoch, service and pinned
+template/release. The history digest covers the canonical entire affected pool
+history before this target's audit; original retirement evidence (empty under
+quarantine), exact transitions and approval are therefore bound too. It excludes
+unrelated pools. Existing whole-namespace semantic validation still runs first.
+A pool cannot advance past its quarantined predecessor, keeping this binding stable.
+All values must equal the independently reconstructed scope in canonical bytes;
+missing/extra keys, boolean numeric substitutes, broader/wrong action, stale digests
+or mismatched tuple refuse before publication.
+
+Use the existing protected `approval.json` and `reservations.json` loader in a
+separately opened trusted approval directory. This is another exact administrator
+execution projection under the same trust root, not a new issuer or provider
+registry. Reconciliation approval has exactly request fields plus `notBefore`,
+`expiresAt`, `state`. Each attempt/recovery reads it afresh, checks active state,
+trusted current UTC validity, independently installed release pin and exact current
+reservation. Ordinary lifecycle approvals cannot authorize reconciliation and the
+reconciliation schema cannot authorize ordinary lifecycle operations. Current file
+replacement is the existing supersession mechanism; no revision ordering is invented.
+Revocation, expiry, different current scope, missing records and protection drift
+fail closed. Held authorization descriptors are checked after independent proof
+consumption, before publication, under serialized administrator-maintenance and
+writer-exclusion assumptions.
+
+Successful acceptance consumes that target's audit slot permanently. Same-ID replay,
+a different reconciliation ID, changed approval or different action cannot accept
+again. `recover=True` requires the identical recorded canonical approval/receipt,
+current authority and independent verification, then successful directory fsync.
+It returns an observation only. Unique reconciliation IDs are checked across the
+namespace. All snapshot reads validate the audit's binding; a self-consistent
+checksum cannot bless a contradictory audit or original lifecycle chain.
+
+### Evidence and boot changes
+
+The trusted independent verifier receives six exact inputs: original start approval,
+original start receipt, original retirement approval, proposed retirement receipt,
+current reconciliation approval, and trusted current boot ID. Only literal True
+permits publication; missing, false, nonboolean or throwing verifiers refuse.
+The first four retain Slice 5's exact ownership, terminal-state, no-job, zero-MainPID,
+empty-descendant-cgroup and exact artifact-retirement requirements. The last two
+bind the narrow evidence-acceptance action and current boot. A digest or journal
+postcondition is never independent proof. The verifier is trusted platform code,
+never a broker-supplied callback. No production verifier exists yet.
+
+`current_boot_id` must come from fresh trusted kernel observation, not the request.
+A change after approval makes its exact scope inapplicable. Recovery after a reboot
+also refuses the prior boot approval. A newly issued approval for the new boot still
+needs independent evidence; it cannot refresh old process evidence by renaming it.
+The verifier must establish boot/session continuity from initial operation through
+quarantine and evidence collection to approval/execution. If a boot changed between
+any of these phases and the required facts cannot independently be established,
+it must refuse, preserving quarantine and reservations. The original offline receipt
+has no independently attested boot field: it supplies no cross-boot proof. Tests use
+an exact independent proof registry tied to one boot and reject reissued new-boot
+approval without new proof. They do not establish a real cross-boot verifier.
+A process cannot survive a real kernel boot change; recovery must obtain a new
+trusted observation. No boot-independent proof mechanism is introduced.
+
+### Crash, concurrency and limitations
+
+The same nonblocking exclusive directory flock covers authorization, evidence,
+source revalidation and atomic durable publication. Competing acceptance/recovery
+and ordinary operations cannot interleave as accepted writers. Interrupted writes
+or pre-rename failures leave a pending marker and quarantine the namespace. A visible
+audit after final directory-sync failure can only be recognized via fresh exact
+recovery and successful sync; it still releases nothing. Existing journal crash,
+process-death lock and semantic-admission regressions remain intact.
+
+Tests simulate root ownership and independently authoritative proof. Current-UID
+openat2, descriptor drift, flock, fsync and rename are real, with deterministic
+fault injection. Trusted FD ancestry, release/clock/boot provenance, independent
+proof collection, complete namespace/tombstone retention, storage durability,
+SELinux/mount exclusion and maintenance serialization remain installed-system
+assumptions. Valid older snapshot rollback and malicious root writers remain
+unsolved. The 128-operation/1-MiB fail-closed limits remain; no compaction exists.
+
+### I5.6 integration-readiness assessment
+
+1. Offline tests demonstrate strict request/approval/reservation binding, current
+   expiry/revocation checks, exact predecessor/lifetime/sequence/epoch invariants,
+   permanent tombstones, semantic corruption rejection, serialized write-once audit
+   acceptance, fail-closed crash recovery and continued reservation retention.
+   They do not demonstrate installed containment or production readiness.
+2. Root trust and external evidence are simulated. Kernel peer/session/boot evidence,
+   systemd state, authoritative artifact provenance, enforced directory writer
+   exclusion, ancestor durability, actual power loss and anti-rollback retention
+   remain unqualified. Sandbox Node native assertion recurred; see verification.
+3. Removing broker indirect systemd authority still requires a separately confined
+   manager, authenticated peer/session transport, live protected account/deployment/
+   boot verifier, fixed renderer and effective-unit verification, protected intent/
+   artifact publication, bounded admission, exact stop/retirement and authenticated
+   connected-worker FD handoff. Broker/worker relay migration and policy changes must
+   remove broker unit writes, reload, systemctl and direct service-manager rights
+   together. An offline validator alone does not close that boundary.
+4. Smallest next installed test: after implementing/reviewing a minimal manager
+   candidate, use one disposable administrator-provisioned identity and one synthetic
+   fixed nonroot worker lifetime in an isolated AlmaLinux test namespace. Prove an
+   approved launch and broker-denied unit replacement/direct manager access, then
+   independently observe exact invocation/cgroup, stop and retained quarantine on
+   an interrupted retirement. No customer deployment, public ingress or automatic
+   reuse is needed. Begin with read-only guest/policy/resource inventory and a
+   concrete reviewed change/rollback plan, not the old harness wholesale.
+5. That test needs separately approved guest changes: dedicated confined manager
+   service/socket/domain and typed protected directories, test approval/template/
+   journal, preprovisioned identity/category, synthetic unit and broker test-policy
+   restriction. It needs explicit permission to install/load policy, reload systemd,
+   start/stop those named services, allocate test resources and perform interruption/
+   cleanup. Verify console/backup/recovery first. None is authorized or done here.
+6. Material blockers remain: broker root/DAC rights make writer exclusion a MAC
+   property; manager publication and PID 1 observations are not a joint transaction;
+   original receipt metadata cannot establish boot-independent truth; FD handoff
+   and all lifecycle writers must migrate together. This slice finds no new blocker
+   beyond those known boundaries, but offline proofs cannot qualify them.
+7. Another generic offline authorization/state-machine slice would postpone the OS
+   boundary. The necessary next code work is a concrete minimal constrained-manager
+   integration candidate with a reviewable guest test plan. It can be implemented
+   offline; installed effects require separate approval. Reservation-releasing or
+   cross-boot reconciliation is unnecessary for the first test and must stay disabled.
+
+Continue toward that narrow integration candidate, with a checkpoint before guest
+mutation. Repeated architectural/qualification difficulty at writer exclusion or
+handoff would support considering deferral of managed WydHosting stability to 0.4.
+The independent Node/Wydgine services behind a conventional reverse proxy fallback
+remains credible because it avoids this dynamic privileged manager boundary; it
+still needs separate identities, storage, credentials and limits. These results
+neither activate that fallback nor change the release roadmap/decision log.
+**I5.6 remains incomplete, experimental and unqualified for production.**

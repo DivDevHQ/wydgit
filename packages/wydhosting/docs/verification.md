@@ -1880,3 +1880,74 @@ document bytes must match frozen repository bytes. Remaining assumptions and pro
 blockers are listed in Slice 5: protected filesystem and writer provenance, complete
 namespace/rollback protection, honest storage and independent external evidence remain
 unqualified. No installed enforcing/crash or production qualification is claimed.
+
+## Slice 6 — offline reconciliation authorization (2026-10-17)
+
+Starting `develop/0.3` HEAD `85fdd68b9322f58509380b9c3f730de4a7d6a75e`,
+clean; prior slice `be5920b6336e8a7d5f475d4c455e2be8cffd763f` preserved.
+See [the Slice 6 contract and seven-part readiness assessment](constrained-systemd-authority.md#implementation-slice-6--exact-offline-reconciliation-authorization-2026-10-17).
+Only write-once **accept-retirement-evidence** is implemented. Positive acceptance
+retains quarantine/reservations; it does not complete retirement or grant effects.
+No guest/host configuration, service, policy, dependency or version changed.
+
+Initial incremental journal tests passed **49/49**; three additional drift/semantic
+corruption regressions bring the focused suite to **52/52**, passing. Focused contract
+**11/11** and authorization **14/14** passed. No assertions or timeouts were relaxed.
+Existing fixtures remain unchanged; the Linux wrapper count changes from 37 to 52
+because fifteen reconciliation regressions were added. Tests use root-owner simulation
+and an exact independent-evidence registry, not real external authority.
+
+### Reproduced native assertion, preserved separately from passing runs
+
+Two unchanged sandbox invocations of `node --test test/linux-isolation.test.js`
+failed with exit 1 before reporting individual tests. Both produced:
+
+```text
+/home/brian/.nvm/versions/node/v24.21.0/bin/node[9]: void node::InternalCallbackScope::Close() at ../src/api/callback.cc:165
+Assertion failed: (env_->execution_async_id()) == (0)
+```
+
+Environment: Node **v24.21.0**, ordinary UID/GID **1000/1000**, CWD this repository,
+Linux `Brian-TUF-A16 7.0.0-38-generic #38~24.04.4-Ubuntu SMP PREEMPT_DYNAMIC
+Mon Sep 14 16:37:11 UTC 2 x86_64 GNU/Linux`. Execution used the managed
+workspace-write/network-restricted sandbox. The unchanged ordinary-user execution
+outside that sandbox passed **23/23**, zero failures/cancellations/skips. Full native
+stacks and test summaries are preserved in:
+
+- `/tmp/wyd-i56-reconciliation-linux.log` (first failure).
+- `/tmp/wyd-i56-reconciliation-linux-sandbox-rerun.log` (same assertion reproduced).
+- `/tmp/wyd-i56-reconciliation-linux-ordinary.log` (passing comparison).
+
+This reproduces the previous report's failure class; its cause is unresolved.
+Neither a Node defect nor a sandbox defect is established. A passing comparison
+does not erase the failures or establish installed lifecycle reliability. Final
+Linux/full/packed verification uses ordinary-user execution with the original
+assertions and timeouts; it does not disable async hooks or suppress errors.
+
+### Final verification commands and evidence
+
+Run sequentially after the final code/docs/mirror edits:
+
+```sh
+python3 test-support/linux/verify_lifecycle_contract.py packages/wydhosting/broker
+python3 test-support/linux/verify_lifecycle_authorization.py packages/wydhosting/broker
+python3 test-support/linux/verify_lifecycle_journal.py packages/wydhosting/broker
+node --test test/linux-isolation.test.js
+npm test
+npm run check
+node scripts/verify-packed-packages.js
+```
+
+Final command outputs are retained as `/tmp/wyd-i56-reconciliation-final-` followed
+by `contract.log`, `authorization.log`, `journal.log`, `linux.log`, `test.log`,
+`check.log`, and `packed.log`. The packed script prints its independent installed
+consumer evidence directory, checks shipped Python assets and runs the same Linux
+suite (including all 52 journal cases) against installed package code. Repository
+Linux checks compare authoritative/mirrored guide bytes. Actual final outcomes and
+commit are in the delivery handoff; the command list alone is not a passing claim.
+
+No installed-system qualification or production readiness is inferred. The smallest
+next step is a concrete minimal constrained-manager candidate and reviewed AlmaLinux
+integration plan, followed by separately authorized installation and enforcing
+adversarial checks. Cross-boot or reservation-releasing reconciliation is not needed
+for that first test. No fallback/deferral decision has been made.

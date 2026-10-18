@@ -646,4 +646,196 @@ class JournalTests(unittest.TestCase):
             self.refuses(lambda:self.call((None,'prepared'),request=request,verify_evidence=self.verified),code)
 
 
+    def quarantined_retirement(self):
+        self.completed_start()
+        request, self.retirement_receipt = self.retirement()
+        self.call(('intent-recorded','reconciliation-required'), request=request)
+        self.boot = 'aaaaaaaa-1234-1234-1234-123456789abc'
+        entries = j._decode((self.store/'journal.json').read_bytes())
+        self.scope = j._reconciliation_scope(entries, request['operationId'], self.retirement_receipt,
+                                              self.boot, '4'*32)
+        self.reconciliation_approval = dict(self.scope, notBefore=100, expiresAt=200, state='active')
+        self.write_auth('approval.json', self.reconciliation_approval)
+        self.reconciliation_proof = (*next(proof for proof in self.proofs if len(proof)==4),
+                                     c._canonical(self.reconciliation_approval), self.boot)
+        return request
+
+    def reconcile(self, **kw):
+        opts = dict(now=150, installed_release_digest='c'*64, current_boot_id=self.boot,
+                    evidence=self.retirement_receipt,
+                    verify_evidence=lambda *args: args == self.reconciliation_proof)
+        raw = kw.pop('raw', c._canonical(self.scope))
+        return j.reconcile(raw, self.fd, self.afd, **{**opts, **kw})
+
+    def test_reconciliation_accepts_only_evidence_and_keeps_quarantine(self):
+        retire = self.quarantined_retirement()
+        self.assertEqual(self.reconcile(), j.Recovery('reconciliation-required','retirement-evidence-accepted'))
+        entries = j._decode((self.store/'journal.json').read_bytes())
+        self.assertEqual(entries[retire['operationId']]['transitions'][-1], 'reconciliation-required')
+        self.assertEqual(j._history(entries), {})
+        self.assertEqual(self.reconcile(recover=True).recorded_state,'reconciliation-required')
+        successor=self.successor(); self.approve(successor)
+        self.refuses(lambda:self.call((None,'prepared'),request=successor,verify_evidence=self.verified),'RESOURCE_BUSY')
+        self.approve(retire)
+        self.refuses(lambda:self.call(('reconciliation-required','completed'),request=retire,
+                                     evidence=self.retirement_receipt,verify_evidence=self.verified),'TRANSITION')
+
+    def test_reconciliation_exact_scope_even_with_signed_wrong_values(self):
+        self.quarantined_retirement(); before=(self.store/'journal.json').read_bytes()
+        changes = dict(poolId='other', tenantId='other', accountId='other', uid=62000, gid=62000,
+                       category=18, generation='22345678-1234-1234-1234-123456789abc', epoch=2,
+                       expectedSequence=2, historyDigest='f'*64, startApprovalDigest='f'*64,
+                       startEvidenceDigest='f'*64, retirementApprovalDigest='f'*64,
+                       evidenceDigest='f'*64, action='release-reservation', operationId='9'*32,
+                       deploymentGeneration=2, epoch_bool=True)
+        for key,value in changes.items():
+            field='epoch' if key=='epoch_bool' else key
+            wrong=dict(self.scope, **{field:value})
+            self.write_auth('approval.json',dict(wrong,notBefore=100,expiresAt=200,state='active'))
+            self.refuses(lambda:self.reconcile(raw=c._canonical(wrong)))
+            self.assertEqual((self.store/'journal.json').read_bytes(),before)
+        for wrong in [{k:v for k,v in self.scope.items() if k!='historyDigest'},dict(self.scope,extra='x')]:
+            self.refuses(lambda:self.reconcile(raw=c._canonical(wrong)), 'CORRUPT')
+
+    def test_reconciliation_missing_forged_and_unavailable_evidence(self):
+        self.quarantined_retirement()
+        for receipt in [b'',b'{}',self.retirement_receipt.replace(b'eeee',b'ffff')]:
+            self.refuses(lambda:self.reconcile(evidence=receipt))
+        for verifier in [None, lambda *_:False, lambda *_:1]:
+            self.refuses(lambda:self.reconcile(verify_evidence=verifier),'EVIDENCE')
+        def broken(*_): raise RuntimeError('unavailable')
+        self.refuses(lambda:self.reconcile(verify_evidence=broken),'EVIDENCE')
+
+    def test_reconciliation_revocation_expiry_and_supersession(self):
+        self.quarantined_retirement()
+        for recover in [False, True]:
+            if recover: self.reconcile()
+            self.write_auth('approval.json',dict(self.reconciliation_approval,state='revoked'))
+            self.refuses(lambda:self.reconcile(recover=recover),'REVOKED')
+            self.write_auth('approval.json',self.reconciliation_approval)
+            for now in [99,200,201]:
+                self.refuses(lambda:self.reconcile(now=now,recover=recover),'TIME')
+            self.write_auth('approval.json',dict(self.reconciliation_approval,reconciliationId='5'*32))
+            self.refuses(lambda:self.reconcile(recover=recover),'APPROVAL_CHANGED')
+            self.write_auth('approval.json',self.reconciliation_approval)
+
+    def test_reconciliation_replay_and_conflicting_approval(self):
+        self.quarantined_retirement(); self.reconcile()
+        before=(self.store/'journal.json').read_bytes()
+        self.refuses(lambda:self.reconcile(),'REPLAY')
+        self.write_auth('approval.json',dict(self.reconciliation_approval,expiresAt=201))
+        self.refuses(lambda:self.reconcile(recover=True),'REPLAY')
+        self.assertEqual((self.store/'journal.json').read_bytes(),before)
+
+    def test_reconciliation_boot_change_before_acceptance_or_recovery(self):
+        self.quarantined_retirement()
+        new_boot='bbbbbbbb-1234-1234-1234-123456789abc'
+        self.refuses(lambda:self.reconcile(current_boot_id=new_boot),'SCOPE')
+        # Reissuing a new-boot approval cannot manufacture cross-boot proof.
+        old_scope=self.scope
+        self.scope=dict(self.scope,bootId=new_boot)
+        self.write_auth('approval.json',dict(self.reconciliation_approval,bootId=new_boot))
+        self.refuses(lambda:self.reconcile(current_boot_id=new_boot),'EVIDENCE')
+        self.scope=old_scope; self.write_auth('approval.json',self.reconciliation_approval)
+        self.reconcile()
+        self.refuses(lambda:self.reconcile(current_boot_id=new_boot,recover=True),'SCOPE')
+
+    def test_reconciliation_interruption_before_rename_quarantines(self):
+        self.quarantined_retirement()
+        with patch.object(j.os,'rename',side_effect=OSError(errno.EIO,'reconcile rename')):
+            self.refuses(lambda:self.reconcile(),'IO')
+        self.assertTrue((self.store/'pending.json').exists())
+        self.refuses(lambda:self.reconcile(recover=True),'RECONCILIATION_REQUIRED')
+
+    def test_reconciliation_post_rename_sync_failure_requires_fresh_recovery(self):
+        self.quarantined_retirement(); sync=j.os.fsync; calls=[]
+        def fail(fd):
+            calls.append(fd)
+            if len(calls)==3: raise OSError(errno.EIO,'reconcile final sync')
+            sync(fd)
+        with patch.object(j.os,'fsync',side_effect=fail):
+            self.refuses(lambda:self.reconcile(),'IO')
+        self.refuses(lambda:self.reconcile(),'REPLAY')
+        self.refuses(lambda:self.reconcile(recover=True,verify_evidence=None),'EVIDENCE')
+        with patch.object(j.os,'fsync',side_effect=OSError(errno.EIO,'recovery sync')):
+            self.refuses(lambda:self.reconcile(recover=True),'IO')
+        self.assertEqual(self.reconcile(recover=True).classification,'retirement-evidence-accepted')
+
+    def test_reconciliation_concurrent_attempt_is_excluded(self):
+        self.quarantined_retirement(); seen=[]
+        def verifier(*args):
+            self.refuses(lambda:self.reconcile(),'BUSY')
+            wrong=dict(self.scope,reconciliationId='5'*32)
+            self.refuses(lambda:self.reconcile(raw=c._canonical(wrong)),'BUSY')
+            seen.append(True)
+            return args == self.reconciliation_proof
+        self.reconcile(verify_evidence=verifier)
+        self.assertEqual(seen,[True])
+        self.refuses(lambda:self.reconcile(),'REPLAY')
+
+    def test_reconciliation_checksum_valid_contradictory_audit(self):
+        self.quarantined_retirement(); self.reconcile()
+        path=self.store/'journal.json'; entries=j._decode(path.read_bytes())
+        record=entries[self.scope['operationId']]
+        good=json.loads(json.dumps(entries))
+        for field in ['approval','evidence']:
+            for invalid in [1, {}, []]:
+                record['reconciliation'][field]=invalid
+                payload=c._canonical(entries)
+                path.write_bytes(c._canonical(dict(schema=j.SCHEMA,payload=payload.decode(),digest=j.digest(payload))))
+                self.refuses(lambda:self.reconcile(recover=True),'CORRUPT')
+                entries=json.loads(json.dumps(good)); record=entries[self.scope['operationId']]
+        wrong=dict(self.reconciliation_approval,historyDigest='f'*64)
+        record['reconciliation']['approval']=c._canonical(wrong).decode()
+        payload=c._canonical(entries)
+        path.write_bytes(c._canonical(dict(schema=j.SCHEMA,payload=payload.decode(),digest=j.digest(payload))))
+        self.refuses(lambda:self.reconcile(recover=True),'CORRUPT')
+
+    def test_reconciliation_wrong_reservation_release_and_protection(self):
+        self.quarantined_retirement()
+        self.refuses(lambda:self.reconcile(installed_release_digest='f'*64),'RELEASE')
+        self.write_auth('reservations.json',[dict(f.reservations()[0],category=18)])
+        self.refuses(lambda:self.reconcile(),'RESERVATION')
+        self.write_auth('reservations.json',f.reservations())
+        (self.auth/'approval.json').chmod(0o644)
+        self.refuses(lambda:self.reconcile(),'PROTECTION')
+
+    def test_reconciliation_requires_exact_quarantined_retirement(self):
+        self.quarantined_retirement()
+        # This is a checksum-valid original history, but no longer quarantined.
+        path=self.store/'journal.json'; entries=j._decode(path.read_bytes())
+        entries[self.scope['operationId']]['transitions'].pop()
+        path.write_bytes(j._encode(entries))
+        self.refuses(lambda:self.reconcile(),'SCOPE')
+
+
+    def test_reconciliation_authorization_drift_during_verification(self):
+        self.quarantined_retirement(); before=(self.store/'journal.json').read_bytes()
+        def revoke(*_):
+            self.write_auth('approval.json',dict(self.reconciliation_approval,state='revoked'))
+            return True
+        self.refuses(lambda:self.reconcile(verify_evidence=revoke),'CHANGED')
+        self.assertEqual((self.store/'journal.json').read_bytes(),before)
+
+    def test_reconciliation_source_drift_during_verification(self):
+        self.quarantined_retirement(); path=self.store/'journal.json'; before=path.read_bytes()
+        def replace(*_):
+            path.write_bytes(before)
+            return True
+        self.refuses(lambda:self.reconcile(verify_evidence=replace),'CHANGED')
+        self.assertNotIn('reconciliation',j._decode(path.read_bytes())[self.scope['operationId']])
+
+    def test_reconciliation_checksum_valid_semantic_history_corruption(self):
+        self.quarantined_retirement(); path=self.store/'journal.json'
+        entries=j._decode(path.read_bytes())
+        record=entries[self.scope['operationId']]
+        approval=json.loads(record['approval']); approval['epoch']=2
+        request={key:approval[key] for key in c.REQUEST_KEYS}; request['schema']='wydhosting.lifecycle/1'
+        approval['requestDigest']=f.digest(request)
+        record['approval']=c._canonical(approval).decode(); record['approvalDigest']=f.digest(approval)
+        payload=c._canonical(entries)
+        path.write_bytes(c._canonical(dict(schema=j.SCHEMA,payload=payload.decode(),digest=j.digest(payload))))
+        self.refuses(lambda:self.reconcile(),'CORRUPT')
+
+
 if __name__ == '__main__': unittest.main()

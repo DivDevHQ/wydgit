@@ -1,5 +1,11 @@
 ## Unreleased
 
+- Add exact protected offline I5.6 reconciliation authorization for write-once
+  acceptance of independently verified retirement evidence. Bind approval to the
+  quarantined history, identity, action and current boot; retain quarantine and
+  reservations, reject replay and revalidate recovery. No lifecycle effects,
+  retirement completion, version/dependency changes or broker authority transfer.
+
 - Enforce private offline I5.6 per-pool sequences/epochs and exact start predecessor
   identity. Retain active reservations until independently verified, history-bound
   retirement; reject stale, conflicting and replayed histories. Host effects remain

@@ -37,7 +37,7 @@ test('offline protected approval and independent authorization deny hostile reco
  const result=spawnSync('python3',['test-support/linux/verify_lifecycle_authorization.py',fileURLToPath(new URL('./broker',import.meta.resolve('wydhosting/package.json')))],{encoding:'utf8',timeout:5000});assert.equal(result.status,0,result.stdout+result.stderr);assert.match(result.stderr,/Ran 14 tests/);
 });
 test('offline durable lifecycle journal and recovery fail closed',()=>{
- const result=spawnSync('python3',['test-support/linux/verify_lifecycle_journal.py',fileURLToPath(new URL('./broker',import.meta.resolve('wydhosting/package.json')))],{encoding:'utf8',timeout:10000});assert.equal(result.status,0,result.stdout+result.stderr);assert.match(result.stderr,/Ran 37 tests/);
+ const result=spawnSync('python3',['test-support/linux/verify_lifecycle_journal.py',fileURLToPath(new URL('./broker',import.meta.resolve('wydhosting/package.json')))],{encoding:'utf8',timeout:10000});assert.equal(result.status,0,result.stdout+result.stderr);assert.match(result.stderr,/Ran 52 tests/);
 });
 test('firewalld probe mocked guards refuse management zones, existing resources and nonroot mutation',()=>{
  const result=spawnSync('python3',['test-support/linux/verify_firewalld_guards.py',fileURLToPath(new URL('./broker',import.meta.resolve('wydhosting/package.json')))],{encoding:'utf8',timeout:5000});assert.equal(result.status,0,result.stdout+result.stderr);assert.match(result.stderr,/Ran 6 tests/);
