@@ -49,10 +49,11 @@ await fs.copyFile(path.join(repository,'test-support/packed/service-free.mjs'),p
 await run(process.execPath,['--import',path.join(serviceFree,'proof-register.mjs'),'service-free.mjs'],serviceFree,{log:'service-free.log'});
 console.log('PASS service-free installed binary, validation, HTTP/assets, restart, closed configuration');
 const full=await consumer('five-library',['wydgine','wydstore','wydgate','wydsearch','wydfiles','wydstream']);
-const selected=['backoffice-actions','backoffice-http','multi-app','hostname-host','hosting-operations','hardening','guestbook-package','packages','package-infrastructure','wydgate-http','wydstream-http','wydstream-search','wydstream-security','wydsearch-package','wydfiles','wydstore-sqlite','operation-completion','process-supervision','linux-isolation'];
+const selected=['backoffice-actions','backoffice-http','backoffice-ui','backoffice-modules','multi-app','hostname-host','hosting-operations','hardening','guestbook-package','packages','package-infrastructure','wydgate-http','wydstream-http','wydstream-search','wydstream-security','wydsearch-package','wydfiles','wydstore-sqlite','operation-completion','process-supervision','linux-isolation'];
 async function stage(root){
  await fs.copyFile(path.join(repository,'wydgit.config.json'),path.join(root,'wydgit.config.json'));
  await fs.mkdir(path.join(root,'.fixtures'));
+ await fs.copyFile(path.join(repository,'wydclient/backoffice.js'),path.join(root,'.fixtures/backoffice-client-source.js'));
  await run('npm',['install','--save-dev','--no-audit','--no-fund','cheerio@1.0.0','happy-dom@20.8.9'],root,{log:path.basename(root)+'-test-dependencies.log'});
  for(const name of ['content','prototypes','public','examples','test-support'])await fs.cp(path.join(repository,name),path.join(root,name),{recursive:true});
  await fs.mkdir(path.join(root,'test'),{recursive:true});await fs.cp(path.join(repository,'test/fixtures'),path.join(root,'test/fixtures'),{recursive:true});
@@ -64,6 +65,7 @@ async function stage(root){
   text=text.replace(/(['"])(\.\.\/)+wydgine\//g,match=>match.replace('wydgine/','node_modules/wydgine/src/engine/'));
   text=text.replace(/(['"])(\.\.\/)+packages\/wyd(store|gate|search|files|stream)\//g,match=>match.replace(/packages\/wyd(\w+)\//,'node_modules/@wydgit/$1/'));
   text=text.replace(/(['"])(\.\.\/)+wydclient\//g,match=>match.replace('wydclient/','node_modules/wydgine/runtime/wydclient/'));
+  text=text.replaceAll("'wydclient/backoffice.js'","'.fixtures/backoffice-client-source.js'").replaceAll("'packages/wydgine/runtime/","'node_modules/wydgine/runtime/");
   text=text.replaceAll('packages/wydstore/package.json','node_modules/@wydgit/store/package.json');
   text=text.replace(/(['"])(\.\.\/)+app\.js\1/g,"'wydgine'");
   // Consumer ancestor resolution replaces the development example's workspace link.

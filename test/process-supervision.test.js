@@ -157,10 +157,13 @@ test('higher-tier dedicated App uses its own approved independent process',{time
  const f=await fixture(t,{dedicatedApp:true}),s=f.supervisor;assert.equal((await f.registry.inspect()).registry.pools.find(p=>p.poolId==='dedicated').mode,'dedicated-app');const a=await s.startPool('dedicated'),b=await s.startPool('shared',{execution:f.execution});assert.notEqual(a.pid,b.pid);assert.equal(a.health.apps.length,1);assert.equal((await request(a.port,'gamma.localhost')).status,200);
 });
 test('registry read deadline cannot launch a late generation after the caller has failed',{timeout:10000},async t=>{
- const f=await fixture(t);await f.supervisor.shutdown();const inspected=await f.registry.inspect();let finishRead;
- const registry={...f.registry,inspect:()=>new Promise(resolve=>{finishRead=resolve;})};
+ const f=await fixture(t);await f.supervisor.shutdown();const inspected=await f.registry.inspect(),reconciled=await f.registry.reconcile();let finishRead,readEntered;
+ const entered=new Promise(resolve=>readEntered=resolve);
+ // Qualify the held inspection boundary, independently of filesystem time spent
+ // in the real reconciliation above. The runtime's 100 ms deadline is unchanged.
+ const registry={...f.registry,reconcile:async()=>reconciled,inspect:()=>new Promise(resolve=>{finishRead=resolve;readEntered();})};
  const s=await createSupervisor({...f,registry,startupMs:100});f.own(s);
- await assert.rejects(s.startPool('dedicated'),{code:'HOSTING.REGISTRY_TIMEOUT'});finishRead(inspected);await new Promise(resolve=>setImmediate(resolve));
+ const rejected=assert.rejects(s.startPool('dedicated'),{code:'HOSTING.REGISTRY_TIMEOUT'});await entered;await rejected;finishRead(inspected);await new Promise(resolve=>setImmediate(resolve));
  assert.equal(s.inspectPool('dedicated').state,'not-observed');assert.equal(s.health().pools.length,0);
 });
 test('strict 100 ms control deadline retires an actual frozen worker before replacement',{timeout:15000},async t=>{

@@ -1,0 +1,194 @@
+{
+  "milestone": "0.3-J increment 7",
+  "date": "2026-10-19",
+  "node": "v24.21.0",
+  "branch": "develop/0.3",
+  "startingHead": "23821a39e8e629e3764cda399a9198e47aacb2a6",
+  "startingTree": "clean",
+  "versionBefore": "0.3.0-alpha.21",
+  "versionAfter": "0.3.0-alpha.22",
+  "gate": "0.1.0-alpha.6",
+  "store": "0.1.0-alpha.5",
+  "client": "0.1.0-alpha.11",
+  "fullBaseline": {
+    "pass": 1479,
+    "fail": 0
+  },
+  "combinedFullRuns": [
+    {
+      "pass": 1500,
+      "fail": 0,
+      "log": "/tmp/alpha22-final-full1.log"
+    },
+    {
+      "pass": 1500,
+      "fail": 0,
+      "log": "/tmp/alpha22-final-full2.log"
+    }
+  ],
+  "focused": {
+    "pass": 66,
+    "fail": 0
+  },
+  "deadlineProbes": {
+    "runs": 3,
+    "passPerRun": 6,
+    "failPerRun": 0,
+    "historicalAttribution": false
+  },
+  "historicalHttpIssue": "open; not reproduced in recorded native full runs; no blanket resolution claim",
+  "backofficeFixes": [
+    "parent request deadline and disconnect guard at admission",
+    "completion control and retained drain",
+    "conservative outcome header",
+    "transient session unavailability preserves credentials"
+  ],
+  "installed": {
+    "directory": "/tmp/wyd-i54-packed-0NNBaN",
+    "integration": 222,
+    "provider": 35,
+    "process": 20,
+    "linux": 25,
+    "fail": 0,
+    "singleInstalledEngine": true,
+    "checkoutRuntimeImportsDenied": true
+  },
+  "retainedInstalledFailure": {
+    "directory": "/tmp/wyd-i54-packed-BWfvLo",
+    "integrationPass": 222,
+    "providerPass": 35,
+    "processPass": 19,
+    "processFail": 1,
+    "cause": "fixture release callback assumed inspection began before real reconciliation consumed the 100 ms deadline",
+    "repair": "explicit inspection barrier; unchanged runtime deadline/assertions",
+    "focusedBarrierSuccessfulRuns": 5
+  },
+  "browser": {
+    "browser": "Google Chrome 155.0.8059.84",
+    "viewports": [
+      {
+        "width": 360,
+        "documentWidth": 345,
+        "mainWidth": 345,
+        "navWidth": 313,
+        "tableScrolls": true,
+        "tableWidth": 313,
+        "tableContentWidth": 1063,
+        "columns": 6
+      },
+      {
+        "width": 768,
+        "documentWidth": 753,
+        "mainWidth": 433,
+        "navWidth": 271,
+        "tableScrolls": true,
+        "tableWidth": 256,
+        "tableContentWidth": 1063,
+        "columns": 6
+      },
+      {
+        "width": 1280,
+        "documentWidth": 1265,
+        "mainWidth": 945,
+        "navWidth": 271,
+        "tableScrolls": true,
+        "tableWidth": 727,
+        "tableContentWidth": 1063,
+        "columns": 6
+      },
+      {
+        "width": 1920,
+        "documentWidth": 1905,
+        "mainWidth": 1280,
+        "navWidth": 271,
+        "tableScrolls": true,
+        "tableWidth": 1036,
+        "tableContentWidth": 1063,
+        "columns": 6
+      },
+      {
+        "width": 320,
+        "documentWidth": 305,
+        "mainWidth": 305,
+        "navWidth": 273,
+        "tableScrolls": true,
+        "tableWidth": 273,
+        "tableContentWidth": 1063,
+        "columns": 6
+      }
+    ],
+    "checks": [
+      "Gate form login, authenticated shell and installed discovery",
+      "Keyboard navigation and invocation, real member roster result, table semantics",
+      "Chrome accessibility tree contains main and table; native controls have names",
+      "360/768/1280/1920 responsive layout and 320 CSS-pixel reflow; wide table scroll remains local",
+      "Light/dark theme switching and system dark preference; reduced-motion preference enabled",
+      "Second independently installed Store module, native keyboard array add/remove/max and genuine sorted query through the same shell",
+      "Refresh clears selection; revoked permission rejects real invocation and clears stale display",
+      "Gate logout revokes BackOffice; valid member without administrative permission sees zero actions"
+    ],
+    "screenshots": [
+      "member-roster.png",
+      "mobile.png",
+      "desktop-light.png",
+      "desktop-dark.png",
+      "access-error.png"
+    ],
+    "accessibility": {
+      "landmarks": {
+        "main": 1,
+        "nav": 1
+      },
+      "headings": 1,
+      "unlabelled": 0,
+      "status": "status"
+    },
+    "contrast": {
+      "light": {
+        "ink/paper": 13.320950605055367,
+        "muted/paper": 4.758842787868666,
+        "muted/surface": 4.758842787868666,
+        "link/paper": 6.701618401398807,
+        "primary-text/primary": 6.701618401398807,
+        "input-text/input-background": 13.320950605055367
+      },
+      "dark": {
+        "ink/paper": 16.193006440967938,
+        "muted/paper": 10.039610154785718,
+        "muted/surface": 8.307495936800388,
+        "link/paper": 9.83750053606076,
+        "primary-text/primary": 9.83750053606076,
+        "input-text/input-background": 13.399258849587758
+      },
+      "system": {
+        "ink/paper": 16.193006440967938,
+        "muted/paper": 10.039610154785718,
+        "muted/surface": 8.307495936800388,
+        "link/paper": 9.83750053606076,
+        "primary-text/primary": 9.83750053606076,
+        "input-text/input-background": 13.399258849587758
+      }
+    },
+    "ok": true
+  },
+  "browserArtifacts": "/tmp/wyd-backoffice-browser-YNmZsT",
+  "contentCheck": {
+    "pages": 3,
+    "links": 42,
+    "uniqueAnchors": true
+  },
+  "relativeDocumentationFileLinks": 583,
+  "missingDocumentationFiles": 0,
+  "immutableClientArtifacts": 31,
+  "newDependencies": 0,
+  "deployment": false,
+  "fullAdm01": false,
+  "humanAssistiveTechnologyQualified": false,
+  "limitations": [
+    "historical FrontEnd SEWN.LIMIT attribution",
+    "bounded Gate session-touch contention",
+    "cooperative mutation outcome uncertainty",
+    "Firefox/human accessibility/actual zoom/mobile hardware",
+    "managed hosting and privileged Linux deployment remain unqualified"
+  ]
+}

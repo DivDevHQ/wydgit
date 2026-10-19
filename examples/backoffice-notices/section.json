@@ -1,0 +1,8 @@
+{
+  "schema": "wydgit/0.2",
+  "id": "backoffice-notices",
+  "prototype": "divdev/backoffice-notices",
+  "properties": {},
+  "slots": {},
+  "provenance": {}
+}

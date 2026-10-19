@@ -74,6 +74,7 @@ test('BOUI-09: action/result focus, loading state and accessible stale-error rec
  let stale=false;const {d,client}=setup(t,async url=>response(url.includes('invoke')?(stale?{ok:false,code:'ACTION.STALE'}:{ok:true,value:{members:[],total:0}}):discovery([action()]),url.includes('invoke')&&stale?409:200));
  await client.ready;d.querySelector('nav button').click();assert.equal(d.activeElement,d.querySelector('#bo-action h1'));
  submit(d);assert.equal(d.getElementById('bo-action').getAttribute('aria-busy'),'true');await settle();assert.equal(d.activeElement,d.querySelector('#bo-action h2'));assert.equal(d.getElementById('bo-action').getAttribute('aria-busy'),'false');
+ d.getElementById('bo-refresh').focus();await client.refresh();assert.equal(d.activeElement,d.getElementById('bo-refresh'));d.querySelector('nav button').click();
  stale=true;submit(d);await settle();assert.equal(d.getElementById('bo-status').getAttribute('role'),'alert');assert.equal(d.getElementById('bo-status').getAttribute('aria-live'),'assertive');assert.equal(d.activeElement,d.getElementById('bo-refresh'));
 });
 
@@ -123,5 +124,5 @@ test('BOUI-14: large bounded results, long text disclosures, pagination, empty v
 });
 
 test('BOUI-15: structured read errors are local text and unknown details stay private',async t=>{
- const {d,fail}=await formFixture(t,object({}));fail('SEWN.LIMIT');submit(d);await settle();assert.match(d.getElementById('bo-status').textContent,/execution budget/);assert.doesNotMatch(d.body.textContent,/private|<script>/);
+ const {d,fail}=await formFixture(t,object({}));fail('SEWN.LIMIT');submit(d);await settle();assert.match(d.getElementById('bo-status').textContent,/execution budget/);assert.equal(d.activeElement,d.querySelector('button[type=submit]'));assert.doesNotMatch(d.body.textContent,/private|<script>/);
 });

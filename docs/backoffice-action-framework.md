@@ -273,3 +273,15 @@ execution data. The existing ledger takes the minimum deadline and charges one
 service call; the existing completion control guards actual service admission and
 retains admitted work through drain. `onStart` reports handler entry only, not a
 provider commit. All existing authority and reference checks remain mandatory.
+
+### Second independent contribution in alpha.22
+
+`examples/backoffice-notices` contributes a read-only WydStore query in the
+`operations` category. It uses its own accepted receipt, required Gate permission
+and separately approved `store.records.read` scope on package-owned notices.
+The member roster remains a separate Gate service and package. JSON/SQLite tests
+and the real browser demonstrate both through the unchanged generic shell,
+independent permission revocation, removal and fresh-reference reinstall.
+No canonical package-status facade exists; native inventory/lifecycle APIs are
+not exposed to make that example possible. See the
+[installation and cleanup procedure](../examples/backoffice-notices/README.md).

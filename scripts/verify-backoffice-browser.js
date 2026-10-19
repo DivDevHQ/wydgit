@@ -6,13 +6,14 @@ import path from 'node:path';
 import os from 'node:os';
 import {spawn,execFileSync} from 'node:child_process';
 import {once} from 'node:events';
-import {actionFixture,installMembershipLogin} from '../test-support/backoffice.js';
+import {installMembershipLogin} from '../test-support/backoffice.js';
+import {modulesFixture} from '../test-support/backoffice-modules.js';
 import {createApp} from '../app.js';
 const cleanup=[],t={after:fn=>cleanup.push(fn)},browser=process.env.WYDCLIENT_CHROME??'google-chrome';
 const artifacts=await fs.mkdtemp(path.join(os.tmpdir(),'wyd-backoffice-browser-'));
 let chrome,ws,sequence=0;const calls=new Map(),evidence={browser:execFileSync(browser,['--version'],{encoding:'utf8'}).trim(),viewports:[],checks:[],screenshots:[]};
 try{
- const f=await actionFixture(t);await installMembershipLogin(f);
+ const f=await modulesFixture(t);await installMembershipLogin(f);
  await f.gate.register({username:'reader',password:f.password,displayName:'Disposable reader'});
  const app=createApp({root:f.root,libraries:f.libraries,localHostname:'127.0.0.1'}),server=app.listen(0,'127.0.0.1');await once(server,'listening');
  cleanup.push(()=>app.shutdown(server));const base='http://127.0.0.1:'+server.address().port;
@@ -32,7 +33,7 @@ try{
  await cdp('Page.enable');await cdp('Network.enable');await cdp('Accessibility.enable');
  await cdp('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
  const login=async username=>{await navigate('/sign-in/',"!!document.querySelector('#membership-login')");await type('#membership-login [name=username]',username);await type('#membership-login [name=password]',f.password);await click('#membership-login button');await until("document.body.textContent.includes('Submission complete')");await navigate('/backoffice',"document.getElementById('bo-status')?.textContent.includes('Select an action')||document.getElementById('bo-status')?.textContent.includes('No actions')");};
- await login('alice');assert.equal(await evaluate("document.querySelectorAll('nav button').length"),1);evidence.checks.push('Gate form login, authenticated shell and installed discovery');
+ await login('alice');assert.equal(await evaluate("document.querySelectorAll('nav button').length"),2);evidence.checks.push('Gate form login, authenticated shell and installed discovery');
  const cookies=(await cdp('Network.getCookies')).cookies;assert.ok(cookies.some(c=>c.name==='wydgit-auth'&&c.httpOnly));assert.equal(await evaluate('document.cookie.includes("wydgit-auth")'),false);
  // Use native key events to activate navigation and submit a genuine service call.
  await evaluate("document.querySelector('nav button').focus()");await key('Enter');await until("!!document.querySelector('form')");
@@ -66,8 +67,12 @@ try{
  }
  await cdp('Emulation.setEmulatedMedia',{features:[{name:'prefers-color-scheme',value:'light'}]});assert.equal(await evaluate("getComputedStyle(document.documentElement).colorScheme"),'light');
  evidence.checks.push('Light/dark theme switching and system dark preference; reduced-motion preference enabled');
- await click('#bo-refresh');await until("document.getElementById('bo-status').textContent==='Select an action.'");assert.equal(await evaluate("document.querySelector('form')===null"),true);
- await click('nav button');await f.gate.assignUser({userId:f.user.account.id,roles:[],permissions:[]});await click('button[type=submit]');await until("document.getElementById('bo-status').textContent.includes('access has changed')");await shot('access-error');
+ await click('nav button[data-action$="/list-notices"]');await type('[aria-label="store"]','operations');await type('[aria-label="collection"]','notices');await type('[aria-label="limit"]','5');
+ await click('[aria-label="Include sort"]');await evaluate("document.querySelector('[aria-label=\"Add item to sort\"]').focus()");await key('Enter');await click('[aria-label="Add item to sort"]');assert.equal(await evaluate("document.querySelector('[aria-label=\"Add item to sort\"]').disabled"),true);
+ await click('[aria-label="Remove sort item 1"]');await type('[aria-label="field"]','title');await type('[aria-label="direction"]','asc');await evaluate("document.querySelector('button[type=submit]').focus()");await key('Enter');await until("document.getElementById('bo-status').textContent==='Action completed.'");assert.equal(await evaluate("document.querySelector('tbody').textContent.includes('Local qualification')"),true);
+ evidence.checks.push('Second independently installed Store module, native keyboard array add/remove/max and genuine sorted query through the same shell');
+ await click('#bo-refresh');await until("document.getElementById('bo-status').textContent==='Select an action.'");assert.equal(await evaluate("document.activeElement.id"),'bo-refresh');assert.equal(await evaluate("document.querySelector('form')===null"),true);
+ await click('nav button');await f.gate.assignUser({userId:f.user.account.id,roles:[],permissions:['operations.notices.read']});await click('button[type=submit]');await until("document.getElementById('bo-status').textContent.includes('access has changed')");await shot('access-error');await click('#bo-refresh');await until("document.querySelectorAll('nav button').length===1");assert.equal(await evaluate("document.querySelector('nav button').textContent"),'Operational notices');
  evidence.checks.push('Refresh clears selection; revoked permission rejects real invocation and clears stale display');
  const logout=async()=>{await navigate('/sign-in/',"!!document.querySelector('#membership-logout')");await click('#membership-logout button');await until("document.body.textContent.includes('Submission complete')");assert.equal(await evaluate("fetch('/backoffice/api/actions').then(r=>r.status)"),401);};
  await logout();await login('reader');assert.equal(await evaluate("document.querySelectorAll('nav button').length"),0);assert.match(await evaluate("document.getElementById('bo-status').textContent"),/No actions/);await logout();

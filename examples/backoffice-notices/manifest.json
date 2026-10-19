@@ -1,0 +1,174 @@
+{
+  "schema": "wydgit-package/0.1",
+  "id": "divdev/backoffice-notices",
+  "publisher": "divdev",
+  "version": "0.1.0",
+  "platform": ">=0.3.0-alpha.22 <0.4.0",
+  "runtime": [
+    "server"
+  ],
+  "resources": {
+    "prototypes": "prototypes.json",
+    "template": "section.json",
+    "sources": {}
+  },
+  "requires": {
+    "schema": "wydgit.requirements/0.1",
+    "libraries": [
+      {
+        "library": "wydstore",
+        "version": "^0.1.0-alpha.5"
+      }
+    ]
+  },
+  "storage": [
+    {
+      "name": "notices",
+      "fields": {
+        "title": {
+          "type": "string",
+          "required": true
+        },
+        "level": {
+          "type": "string",
+          "required": true
+        },
+        "active": {
+          "type": "boolean",
+          "required": true
+        },
+        "message": {
+          "type": "string",
+          "required": true
+        }
+      }
+    }
+  ],
+  "permissions": {
+    "capabilities": [
+      "store.records.read"
+    ],
+    "traversal": [],
+    "visible": [
+      "backoffice-notices"
+    ],
+    "editable": [],
+    "scopes": {
+      "wydstore": [
+        "notices"
+      ]
+    }
+  },
+  "bindings": [],
+  "installables": [
+    {
+      "id": "notices",
+      "kind": "section-template"
+    }
+  ],
+  "backofficeActions": [
+    {
+      "id": "list-notices",
+      "owner": "backoffice-notices",
+      "title": "Operational notices",
+      "description": "Read site operational notices. Enter store operations and collection notices, then a limit of 1\u201350. Optional sort fields include title, level and active; direction is asc or desc.",
+      "category": "operations",
+      "context": "BackOffice",
+      "permission": "operations.notices.read",
+      "capability": "store.records.read",
+      "scopes": {
+        "wydstore": [
+          "notices"
+        ]
+      },
+      "service": {
+        "library": "wydstore",
+        "apiVersion": "1.0.0",
+        "operation": "query"
+      },
+      "effect": "read",
+      "input": {
+        "type": "object",
+        "fields": {
+          "store": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "collection": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "limit": {
+            "type": "integer",
+            "min": 1,
+            "max": 50
+          },
+          "offset": {
+            "type": "integer",
+            "min": 0,
+            "max": 10000
+          },
+          "sort": {
+            "type": "array",
+            "maxItems": 2,
+            "items": {
+              "type": "object",
+              "fields": {
+                "field": {
+                  "type": "string",
+                  "maxLength": 32
+                },
+                "direction": {
+                  "type": "string",
+                  "maxLength": 4
+                }
+              }
+            }
+          }
+        },
+        "optional": [
+          "offset",
+          "sort"
+        ]
+      },
+      "output": {
+        "type": "array",
+        "maxItems": 50,
+        "items": {
+          "type": "object",
+          "fields": {
+            "id": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "version": {
+              "type": "integer",
+              "min": 1,
+              "max": 9007199254740991
+            },
+            "data": {
+              "type": "object",
+              "fields": {
+                "title": {
+                  "type": "string",
+                  "maxLength": 160
+                },
+                "level": {
+                  "type": "string",
+                  "maxLength": 16
+                },
+                "active": {
+                  "type": "boolean"
+                },
+                "message": {
+                  "type": "string",
+                  "maxLength": 4096
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

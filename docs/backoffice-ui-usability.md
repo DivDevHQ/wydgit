@@ -76,3 +76,14 @@ UI-only new renderer tests **15/15**. Chrome real login/roster/theme/responsive
 rerun passed, with artifacts in `/tmp/wyd-backoffice-browser-mHmvC9`. Content and
 whitespace checks passed. Final combined verification repeats required checks after
 all increment edits; earlier counts are independent runs, not additive totals.
+
+The second independent notices package also qualifies nested sort-array Add/Remove,
+maximum length and real Store query in Chrome, through the unchanged shell.
+Its read-only action and exact resource permissions are described in the
+[example installation guide](../examples/backoffice-notices/README.md).
+
+Final keyboard review also preserves focus on Refresh across rediscovery and
+returns focus to Run after a non-stale service failure. Stale/authorization errors
+still return to Refresh; validation stays on the invalid field and success moves
+to Result. These cases are regression-tested and the real refresh path is checked
+in Chrome.

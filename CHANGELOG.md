@@ -1,5 +1,11 @@
 ## Unreleased
 
+- Add an independently installed read-only operational-notices BackOffice Wydgit
+  through canonical WydStore query. Qualify separate permissions/receipts, Store
+  ownership, removal/reinstall and site isolation on JSON/SQLite, plus both modules
+  and nested array controls in real Chrome. Add reviewed local setup/cleanup docs;
+  no native package-inventory or policy-approval bridge is exposed.
+
 - Replace raw array JSON entry with bounded recursive Add/Remove controls and
   field-level accessible validation. Clarify required/optional/null/bounded values,
   improve safe long/empty/nested results and pagination summaries, and reset write

@@ -1,0 +1,9 @@
+[
+  {
+    "id": "divdev/backoffice-notices",
+    "publisher": "divdev",
+    "extends": "wydgit.core/section",
+    "properties": {},
+    "slots": {}
+  }
+]

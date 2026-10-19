@@ -88,3 +88,28 @@ Checkpoint result: full `npm test` **1490/1490**, focused HTTP/UI **33/33**,
 Tab/Enter journey, ArrowRight result scrolling, both system color preferences and
 all measured viewports passed. Screenshot review includes the actual roster table;
 no credentials or session tokens are stored in the evidence.
+
+## Two-module and array workflow
+
+The final harness installs both the member roster and
+[operational notices](../examples/backoffice-notices/README.md), with explicit
+independent receipt approvals and user permissions in a disposable App. It verifies
+two navigation categories, invokes Gate's roster, then uses native keyboard/mouse
+interaction to add two nested sort-object items, observe the array maximum,
+remove an item, and query real package-owned notice records through WydStore.
+Revoking only roster permission leaves notices discoverable. Login/logout and the
+valid unprivileged member checks remain in the same genuine browser journey.
+The fixture performs no live package cutover; removal/reinstall independence and
+site isolation are separately exercised in BOMOD-01/02 on JSON and SQLite.
+
+Final two-module Chrome artifact directory from the completed qualification run:
+`/tmp/wyd-backoffice-browser-OHlygc`. The generic shell source was unchanged when
+the second package was added. No false native package inventory or privilege bridge
+was introduced. UI renderers also passed the bounded deterministic tests described
+in [usability](backoffice-ui-usability.md).
+
+Completion rerun including refresh-focus preservation passed at
+`/tmp/wyd-backoffice-browser-YNmZsT`. The final source's installed tarball integration
+also passed **222/222**, including UI and module tests; provider/process/Linux
+sets passed **35/35**, **20/20**, **25/25**. The combined repository suite passed
+**1500/1500 twice** before the final documentation-only required rerun.

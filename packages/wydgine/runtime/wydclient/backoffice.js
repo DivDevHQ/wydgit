@@ -117,11 +117,11 @@ export function mountBackOffice({document,fetch:request}){
         else if(error.status===401||error.status===403){clear();say('Your session or access has changed. Sign in again or refresh actions.',true);}
         else {const messages={'ACTION.INVALID_INPUT':'Input was rejected by the service. Check the field values.','ACTION.CONFIRMATION':'Explicit confirmation is required.','STORE.CONFLICT':'The record changed. Inspect its current revision before submitting again.','SEWN.LIMIT':'The action exceeded its execution budget.','HTTP.DEADLINE':'The request exceeded its deadline.','SERVICE.FAILED':'The service is temporarily unavailable.'};
           say(action.effect==='write'?(error.outcome==='rejected'?'The request was rejected before execution. Check the inputs and current access before submitting again.':'The change could not be verified. It may have taken effect. Inspect current state before submitting again.'):(messages[error.code]??'The action could not be completed. Check your inputs or refresh actions.'),true);}
-      }finally{lock(false);inputs.element.querySelector('fieldset').disabled=false;if(confirm)confirm.disabled=false;run.disabled=false;if(!form.isConnected)refresh.focus();}
+      }finally{lock(false);inputs.element.querySelector('fieldset').disabled=false;if(confirm)confirm.disabled=false;run.disabled=false;if(!form.isConnected)refresh.focus();else if(status.getAttribute('role')==='alert')run.focus();}
     });
   }
   async function discover(){
-    if(busy)return;clear();const current=version;lock(true);say('Loading available actions…');
+    if(busy)return;const restoreFocus=document.activeElement===refresh;clear();const current=version;lock(true);say('Loading available actions…');
     try{
       const found=[];let offset=0,total;
       do{
@@ -137,7 +137,7 @@ export function mountBackOffice({document,fetch:request}){
       }
       say(actions.length?'Select an action.':'No actions are available for your current access. Installed modules and current permissions determine this list.');
     }catch(error){clear();say(error.status===401?'Your session has ended. Sign in to this site again.':error.status===403?'Access denied. Your current permissions do not allow this request.':error.code==='ACTION.STALE'?'The site changed. Reload BackOffice after the host restarts.':'Actions could not be loaded. Use Refresh to try again.');}
-    finally{lock(false);}
+    finally{lock(false);if(restoreFocus)refresh.focus();}
   }
   refresh.addEventListener('click',discover);
   // Cached privilege displays are cleared on leaving and rediscovered on return.

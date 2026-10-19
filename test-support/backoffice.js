@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import {loadRepository} from '../wydgine/repository.js';
 import {membershipFixture} from './membership.js';
 import {ExecutionContext} from '../wydgine/seam/context.js';
 import {packageOperation,executionPlacement} from '../wydgine/packages/index.js';
@@ -36,7 +37,8 @@ export async function actionFixture(t,provider='json',{install=true,edit=()=>{},
 // step; the membership package itself neither creates admins nor approves grants.
 export async function installMembershipLogin(f){
   const directory=path.resolve('examples/membership'),manifest=JSON.parse(await fs.readFile(path.join(directory,'manifest.json')));
-  const ids=[...f.operator.visible,...manifest.permissions.visible,'page-login'];
+  const model=loadRepository(f.root),current=[];const walk=id=>{current.push(id);Object.values(model.runtime.get(id).slots).flat().forEach(walk);};walk(model.runtime.rootId);
+  const ids=[...new Set([...f.operator.visible,...current,...manifest.permissions.visible,'page-login'])];
   const operator=new ExecutionContext({...f.operator,visible:ids,editable:ids});
   await packageOperation({root:f.root,package:manifest.id,action:'install',installationContext:operator,candidates:[{
     packagePath:directory,approvals:manifest.permissions,storageMappings:{},placement:{page:'page-login',parent:'page-login',slot:'sections',index:0},
