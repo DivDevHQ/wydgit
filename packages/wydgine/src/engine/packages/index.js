@@ -687,7 +687,7 @@ export async function executionPlacement(options) {
 }
 // Host explicitly supplies the expected generation. A stale queued request must
 // never silently bind to the current replacement, even with the same instance ID.
-export function acquirePackageExecution({root,package:id,installation,generation,app,self,installationContext,verifiedPackages={}}) {
+export function acquirePackageExecution({root,package:id,installation,generation,app,self,installationContext,identity=null,verifiedPackages={}}) {
   root=path.resolve(root);const state=readInstalledState(root);
   check(state&&!state.manualReplacement,'PACKAGE.PENDING','App unavailable');
   authorizeLifecycle(installationContext,JSON.parse(state.app).id);
@@ -698,7 +698,7 @@ export function acquirePackageExecution({root,package:id,installation,generation
   validateCandidateState(root,state,verifiedPackages);
   const grant=entry.approved;
   return guardInstalledExecution(root,entry,new ExecutionContext({context:p.context,publisher:entry.manifest.publisher,
-    package:id,principal:id,installation,template:entry.installable,app,self,
+    package:id,principal:id,installation,template:entry.installable,app,self,identity,
     capabilities:grant.capabilities,visible:grant.visible,editable:grant.editable,traversal:grant.traversal,
     scopes:{...grant.scopes,wydstore:entry.storageScopes,...(entry.libraryScopes??{})}}));
 }

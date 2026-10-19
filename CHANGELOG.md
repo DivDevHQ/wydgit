@@ -1,5 +1,11 @@
 ## Unreleased
 
+- Add private site-scoped WydGate policy evaluation through canonical dispatch.
+  Revalidate live sessions, membership and explicit permissions; require BackOffice
+  for installed Gate administration and repeat mutation checks on revision retries.
+  Keep native operator provisioning separate and preserve independently approved
+  SEAM grants. Trusted placement acquisition accepts a host-resolved user identity.
+
 - Add trusted BackOffice placement, same-context replacement, separately authorized
   relocation and retained retirement on the existing stopped-App package lifecycle.
   Bind exact App/installation generations; fence cached and asynchronous authority,

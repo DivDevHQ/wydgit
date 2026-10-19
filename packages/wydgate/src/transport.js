@@ -1,6 +1,6 @@
 import { fields, check } from './validation.js';
 // Trusted canonical-library adapter. Portable packages never see the token or port.
-export function gateTransport({gate,name,safe}) {
+export function gateTransport({gate,name,safe,withIdentity}) {
   return async(input,caller,port)=>safe(async()=>{
     fields(input,[]);check(port.method==='POST'&&port.authentication,'GATE.DENIED');
     check(port.headers.encoding==='identity'&&/^application\/x-www-form-urlencoded(?:;|$)/i.test(port.headers.type),'GATE.INVALID_USER');
@@ -18,7 +18,7 @@ export function gateTransport({gate,name,safe}) {
       await port.authentication.establish(login.token);result={authenticated:true};
     }else if(name==='browser-register'){try{await gate.execute('register',request,caller);}catch(error){if(error.code!=='GATE.REGISTRATION_FAILED')throw error;}result={accepted:true};}
     else {
-      const identity=await port.authentication.verify();const authenticated={...caller,identity};
+      const identity=await port.authentication.verify();const authenticated=withIdentity(caller,identity);
       if(name==='browser-logout'){fields(request,[]);await gate.execute('logout',{token:port.authentication.token},caller);await port.authentication.clear();result={revoked:true};}
       if(name==='browser-profile')result=await gate.execute('update-account',request,authenticated);
       if(name==='browser-password'){result=await gate.execute('change-own-password',request,authenticated);await port.authentication.clear();}

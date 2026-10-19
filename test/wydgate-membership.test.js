@@ -77,10 +77,13 @@ for(const provider of ['json','sqlite'])test(`${provider}: idle expiry, logout, 
 });
 test('installed administration needs both a live App administrator fact and a SEAM grant',async t=>{
  const f=await membershipFixture(t);const registered=await f.gate.register({username:'alice',password:f.password});const login=await f.gate.login('alice',f.password),identity=await f.gate.resolveSession(login.token);
- const administration=subject=>createGate(f.libraries.bind(new ExecutionContext({context:'FrontEnd',publisher:'divdev',package:'divdev/admin',installation:'admin-receipt',self:'admin',app:'boilerplate',identity:subject,capabilities:['gate.members.manage'],scopes:{wydgate:['boilerplate']}})));
+ const administration=subject=>createGate(f.libraries.bind(new ExecutionContext({context:'BackOffice',publisher:'divdev',package:'divdev/admin',installation:'admin-receipt',self:'admin',app:'boilerplate',identity:subject,capabilities:['gate.members.manage'],scopes:{wydgate:['boilerplate']}})));
  await denied(()=>administration(null).listMembers(),'GATE.DENIED');await denied(()=>administration(identity).listMembers(),'GATE.DENIED');
  await denied(()=>administration({...identity,membershipRole:'administrator'}).listMembers(),'GATE.DENIED');
- await f.gate.manageMember({id:registered.membership.id,role:'administrator'});const promoted=await f.gate.login('alice',f.password),adminIdentity=await f.gate.resolveSession(promoted.token);assert.equal((await administration(adminIdentity).listMembers()).total,1);
+ await f.gate.manageMember({id:registered.membership.id,role:'administrator'});const promoted=await f.gate.login('alice',f.password),adminIdentity=await f.gate.resolveSession(promoted.token);
+ await denied(()=>administration(adminIdentity).listMembers(),'GATE.DENIED');
+ await f.gate.assignUser({userId:registered.account.id,roles:[],permissions:['gate.members.manage']});
+ assert.equal((await administration(adminIdentity).listMembers()).total,1);
  // Membership facts are reread, even when a once-valid host context is retained.
  await f.gate.manageMember({id:registered.membership.id,role:'member'});await denied(()=>administration(adminIdentity).listMembers(),'GATE.SESSION_INVALID');
 });

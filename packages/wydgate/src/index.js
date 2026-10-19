@@ -42,11 +42,12 @@ export function initialize({adapter}) {
   if(adapter!==undefined&&(!adapter||typeof adapter.deliverRecovery!=='function'))throw new GateError('GATE.INVALID_CONFIG');
   return {context:Object.freeze({deliverRecovery:adapter?.deliverRecovery})};
 }
-export async function register({service,transport,options,dependency,failure,lifecycle,hostContext}) {
+export async function register({service,transport,options,dependency,failure,lifecycle,hostContext,sitePolicy,checkCaller,withIdentity}) {
   const safe=async work=>{try{return await work();}catch(error){throw failure(error instanceof GateError?error.code:'GATE.IO');}};
-  const gate=await safe(()=>openGate(options,dependency('wydstore'),lifecycle,hostContext));
+  const gate=await safe(()=>openGate(options,dependency('wydstore'),lifecycle,hostContext,checkCaller));
+  sitePolicy((caller,required)=>safe(()=>gate.evaluateSitePolicy(caller,required)));
   for(const {name} of manifest.services)service(name,
     (request,caller)=>safe(()=>gate.execute(name,request,caller)),
     {authorize:(request,caller)=>safe(()=>gate.authorize(request,caller)),validate:()=>true,presentation:name==='list-members'});
-  for(const name of ['browser-login','browser-register','browser-logout','browser-profile','browser-password'])transport(name,gateTransport({gate,name,safe}));
+  for(const name of ['browser-login','browser-register','browser-logout','browser-profile','browser-password'])transport(name,gateTransport({gate,name,safe,withIdentity}));
 }

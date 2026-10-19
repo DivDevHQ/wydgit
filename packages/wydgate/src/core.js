@@ -4,6 +4,7 @@ import { passwords, validHash } from './passwords.js';
 import { GateError, check, fields, username, displayName, password, validId, safeUser } from './validation.js';
 import { validateAuthorization, authorizationOperations } from './authorization.js';
 import { validateSessions, sessionOperations, revokeUser, MAX_TTL } from './sessions.js';
+import { requireSitePolicy, administrativePolicy } from './site-policy.js';
 const MAX_USERS = 256;
 const directoryId = 'local-identity';
 const storageId = value => typeof value === 'string' && /^[A-Za-z][A-Za-z0-9_-]{0,127}$/.test(value) && !['constructor','prototype','__proto__'].includes(value);
@@ -35,7 +36,7 @@ function directory(snapshot) {
 function storeError(code) {
   return new GateError(({ 'STORE.CONFLICT':'GATE.CONFLICT', 'STORE.BUSY':'GATE.BUSY', 'STORE.LIMIT':'GATE.LIMIT' })[code] ?? 'GATE.IO');
 }
-export async function openGate(options, storage, lifecycle = async () => {}, hostContext = {}) {
+export async function openGate(options, storage, lifecycle = async () => {}, hostContext = {}, checkCaller = () => {}) {
   fields(options,['app','store','collection'],['sessionTtlMs','sessionIdleMs','membership'],'GATE.INVALID_CONFIG');
   check(storageId(options.app) && storageId(options.store) && storageId(options.collection),'GATE.INVALID_CONFIG');
   check(storage.identity?.app === options.app && storage.identity.publisher === 'wydgit.core' && storage.identity.library === 'wydgate','GATE.INVALID_CONFIG');
@@ -59,6 +60,7 @@ export async function openGate(options, storage, lifecycle = async () => {}, hos
   const hashing=await passwords();
   const passwordPolicy=value=>{password(value);check(!membership||[...value].length>=membership.passwordMinLength,'GATE.INVALID_PASSWORD');};
   const authorize=(_request,caller)=>{
+    checkCaller(caller);
     check(caller.app === options.app && Array.isArray(caller.scopes?.wydgate) && caller.scopes.wydgate.includes(options.app),'GATE.DENIED');
     return true;
   };
@@ -103,11 +105,24 @@ export async function openGate(options, storage, lifecycle = async () => {}, hos
     check(latest?.active&&latest.username===name&&latestCredential?.passwordHash===credential.passwordHash,'GATE.AUTH_FAILED');
     return {user:safeUser(latest),hash:credential.passwordHash};
   };
-  const sessions=sessionOperations({read,mutate,app:options.app,ttl,idle,authenticate});
-  const authorization=authorizationOperations({read,mutate,find});
-  const members=membershipOperations({read,mutate,find,hashing,authenticate,app:options.app,config:membership,rate,idle,deliverRecovery:hostContext.deliverRecovery});
+  const evaluateSitePolicy=async(caller,required)=>{
+    checkCaller(caller);
+    const snapshot=await read();
+    checkCaller(caller);
+    return requireSitePolicy(snapshot.data,caller,options.app,idle,required,membership);
+  };
   const perform=async(operation,request,caller)=>{
     authorize(request,caller);
+    const required=administrativePolicy(operation,caller);
+    if(required)await evaluateSitePolicy(caller,required);
+    const commit=(change,reason)=>mutate(data=>{
+      checkCaller(caller);
+      if(required)requireSitePolicy(data,caller,options.app,idle,required,membership);
+      return change(data);
+    },reason);
+    const sessions=sessionOperations({read,mutate:commit,app:options.app,ttl,idle,authenticate});
+    const authorization=authorizationOperations({read,mutate:commit,find});
+    const members=membershipOperations({read,mutate:commit,find,hashing,authenticate,app:options.app,config:membership,rate,idle,deliverRecovery:hostContext.deliverRecovery});
     if((await read()).data.sessions.some(session=>!session.revoked&&(session.expiresAt<=Date.now()||Date.now()-(session.lastSeenAt??session.createdAt)>=idle)))
       await mutate(data=>{for(const session of data.sessions)if(!session.revoked&&(session.expiresAt<=Date.now()||Date.now()-(session.lastSeenAt??session.createdAt)>=idle))session.revoked=true;return null;},'Timeout');
     const member=await members(operation,request,caller);if(member!==undefined)return member;
@@ -118,7 +133,7 @@ export async function openGate(options, storage, lifecycle = async () => {}, hos
       fields(request,['username','password'],['displayName']);
       const name=username(request.username),label=displayName(Object.hasOwn(request,'displayName') ? request.displayName : '');passwordPolicy(request.password);
       const encoded=await hashing.hash(request.password),id=`u_${randomUUID()}`;
-      return mutate(data=>{
+      return commit(data=>{
         check(!data.users.some(user=>user.username === name),'GATE.USER_EXISTS');
         check(data.users.length < MAX_USERS,'GATE.LIMIT');check(!data.users.some(user=>user.id === id),'GATE.CONFLICT');
         const user={id,username:name,displayName:label,active:true};
@@ -140,7 +155,7 @@ export async function openGate(options, storage, lifecycle = async () => {}, hos
       if(Object.hasOwn(request,'displayName'))patch.displayName=displayName(request.displayName);
       if(Object.hasOwn(request,'active')){check(typeof request.active === 'boolean');patch.active=request.active;}
       check(Object.keys(patch).length > 0);
-      return mutate(data=>{
+      return commit(data=>{
         const user=find(data,request.id);
         if(patch.username)check(!data.users.some(other=>other.id !== user.id && other.username === patch.username),'GATE.USER_EXISTS');
         Object.assign(user,patch);if(patch.active===false)revokeUser(data,user.id);return safeUser(user);
@@ -151,7 +166,7 @@ export async function openGate(options, storage, lifecycle = async () => {}, hos
       // Credential management is a distinct, explicitly granted administrative action.
       find((await read()).data,request.id);
       const encoded=await hashing.hash(request.password);
-      return mutate(data=>{
+      return commit(data=>{
         const user=find(data,request.id);
         data.credentials.find(credential=>credential.userId === user.id).passwordHash=encoded;revokeUser(data,user.id);return safeUser(user);
       },'password-change');
@@ -164,5 +179,5 @@ export async function openGate(options, storage, lifecycle = async () => {}, hos
     try{const result=await perform(operation,request,caller);if(operation==='authenticate')try{await record(operation);}catch{/* Post-commit observers cannot undo a security transition. */}return result;}
     catch(error){if(error.code==='GATE.AUTH_FAILED')try{await record('authentication-failed');}catch{/* Never disclose audit I/O or alter the public authentication failure. */}throw error;}
   };
-  return Object.freeze({authorize,execute});
+  return Object.freeze({authorize,execute,evaluateSitePolicy});
 }

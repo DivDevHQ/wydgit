@@ -94,6 +94,15 @@ export async function loadLibraries({ config: input, requirements: requested = e
     })));
   }
   const services = new Map(),transports=new Map(),starts=[];
+  let sitePolicyEvaluator;
+  const authorizeSitePolicy=async(caller,required)=>{
+    assertLive(caller);
+    if(!sitePolicyEvaluator)throw failure('GATE.DENIED');
+    const result=await sitePolicyEvaluator(caller,required);
+    assertLive(caller);
+    if(result!==true)throw failure('GATE.DENIED');
+    return true;
+  };
   try {
   for (const id of order) {
     assertLive();
@@ -107,6 +116,17 @@ export async function loadLibraries({ config: input, requirements: requested = e
     let active = true, invalid = false;
     const api = Object.freeze({ options: configured.get(id).options ?? Object.freeze({}), failure, checkJson:checkJsonBudget,
       hostContext:host?.context??Object.freeze({}),
+      checkCaller:assertLive,
+      withIdentity(caller,identity) {
+        assertLive(caller);
+        return new ExecutionContext({...caller,placement:caller,identity});
+      },
+      authorizeSitePolicy,
+      sitePolicy(evaluate) {
+        ensure(active && id==='wydgate' && manifest.publisher==='wydgit.core' && manifest.trust==='canonical' &&
+          !sitePolicyEvaluator && typeof evaluate==='function','LIBRARY.REGISTRATION_FAILED','Invalid site policy registration');
+        sitePolicyEvaluator=evaluate;
+      },
       transport(name,handler) {
         if(!(active && manifest.services.some(s=>s.name===name) && typeof handler==='function' && !transports.has(id+':'+name))){invalid=true;throw new WydgitError('LIBRARY.REGISTRATION_FAILED','Invalid transport registration');}
         transports.set(id+':'+name,handler);

@@ -735,6 +735,9 @@ Wydgits and SEWN should never need raw SQL or backend-specific paths.
 ## 22. WydGate
 
 WydGate provides identity and membership services.
+The [site-scoped policy integration](backoffice-scoped-policy-and-store-authorization.md)
+connects current membership policy to independently approved SEAM authority and
+trusted storage ownership; membership labels never create capabilities.
 
 The initial scope should remain deliberately small:
 
