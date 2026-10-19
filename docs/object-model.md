@@ -1,5 +1,10 @@
 # Object model — 0.2-B
 
+The [modular BackOffice action framework](backoffice-action-framework.md) adds
+installed site-scoped action declarations, private discovery and trusted service
+invocation in alpha.20. It preserves the independent authority and lifecycle checks;
+UI, AccountAdmin and HostAdmin remain deferred.
+
 `wydgine/object-model/index.js` implements the portable model. It has no filesystem,
 HTTP or DOM dependency. The founding architecture remains unchanged.
 

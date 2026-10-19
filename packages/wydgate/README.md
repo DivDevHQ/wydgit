@@ -1,8 +1,8 @@
 # @wydgit/gate
 
-Canonical server library `wydgate`, independently versioned at `0.1.0-alpha.5`.
+Canonical server library `wydgate`, independently versioned at `0.1.0-alpha.6`.
 
-Requires platform `^0.3.0-alpha.18`. Installed administration intersects current
+Requires platform `^0.3.0-alpha.20`. Installed administration intersects current
 App membership/session permission, BackOffice and independently approved SEAM
 authority. Private policy evaluation exposes no portable authorization token.
 See the repository contract `docs/backoffice-scoped-policy-and-store-authorization.md`.

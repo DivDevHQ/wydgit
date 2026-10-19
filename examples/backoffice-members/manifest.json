@@ -1,0 +1,143 @@
+{
+  "schema": "wydgit-package/0.1",
+  "id": "divdev/backoffice-members",
+  "publisher": "divdev",
+  "version": "0.1.0",
+  "platform": ">=0.3.0-alpha.20 <0.4.0",
+  "runtime": [
+    "server"
+  ],
+  "resources": {
+    "prototypes": "prototypes.json",
+    "template": "section.json",
+    "sources": {}
+  },
+  "requires": {
+    "schema": "wydgit.requirements/0.1",
+    "libraries": [
+      {
+        "library": "wydgate",
+        "version": "^0.1.0-alpha.6"
+      }
+    ]
+  },
+  "storage": [],
+  "permissions": {
+    "capabilities": [
+      "gate.members.manage"
+    ],
+    "traversal": [],
+    "visible": [
+      "backoffice-members"
+    ],
+    "editable": [],
+    "scopes": {
+      "wydgate": [
+        "current-app"
+      ],
+      "wydstore": []
+    }
+  },
+  "bindings": [],
+  "installables": [
+    {
+      "id": "members",
+      "kind": "section-template"
+    }
+  ],
+  "backofficeActions": [
+    {
+      "id": "list-members",
+      "owner": "backoffice-members",
+      "title": "Site members",
+      "description": "List the current site membership roster without credentials or session data.",
+      "category": "membership",
+      "context": "BackOffice",
+      "permission": "gate.members.manage",
+      "capability": "gate.members.manage",
+      "scopes": {
+        "wydgate": [
+          "current-app"
+        ]
+      },
+      "service": {
+        "library": "wydgate",
+        "apiVersion": "1.0.0",
+        "operation": "list-members"
+      },
+      "effect": "read",
+      "input": {
+        "type": "object",
+        "fields": {
+          "offset": {
+            "type": "integer",
+            "min": 0,
+            "max": 256
+          },
+          "limit": {
+            "type": "integer",
+            "min": 1,
+            "max": 50
+          }
+        },
+        "optional": [
+          "offset",
+          "limit"
+        ]
+      },
+      "output": {
+        "type": "object",
+        "fields": {
+          "members": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "fields": {
+                "id": {
+                  "type": "string",
+                  "maxLength": 64
+                },
+                "app": {
+                  "type": "string",
+                  "maxLength": 128
+                },
+                "accountId": {
+                  "type": "string",
+                  "maxLength": 64
+                },
+                "status": {
+                  "type": "string",
+                  "maxLength": 16
+                },
+                "role": {
+                  "type": "string",
+                  "maxLength": 32
+                },
+                "displayName": {
+                  "type": "string",
+                  "maxLength": 80
+                }
+              }
+            },
+            "maxItems": 50
+          },
+          "offset": {
+            "type": "integer",
+            "min": 0,
+            "max": 256
+          },
+          "limit": {
+            "type": "integer",
+            "min": 1,
+            "max": 50
+          },
+          "total": {
+            "type": "integer",
+            "min": 0,
+            "max": 256
+          }
+        }
+      }
+    }
+  ]
+}

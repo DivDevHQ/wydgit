@@ -1,5 +1,10 @@
 # Execution contexts, administrative domains, and WydStore isolation
 
+The [modular BackOffice action framework](backoffice-action-framework.md) adds
+installed site-scoped action declarations, private discovery and trusted service
+invocation in alpha.20. It preserves the independent authority and lifecycle checks;
+UI, AccountAdmin and HostAdmin remain deferred.
+
 The [reviewed package-policy foundation](reviewed-package-policy-reconciliation.md)
 adds native stopped-App plan/review/apply with separate policy revisions and durable
 host approval. Package requirements, execution placement, SEAM, Gate membership and
@@ -451,6 +456,20 @@ adapter conformance and full account/provider OS isolation cannot be inferred fr
 site tests, mocks, same-UID processes or successful Debian installation. Existing
 I5.6 installed qualification gates and unresolved 0.3 HTTP reliability obligations
 remain separate and unchanged.
+
+### Increment 5 backend acceptance evidence
+
+The [alpha.20 action implementation](backoffice-action-framework.md#qualification-and-acceptance)
+records the exact mission-to-test mapping and limitations. This supplements the
+required matrix above without declaring its future cases complete.
+
+| Acceptance case | Implemented evidence / remaining boundary |
+| --- | --- |
+| ADM-01 | Partial: installed modular actions, private discovery, direct invocation denial and independent service policy qualified; graphical UI and user-facing transport deferred |
+| CTX-05 / CTX-06 | Site backend qualified: BackOffice placement, genuine caller, exact receipt/revision/generation and retired/replaced execution fencing; account/host contexts remain unavailable |
+| GAT-02 / GAT-03 | Site actions qualified: independent SEAM, live direct/group/role policy, current session/membership and per-site denial; wider domains deferred |
+| STO-02 | Site action boundary qualified on JSON/SQLite: exact required-resource ownership and protected policy during discovery/invocation; stale record writes retain Store conflicts |
+| LIF-01 | Existing dependency/retention protections retained; action replacement/removal/reinstall and interrupted local recovery qualified on both providers; wider-domain recovery deferred |
 
 ## 13. Implementation phases and release boundaries
 

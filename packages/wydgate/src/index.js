@@ -2,8 +2,8 @@ import { gateTransport } from './transport.js';
 import { openGate } from './core.js';
 import { GateError } from './validation.js';
 export const manifest = {
-  schema:'wydgit.library/0.1',id:'wydgate',version:'0.1.0-alpha.5',apiVersion:'1.0.0',
-  publisher:'wydgit.core',trust:'canonical',platform:'^0.3.0-alpha.18',targets:['server'],
+  schema:'wydgit.library/0.1',id:'wydgate',version:'0.1.0-alpha.6',apiVersion:'1.0.0',
+  publisher:'wydgit.core',trust:'canonical',platform:'^0.3.0-alpha.20',targets:['server'],
   requirements:{schema:'wydgit.requirements/0.1',libraries:[{library:'wydstore',version:'^0.1.0-alpha.2'}]},
   capabilities:['gate.users.read','gate.users.create','gate.users.update','gate.credentials.authenticate','gate.credentials.manage','gate.sessions.use','gate.sessions.manage','gate.roles.manage','gate.groups.manage','gate.accounts.use','gate.members.use','gate.members.manage','gate.members.bootstrap','gate.registration.use'],
   services:[
@@ -35,6 +35,7 @@ export const manifest = {
   ]
 };
 manifest.legacyOperations=['create-user','get-user','find-user','update-user','authenticate','change-password','login','logout','resolve-session','revoke-session',...['create','get','update','delete'].flatMap(action=>[`${action}-role`,`${action}-group`]),'assign-user','get-authorization','get-profile','update-profile'];
+export const administrativeOperations=Object.freeze({'list-members':'read','manage-member':'write'});
 export function resolvePackageScopes({options,app,scopes}) {
   if(options.app!==app||!Array.isArray(scopes)||scopes.length!==1||scopes[0]!=='current-app')throw new GateError('GATE.DENIED');return [app];
 }
@@ -48,6 +49,7 @@ export async function register({service,transport,options,dependency,failure,lif
   sitePolicy((caller,required)=>safe(()=>gate.evaluateSitePolicy(caller,required)));
   for(const {name} of manifest.services)service(name,
     (request,caller)=>safe(()=>gate.execute(name,request,caller)),
-    {authorize:(request,caller)=>safe(()=>gate.authorize(request,caller)),validate:()=>true,presentation:name==='list-members'});
+    {authorize:(request,caller)=>safe(()=>gate.authorize(request,caller)),validate:()=>true,presentation:name==='list-members',
+      ...(administrativeOperations[name]?{administration:administrativeOperations[name],administrativeAuthorize:caller=>safe(async()=>{await gate.execute('list-members',{limit:1},caller);return true;})}:{})});
   for(const name of ['browser-login','browser-register','browser-logout','browser-profile','browser-password'])transport(name,gateTransport({gate,name,safe,withIdentity}));
 }

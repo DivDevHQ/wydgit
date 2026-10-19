@@ -1,5 +1,14 @@
 ## Unreleased
 
+- Add the modular site-level BackOffice action framework: installed declarations,
+  authorized discovery, exact receipt/contract/generation references and fixed
+  caller-bound canonical service invocation. Preserve live Gate/SEAM/Store checks,
+  mutation confirmation, stopped-App fencing and native host-policy authority.
+  Include a real member-roster package and JSON/SQLite security/recovery tests.
+  Advance platform/Wydgine/WydHosting to alpha.20, Gate to alpha.6 and Store to
+  alpha.5; no persisted schema migration or graphical administration. The existing
+  intermittent HTTP `SEWN.LIMIT` issue remains open.
+
 - Add reviewed stopped-App package policy reconciliation: deterministic plans,
   independently authorized durable approvals, exact revision binding, explicit
   expansion review, and recoverable apply/cancel through existing lifecycle journals

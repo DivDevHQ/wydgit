@@ -1,5 +1,10 @@
 # Trusted local package lifecycle
 
+The [modular BackOffice action framework](backoffice-action-framework.md) adds
+installed site-scoped action declarations, private discovery and trusted service
+invocation in alpha.20. It preserves the independent authority and lifecycle checks;
+UI, AccountAdmin and HostAdmin remain deferred.
+
 The [scoped-policy/store increment](backoffice-scoped-policy-and-store-authorization.md)
 qualifies retained site data under current Gate policy. The
 [reviewed policy increment](reviewed-package-policy-reconciliation.md) adds native

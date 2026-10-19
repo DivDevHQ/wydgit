@@ -1,4 +1,5 @@
 import semver from 'semver';
+import {actionDeclarations} from './backoffice-contract.js';
 import { clean, freeze, record, parse, requireThat as check } from '../object-model/validation.js';
 import { fields, version, range, satisfies, validateRequirements } from '../libraries/contracts.js';
 import { validObjectGrant, matchesObjectGrant, objectGrantCovers } from '../seam/context.js';
@@ -27,7 +28,7 @@ export function permissions(input) {
 export function validatePackageManifest(input,{target='server'}={}) {
   check(['server','client'].includes(target),'PACKAGE.TARGET','Unknown authoring target');
   const text=typeof input==='string'?input:JSON.stringify(clean(input));check(Buffer.byteLength(text)<=LIMITS.manifest,code,'Manifest too large');
-  const m=clean(parse(text));fields(m,['schema','id','publisher','version','platform','runtime','resources','requires','storage','permissions','bindings','installables',...['staticLibraries','interfaces','dependencies'].filter(key=>Object.hasOwn(m,key))],code);
+  const m=clean(parse(text));fields(m,['schema','id','publisher','version','platform','runtime','resources','requires','storage','permissions','bindings','installables',...['staticLibraries','interfaces','dependencies','backofficeActions'].filter(key=>Object.hasOwn(m,key))],code);
   check(m.schema==='wydgit-package/0.1',code,'Unsupported package schema');
   check(qualified(m.id)&&m.publisher===m.id.split('/')[0]&&m.publisher!=='wydgit.core',code,'Invalid package/publisher identity');
   check(version(m.version)&&range(m.platform),code,'Invalid version');check(satisfies(platform.version,m.platform),'PACKAGE.VERSION','Incompatible platform');
@@ -46,6 +47,10 @@ export function validatePackageManifest(input,{target='server'}={}) {
     for(const [name,rule] of Object.entries(s.fields)){check(localName(name)&&name!=='id',code,'Invalid storage field');fields(rule,['type',...['required','default'].filter(k=>Object.hasOwn(rule,k))],code);check(['string','number','boolean','object','array','null'].includes(rule.type)&&(rule.required===undefined||typeof rule.required==='boolean'),code,'Invalid storage type');if(Object.hasOwn(rule,'default')){const type=rule.default===null?'null':Array.isArray(rule.default)?'array':typeof rule.default;check(type===rule.type,code,'Invalid storage default');}}
   }
   m.permissions=permissions(m.permissions);check(m.permissions.scopes.wydstore.every(n=>names.has(n)),code,'Undeclared storage scope');
+  if(m.backofficeActions!==undefined){
+    check(target==='server'&&m.runtime.length===1&&m.runtime[0]==='server'&&semver.subset(m.platform,'>=0.3.0-alpha.20',{includePrerelease:true}),'PACKAGE.VERSION','BackOffice actions require server-only Wydgine alpha.20 or newer');
+    m.backofficeActions=actionDeclarations(m.backofficeActions,m);
+  }
   check(Array.isArray(m.bindings)&&m.bindings.length<=LIMITS.bindings,code,'Invalid bindings');const bindings=new Set();
   for(const b of m.bindings){
     const delegated=b.delegation!==undefined;

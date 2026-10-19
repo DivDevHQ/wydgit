@@ -1,8 +1,8 @@
 # @wydgit/store
 
-Canonical library `wydstore`, independently versioned at `0.1.0-alpha.4`.
+Canonical library `wydstore`, independently versioned at `0.1.0-alpha.5`.
 
-Requires platform `^0.3.0-alpha.18`. Trusted optional `wydstore.authorization/1`
+Requires platform `^0.3.0-alpha.20`. Trusted optional `wydstore.authorization/1`
 rules classify collection operations by context and current site-scoped Gate
 permission or explicit public access. Existing ownership, capabilities and scopes
 remain mandatory; policy-bound stores deny missing operation rules. See the

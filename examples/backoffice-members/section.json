@@ -1,0 +1,8 @@
+{
+  "schema": "wydgit/0.2",
+  "id": "backoffice-members",
+  "prototype": "divdev/backoffice-members",
+  "properties": {},
+  "slots": {},
+  "provenance": {}
+}

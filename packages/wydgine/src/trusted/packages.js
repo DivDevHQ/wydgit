@@ -1,4 +1,5 @@
 // Native host infrastructure only. Never register this module as a SEAM provider.
+export {createBackOfficeActions} from '../engine/packages/backoffice.js';
 export {
   inspectPackagePolicy, planPackagePolicy, approvePackagePolicy, applyPackagePolicy, cancelPackagePolicy,
   planExecutionPlacement, executionPlacement, acquirePackageExecution,

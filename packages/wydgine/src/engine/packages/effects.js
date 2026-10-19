@@ -214,13 +214,17 @@ async function recoverEffects({root,installationContext,direction,atStage,budget
 
 export async function recoverPackageEffects(options){
   let release;
-  try{if(inspectPackageEffects(options.root)?.action?.startsWith('policy-'))release=reserveStoppedApp(options.root);return await recoverEffects(options);}catch(e){if(e instanceof WydgitError)throw e;throw new WydgitError('PACKAGE.RECOVERY','Unrecognized recovery evidence; preserve markers for inspection');}finally{release?.();}
+  try{release=reserveStoppedApp(options.root);return await recoverEffects(options);}catch(e){if(e instanceof WydgitError)throw e;throw new WydgitError('PACKAGE.RECOVERY','Unrecognized recovery evidence; preserve markers for inspection');}finally{release?.();}
 }
 
 export function inspectPackageEffects(root) {
   try{return JSON.parse(safeRead(root,EFFECTS,LIMITS.state));}catch(e){if(e.code==='ENOENT')return null;throw e;}
 }
-export async function rollbackPackageEffects({root,installationContext,budget:token,atStage}) {
+export async function rollbackPackageEffects(options) {
+  const release=reserveStoppedApp(options.root);
+  try{return await rollbackEffects(options);}finally{release();}
+}
+async function rollbackEffects({root,installationContext,budget:token,atStage}) {
   root=path.resolve(root);const record=inspectPackageEffects(root),checkpoint=await loadCheckpoint(root,record);
   authorizeLifecycle(installationContext,checkpoint.app);
   check(record.status==='COMPLETED'&&['update','upgrade','manual-migrate'].includes(checkpoint.action)&&checkpoint.stateBefore!==null,'PACKAGE.ROLLBACK_UNSUPPORTED','Only a completed checkpointed update, upgrade or manual migration can be rolled back');

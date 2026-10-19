@@ -1,5 +1,10 @@
 # Scoped site policy and WydStore authorization — 0.3-J increment 3
 
+The [modular BackOffice action framework](backoffice-action-framework.md) adds
+installed site-scoped action declarations, private discovery and trusted service
+invocation in alpha.20. It preserves the independent authority and lifecycle checks;
+UI, AccountAdmin and HostAdmin remain deferred.
+
 The [implemented fourth increment](reviewed-package-policy-reconciliation.md)
 provides the reviewed stopped-App reconciliation deferred at this alpha.18
 checkpoint. Direct host-policy edits remain `PACKAGE.DRIFT`; existing policy,

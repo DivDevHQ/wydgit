@@ -141,9 +141,9 @@ export async function loadLibraries({ config: input, requirements: requested = e
           call(name,input) { return dispatch.call(library,name,input); },
           invoke(apiVersion,name,input,limits) { const selected=limits?bind(new ExecutionContext({...context,limits}),(target,operation)=>services.get(target)?.get(operation)):dispatch;return selected.invoke(library,apiVersion,name,input); }});
       }, service(name, handler, policy = {}) {
-      const valid = active && manifest.services.some(s => s.name === name) && !handlers.has(name) && typeof handler === 'function' && policy && Object.keys(policy).every(key => ['authorize','validate','presentation'].includes(key)) && (policy.presentation === undefined || typeof policy.presentation === 'boolean') && (policy.authorize === undefined || typeof policy.authorize === 'function') && (policy.validate === undefined || typeof policy.validate === 'function') && (!manifest.apiVersion || typeof policy.authorize === 'function' && typeof policy.validate === 'function');
+      const valid = active && manifest.services.some(s => s.name === name) && !handlers.has(name) && typeof handler === 'function' && policy && Object.keys(policy).every(key => ['authorize','validate','presentation','administration','administrativeAuthorize'].includes(key)) && (policy.administration === undefined || ['read','write'].includes(policy.administration) && typeof policy.administrativeAuthorize === 'function') && (policy.administrativeAuthorize === undefined || typeof policy.administrativeAuthorize === 'function') && (policy.presentation === undefined || typeof policy.presentation === 'boolean') && (policy.authorize === undefined || typeof policy.authorize === 'function') && (policy.validate === undefined || typeof policy.validate === 'function') && (!manifest.apiVersion || typeof policy.authorize === 'function' && typeof policy.validate === 'function');
       if (!valid) { invalid = true; throw new WydgitError('LIBRARY.REGISTRATION_FAILED', 'Invalid service registration'); }
-      handlers.set(name, { handler, limits, presentation:policy.presentation===true, enforceLegacyLimits:manifest.id==='wydstore' || configured.get(id).serviceLimits!==undefined, authorize: policy.authorize, validate: policy.validate, capability: manifest.services.find(s => s.name === name).capability });
+      handlers.set(name, { handler, limits, administration:policy.administration, administrativeAuthorize:policy.administrativeAuthorize, presentation:policy.presentation===true, enforceLegacyLimits:manifest.id==='wydstore' || configured.get(id).serviceLimits!==undefined, authorize: policy.authorize, validate: policy.validate, capability: manifest.services.find(s => s.name === name).capability });
     } });
     try {
       await register(api);
@@ -156,6 +156,18 @@ export async function loadLibraries({ config: input, requirements: requested = e
   }
   const registry=Object.freeze({
     close,
+    authorizeSitePolicy,
+    async authorizeAdministrativeOperation(context,id,name,resources){
+      assertLive(context);const operation=services.get(id)?.get(name);
+      ensure(operation?.administration && operation.administrativeAuthorize,'SEAM.DENIED','Administrative operation unavailable');
+      context.require(operation.capability);
+      ensure(await operation.administrativeAuthorize(context,freeze(validateLifecycle(resources)))===true,'SEAM.DENIED','Administrative operation denied');
+      assertLive(context);return true;
+    },
+    administrativeOperation(id,name){
+      assertLive();const operation=services.get(id)?.get(name);
+      return operation?.administration ? Object.freeze({capability:operation.capability,effect:operation.administration,apiVersion:staged.get(id).manifest.apiVersion}) : null;
+    },
     async transfer(context,id,name,input,port) {
       assertLive(context);const finish=staged.has(id)?observe?.(id):undefined;let failed=true;try{ensure(context.app!==null,'SEAM.DENIED','Transport requires authoritative App identity');
       const record=services.get(id)?.get(name),handler=transports.get(id+':'+name);

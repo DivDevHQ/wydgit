@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 const project=fileURLToPath(new URL('../../',import.meta.url));
-const mapping=(id,options,bindings=[])=>({id,package:'@wydgit/'+({wydstore:'store',wydgate:'gate',wydfiles:'files',wydsearch:'search',wydstream:'stream'})[id],enabled:true,version:({wydstore:'0.1.0-alpha.4',wydgate:'0.1.0-alpha.5',wydsearch:'0.1.0-alpha.2',wydstream:'0.1.0-alpha.2',wydfiles:'0.1.0-alpha.1'})[id],publisher:'wydgit.core',trust:'canonical',options,...(bindings.length?{bindings}:{})});
+const mapping=(id,options,bindings=[])=>({id,package:'@wydgit/'+({wydstore:'store',wydgate:'gate',wydfiles:'files',wydsearch:'search',wydstream:'stream'})[id],enabled:true,version:({wydstore:'0.1.0-alpha.5',wydgate:'0.1.0-alpha.6',wydsearch:'0.1.0-alpha.2',wydstream:'0.1.0-alpha.2',wydfiles:'0.1.0-alpha.1'})[id],publisher:'wydgit.core',trust:'canonical',options,...(bindings.length?{bindings}:{})});
 export async function provisionExample(root){
  const inventory={schema:'wydgit.multi-host/0.1',apps:[]};
  for(const id of ['app-alpha','app-beta']){

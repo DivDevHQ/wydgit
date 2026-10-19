@@ -1,5 +1,10 @@
 # WydStore — 0.2-E
 
+The [modular BackOffice action framework](backoffice-action-framework.md) adds
+installed site-scoped action declarations, private discovery and trusted service
+invocation in alpha.20. It preserves the independent authority and lifecycle checks;
+UI, AccountAdmin and HostAdmin remain deferred.
+
 The [reviewed package-policy foundation](reviewed-package-policy-reconciliation.md)
 adds native stopped-App plan/review/apply with separate policy revisions and durable
 host approval. Package requirements, execution placement, SEAM, Gate membership and

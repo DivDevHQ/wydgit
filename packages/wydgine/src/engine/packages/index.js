@@ -1,4 +1,6 @@
 import {checkPlacement} from '../execution/placement.js';
+import {reserveStoppedApp} from '../execution/maintenance.js';
+import {checkActionCount} from './backoffice-contract.js';
 import {interfaceTypes} from '../object-model/interfaces.js';
 import {validate as validateWorkflow} from '../sewn/validate.js';
 import {StaticLibraryRegistry} from '../static-libraries/index.js';
@@ -64,6 +66,10 @@ export function inspectPackageMigrationArtifact(packagePath) {
 }
 export function packageBindings(entry,registry,runtime) {
   const handlers=[],actions=[],events=new EventRegistry(),m=validatePackageManifest(entry.manifest);
+  for(const action of m.backofficeActions??[]){
+    check(entry.instanceIds.includes(action.owner),'ACTION.DECLARATION','Action owner must belong to this installation');
+    const node=runtime.get(action.owner);checkPlacement(node,registry.get(node.prototype),{runat:'Server',context:'BackOffice'});
+  }
   const checked=new Set();
   const validateTree=id=>{
     if(checked.has(id))return;checked.add(id);
@@ -94,7 +100,9 @@ async function resolveLibraries(root,manifest,hostConfig) {
   const config=validateConfig(hostConfig??safeRead(root,'wydgit.config.json')),resolved=[],scopeResolvers=new Map(),available=new Set(['object.instances.edit','object.instances.construct','app.forms.submit','event.custom.raise']);
   for(const required of manifest.requires.libraries){const entry=config.libraries.find(x=>x.id===required.library);check(entry?.enabled,'PACKAGE.LIBRARY','Required library must already be enabled');
     const {module,packageVersion}=await importNodePackage(entry,root);const m=libraryManifest(module.manifest);
-    check(m.id===entry.id&&m.publisher===entry.publisher&&m.trust===entry.trust&&m.version===packageVersion&&satisfies(m.version,required.version)&&satisfies(platform.version,m.platform)&&m.targets.includes('server'),'PACKAGE.LIBRARY','Incompatible library');scopeResolvers.set(m.id,input=>module.resolvePackageScopes?.({...input,options:entry.options??{}}));resolved.push({id:m.id,version:m.version,package:entry.package});m.capabilities.forEach(cap=>available.add(cap));
+    check(m.id===entry.id&&m.publisher===entry.publisher&&m.trust===entry.trust&&m.version===packageVersion&&satisfies(m.version,required.version)&&satisfies(platform.version,m.platform)&&m.targets.includes('server'),'PACKAGE.LIBRARY','Incompatible library');
+    for(const a of manifest.backofficeActions??[])if(a.service.library===m.id)check(m.apiVersion===a.service.apiVersion&&m.services.some(s=>s.name===a.service.operation&&s.capability===a.capability)&&Object.hasOwn(module.administrativeOperations??{},a.service.operation)&&module.administrativeOperations[a.service.operation]===a.effect,'ACTION.SERVICE','Unapproved administrative service binding');
+    scopeResolvers.set(m.id,input=>module.resolvePackageScopes?.({...input,options:entry.options??{}}));resolved.push({id:m.id,version:m.version,package:entry.package});m.capabilities.forEach(cap=>available.add(cap));
   }
   return {config,resolved,available,scopeResolvers};
 }
@@ -118,7 +126,7 @@ function mapStorage(manifest,config,mappings,app,grants=manifest.permissions) {
 }
 export async function planPackageInstall(options) {
   const plan=await planInstall(options);
-  const data=plans.get(plan);packageGraph([...data.previous,data.entry]);return plan;
+  const data=plans.get(plan);packageGraph([...data.previous,data.entry]);checkActionCount([...data.previous,data.entry]);return plan;
 }
 async function planInstall({root,packagePath,placement,approvals,storageMappings={},installationContext,hostConfig,verifiedPackages={},additions=[],page,properties={},navigation,staticLibraries,serverPlacement},snapshot,policyOverride) {
   root=path.resolve(root);
@@ -183,7 +191,12 @@ async function planInstall({root,packagePath,placement,approvals,storageMappings
   if(hostConfig)check(Buffer.byteLength(JSON.stringify(validateConfig(hostConfig),null,2)+'\n')<=LIMITS.resource,'PACKAGE.LIMIT','Prospective host config too large');
   plans.set(plan,{root,installationContext,catalogMetadata:{schema:model.installed?.schema==='wydgit-installed/0.4'?'wydgit-installed/0.4':executionPlacement?'wydgit-installed/0.3':model.installed?.schema??'wydgit-installed/0.1',...(model.installed?.policyHistory?{policyHistory:model.installed.policyHistory}:{}),...(model.installed?.replacementHistory?{replacementHistory:model.installed.replacementHistory}:{})},hostConfig:hostConfig?JSON.stringify(validateConfig(hostConfig),null,2)+'\n':null,entry,app:JSON.stringify(dehydrate(result.runtime,{includeSensitive:true})),revision:result.revision,retained:model.installed?.retained??[],previous:model.installed?.packages??[]});return plan;
 }
-export async function applyPackageInstall(plan,{beforeReplace,infrastructure,beforeConfigReplace,beforeStateReplace,beforeProviderSetup,atStage}={}) {
+export async function applyPackageInstall(plan,options={}) {
+  check(plans.has(plan),'PACKAGE.PLAN','Expected an original installation plan');
+  const release=reserveStoppedApp(plans.get(plan).root);
+  try{return await applyInstall(plan,options);}finally{release();}
+}
+async function applyInstall(plan,{beforeReplace,infrastructure,beforeConfigReplace,beforeStateReplace,beforeProviderSetup,atStage}={}) {
   check(plans.has(plan),'PACKAGE.PLAN','Expected an original host plan');const data=plans.get(plan),{root}=data;
   const legacyBudget=packageBudget(createPackageBudget(data.installationContext),data.installationContext);
   if(!data.hostConfig){
@@ -246,6 +259,7 @@ function detachPackage(root,state,entry,context,verifiedPackages) {
   return {app:JSON.stringify(dehydrate(runtime,{includeSensitive:true})),retained:{entry,attachments,navigationRemoved}};
 }
 function validateCandidateState(root,state,verifiedPackages,hostConfig) {
+  checkActionCount(state.packages);
   validateInstalledState(root,state);
   const model=repositoryFromState(root,state,{verifiedPackages});
   const config=validateConfig(hostConfig??safeRead(root,'wydgit.config.json')),pages=new Map(),allIds=idsOf(dehydrate(model.runtime));
@@ -475,11 +489,14 @@ async function planOperation({root,action,package:id,candidates=[],installationC
 }
 export async function applyPackageOperation(plan,options={}){
   check(operationPlans.has(plan),'PACKAGE.PLAN','Expected an original host lifecycle plan');const data=operationPlans.get(plan);
+  const release=reserveStoppedApp(data.root);
+  try{
   // Consume before apply: even an ambiguous storage error cannot replay this plan.
   operationPlans.delete(plan);
   for(const artifact of data.artifactChecks??[]){data.meter.take();check(packageMigrationArtifactHash(loadPackage(artifact.packagePath))===artifact.sha256,'PACKAGE.STALE','Migration artifact changed after preview');}
-  if(data.effects)return publishPackageEffects({...data,...data.effects,plan,budget:data.meter,atStage:options.atStage});
-  return publishPackageState({...data,plan,budget:data.meter,atStage:options.atStage});
+  if(data.effects)return await publishPackageEffects({...data,...data.effects,plan,budget:data.meter,atStage:options.atStage});
+  return await publishPackageState({...data,plan,budget:data.meter,atStage:options.atStage});
+  }finally{release();}
 }
 export async function packageOperation(options){return applyPackageOperation(await planPackageOperation(options));}
 

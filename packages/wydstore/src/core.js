@@ -120,5 +120,15 @@ export async function openStores(input, rawCheckJson, {authorizeSitePolicy,check
       return await store.adapter.execute(operation,request,completion);
     } finally {prepared.delete(raw);}
   };
-  return frozen({authorize,execute,validate});
+  const authorizeAdministration=async(operation,caller,resources)=>{
+    check(Array.isArray(resources)&&resources.length>0&&resources.length<=16,'STORE.DENIED');
+    check(caller.capabilities.includes(`store.records.${capabilities[operation]}`),'SEAM.DENIED');
+    for(const resource of resources){
+      fields(resource,['store','collection']);authorize(resource,caller);
+      await authorizeOperation(stores.get(resource.store).definition,operation,resource,caller,authorizeSitePolicy);
+      authorize(resource,caller);
+    }
+    return true;
+  };
+  return frozen({authorize,execute,validate,authorizeAdministration});
 }
