@@ -2,6 +2,7 @@ import { storeLimits, budget, resultCollector } from './resource-limits.js';
 import { check, StoreError, json, record, fields, schema, idValid, frozen } from './data.js';
 import { openJsonAdapter } from './json-adapter.js';
 import { normalizeRequest } from './adapter-contract.js';
+import { validateAuthorization, authorizeOperation } from './authorization.js';
 
 export function validateStoreConfig(input) {
   let config;
@@ -10,7 +11,7 @@ export function validateStoreConfig(input) {
     check(Array.isArray(config.stores),'STORE.INVALID_CONFIG');
     const ids = new Set();
     for (const store of config.stores) {
-      fields(store,['id','app','publisher','package','provider','root','collections'],['principal','installation','limits'],'STORE.INVALID_CONFIG');
+      fields(store,['id','app','publisher','package','provider','root','collections'],['principal','installation','limits','authorization'],'STORE.INVALID_CONFIG');
       check(idValid(store.id) && idValid(store.app) && typeof store.publisher === 'string' && /^[a-z][a-z0-9.-]*$/.test(store.publisher) && typeof store.package === 'string' && store.package.length > 0 && ['json','sqlite'].includes(store.provider),'STORE.INVALID_CONFIG');
       storeLimits(store.limits);
       check(!ids.has(store.id),'STORE.INVALID_CONFIG'); ids.add(store.id);
@@ -23,12 +24,13 @@ export function validateStoreConfig(input) {
         collections.add(collection.id); schema(collection.fields);
         check((collection.schemaId === undefined && collection.schemaVersion === undefined) || idValid(collection.schemaId) && Number.isSafeInteger(collection.schemaVersion) && collection.schemaVersion >= 1,'STORE.INVALID_CONFIG');
       }
+      validateAuthorization(store.authorization,collections);
     }
   } catch { throw new StoreError('STORE.INVALID_CONFIG'); }
   return config;
 }
 
-export async function openStores(input, rawCheckJson) {
+export async function openStores(input, rawCheckJson, {authorizeSitePolicy,checkCaller = () => {}} = {}) {
   const checkJson=(value,limits)=>{try{return rawCheckJson(value,limits);}catch{throw new StoreError('STORE.LIMIT');}};
   const config = validateStoreConfig(input);
   const stores = new Map();
@@ -42,6 +44,7 @@ export async function openStores(input, rawCheckJson) {
     stores.set(definition.id,{definition,definitions,adapter,metadata,limits});
   }
   const authorize = (request, caller) => {
+    checkCaller(caller);
     check(record(request) && idValid(request.store) && idValid(request.collection),'STORE.INVALID_RECORD');
     const grants = caller.scopes?.wydstore;
     check(Array.isArray(grants) && grants.some(grant => record(grant) && grant.store === request.store && grant.collection === request.collection),'STORE.DENIED');
@@ -104,6 +107,12 @@ export async function openStores(input, rawCheckJson) {
   const execute = async (operation, raw, caller, policy) => {
     try {
       const request=validate(operation,raw,caller,policy),store=stores.get(request.store);
+      // Prepared inputs cache only structural work. Policy is read afresh on
+      // every admission, including cached facades and every transaction member.
+      await authorizeOperation(store.definition,operation,request,caller,authorizeSitePolicy);
+      if(operation==='transaction')for(const item of request.operations)
+        await authorizeOperation(store.definition,item.operation,item.request,caller,authorizeSitePolicy);
+      authorize(request,caller);
       // This host-only control is never accepted in a canonical store request.
       const completion=policy.operation;
       completion?.cancelled();completion?.check();

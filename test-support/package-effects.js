@@ -31,7 +31,7 @@ export async function provisionFixture(t,provider) {
     infrastructure:{enableWydstore:true,stores:[{id:'new-book',provider,location:'.wydgit-data/book',collections:[{id:'entries',fields:f.manifest.storage[0].fields}]}]}};
   return {...f,context,policy,options:{root:f.root,packagePath:f.packagePath,manifest:f.manifest,policy,installationContext:context}};
 }
-export async function storedFixture(t,provider,{extraCollection=false,multiple=false}={}) {
+export async function storedFixture(t,provider,{extraCollection=false,multiple=false,configure}={}) {
   const f=await lifecycleFixture(t),candidate=await f.candidate('a');
   const fields={text:{type:'string',required:true}};
   const schema={name:'entries',schemaId:'entries',schemaVersion:1,fields};
@@ -55,13 +55,15 @@ export async function storedFixture(t,provider,{extraCollection=false,multiple=f
   }
   const initial=await version();
   const store={id:'store-a',app:'boilerplate',publisher:'acme',package:'acme/a',provider,root:path.join(f.root,'data'),collections:[{id:'records',schemaId:'entries',schemaVersion:1,fields},...(extraCollection?[{id:'foreign',fields:{text:{type:'string'}}}]:[])]};
-  f.config.libraries.find(l=>l.id==='wydstore').options={stores:[store]};await writeJson(path.join(f.root,'wydgit.config.json'),f.config);
+  f.config.libraries.find(l=>l.id==='wydstore').options={stores:[store]};
+  const session=configure?await configure(f.config,f.root,store):{};
+  await writeJson(path.join(f.root,'wydgit.config.json'),f.config);
   await packageOperation(f.operation('install','acme/a',[initial]));
   const binding=async()=>{
     const model=loadRepository(f.root),libraries=await initializeHost({root:f.root}),active=activatePackages(model,libraries,f.root);
-    return libraries.bind(active.context({pageId:'page-a',session:{},ids:[]}));
+    return libraries.bind(active.context({pageId:'page-a',session,ids:[]}));
   };
-  const service=await binding(),input={store:'store-a',collection:'records',id:'content'};
+  const service=session.seedContext?(await initializeHost({root:f.root})).bind(session.seedContext):await binding(),input={store:'store-a',collection:'records',id:'content'};
   const created=await service.call('wydstore','create',{...input,data:{text:'Original content'}});if(!created.ok)throw Error(created.code);
   const updated=await service.call('wydstore','update',{...input,version:1,data:{text:'Customer edit'}});if(!updated.ok)throw Error(updated.code);
   const migration=(toVersion='2.0.0')=>({schema:'wydgit.package-migration/1',package:'acme/a',from:'1.0.0',to:toVersion,

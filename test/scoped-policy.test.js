@@ -22,6 +22,7 @@ for (const provider of ['json','sqlite']) {
     await f.gate.assignUser({userId:user.account.id,roles:[role.id],permissions:[]});
     assert.equal((await gate().listMembers()).total,1);
     await denied(() => gate({capabilities:[]}).listMembers(),'SEAM.DENIED');
+    await denied(() => f.libraries.service('wydgate','list-members')({},context({capabilities:[]})),'SEAM.DENIED');
     await denied(() => gate({context:'FrontEnd'}).listMembers());
     await denied(() => gate({identity:null}).listMembers());
     await denied(() => gate({app:'foreign',identity:null}).listMembers());
@@ -59,3 +60,20 @@ for (const provider of ['json','sqlite']) {
     assert.doesNotMatch(JSON.stringify(plain(caller.identity)), /passwordHash|digest|token/);
   });
 }
+
+test('GAT-03 ADM-01: permission revocation during credential hashing denies the later directory write',async t=>{
+  const f=await membershipFixture(t);
+  const user=await f.gate.register({username:'alice',password:f.password});
+  await f.gate.assignUser({userId:user.account.id,roles:[],permissions:['gate.users.create']});
+  const login=await f.gate.login('alice',f.password),identity=await f.gate.resolveSession(login.token);
+  const caller=new ExecutionContext({context:'BackOffice',publisher:'divdev',package:'divdev/admin',installation:'install',
+    self:'admin',app:'boilerplate',identity,capabilities:['gate.users.create'],scopes:{wydgate:['boilerplate']}});
+  const gate=createGate(f.libraries.bind(caller)),argon2=(await import('argon2')).default,hash=argon2.hash;
+  const mock=t.mock.method(argon2,'hash',async(...args)=>{
+    const result=await hash(...args);
+    await f.gate.assignUser({userId:user.account.id,roles:[],permissions:[]});
+    return result;
+  });
+  await denied(()=>gate.createUser({username:'mustnotexist',password:f.password}));mock.mock.restore();
+  assert.equal((await f.libraries.bind(f.gateContext).call('wydgate','find-user',{username:'mustnotexist'})).code,'GATE.USER_NOT_FOUND');
+});

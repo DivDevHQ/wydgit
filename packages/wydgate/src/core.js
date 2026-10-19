@@ -114,7 +114,7 @@ export async function openGate(options, storage, lifecycle = async () => {}, hos
   const perform=async(operation,request,caller)=>{
     authorize(request,caller);
     const required=administrativePolicy(operation,caller);
-    if(required)await evaluateSitePolicy(caller,required);
+    if(required){check(caller.capabilities.includes(required.permission),'SEAM.DENIED');await evaluateSitePolicy(caller,required);}
     const commit=(change,reason)=>mutate(data=>{
       checkCaller(caller);
       if(required)requireSitePolicy(data,caller,options.app,idle,required,membership);

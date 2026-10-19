@@ -1,5 +1,12 @@
 ## Unreleased
 
+- Enforce versioned host WydStore operation policies at JSON/SQLite resource
+  boundaries: exact context plus current site-scoped Gate permission, in addition
+  to existing SEAM capabilities, collection scopes and ownership. Revalidate cached
+  handles and every transaction member; retain explicit public reads, draft/save
+  semantics and dependency-private directories. Qualify restarts, colliding IDs,
+  inherited dispatch and retained-data placement/replacement lifecycles.
+
 - Add private site-scoped WydGate policy evaluation through canonical dispatch.
   Revalidate live sessions, membership and explicit permissions; require BackOffice
   for installed Gate administration and repeat mutation checks on revision retries.

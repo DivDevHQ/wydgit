@@ -11,9 +11,9 @@ export const manifest = {
     {name:'update',capability:'store.records.write'}, {name:'delete',capability:'store.records.delete'}
   ]
 };
-export async function register({service,options,failure,checkJson}) {
+export async function register({service,options,failure,checkJson,authorizeSitePolicy,checkCaller}) {
   const safe = async fn => { try { return await fn(); } catch(error) { throw failure(error instanceof StoreError ? error.code : 'STORE.IO'); } };
-  const stores = await safe(() => openStores(options,checkJson));
+  const stores = await safe(() => openStores(options,checkJson,{authorizeSitePolicy,checkCaller}));
   for(const {name} of manifest.services)service(name,
     (request,caller,policy) => safe(() => stores.execute(name,request,caller,policy)),
     {presentation:['get','query','count','metadata','history'].includes(name),authorize:(request,caller,policy) => safe(() => { stores.validate(name,request,caller,policy); return true; }), validate:() => true});
