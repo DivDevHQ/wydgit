@@ -24,7 +24,7 @@ for(const resource of ['steps','serviceCalls','timeMs'])test(`HTTPREL: genuine $
  const record=records[0];assert.equal(record.schema,'wydgine.http-diagnostics/1');assert.equal(record.pageAdmitted,true);
  assert.equal(record.failure.code,'SEWN.LIMIT');assert.equal(record.meter.exhaustion.resource,resource);assert.equal(record.meter.exhaustion.limit,resource==='timeMs'?1000:0);
  assert.equal(record.headersPublished,true);assert.equal(record.responseEnded,true);assert.equal(record.services.admitted,0);assert.equal(record.services.nativeStarted,0);assert.equal(record.operationOutcome,'not-committed');
- assert.ok(record.eventLoop.activeMs>=0&&record.eventLoop.idleMs>=0);assert.ok(Object.isFrozen(record)&&Object.isFrozen(record.services));
+ assert.ok(record.eventLoop.activeMs>=0&&record.eventLoop.idleMs>=0);assert.equal(record.scheduling.schema,'wydgine.scheduling/1');assert.ok(record.scheduling.pendingLatenessMs>=0);assert.equal(record.meter.progress.schema,'wydgit.ledger-progress/1');assert.ok(record.meter.progress.checks>0);assert.ok(Object.isFrozen(record)&&Object.isFrozen(record.services));
  assert.ok(JSON.stringify(record).length<10000);assert.doesNotMatch(JSON.stringify(record)+body,/private-value|private-query|private-cookie/);assert.equal(JSON.stringify(record).includes(f.root),false);
  assert.doesNotMatch(body,/diagnostics|exhaustion|timeLimitMs|SEWN.LIMIT/);
 });
@@ -37,4 +37,5 @@ test('HTTPREL: preadmission rejection and throwing observers preserve sanitized 
  const rejected=await fetch(url,{headers:{cookie:'theme=a; theme=b'}});assert.equal(rejected.status,400);await rejected.text();
  assert.equal(records.length,1);assert.equal(records[0].pageAdmitted,false);assert.equal(records[0].meter,null);assert.equal(records[0].failure.phase,'session');assert.equal(records[0].operationOutcome,'unknown');
  const success=await fetch(url);assert.equal(success.status,200);assert.doesNotMatch(await success.text(),/private-observer/);assert.equal(records.length,2);assert.equal(records[1].failure,null);assert.equal(records[1].meter.exhaustion,null);
+ for(const route of ['/runtime/wydgine/http/scheduling.js','/runtime/wydgine/execution/progress.js','/packages/wydgine/src/engine/http/scheduling.js']){const denied=await fetch(url.slice(0,-1)+route);assert.equal(denied.status,404);await denied.text();}
 });

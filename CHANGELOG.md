@@ -1,5 +1,12 @@
 ## Unreleased
 
+- Advance platform/Wydgine/WydHosting to alpha.24. Add an opt-in shared HTTP
+  scheduling-lateness sampler and bounded ledger progress at trusted boundaries,
+  with deterministic waiting/lateness/clock/commit controls and measured overhead.
+  Preserve deadline, cancellation, authority and publication semantics. Small
+  JSON/SQLite Contact and held-request experiments do not reproduce the historical
+  failure; WYDGINE-0.3-HTTP-LIMIT remains open with no claimed cause or runtime fix.
+
 - Qualify Firefox pointer/DOM workflows and retain explicit native-keyboard/human
   accessibility gaps. Fix Firefox null-Origin POST rejection with same-origin shell
   referrer policy while preserving Origin/CSRF checks; announce discovery failures

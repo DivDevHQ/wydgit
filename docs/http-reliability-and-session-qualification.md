@@ -307,3 +307,12 @@ checkout-import denial and one installed engine per consumer. These counts inclu
 all new HTTP/Gate tests and the controlled S3 fixture. The concurrent 239/246 result
 and its captured HTTP failures remain retained; the successful installed repeat
 is not a reliability fix or managed-hosting/deployment qualification.
+
+
+## Increment 9 follow-up
+
+Alpha.24's [deadline attribution qualification](http-deadline-attribution-qualification.md)
+adds shared scheduling-lateness and fixed ledger-progress observations, deterministic
+controls and small serial JSON/SQLite/held-request comparisons. The historical
+issue remains open without a proven cause or runtime correction. This alpha.23
+record and all its failing observations remain historical evidence.

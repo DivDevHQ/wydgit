@@ -1,4 +1,4 @@
-// Regression for the demonstrated deadline defect; original failing evidence is retained.
+// Controlled deadline/commit semantics; these forced waits do not establish historical causation.
 // Run: node --test test-support/http-budget-probe.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -85,7 +85,8 @@ test('controlled held-request drain crosses unchanged Page deadline while siblin
  assert.ok((await Promise.all(Array.from({length:12},()=>get('beta.localhost')))).every(status=>status===200));
  await new Promise(r=>setTimeout(r,1100));release();assert.equal(await pending,500);await stopping;
  assert.ok(diagnostics.some(e=>e.phase==='page'&&e.code==='SEWN.LIMIT'),JSON.stringify(diagnostics));
- const meter=meters.findLast(m=>m.exhaustion);assert.equal(meter.exhaustion.resource,'timeMs');assert.equal(meter.timeLimitMs,1000);assert.equal(meter.diagnostics.phaseAtFailure,'load');assert.ok(meter.diagnostics.spans.dispatch.elapsedMs>=900);
+ const meter=meters.findLast(m=>m.exhaustion);assert.equal(meter.exhaustion.resource,'timeMs');assert.equal(meter.timeLimitMs,1000);assert.equal(meter.diagnostics.phaseAtFailure,'load');assert.ok(meter.diagnostics.spans.dispatch.elapsedMs>=900);assert.equal(meter.progress.maxObservedUncheckedInterval.phase,'load');assert.equal(meter.progress.maxObservedUncheckedInterval.boundary,'handler');assert.ok(meter.progress.maxObservedUncheckedInterval.elapsedMs>=900);
+ const trace=traces.findLast(record=>record.meter?.exhaustion);assert.equal(trace.scheduling.schema,'wydgine.scheduling/1');assert.equal(trace.services.nativeStarted,0);
  assert.equal(await get('beta.localhost'),200);
- console.log(JSON.stringify({boundary:'held Page.Load during drain',controlledWaitMs:1100,status:500,diagnostics,meter,siblingStatus:200,historicalAttribution:false}));
+ console.log(JSON.stringify({boundary:'held Page.Load during drain',controlledWaitMs:1100,status:500,diagnostics,meter,trace,siblingStatus:200,historicalAttribution:false}));
 });

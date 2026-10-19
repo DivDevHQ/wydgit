@@ -1,7 +1,8 @@
 import {createPageDiagnostics} from './diagnostics.js';
 import {createInstanceController} from './instances.js';
 import {createCompletion} from './completion.js';
-import {createExecutionBudget,executionBudget} from '../sewn/budget.js';
+import {executionBudget} from '../sewn/budget.js';
+import {createObservedExecutionBudget,budgetProgress,observedExecutionMeter} from './progress.js';
 import {execute as executeWorkflow} from '../sewn/execute.js';
 import { bindMembers, authorizeMember, resolveMember } from '../object-model/members.js';
 import { matchesObjectGrant } from '../seam/context.js';
@@ -16,17 +17,18 @@ import { webModel } from '../web-model.js';
 import { renderSite,errorDocument } from '../index.js';
 import { prepareComponents,createPresentationLedger } from '../components.js';
 
-export async function executePage({model,pageId,session,input,context,runtimeSettings={},handlers=[],actions=[],events=new EventRegistry(),files,libraries,serviceMappings,csrf,render=renderSite,observe,onAdmission,cancelled=()=>false}) {
+export async function executePage({model,pageId,session,input,context,runtimeSettings={},handlers=[],actions=[],events=new EventRegistry(),files,libraries,serviceMappings,csrf,render=renderSite,observe,onAdmission,diagnosticProgress=typeof observe==='function',cancelled=()=>false}) {
   const diagnostics=createPageDiagnostics();
   handlers=prepareHandlers(handlers,events);actions=actions.map(record=>prepareAction(record,events));
   check(context.app===session.view.app&&session.active(),'EVENT.DENIED','Invalid owning Session');
   check((context.identity?.sessionId??null)===(session.identity?.sessionId??null),'EVENT.DENIED','Wrong Session identity');
   const presentationLedger=createPresentationLedger(context,pageId,runtimeSettings);
   let runtime=hydrate(dehydrate(model.runtime,{includeSensitive:true}),model.registry),alive=true,writable=true,unloading=false;
-  const executionLedger=createExecutionBudget(context,{guard:()=>check(alive&&session.active()&&!cancelled(),'EVENT.DENIED','Page execution ended')});
-  diagnostics.budgetStarted();
-  try{onAdmission?.();}catch{/* Trusted observation cannot alter admission. */}
+  const executionLedger=createObservedExecutionBudget(context,{progress:diagnosticProgress,guard:()=>check(alive&&session.active()&&!cancelled(),'EVENT.DENIED','Page execution ended')});
   const completion=createCompletion(()=>executionBudget(executionLedger,context).check());
+  diagnostics.budgetStarted(budgetProgress(executionLedger),completion);
+  handlers=diagnostics.handlers(handlers);actions=diagnostics.handlers(actions);
+  try{onAdmission?.();}catch{/* Trusted observation cannot alter admission. */}
   const ledger=[],initialized=new Set(),archive=new Map(),errors=[];let failure;let resolving=false;
   const response=createResponse(context),requestData={...input,route:{page:pageId}};
   const tree=(state=runtime)=>{const ids=[];const walk=id=>{ids.push(id);for(const slot of Object.keys(state.get(id).slots).sort())state.get(id).slots[slot].forEach(walk);};walk(pageId);return ids;};
@@ -76,7 +78,8 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
     SERVICES:Object.freeze({async Invoke(library,apiVersion,name,input){guard();check(!resolving||library==='wydstore'&&['get','query'].includes(name),'EVENT.DENIED','Resolvers may only read records');await diagnostics.measure('authorization',()=>session.authorize());guard();check(libraries,'SEAM.DENIED','No services');input=storageInput(library,name,input);return diagnostics.measure('service',()=>completion.run(operation=>libraries.bind(context,operation).invoke(library,apiVersion,name,input)));},async Call(library,name,input){guard();check(!resolving||library==='wydstore'&&['get','query'].includes(name),'EVENT.DENIED','Resolvers may only read records');await diagnostics.measure('authorization',()=>session.authorize());guard();check(libraries,'SEAM.DENIED','No services');input=storageInput(library,name,input);return diagnostics.measure('service',()=>completion.run(operation=>libraries.bind(context,operation).call(library,name,input)));}})
   });
   const componentsRuntime=createInstanceController({runtime,registry:model.registry,context,rootId:pageId,budget:executionLedger,events,services:contexts(rootGuard).SERVICES,scope:contexts(rootGuard),canEdit:()=>writable&&!unloading&&response.state==='Open',canEmit:()=>writable&&!unloading,onRuntime:next=>{runtime=next;}});
-  const executor=async(document,options)=>{const id=options.scope.ME.id;if(!exists(id))return executeWorkflow(document,options);const d=model.registry.get(runtime.get(id).prototype);if(!d.component&&!Object.keys(d.events).length)return executeWorkflow(document,options);componentsRuntime.adopt(runtime);if(!componentsRuntime.executable(id))await componentsRuntime.activate();return componentsRuntime.workflow(document,options.scope,id,options);};
+  const executeHandler=async(document,options)=>{const id=options.scope.ME.id;if(!exists(id))return executeWorkflow(document,options);const d=model.registry.get(runtime.get(id).prototype);if(!d.component&&!Object.keys(d.events).length)return executeWorkflow(document,options);componentsRuntime.adopt(runtime);if(!componentsRuntime.executable(id))await componentsRuntime.activate();return componentsRuntime.workflow(document,options.scope,id,options);};
+  const executor=diagnosticProgress?(document,options)=>diagnostics.measure('handler',()=>executeHandler(document,options)):executeHandler;
   const candidates=actions.filter(a=>a.page===pageId&&a.type===input.action?.type&&(a.delegation?matchesObjectGrant([a.target],input.action?.target):a.target===input.action?.target));
   let action=candidates.length===1?candidates[0]:null;
   const defaults={};
@@ -178,9 +181,9 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
     executionBudget(executionLedger,context).close();alive=false;
     // Revocation stops new work; it does not cancel already submitted kernel I/O.
     // Keep the request in the host's drain set until every admitted call settles.
-    diagnostics.phase('settle');await completion.settle();
+    diagnostics.phase('settle');await completion.settle();diagnostics.settled();
     const charges=executionBudget(executionLedger,context).snapshot();
-    try{observe?.({meter:diagnostics.finish(executionBudget(executionLedger,context).meter()),steps:charges.steps??0,limited:[failure,...errors].some(error=>['SEWN.LIMIT','EVENT.LIMIT'].includes(error?.code))});}catch{}
+    try{observe?.({meter:diagnostics.finish(observedExecutionMeter(executionLedger,context)),steps:charges.steps??0,limited:[failure,...errors].some(error=>['SEWN.LIMIT','EVENT.LIMIT'].includes(error?.code))});}catch{}
     }
   }
   const outcome=completion.outcome(Boolean(failure));
