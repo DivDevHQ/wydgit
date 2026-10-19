@@ -1,5 +1,13 @@
 ## Unreleased
 
+- Qualify Firefox pointer/DOM workflows and retain explicit native-keyboard/human
+  accessibility gaps. Fix Firefox null-Origin POST rejection with same-origin shell
+  referrer policy while preserving Origin/CSRF checks; announce discovery failures
+  as alerts. Extend installed diagnostics/session coverage and use a controlled
+  monotonic clock for the S3 deadline fixture without changing resource bounds.
+  Retain instrumented Contact/held-request wall-time failures under concurrent
+  qualification; historical root cause and mitigation remain open.
+
 - Advance Gate to alpha.7: reject session resolution when absolute or idle expiry
   crosses a pending touch write. Qualify real JSON/SQLite revocation/rotation/CAS
   races, bounded conflict/busy/I/O recovery and concurrent HTTP discovery/invocation.

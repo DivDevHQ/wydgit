@@ -73,7 +73,10 @@ export function createBackOfficeHttp({root,model,libraries,sessions,contextPolic
       checkDeadline();
       const csrf=submissionToken(session.csrf,app,'backoffice','actions',binding);
       if(stateFingerprint(root)!==head)return reject(409,'ACTION.STALE');
-      if(isShell){if(req.query)return reject(400,'HTTP.REQUEST');res.setHeader('Content-Type','text/html; charset=utf-8');res.end(shell(model,csrf));return;}
+      // Firefox's no-referrer document policy can make same-origin fetch POSTs
+      // send Origin:null. Preserve exact Origin validation and suppress referrers
+      // to other origins while allowing this shell's own authenticated requests.
+      if(isShell){if(req.query)return reject(400,'HTTP.REQUEST');res.setHeader('Referrer-Policy','same-origin');res.setHeader('Content-Type','text/html; charset=utf-8');res.end(shell(model,csrf));return;}
       let result;
       if(discovery){
         const query=parseMap(req.query),keys=Object.keys(query);

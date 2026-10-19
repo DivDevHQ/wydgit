@@ -53,7 +53,7 @@ test('BOUI-05: nested objects, required/optional fields, booleans, bounded array
  assert.equal(matchesValue(JSON.parse('{"__proto__":{}}'),{type:'object',fields:{}}),false);assert.equal(matchesValue({extra:true},{type:'object',fields:{}}),false);assert.equal(matchesValue([1,2,3],{type:'array',maxItems:2,items:{type:'integer',min:0,max:3}}),false);
 });
 test('BOUI-06: discovery authorization/error states and bounded response rendering',async t=>{
- for(const status of [401,403,500]){const {d,client}=setup(t,async()=>response({ok:false,code:'ACTION.DENIED',message:'<script>private stack</script>'},status));await client.ready;assert.equal(d.querySelector('nav button'),null);assert.doesNotMatch(d.body.textContent,/private stack/);assert.match(d.getElementById('bo-status').textContent,status===401?/session has ended/:status===403?/Access denied/:/could not be loaded/);}
+ for(const status of [401,403,500]){const {d,client}=setup(t,async()=>response({ok:false,code:'ACTION.DENIED',message:'<script>private stack</script>'},status));await client.ready;assert.equal(d.getElementById('bo-status').getAttribute('role'),'alert');assert.equal(d.getElementById('bo-status').getAttribute('aria-live'),'assertive');assert.equal(d.querySelector('nav button'),null);assert.doesNotMatch(d.body.textContent,/private stack/);assert.match(d.getElementById('bo-status').textContent,status===401?/session has ended/:status===403?/Access denied/:/could not be loaded/);}
  const {d,client}=setup(t,async()=>new Response('x'.repeat(66561)));await client.ready;assert.match(d.getElementById('bo-status').textContent,/could not be loaded/);
 });
 test('BOUI-07: light/dark/system controls and responsive stylesheet use established conventions',async t=>{

@@ -136,7 +136,7 @@ export function mountBackOffice({document,fetch:request}){
         for(const action of actions.filter(a=>a.category===category)){const li=node('li'),button=node('button',action.title,{type:'button','data-action':action.id});button.addEventListener('click',()=>select(action));li.append(button);list.append(li);}
       }
       say(actions.length?'Select an action.':'No actions are available for your current access. Installed modules and current permissions determine this list.');
-    }catch(error){clear();say(error.status===401?'Your session has ended. Sign in to this site again.':error.status===403?'Access denied. Your current permissions do not allow this request.':error.code==='ACTION.STALE'?'The site changed. Reload BackOffice after the host restarts.':'Actions could not be loaded. Use Refresh to try again.');}
+    }catch(error){clear();say(error.status===401?'Your session has ended. Sign in to this site again.':error.status===403?'Access denied. Your current permissions do not allow this request.':error.code==='ACTION.STALE'?'The site changed. Reload BackOffice after the host restarts.':'Actions could not be loaded. Use Refresh to try again.',true);}
     finally{lock(false);if(restoreFocus)refresh.focus();}
   }
   refresh.addEventListener('click',discover);

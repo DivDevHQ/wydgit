@@ -113,3 +113,87 @@ Completion rerun including refresh-focus preservation passed at
 also passed **222/222**, including UI and module tests; provider/process/Linux
 sets passed **35/35**, **20/20**, **25/25**. The combined repository suite passed
 **1500/1500 twice** before the final documentation-only required rerun.
+
+## Alpha.23 Firefox and accessibility continuation
+
+The shared journey now supports the installed Firefox through a test-only
+[WebDriver BiDi connection](https://developer.mozilla.org/en-US/docs/Web/WebDriver/How_to/Create_BiDi_connection).
+No geckodriver, automation dependency or browser download is required. Use:
+
+```sh
+WYDCLIENT_BROWSER=firefox WYDCLIENT_FIREFOX_POINTER_ONLY=1 node scripts/verify-backoffice-browser.js
+node scripts/verify-backoffice-browser.js
+```
+
+Firefox **158.0** passed the explicitly labelled pointer/DOM subset at
+`/tmp/wyd-backoffice-browser-Z2aj9R`; Chrome **155.0.8059.84** passed the native
+keyboard/accessibility-tree journey at `/tmp/wyd-backoffice-browser-5fl15C`.
+Both process exits, including disposable profile cleanup, were successful. Five
+screenshots and sanitized `result.json` measurements are retained per run. Firefox
+mobile/roster and Chrome dark screenshots were visually inspected.
+
+Firefox exercised real Gate form login, cookies unavailable to page script, shell
+and discovery, both installed action modules, actual roster and notices, nested
+array add/remove/max, light/dark/system appearance, refresh focus restoration,
+permission denial and rediscovery, logout, unprivileged membership and controlled
+session expiry. Widths 320/360/768/1280/1920 retain local table scrolling and no
+page-wide overflow. Firefox uses native pointer/wheel and text entry; DOM focus
+and semantic/label checks are supporting evidence. It does **not** qualify native
+Tab/Enter/Arrow navigation or a Firefox accessibility tree. The headless window
+reported `document.hasFocus() === false` despite activation and Mozilla's
+[automation focus preference](https://firefox-source-docs.mozilla.org/python/marionette_driver.html),
+confined to the disposable profile. Without the explicit pointer-only option the
+harness still fails its keyboard prerequisite; it does not silently skip it.
+System preference was observed, not emulated, in Firefox. Chrome retains both
+emulated system schemes, reduced-motion preference and native table keyboard scroll.
+
+Two demonstrated defects were corrected:
+
+- Firefox supplied `Origin: null` on JSON POSTs from the `no-referrer` shell and
+  the trusted hostname boundary rejected them with 400. Successful shell documents
+  now use **Referrer-Policy: same-origin**. Protected API responses retain
+  `no-referrer`. Foreign/null Origin is still rejected; CSRF, CSP and cookie checks
+  are unchanged. Before/after real Firefox evidence is 400/null → 200/exact origin,
+  and permission-revoked invocation still returns 403. Header regressions failed
+  against the old implementation on JSON and SQLite before correction.
+- Discovery/session-expiry errors used a polite status rather than an alert.
+  They now use `role=alert` and `aria-live=assertive`, like invocation errors. The
+  BOUI-06 regression failed before correction; Firefox now observes the alert on
+  actual expired-session discovery. This is DOM semantics, not proof of speech.
+
+Initial harness-only failures (required profile directory, BiDi expression syntax,
+headless focus prerequisite) are retained in `/tmp/alpha23-firefox*.log`. A Chrome
+journey initially passed its assertions but failed profile removal with ENOTEMPTY;
+profile removal now has a bounded five-retry cleanup before fixture-root removal.
+No product browser-specific layout hack, framework, raw contributed HTML or new
+BackOffice functionality was introduced.
+
+### Human review checklist — NOT YET PERFORMED
+
+Use a disposable App with both documented modules and generated test accounts;
+record browser/OS, assistive technology/version, viewport/zoom, result and issue IDs.
+These unchecked steps are future work, not automated certification:
+
+- [ ] In a focused graphical Firefox window, use only Tab/Shift-Tab/Enter/Space to
+  log in, use the skip link, choose both modules and invoke each read action.
+- [ ] With NVDA/Firefox or another supported human screen-reader combination,
+  verify heading/landmark order, accessible names and focus visibility/order.
+- [ ] Confirm optional Include, required bounds, nested fieldsets and array item
+  names/counts are understandable; add/remove items and verify focus restoration.
+- [ ] Submit invalid integers/required text; hear the error once, reach its field
+  and read the linked error/bounds without losing entered values.
+- [ ] Hear loading, success, empty result, discovery failure and session expiry;
+  verify alerts do not duplicate speech or interrupt unrelated input unnecessarily.
+- [ ] Navigate the real result table by row/column, hear captions/headers and scroll
+  the named result region with a keyboard; verify focus escapes normally.
+- [ ] Refresh, revoke permissions through the separate trusted fixture operator,
+  invoke a stale selection and log out; verify clear recovery and no action replay.
+- [ ] At actual 200% and 400% browser zoom, inspect reflow, clipped content, controls,
+  scroll regions, focus indicators and browser text scaling; repeat at 320 CSS px.
+- [ ] Check light/dark/system and OS high-contrast/forced-colors with magnification;
+  inspect all states, error indicators and focus boundaries beyond measured tokens.
+- [ ] On real touch hardware, verify target size, scrolling, nested forms and
+  orientation changes. Record remaining usability defects independently of WCAG claims.
+
+No human screen-reader, actual zoom, forced-colors or touch qualification, full WCAG
+conformance, complete ADM-01, proxy/TLS deployment or privileged hosting claim follows.

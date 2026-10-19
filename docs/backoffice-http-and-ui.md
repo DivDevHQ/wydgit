@@ -345,3 +345,13 @@ entry with recursive Add/Remove controls, per-field linked errors and clearer
 bounds. Results add homogeneous tables, explicit empty/null text, long-text
 native disclosures and pagination metadata. Confirmation resets on edits and on
 every attempt; all original server authority and no-replay boundaries remain.
+
+### Alpha.23 portability/accessibility amendment
+
+Real Firefox qualification demonstrated null-Origin rejection caused by the shell's
+`no-referrer` document policy. Successful shell documents now send
+**Referrer-Policy: same-origin**, suppressing cross-origin referrers while preserving
+exact Origin on their own JSON POSTs. API/error responses retain `no-referrer`;
+foreign/null Origin, CSRF and Fetch Metadata checks remain unchanged. Discovery
+failures now use the same alert/assertive announcement semantics as invocation
+failures. See the [Firefox subset and manual checklist](backoffice-browser-qualification.md#alpha23-firefox-and-accessibility-continuation).

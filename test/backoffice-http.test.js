@@ -23,7 +23,7 @@ async function listen(t,f,options={}){
 for(const provider of ['json','sqlite']){
   test(`BOHTTP-01 ${provider}: authenticated shell, bounded discovery and genuine roster invocation`,async t=>{
     const f=await actionFixture(t,provider),h=await listen(t,f);
-    assert.equal(h.shell.status,200);assert.equal(h.shell.headers.get('cache-control'),'no-store');assert.equal(h.shell.headers.get('referrer-policy'),'no-referrer');
+    assert.equal(h.shell.status,200);assert.equal(h.shell.headers.get('cache-control'),'no-store');assert.equal(h.shell.headers.get('referrer-policy'),'same-origin');
     assert.match(h.shell.headers.get('content-security-policy'),/script-src 'self'/);assert.doesNotMatch(h.shell.headers.get('content-security-policy'),/unsafe-inline/);
     const $=load(h.html);assert.equal($('header').length,1);assert.equal($('nav[aria-label="BackOffice actions"]').length,1);assert.equal($('#backoffice-content').length,1);assert.equal($('script:not([src])').length,0);assert.equal($('html').attr('data-wyd-theme'),'system');
     assert.match($('header').text(),/Example Site.*boilerplate/);assert.equal(h.html.includes(f.login.token),false);assert.equal(h.html.includes(f.password),false);
@@ -34,7 +34,7 @@ for(const provider of ['json','sqlite']){
     const front=await h.get('/');assert.equal(front.status,200);await front.text();
     const privatePage=await h.get('/administration/');assert.notEqual(privatePage.status,200);await privatePage.text();
     for(const asset of ['/runtime/wydclient/backoffice.js','/backoffice/assets/shell.css']){const r=await h.get(asset);assert.equal(r.status,200);assert.ok((await r.text()).length>100);}
-    for(const route of ['/runtime/wydgine/packages/backoffice.js','/backoffice/api/host-policy','/backoffice/AccountAdmin','/backoffice/HostAdmin']){const r=await h.get(route);assert.equal(r.status,404);await r.text();}
+    for(const route of ['/runtime/wydgine/packages/backoffice.js','/runtime/wydgine/http/diagnostics.js','/backoffice/api/host-policy','/backoffice/AccountAdmin','/backoffice/HostAdmin']){const r=await h.get(route);assert.equal(r.status,404);await r.text();}
   });
   test(`BOHTTP-02 ${provider}: no anonymous, expired, revoked or cross-site authentication`,async t=>{
     const f=await actionFixture(t,provider),h=await listen(t,f);
@@ -67,7 +67,7 @@ for(const provider of ['json','sqlite']){
 
 test('BOHTTP-04: methods, CSRF, origin, JSON/body budgets, closed envelopes, pollution and ambiguous credentials',async t=>{
   const f=await actionFixture(t),h=await listen(t,f),[a]=await h.discover(),body={reference:a.reference,input:{}};
-  for(const [headers,status]of [[{'X-Wydgit-CSRF':''},403],[{'X-Wydgit-CSRF':'forged'},403],[{Origin:'https://foreign.test'},400],[{'Content-Type':'text/plain'},415],[{'Content-Type':'application/json; charset=iso-8859-1'},415],[{'Content-Encoding':'gzip'},415],[{Authorization:'Bearer '+f.login.token},400],[{Cookie:h.cookie+'; __Host-wydgit-auth='+f.login.token},400],[{Cookie:h.cookie+'; '+h.cookie},400]]){
+  for(const [headers,status]of [[{'X-Wydgit-CSRF':''},403],[{'X-Wydgit-CSRF':'forged'},403],[{Origin:'https://foreign.test'},400],[{Origin:'null'},400],[{'Content-Type':'text/plain'},415],[{'Content-Type':'application/json; charset=iso-8859-1'},415],[{'Content-Encoding':'gzip'},415],[{Authorization:'Bearer '+f.login.token},400],[{Cookie:h.cookie+'; __Host-wydgit-auth='+f.login.token},400],[{Cookie:h.cookie+'; '+h.cookie},400]]){
     const r=await h.post(body,headers);assert.equal(r.status,status,JSON.stringify(headers));const text=await r.text();assert.equal(text.includes(f.login.token),false);assert.equal(r.headers.get('access-control-allow-origin'),null);
   }
   for(const method of ['PUT','PATCH','DELETE']){const r=await h.post(body,{},method);assert.equal(r.status,405);assert.equal(r.headers.get('allow'),'POST');await r.text();}

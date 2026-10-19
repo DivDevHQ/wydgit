@@ -54,7 +54,7 @@ for(const provider of ['JSON','SQLite'])test(`${provider}: clean interactive Con
  const answers=['y','y','contact','contact','sections','0',provider,'','y','y'];let transcript='';
  const installed=await runInstaller({args:[f.packagePath,'--root',f.root,'--apply'],input:Readable.from(answers.map(a=>a+'\n')),output:{write:s=>{transcript+=s;}}});
  assert.equal(installed.receipt.placement.page,'contact');assert.match(transcript,/Apply installation\?/);assert.match(transcript,/Approve this host storage provisioning/);
- await start();const first=await fetch(host.url+'/contact/'),html=await first.text();assert.match(html,/Guestbook/);assert.match(html,/wyd-form/);
+ await start();const first=await fetch(host.url+'/contact/'),html=await first.text();assert.equal(first.status,200,JSON.stringify({provider,phase:'Contact.GET',diagnostics,meters,http}));assert.match(html,/Guestbook/);assert.match(html,/wyd-form/);
  const cookie=first.headers.get('set-cookie').split(';')[0],csrf=/name="_csrf" value="([^"]+)"/.exec(html)[1];
  const post=async(name,message)=>{const response=await fetch(host.url+'/contact/',{method:'POST',headers:{cookie,'content-type':'application/x-www-form-urlencoded'},body:new URLSearchParams({_target:'guestbook-form',_action:'Submit',_csrf:csrf,name,message})});assert.equal(response.status,200,JSON.stringify({provider,phase:'Contact.POST',diagnostics,meters,http}));return response.text();};
  assert.match(await post(' ','retain invalid'),/aria-invalid="true"/);

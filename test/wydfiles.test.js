@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {performance} from 'node:perf_hooks';
 import {EventEmitter} from 'node:events';
 import {sendTransfer} from '../wydgine/http/transfers.js';
 import {permissions} from '../wydgine/packages/manifest.js';
@@ -125,9 +126,9 @@ test('S3 one deadline spans retries, pagination, stream consumption and non-retr
 });
 
 test('canonical S3 deadlines span metadata, capacity, transfer and mutation phases',async t=>{
- const calls=[];
+ const calls=[];let clock=performance.now();t.mock.method(performance,'now',()=>clock);
  const f=await fixture(t,{},()=>s3Provider(s3config,defaults,async(url,o)=>{
-  calls.push(o.method);await new Promise(r=>setTimeout(r,40));
+  calls.push(o.method);clock+=40;
   if(new URL(url).search)return new Response('<ListBucketResult><IsTruncated>false</IsTruncated></ListBucketResult>');
   if(o.method==='HEAD')return new Response(null,{headers:{'content-length':'1'}});
   if(o.method==='GET')return new Response('x',{headers:{'content-length':'1'}});

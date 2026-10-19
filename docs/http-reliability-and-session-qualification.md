@@ -9,7 +9,9 @@ Store alpha.5 and standalone Client alpha.11 remain unchanged.
 
 ## Historical HTTP failure: OPEN
 
-**WYDGINE-0.3-HTTP-LIMIT remains unresolved.** No historical cause or fix is
+**WYDGINE-0.3-HTTP-LIMIT remains unresolved.** Matching Contact/held-request
+failures were reproduced under concurrent qualification; see the final trace
+section below. No historical cause or fix is
 claimed. Controlled limit/cancellation failures establish coverage, not attribution
 of the old intermittent Contact/hosting failure. Passing requests or suites do not
 establish resolution. See [retained evidence](milestones/0.3-reliability.md).
@@ -47,7 +49,8 @@ Optional **`execution.observeHttp(record)`** receives one frozen
 response cleanup. It joins the existing frozen meter and Page phases/spans with:
 
 - Pipeline failure phase and bounded code; first cleanup code separately.
-- Whether Page execution reached its ledger/settlement observation.
+- Whether Page execution passed its owning Session/context checks and created its
+  shared ledger (recorded at admission, independently of later settlement).
 - Service calls admitted to completion, calls whose native handler began, pending
   calls after settlement, and calls reporting a commit. Multiple `begin` checks
   for one service count once. A cancelled precommit call still records native entry.
@@ -181,3 +184,126 @@ old idle timestamp alone. This changes no touch frequency or conflict bound.
 The prior 1522-test post-documentation run also passed (70.093 seconds), before
 these last two regression cases and conditional-read refinement. Final verification
 must use the expanded source, not infer its success from those earlier totals.
+
+## Firefox/accessibility and integrated qualification
+
+Checkpoint A/B **2a74e5a555d876cd70a8778dd648c767a1af80d3** was committed and
+pushed after **1524/1524** passed, **78.899 seconds**, with required content,
+whitespace and dependency checks. Remote HEAD was verified identical. No historical
+Contact/hosting failure occurred in that run. A concurrent repeat of the six
+controlled Contact/drain probes passed **6/6**, **7.110 seconds**; non-reproduction
+is not a cause or closure claim.
+
+The [browser continuation and human checklist](backoffice-browser-qualification.md#alpha23-firefox-and-accessibility-continuation)
+record real Firefox 158 pointer/DOM and Chrome 155 native-keyboard journeys. Two
+proven corrections: successful shell Referrer-Policy changes to same-origin to
+avoid Firefox's null-Origin POSTs while retaining exact Origin/CSRF rejection;
+discovery errors announce alert/assertive semantics. Firefox native keyboard,
+accessibility tree, human assistive technology, actual zoom/forced-colors/touch
+remain unqualified. No UI expansion, framework or browser-specific product hack.
+The served web adapter and its Wydgine runtime mirror change; standalone Client and
+historical distributions remain unchanged. Focused HTTP/UI/Files: **74/74**,
+**12.434 seconds**, `/tmp/alpha23-browser-focused.log`.
+
+The first installed A/B tarballs passed **224 integration + 35 provider + 20 process
++ 25 unprivileged Linux** tests, with service-free binary/HTTP/assets/restart and
+one installed engine per consumer; checkout imports were denied by resolution hooks.
+Evidence: `/tmp/wyd-i54-packed-yFgIE5`. The expanded run added Gate contention/HTTP
+diagnostics and passed **245/246** integration tests; its existing S3 timing fixture
+expected two calls after 40 ms waits under a 65 ms deadline but observed only one
+before timeout. Retained log: `/tmp/wyd-i54-packed-71H9ZQ/five-library-tests.log`.
+This is distinct from historical SEWN.LIMIT and did not show a missed deadline.
+
+The S3 fixture now advances its existing monotonic clock by exactly 40 ms per
+provider response. All original 65/20 ms bounds, expected call sequences and
+no-PUT/mutation assertions remain; real timer/abort tests elsewhere are unchanged.
+The controlled fixture passed **1/1**, and the broader Files/HTTP/UI set passed
+**74/74**. No Files runtime or published version change was needed. The expanded
+installed verification is repeated against final source, not inferred from the
+old passing tarballs. Final commands/results are retained in the structured evidence
+and [handoff](work-in-progress/http-reliability-alpha23-handoff.md).
+
+## Matching historical failures reproduced — RELEASE ISSUE STILL OPEN
+
+A bounded load experiment ran the unchanged default-concurrency `npm test`, the
+184-case focused qualification and the 246-case installed integration suite at the
+same time. No engine limit, test concurrency setting or security assertion changed.
+This reproduced the Contact/held-request **failure class** and captured private
+meters; it does not prove the original unmetered failures shared one cause.
+
+| Observed trace | First resource / phase | Native/commit evidence | HTTP publication |
+| --- | --- | --- | --- |
+| Installed JSON Contact POST | timeMs: used 1053 / bound 1000; prerender; 1102.761 ms pipeline elapsed | 2 admitted/started, 1 commit reported; 865.389 ms aggregate service spans; none pending | 500, headers/body ended, indeterminate |
+| Installed SQLite Contact POST | timeMs: used 1000 / bound 1000; prerender; 1026.166 ms pipeline elapsed | 2 admitted/started, 1 commit reported; 831.310 ms service spans; none pending | 500, headers/body ended, indeterminate |
+| Installed held Page.Load/drain | timeMs: used 1169 / bound 1000; load; 1201.880 ms pipeline elapsed | 0 admitted/started services, no reported commit | 500, headers/body ended, not-committed |
+| Separate SQLite sibling, cleanup only | timeMs: used 1001 / bound 1000; cleanup | 2 admitted/started, 1 commit reported | 200, committed; cleanup failure separately diagnosed |
+
+The wall-time bound, rather than a service-call/loop counter, was the first terminal
+resource in these traces. The held native Page.Load waits for a fixture barrier while
+12 sibling requests complete; that awaited interval is charged to the same ledger.
+It had no provider service work. Contact had actual service calls and a reported
+commit before its unsuccessful response. This is not a request-size rejection,
+invalid authentication, proof of rollback or evidence that changing 500 to 200 would
+repair the failure. Cleanup-only LIMIT is distinguishable from a failed Page result.
+
+The event-loop active deltas were 1078.163, 1026.155 and 1201.731 ms respectively,
+with idle deltas 24.569, 0 and 0. These include other requests and OS descheduling;
+**they are not CPU measurements or proof of scheduler causation**. Exact provider
+wait versus scheduling attribution, appropriate budget policy and corrective
+mitigation remain unresolved. No wall-time pause, ceiling increase, mutation retry,
+exception suppression, concurrency reduction or assertion relaxation was applied.
+
+Retained results from this experiment:
+
+- Installed integration **239/246**, seven HTTP/render failures across Guestbook,
+  JSON/SQLite Contact, hosting startup/relocation, Taskboard and held drain.
+  `/tmp/wyd-i54-packed-oJBxHm/five-library-tests.log`; later installed stages were
+  not run because integration failed. Only the captured meter-bearing cases above
+  are specifically classified as timeMs; generic 500 alone does not classify others.
+- Focused **182/184**, two Contact HTTP 500 failures, **62.671 seconds**;
+  `/tmp/alpha23-final-focused.log`.
+- Full **1522/1524**, process-worker sample rendering and tenant sibling HTTP 500
+  assertions, **89.384 seconds**; `/tmp/alpha23-integration-full.log`. Their generic
+  response alone does not establish the exhausted category.
+
+Full sanitized meter records are durable in
+[structured evidence](../test-support/http-reliability-alpha23-evidence-2026-10-19.json).
+Contact's initial GET assertion now also emits the same bounded fixture history,
+so a failure before POST cannot lose its private classification on a future run.
+These observed failures remain release concerns even if subsequent normal-schedule
+runs pass. Follow-up qualification runs the **same commands/default test concurrency**
+sequentially; those conditions and results are recorded separately, without treating
+successful repeats as a reliability fix or discarding the stress failure evidence.
+
+## Normal-schedule repeat and integrity checks
+
+After the concurrent experiment completed, the identical focused command passed
+**184/184**, **42.054 seconds**, `/tmp/alpha23-focused-normal.log`. Then the normal
+`npm test` command, with its unchanged default concurrency, passed **1524/1524**,
+**69.524 seconds**, `/tmp/alpha23-normal-full.log`. The installed command runs only
+after that suite completes; final installed counts are recorded below. This does
+not resolve the observed load failures or classify the generic 500s in the stress
+full suite. The different command-overlap conditions are explicit evidence.
+
+The private Page admission flag now records creation of the shared ledger, separately
+from the later settlement meter, so an interrupted execution cannot be labelled
+unadmitted merely because it did not reach observation. Existing diagnostics tests
+retain preadmission, genuine limits, observer isolation and native publication checks.
+New security assertions retain null-Origin rejection and public 404 for the trusted
+HTTP diagnostics module.
+
+`npm run check`, dependency graph and whitespace checks pass. Relative documentation
+file links: **596 checked, zero missing** (external schemes excluded); **32 tracked
+Client distribution files** match starting HEAD byte-for-byte. Package dry runs:
+Wydgine alpha.23 **129 files**, WydHosting alpha.23 **50 files**, Gate alpha.7
+**13 files**; no publication. Browser profiles, runtime fixtures and authoritative
+data are disposable. A final required-check rerun follows documentation completion
+before committing; **the historical release issue remains open regardless of it**.
+
+Sequential final installed tarballs at `/tmp/wyd-i54-packed-FXzIwE` passed
+**246/246 integration** (17.355 s), **35/35 provider** (2.007 s), **20/20 process**
+(42.524 s), and **25/25 unprivileged Linux** (4.514 s), with service-free acceptance,
+checkout-import denial and one installed engine per consumer. These counts include
+all new HTTP/Gate tests and the controlled S3 fixture. The concurrent 239/246 result
+and its captured HTTP failures remain retained; the successful installed repeat
+is not a reliability fix or managed-hosting/deployment qualification.
