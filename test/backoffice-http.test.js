@@ -103,10 +103,10 @@ test('BOHTTP-06: approved policy narrowing removes discovery; permission cannot 
 test('BOHTTP-07: actual write requires confirmation and timeout may follow committed side effects',async t=>{
   const f=await actionFixture(t,'json',{edit:m=>{const a=m.backofficeActions[0];a.id='manage-member';a.service.operation='manage-member';a.effect='write';a.confirmation='Confirm the membership change';a.input={type:'object',fields:{id:{type:'string',maxLength:64},status:{type:'string',maxLength:16}}};a.output=a.output.fields.members.items;}});
   const target=await f.gate.register({username:'bob',password:f.password});let calls=0;
-  const real=f.libraries,libraries={...real,bind(context){const bound=real.bind(context);return {...bound,async invoke(...args){calls++;const result=await bound.invoke(...args);await new Promise(r=>setTimeout(r,1100));return result;}};}};
+  const real=f.libraries,libraries={...real,bind(context,operation){const bound=real.bind(context,operation);return {...bound,async invoke(...args){calls++;const result=await bound.invoke(...args);await new Promise(r=>setTimeout(r,1100));return result;}};}};
   const h=await listen(t,f,{libraries}),[a]=await h.discover(),body={reference:a.reference,input:{id:target.membership.id,status:'suspended'}};
   const missing=await h.post(body);assert.equal(missing.status,400);assert.equal((await missing.json()).code,'ACTION.CONFIRMATION');assert.equal(calls,0);
-  const changed=await h.post({...body,confirmed:true});assert.equal(changed.status,503);assert.equal((await changed.json()).code,'SEWN.LIMIT');assert.equal(calls,1);
+  const changed=await h.post({...body,confirmed:true});assert.equal(changed.status,503);assert.equal((await changed.json()).code,'SEWN.LIMIT');assert.equal(calls,1);assert.equal(changed.headers.get('x-wydgit-action-outcome'),'uncertain');
   const members=await f.gate.listMembers({limit:20});assert.equal(members.members.find(m=>m.id===target.membership.id).status,'suspended');
 });
 
@@ -158,4 +158,80 @@ test('BOHTTP-11: explicit native demo installation uses reviewed grants and crea
   await h.stop();let started=0;
   assert.throws(()=>createApp({root:f.root,libraries:f.libraries,localHostname:'public.example.com',lifecycle:{start(){started++;return Promise.resolve();},async stop(){}}}),{code:'HOST.ROUTING'});
   assert.equal(started,0,'invalid development ingress must reject before lifecycle startup');
+});
+
+// The clock advances only at explicit barriers; no sleep guesses decide outcomes.
+function actionBarrier(f,{before=false,fail=false}={}){
+  const real=f.libraries;let enter,release,calls=0;
+  const entered=new Promise(r=>enter=r),held=new Promise(r=>release=r);
+  const libraries={...real,bind(context,operation){const bound=real.bind(context,operation);return {...bound,async invoke(...args){
+    calls++;if(before){enter();await held;}
+    const result=fail?{ok:false,code:'SERVICE.FAILED',message:'secret /native/path',details:{secret:true}}:await bound.invoke(...args);
+    if(!before){enter();await held;}return result;
+  }};}};
+  return {libraries,entered,release,calls:()=>calls};
+}
+
+test('BOREL-01: expired native admission and genuine service budget exhaustion dispatch no operation',async t=>{
+  const f=await actionFixture(t),api=f.framework(),[a]=await f.discover(api);let started=0;
+  const expired=await api.invoke({...f.request,reference:a.reference,input:{}},{deadline:0,onStart:()=>started++});
+  assert.equal(expired.code,'SEWN.LIMIT');assert.equal(started,0);
+  const h=await listen(t,f,{contextPolicy:c=>new ExecutionContext({...c,limits:{sewnServiceCalls:0}})}),[fresh]=await h.discover();
+  const response=await h.post({reference:fresh.reference,input:{}});assert.equal(response.status,503);
+  assert.equal((await response.json()).code,'SEWN.LIMIT');assert.equal(response.headers.get('x-wydgit-action-outcome'),'rejected');
+});
+
+test('BOREL-02: HTTP deadline crosses authorization before service admission, rather than starting late work',async t=>{
+  const f=await actionFixture(t),real=f.libraries;let advance=()=>{},calls=0;
+  const libraries={...real,async authorizeSitePolicy(...args){const value=await real.authorizeSitePolicy(...args);advance();return value;},bind(c,op){const b=real.bind(c,op);return {...b,invoke(...args){calls++;return b.invoke(...args);}};}};
+  const h=await listen(t,f,{libraries}),[a]=await h.discover();const now=Date.now();let clock=now;
+  t.mock.method(Date,'now',()=>clock);advance=()=>{clock=now+120001;};
+  const r=await h.post({reference:a.reference,input:{}});assert.equal(r.status,503);assert.equal((await r.json()).code,'HTTP.DEADLINE');
+  assert.equal(calls,0);assert.equal(r.headers.get('x-wydgit-action-outcome'),'rejected');
+});
+
+for(const expired of [false,true])test(`BOREL-03: asynchronous read ${expired?'after':'before'} unchanged deadline, one service charge`,async t=>{
+  const f=await actionFixture(t),barrier=actionBarrier(f);t.after(barrier.release);
+  const h=await listen(t,f,{libraries:barrier.libraries,contextPolicy:c=>new ExecutionContext({...c,limits:{sewnServiceCalls:1}})}),[a]=await h.discover();let clock=Date.now();t.mock.method(Date,'now',()=>clock);
+  const pending=h.post({reference:a.reference,input:{}});await barrier.entered;if(expired)clock+=1001;barrier.release();
+  const r=await pending;assert.equal(r.status,expired?503:200);assert.equal(r.headers.get('x-wydgit-action-outcome'),expired?'uncertain':'completed');
+  const result=await r.json();assert.equal(result.ok,!expired);if(expired){assert.equal(result.code,'SEWN.LIMIT');assert.deepEqual(result.details,{});}assert.equal(barrier.calls(),1);
+});
+
+test('BOREL-04: failed read sanitizes host details and concurrent siblings retain independent budgets',async t=>{
+  const f=await actionFixture(t),barrier=actionBarrier(f,{fail:true});t.after(barrier.release);
+  const h=await listen(t,f,{libraries:barrier.libraries}),[a]=await h.discover();
+  const pending=h.post({reference:a.reference,input:{}});await barrier.entered;barrier.release();const bad=await pending;
+  assert.equal(bad.status,503);const result=await bad.json();assert.deepEqual(result.details,{});assert.equal(JSON.stringify(result).includes('secret'),false);
+  await h.stop();const fresh=await listen(t,f),[next]=await fresh.discover();
+  const responses=await Promise.all(Array.from({length:8},()=>fresh.post({reference:next.reference,input:{limit:1}})));
+  assert.ok(responses.some(r=>r.status===200),'At least one sibling completes');
+  for(const r of responses){assert.ok([200,503].includes(r.status),'Contention is availability failure, never revoked authentication');assert.equal(r.headers.get('set-cookie'),null);const result=await r.json();if(r.status===200)assert.equal(r.headers.get('x-wydgit-action-outcome'),'completed');else assert.equal(result.code,'SERVICE.FAILED');}
+});
+
+test('BOREL-05: real disconnect retains admitted I/O and App drain until the service settles',async t=>{
+  const f=await actionFixture(t),barrier=actionBarrier(f);t.after(barrier.release);
+  const h=await listen(t,f,{libraries:barrier.libraries}),[a]=await h.discover(),http=await import('node:http');
+  let client;const closed=new Promise(resolve=>h.server.once('request',(_req,res)=>res.once('close',resolve)));
+  const body=JSON.stringify({reference:a.reference,input:{}});
+  const pending=new Promise(resolve=>{client=http.request(h.base+'/backoffice/api/actions/invoke',{method:'POST',headers:{Cookie:h.cookie,Origin:h.base,'Content-Type':'application/json','X-Wydgit-CSRF':h.csrf,'Content-Length':Buffer.byteLength(body)}},()=>assert.fail('Aborted request published a response'));client.once('error',resolve);client.end(body);});
+  await barrier.entered;client.destroy();await pending;await closed;
+  let stopped=false;const stop=h.stop().then(()=>stopped=true);await new Promise(r=>setImmediate(r));assert.equal(stopped,false);
+  await assert.rejects(f.place('replace'),{code:'PACKAGE.RUNNING'});barrier.release();await stop;assert.equal(barrier.calls(),1);
+  await f.place('replace');
+});
+
+for(const code of ['GATE.CONFLICT','GATE.BUSY','GATE.IO'])test(`BOREL-06: ${code} during authentication preserves credential and reports service unavailability`,async t=>{
+  const f=await actionFixture(t),real=f.libraries;let unavailable=false;
+  const libraries={...real,bind(c,op){const b=real.bind(c,op);return {...b,call(...args){if(unavailable&&args[0]==='wydgate'&&args[1]==='resolve-session')return {ok:false,code};return b.call(...args);}};}};
+  const h=await listen(t,f,{libraries});unavailable=true;const r=await h.get('/backoffice/api/actions');
+  assert.equal(r.status,503);assert.equal(r.headers.get('set-cookie'),null);assert.equal((await r.json()).code,'SERVICE.FAILED');
+  unavailable=false;assert.equal((await h.discover()).length,1);
+});
+
+test('BOREL-07: expiration while canonical service admission is pending rejects before its handler begins',async t=>{
+  const f=await actionFixture(t),barrier=actionBarrier(f,{before:true});t.after(barrier.release);
+  const h=await listen(t,f,{libraries:barrier.libraries}),[a]=await h.discover();let clock=Date.now();t.mock.method(Date,'now',()=>clock);
+  const pending=h.post({reference:a.reference,input:{}});await barrier.entered;clock+=1001;barrier.release();
+  const r=await pending;assert.equal(r.status,503);assert.equal((await r.json()).code,'SEWN.LIMIT');assert.equal(r.headers.get('x-wydgit-action-outcome'),'rejected');
 });

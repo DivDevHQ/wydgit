@@ -6,6 +6,7 @@ import {authorizeLifecycle} from './budget.js';
 import {acquirePackageExecution,activatePackages} from './index.js';
 import {actionDeclarations,matchesContract,ACTION_LIMITS} from './backoffice-contract.js';
 import {digest,readInstalledState} from './state.js';
+import {createCompletion} from '../execution/completion.js';
 import {registerAppExecution} from '../execution/maintenance.js';
 import {createExecutionBudget,executionBudget} from '../sewn/budget.js';
 
@@ -56,6 +57,7 @@ export function createBackOfficeActions({root,libraries,installationContext,veri
     checkContext(installationContext);
     check(request.app===app&&typeof request.session==='string'&&request.session.length<=256,'ACTION.DENIED','Wrong site or authentication');
     const result=await authentication.call('wydgate','resolve-session',{token:request.session});
+    check(result.ok===true||result.code==='GATE.SESSION_INVALID','SERVICE.FAILED','Session verification unavailable');
     check(result.ok===true&&result.value?.authenticated===true&&result.value.app===app,'ACTION.DENIED','Authentication required');
     return result.value;
   };
@@ -71,49 +73,56 @@ export function createBackOfficeActions({root,libraries,installationContext,veri
     await libraries.authorizeAdministrativeOperation(context,provider,a.service.operation,resources);
     checkContext(context);return context;
   };
-  const boundary=(work,enveloped=false)=>async request=>{
+  const boundary=(work,enveloped=false)=>async (request,{guard=()=>{},deadline=Infinity,onStart=()=>{}}={})=>{
     let release;
     try{
+      guard();check(Date.now()<deadline,'SEWN.LIMIT','Request deadline');
       release=registerAppExecution(root);
       checkJsonBudget(request,{...ACTION_LIMITS,maxBytes:49152},'ACTION.INVALID_REQUEST');
-      const value=await work(freeze(clean(request)));return freeze(enveloped?value:{ok:true,value});
+      const checkRequest=()=>{guard();check(Date.now()<deadline,'SEWN.LIMIT','Request deadline');};
+      const value=await work(freeze(clean(request)),{checkRequest,deadline,onStart});checkRequest();return freeze(enveloped?value:{ok:true,value});
     }
-    catch(error){return fail(['ACTION.INVALID_REQUEST','ACTION.INVALID_INPUT','ACTION.INVALID_RESULT','ACTION.CONFIRMATION','ACTION.STALE','SEWN.LIMIT'].includes(error?.code)?error.code:'ACTION.DENIED');}
+    catch(error){return fail(['ACTION.INVALID_REQUEST','ACTION.INVALID_INPUT','ACTION.INVALID_RESULT','ACTION.CONFIRMATION','ACTION.STALE','SEWN.LIMIT','SERVICE.FAILED'].includes(error?.code)?error.code:'ACTION.DENIED');}
     finally{release?.();}
   };
   return Object.freeze({
-    discover:boundary(async request=>{
-      const identity=await identityFor(request);fields(request,['app','session'],['offset','limit']);
+    discover:boundary(async (request,{checkRequest})=>{
+      const identity=await identityFor(request);checkRequest();fields(request,['app','session'],['offset','limit']);
       const offset=request.offset??0,limit=request.limit??10;
       check(Number.isSafeInteger(offset)&&offset>=0&&offset<=256&&Number.isSafeInteger(limit)&&limit>=1&&limit<=10,'ACTION.INVALID_REQUEST','Invalid page');
       const available=[];
       for(const record of records.values()) {
+        checkRequest();
         try{await authorize(record,identity);available.push(record.descriptor);}catch{/* No metadata or denial details for unavailable actions. */}
+        checkRequest();
       }
       const value={schema:'wydgit.backoffice-discovery/1',app,actions:available.slice(offset,offset+limit),offset,limit,total:available.length};
       checkJsonBudget(value,{maxBytes:65536,maxDepth:20,maxNodes:8192},'ACTION.INVALID_RESULT');return value;
     }),
-    invoke:boundary(async request=>{
-      const identity=await identityFor(request);fields(request,['app','session','reference','input'],['confirmed']);
+    invoke:boundary(async (request,{checkRequest,deadline,onStart})=>{
+      const identity=await identityFor(request);checkRequest();fields(request,['app','session','reference','input'],['confirmed']);
       const ref=request.reference;
       check(record(ref)&&typeof ref.package==='string'&&typeof ref.instance==='string'&&typeof ref.action==='string','ACTION.STALE','Invalid reference');
       const registered=records.get(`${ref.package}#${ref.instance}/${ref.action}`);
       check(registered&&equal(ref,registered.reference),'ACTION.STALE','Unknown or obsolete action reference');
       const context=await authorize(registered,identity),{a}=registered,limits=effectiveLimits(SERVICE_DEFAULTS,context);
+      checkRequest();
       const input=valueFor(request.input,limits.request,a.input,'ACTION.INVALID_INPUT');
       check(request.confirmed===undefined||typeof request.confirmed==='boolean','ACTION.INVALID_REQUEST','Invalid confirmation');
       check(!a.confirmation||request.confirmed===true,'ACTION.CONFIRMATION','Confirmation required');
       // Invoke only the installed fixed binding, with the genuine principal and
       // exact approved package context. The service owns operation authorization.
-      const ledger=executionBudget(createExecutionBudget(context),context);
+      const ledger=executionBudget(createExecutionBudget(context,{guard:checkRequest,deadline}),context);
+      const completion=createCompletion(()=>ledger.check());
       try{
         ledger.take('serviceCalls');
-        const result=await libraries.bind(context).invoke(a.service.library,a.service.apiVersion,a.service.operation,input);
+        const result=await completion.run(operation=>libraries.bind(context,Object.freeze({...operation,begin(){operation.begin();onStart();}})).invoke(a.service.library,a.service.apiVersion,a.service.operation,input));
         ledger.check();
         await libraries.authorizeSitePolicy(context,{contexts:['BackOffice'],permission:a.permission});ledger.check();
         if(!result.ok)return fail(result.code);
-        return {ok:true,value:valueFor(result.value,limits.response,a.output,'ACTION.INVALID_RESULT')};
-      }finally{ledger.close();}
+        const value=valueFor(result.value,limits.response,a.output,'ACTION.INVALID_RESULT');ledger.check();
+        return {ok:true,value};
+      }finally{ledger.close();await completion.settle();}
     },true)
   });
 }

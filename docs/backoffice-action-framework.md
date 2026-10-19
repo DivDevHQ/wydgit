@@ -264,3 +264,12 @@ execution with the required listener/subprocess access.
 The existing
 [SEWN.LIMIT HTTP reliability issue](milestones/0.3-reliability.md) remains open even
 when a complete run passes.
+
+### Alpha.22 native execution options
+
+Trusted adapters may supply a second argument `{guard, deadline, onStart}` to
+`discover`/`invoke`. These controls never enter canonical input, discovery or package
+execution data. The existing ledger takes the minimum deadline and charges one
+service call; the existing completion control guards actual service admission and
+retains admitted work through drain. `onStart` reports handler entry only, not a
+provider commit. All existing authority and reference checks remain mandatory.

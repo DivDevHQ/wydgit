@@ -15,6 +15,7 @@ const messages=Object.freeze({
   'HTTP.AUTHENTICATION':'Sign in to this site before opening BackOffice.',
   'HTTP.ORIGIN':'Request origin rejected.', 'HTTP.CSRF':'Session verification failed. Reload BackOffice.',
   'HTTP.REQUEST':'Invalid BackOffice request.', 'HTTP.MEDIA':'Use UTF-8 application/json without compression.',
+  'HTTP.DEADLINE':'BackOffice request deadline exceeded.',
   'HTTP.LIMIT':'BackOffice request limit exceeded.', 'HTTP.UNAVAILABLE':'BackOffice requires a trusted origin and configured WydGate.',
   'HTTP.METHOD':'Method not allowed.', 'HTTP.NOT_FOUND':'BackOffice route not found.',
   'ACTION.STALE':'This action is no longer available. Refresh actions and select it again.',
@@ -45,14 +46,15 @@ export function createBackOfficeHttp({root,model,libraries,sessions,contextPolic
     installationContext:contextPolicy(new ExecutionContext({context:'BackOffice',publisher:'wydgit.core',self:app,app,
       capabilities:['packages.lifecycle.manage','packages.placement.manage']}))}):null;
   return async(req,res)=>{
-    const deadline=Date.now()+requestMs;
-    const checkDeadline=()=>{if(Date.now()>=deadline)throw Object.assign(Error(),{code:'HTTP.LIMIT'});alive();};
-    const json=(status,data)=>{res.statusCode=status;res.setHeader('Content-Type','application/json; charset=utf-8');res.end(JSON.stringify(data));};
+    const deadline=Date.now()+requestMs;let outcome='rejected';
+    const checkDeadline=()=>{if(Date.now()>=deadline)throw Object.assign(Error(),{code:'HTTP.DEADLINE'});if(res.destroyed)throw Object.assign(Error(),{code:'HTTP.REQUEST'});alive();};
+    const execution={guard:checkDeadline,deadline,onStart:()=>{outcome='uncertain';}};
+    const json=(status,data)=>{res.setHeader('X-Wydgit-Action-Outcome',outcome);res.statusCode=status;res.setHeader('Content-Type','application/json; charset=utf-8');res.end(JSON.stringify(data));};
     const reject=(status,code)=>json(status,failure(code));
     res.setHeader('Cache-Control','no-store');res.setHeader('Referrer-Policy','no-referrer');
     res.setHeader('Cross-Origin-Resource-Policy','same-origin');
     try{
-      alive();await ready();alive();
+      checkDeadline();await ready();checkDeadline();
       const invoke=req.path==='/backoffice/api/actions/invoke',discovery=req.path==='/backoffice/api/actions';
       const isShell=req.path==='/backoffice'||req.path==='/backoffice/';
       if(!invoke&&!discovery&&!isShell)return reject(404,'HTTP.NOT_FOUND');
@@ -67,7 +69,7 @@ export function createBackOfficeHttp({root,model,libraries,sessions,contextPolic
       if(!cookies[policy.auth])return reject(401,'HTTP.AUTHENTICATION');
       let session;
       try{session=await sessions.resolve(cookies,{secure});if(!session.identity?.authenticated)throw Error();}
-      catch{res.setHeader('Set-Cookie',[policy.serialize('auth','',0)]);return reject(401,'HTTP.AUTHENTICATION');}
+      catch(error){if(error.code!=='GATE.SESSION_INVALID')return reject(503,'SERVICE.FAILED');res.setHeader('Set-Cookie',[policy.serialize('auth','',0)]);return reject(401,'HTTP.AUTHENTICATION');}
       checkDeadline();
       const csrf=submissionToken(session.csrf,app,'backoffice','actions',binding);
       if(stateFingerprint(root)!==head)return reject(409,'ACTION.STALE');
@@ -76,28 +78,28 @@ export function createBackOfficeHttp({root,model,libraries,sessions,contextPolic
       if(discovery){
         const query=parseMap(req.query),keys=Object.keys(query);
         if(keys.some(k=>!['offset','limit'].includes(k)||query[k].length!==1||!/^\d{1,3}$/.test(query[k][0])))return reject(400,'HTTP.REQUEST');
-        result=await actions.discover({app,session:cookies[policy.auth],...Object.fromEntries(keys.map(k=>[k,Number(query[k][0])]))});
+        result=await actions.discover({app,session:cookies[policy.auth],...Object.fromEntries(keys.map(k=>[k,Number(query[k][0])]))},execution);
       }else{
         if(req.query)return reject(400,'HTTP.REQUEST');
         if(!equal(h.csrf,csrf))return reject(403,'HTTP.CSRF');
         if(!/^application\/json(?:\s*;\s*charset=(?:utf-8|"utf-8"))?\s*$/i.test(h.type??'')||!['identity',''].includes(h.encoding??''))return reject(415,'HTTP.MEDIA');
-        const body=await readJson(req.body);
+        const body=await readJson(req.body,Math.max(1,deadline-Date.now()));
         checkDeadline();
         checkJsonBudget(body,{maxBytes:48000,maxDepth:12,maxNodes:2048},'HTTP.REQUEST');
         if(!body||Array.isArray(body)||typeof body!=='object'||!Object.hasOwn(body,'reference')||!Object.hasOwn(body,'input')||Object.keys(body).some(k=>!['reference','input','confirmed'].includes(k)))return reject(400,'HTTP.REQUEST');
-        result=await actions.invoke({...body,app,session:cookies[policy.auth]});
+        result=await actions.invoke({...body,app,session:cookies[policy.auth]},execution);
       }
       checkDeadline();
       if(!result.ok)return reject(statusFor(result.code),Object.hasOwn(messages,result.code)?result.code:'ACTION.DENIED');
       await session.authorize();checkDeadline();
       const output=discovery?{...result,csrf}:result;
       checkJsonBudget(output,{maxBytes:66560,maxDepth:24,maxNodes:10000},'ACTION.INVALID_RESULT');
-      json(200,output);
+      checkDeadline();if(invoke)outcome='completed';json(200,output);
     }catch(error){
       if(res.headersSent||res.destroyed){res.destroy();return;}
       if(error.code==='GATE.SESSION_INVALID')return reject(401,'HTTP.AUTHENTICATION');
       const code=Object.hasOwn(messages,error.code)?error.code:'HTTP.REQUEST';
-      reject(code==='HTTP.LIMIT'?413:400,code);
+      reject(['HTTP.DEADLINE','SERVICE.FAILED'].includes(code)?503:code==='HTTP.LIMIT'?413:400,code);
     }finally{
       // Release bodies rejected before collection without reading attacker data.
       void req.body?.cancel().catch(()=>{});

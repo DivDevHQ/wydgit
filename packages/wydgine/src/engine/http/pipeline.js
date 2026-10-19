@@ -30,11 +30,11 @@ export function createPipeline({root,libraries,execution={},lifecycle,guard=()=>
   if(packages){check(!execution.context&&!execution.handlers.length&&!execution.actions.length,'PACKAGE.PRINCIPALS','Package Page authority cannot be combined with independently authorized host execution');execution={...execution,context:packages.context,handlers:packages.handlers,actions:packages.actions};}
   lifecycle??=createLifecycle({app,handlers:execution.lifecycleHandlers,context:execution.lifecycleContext,instances:execution.lifecycleInstances});
   const authentication=libraries?.list().some(item=>item.id==='wydgate')?libraries.bind(execution.gateContext??contextPolicy(new ExecutionContext({context:'FrontEnd',publisher:'wydgit.core',self:app,app,capabilities:['gate.sessions.use'],scopes:{wydgate:[app]}}))):null;
-  const gate=authentication?{async resolveSession(token){const result=await authentication.call('wydgate','resolve-session',{token});check(result.ok&&result.value?.authenticated&&result.value.app===app,'GATE.SESSION_INVALID','Invalid session');return result.value;}}:null;
+  const gate=authentication?{async resolveSession(token){const result=await authentication.call('wydgate','resolve-session',{token});check(result.ok,result.code==='GATE.SESSION_INVALID'?'GATE.SESSION_INVALID':'SERVICE.FAILED','Session verification failed');check(result.value?.authenticated&&result.value.app===app,'GATE.SESSION_INVALID','Invalid session');return result.value;}}:null;
   const sessions=createSessionResolver({app,gate,lifecycle,sessionless:parking});let closed=false;
   const alive=()=>{check(!closed,'EVENT.DENIED','Application stopped');guard();};
   let ready;
-  const backoffice=createBackOfficeHttp({root,model,libraries,sessions,contextPolicy,ready:()=>ready,alive,parking,verifiedPackages:execution.verifiedPackages,requestMs:runtimeSettings.http.requestMs,readJson:body=>readBackOfficeJson(body,runtimeSettings.http.requestMs)});
+  const backoffice=createBackOfficeHttp({root,model,libraries,sessions,contextPolicy,ready:()=>ready,alive,parking,verifiedPackages:execution.verifiedPackages,requestMs:runtimeSettings.http.requestMs,readJson:(body,remainingMs)=>readBackOfficeJson(body,remainingMs)});
   ready=lifecycle.start();
   const ownedLifecycle={...lifecycle,async stop(){closed=true;sessions.close();await lifecycle.stop();}};
   // Plain transport input and kernel output port only; no host request/context.

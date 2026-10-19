@@ -1,5 +1,12 @@
 ## Unreleased
 
+- Advance platform/Wydgine/WydHosting to alpha.22. Propagate BackOffice request
+  deadlines and disconnect guards into action/service admission, retain admitted
+  I/O through drain, and publish conservative action outcome headers. Preserve
+  credentials on transient session-service failures; add deterministic regression
+  tests without raised limits or mutation replay. Historical intermittent FrontEnd
+  SEWN.LIMIT remains open.
+
 - Add site-scoped BackOffice HTTP transport and the first modular graphical shell
   over the existing installed action framework. Reuse Gate cookie authentication,
   trusted routing, session-bound CSRF, live Gate/SEAM checks and lifetime fences;

@@ -308,3 +308,24 @@ actual browser visual automation and privileged Linux deployment were not perfor
 The final required checks are repeated after this documentation update before
 commit/push. No deployment, production data change or elevated account creation
 is part of this increment.
+
+## Alpha.22 reliability amendment
+
+The HTTP adapter now passes its remaining deadline and disconnect guard through
+private native action options and the existing service completion control. Admission
+is checked again after authorization and at actual service-handler entry. Admitted
+I/O remains in the drain set until it settles. The unchanged SEWN budget is reduced
+by the parent deadline; no client field can supply or extend it. A request deadline
+returns sanitized 503 `HTTP.DEADLINE`; body bounds retain 413.
+
+Invocation JSON responses include `X-Wydgit-Action-Outcome`: `rejected` (no handler
+began), `completed` (validated success published), or `uncertain` (handler began,
+success unavailable). Unknown/missing delivery is always uncertain to the caller.
+This is not a provider commit receipt or rollback guarantee. Explicit confirmation
+and inspection before retrying remain necessary. See the
+[reliability investigation](milestones/0.3-reliability.md).
+
+Transient Gate session-resolution conflict/busy/I/O failures return 503
+`SERVICE.FAILED` and preserve the auth cookie. Only genuinely invalid sessions
+return 401 with cookie deletion. Concurrent session touches can still reach Gate's
+existing optimistic-conflict bound; the transport does not retry an action.
