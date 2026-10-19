@@ -10,14 +10,14 @@ reliability issue. See repository `docs/decisions/0003-defer-managed-hosting-qua
 and `docs/milestones/0.3-release-status.md`. No deployment or guest changes are
 authorized by this documentation decision.
 
-Wydgine runs canonical Wydgit Apps. Version 0.3.0-alpha.18 is a private,
+Wydgine runs canonical Wydgit Apps. Version 0.3.0-alpha.19 is a private,
 locally packed development artifact; it has not been published to npm.
 Requires Node >=24.21.0. No WydHosting or Linux hosting installation is required.
 
 Install a verified local tarball in a consumer directory:
 
 ```sh
-npm install /verified/path/wydgine-0.3.0-alpha.18.tgz
+npm install /verified/path/wydgine-0.3.0-alpha.19.tgz
 ./node_modules/.bin/wydgine setup
 npm start
 ```
@@ -58,3 +58,9 @@ be built explicitly and installed as a reviewed immutable artifact; no install h
 runs. Standalone and same-UID fork modes require no native helper. Trusted exports
 `trusted/stream-peer` and `trusted/unix-peer` are host integration, never portable
 capabilities. This experimental lane has no privileged Linux qualification evidence.
+
+`wydgine/trusted/packages` now includes `planPackagePolicy`, `approvePackagePolicy`,
+`applyPackagePolicy`, `cancelPackagePolicy` and read-only `inspectPackagePolicy`. These native stopped-App operations
+require independent lifecycle and policy-management capabilities; they are not
+portable services. See repository `docs/reviewed-package-policy-reconciliation.md`
+for exact revision/approval bindings, local recovery and cross-process drain limits.

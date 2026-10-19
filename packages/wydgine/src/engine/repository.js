@@ -18,6 +18,7 @@ export function compileDefinitions(definitions,options={}) {
 }
 export function loadRepository(root, { verifiedPackages = {} } = {}) {
   const state=readInstalledState(root);
+  check(!state?.policyReconciliation,'PACKAGE.PENDING','Reviewed policy keeps the App unavailable');
   check(!state?.manualReplacement,'PACKAGE.PENDING','Manual replacement keeps the App unavailable');
   return repositoryFromState(root,state,{verifiedPackages});
 }

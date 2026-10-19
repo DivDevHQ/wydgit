@@ -6,6 +6,7 @@ import { LIMITS, validatePackageManifest } from './manifest.js';
 import { packageGraph } from './graph.js';
 import { copyEnvelope } from '../object-model/schema.js';
 import { version } from '../libraries/contracts.js';
+import { validatePolicyMetadata } from './policy-contract.js';
 export const STATE='content/installed-packages.json';
 const present=file=>Boolean(lstatSync(file,{throwIfNoEntry:false}));
 export const digest=text=>createHash('sha256').update(text).digest('hex');
@@ -42,7 +43,7 @@ export function readInstalledState(root) {
 }
 export function validateInstalledState(root,state) {
   try {
-  check(record(state)&&['wydgit-installed/0.1','wydgit-installed/0.2','wydgit-installed/0.3'].includes(state.schema)&&Array.isArray(state.packages)&&state.packages.length<=LIMITS.packages&&state.packages.every(p=>record(p)&&record(p.manifest))&&Number.isSafeInteger(state.revision)&&state.revision>0,'PACKAGE.CATALOG','Invalid installed state');
+  check(record(state)&&['wydgit-installed/0.1','wydgit-installed/0.2','wydgit-installed/0.3','wydgit-installed/0.4'].includes(state.schema)&&Array.isArray(state.packages)&&state.packages.length<=LIMITS.packages&&state.packages.every(p=>record(p)&&record(p.manifest))&&Number.isSafeInteger(state.revision)&&state.revision>0,'PACKAGE.CATALOG','Invalid installed state');
   check(state.baseFingerprint===baseFingerprint(root),'PACKAGE.DRIFT','Base repository changed after installation; reconcile accepted state explicitly');
   check(new Set(state.packages.map(p=>p.manifest.id)).size===state.packages.length,'PACKAGE.CATALOG','Duplicate installed package');
   check(typeof state.app==='string','PACKAGE.CATALOG','Missing accepted App');
@@ -56,11 +57,11 @@ export function validateInstalledState(root,state) {
   for(const entry of [...state.packages,...(state.retained??[]).map(r=>r.entry)]){
     const m=validatePackageManifest(entry.manifest);
     check(entry.lifetimeGeneration===undefined?entry.receipt?.lifetimeGeneration===undefined:
-      state.schema==='wydgit-installed/0.3'&&typeof entry.lifetimeGeneration==='string'&&/^[a-f0-9-]{36}$/.test(entry.lifetimeGeneration)&&entry.receipt?.lifetimeGeneration===entry.lifetimeGeneration,
+      ['wydgit-installed/0.3','wydgit-installed/0.4'].includes(state.schema)&&typeof entry.lifetimeGeneration==='string'&&/^[a-f0-9-]{36}$/.test(entry.lifetimeGeneration)&&entry.receipt?.lifetimeGeneration===entry.lifetimeGeneration,
       'PACKAGE.CATALOG','Invalid retirement lifetime generation');
     if(entry.executionPlacement!==undefined) {
       const p=entry.executionPlacement;
-      check(state.schema==='wydgit-installed/0.3'&&record(p)&&Object.keys(p).sort().join(',')==='app,context,generation,status'&&
+      check(['wydgit-installed/0.3','wydgit-installed/0.4'].includes(state.schema)&&record(p)&&Object.keys(p).sort().join(',')==='app,context,generation,status'&&
         p.app===JSON.parse(state.app).id&&['FrontEnd','BackOffice'].includes(p.context)&&
         typeof p.generation==='string'&&/^[a-f0-9-]{36}$/.test(p.generation)&&['active','retired'].includes(p.status)&&
         JSON.stringify(clean(p))===JSON.stringify(clean(entry.receipt?.executionPlacement)), 'PACKAGE.CATALOG','Invalid trusted execution placement');
@@ -92,7 +93,7 @@ export function validateInstalledState(root,state) {
     const definitions=JSON.parse(entry.resources[m.resources.prototypes]);
     check(Array.isArray(definitions)&&definitions.length<=LIMITS.prototypes&&definitions.every(d=>d.publisher===m.publisher&&d.id?.startsWith(m.publisher+'/')),'PACKAGE.CATALOG','Invalid catalog prototypes');
   }
-  check(['wydgit-installed/0.2','wydgit-installed/0.3'].includes(state.schema)||state.manualReplacement===undefined&&state.replacementHistory===undefined,'PACKAGE.CATALOG','Manual lifecycle requires catalog version 0.2');
+  check(['wydgit-installed/0.2','wydgit-installed/0.3','wydgit-installed/0.4'].includes(state.schema)||state.manualReplacement===undefined&&state.replacementHistory===undefined,'PACKAGE.CATALOG','Manual lifecycle requires catalog version 0.2');
   if(state.manualReplacement!==undefined) {
     const m=state.manualReplacement,source=state.packages.find(p=>p.manifest.id===m.package),sha=v=>typeof v==='string'&&/^[a-f0-9]{64}$/.test(v);
     check(record(m)&&m.schema==='wydgit.manual-replacement/1'&&typeof m.id==='string'&&source?.receipt.id===m.sourceReceipt&&sha(m.sourceCatalog)&&m.sourceApp===digest(state.app)&&['RETIRED','STAGED','REFERENCES_PREPARED'].includes(m.status),'PACKAGE.CATALOG','Invalid pending manual replacement');
@@ -114,6 +115,7 @@ export function validateInstalledState(root,state) {
       check(entry&&entry.receipt.id===reservation.receipt&&reservation.artifact===digest(JSON.stringify(clean({manifest:entry.manifest,resources:entry.resources}))),'PACKAGE.RESERVED','Replacement recovery dependency reservation changed');
     }
   }
+  validatePolicyMetadata(state);
   packageGraph(state.packages);
   return state;
   }catch(error){if(error instanceof WydgitError)throw error;throw new WydgitError('PACKAGE.CATALOG','Invalid installed or retained package record');}

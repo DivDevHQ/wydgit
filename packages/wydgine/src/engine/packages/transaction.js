@@ -7,6 +7,8 @@ import { randomUUID } from 'node:crypto';
 import { requireThat as check, WydgitError } from '../object-model/validation.js';
 import { STATE, digest, stateFingerprint, baseFingerprint, safeRead, validateInstalledState } from './state.js';
 import { LIMITS } from './manifest.js';
+import { reserveStoppedApp } from '../execution/maintenance.js';
+import { authorizePolicy } from './policy-contract.js';
 import { authorizeLifecycle } from './budget.js';
 export const JOURNAL='content/package-operation.json';
 const LOCK='content/.package-install.lock',RECOVERY='content/.package-recovery.lock';
@@ -57,8 +59,9 @@ export async function recoverPackageOperation({root,installationContext}){
   // The accepted App ID is validated below without bypassing catalog integrity.
   let state;try{state=JSON.parse(safeRead(root,STATE,LIMITS.state));}catch(e){if(e.code!=='ENOENT')throw e;}
   authorizeLifecycle(installationContext,state?JSON.parse(state.app).id:JSON.parse(safeRead(root,'content/app.json',LIMITS.state)).id);
-  let recovery;
+  let recovery,release;
   try{
+    if(inspectPackageOperation(root)?.action?.startsWith('policy-')){authorizePolicy(installationContext,JSON.parse(state.app).id,authorizeLifecycle);release=reserveStoppedApp(root);}
     try{recovery=await fs.open(path.join(root,RECOVERY),'wx',0o600);}catch(e){if(e.code==='EEXIST')throw new WydgitError('PACKAGE.BUSY','Recovery already in progress');throw e;}
     const lockText=await readLock(root),lock=JSON.parse(lockText),record=inspectPackageOperation(root);
     check(lock.schema==='wydgit.package-lock/1'&&record?.schema==='wydgit.package-operation/1'&&lock.id===record.id&&lock.pid===record.pid&&Number.isSafeInteger(lock.pid)&&lock.pid>0,'PACKAGE.RECOVERY','Unrecognized interrupted operation; manual inspection required');
@@ -75,5 +78,5 @@ export async function recoverPackageOperation({root,installationContext}){
     check(await readLock(root)===lockText,'PACKAGE.RECOVERY','Lock changed during recovery');
     await fs.unlink(path.join(root,LOCK));await syncDirectory(root);return record;
   }catch(error){if(error instanceof WydgitError)throw error;throw new WydgitError('PACKAGE.RECOVERY','Unrecognized or unreadable recovery evidence; manual inspection required');
-  }finally{if(recovery){await recovery.close();await fs.unlink(path.join(root,RECOVERY));await syncDirectory(root);}}
+  }finally{try{if(recovery){await recovery.close();await fs.unlink(path.join(root,RECOVERY));await syncDirectory(root);}}finally{release?.();}}
 }

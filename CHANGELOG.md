@@ -1,5 +1,15 @@
 ## Unreleased
 
+- Add reviewed stopped-App package policy reconciliation: deterministic plans,
+  independently authorized durable approvals, exact revision binding, explicit
+  expansion review, and recoverable apply/cancel through existing lifecycle journals
+  and checkpoints. Preserve package requirements, data/history/ownership, Gate
+  assignments and direct-edit `PACKAGE.DRIFT`; fence obsolete execution authority.
+  Qualify JSON/SQLite interruptions and replay/forgery cases. Advance platform,
+  Wydgine and WydHosting to alpha.19; catalog 0.4 rejects older engines. Local host
+  admission is enforced in-process; cross-process drain and administration UI remain
+  outside this increment. The intermittent HTTP `SEWN.LIMIT` issue remains open.
+
 - Qualify scoped site-policy increment 3 and advance platform/Wydgine/WydHosting
   to alpha.18, Gate to alpha.5 and Store to alpha.4. Synchronize host dependency,
   peer, lockfile and development fixture metadata; retain client alpha.11 and

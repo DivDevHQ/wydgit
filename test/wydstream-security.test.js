@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { mediaFixture,png } from '../test-support/wydstream.js';
+import { mediaFixture,png,useNativeMediaPolicyFixture } from '../test-support/wydstream.js';
 import { initializeHost } from '../wydgine/host.js';
 import { localProvider } from '../packages/wydstream/src/local-provider.js';
 import { validatePresentation,renderComponent } from '../wydgine/components.js';
@@ -35,7 +35,7 @@ test('finalized object symlinks and hardlinks cannot disclose outside bytes',asy
  assert.equal(await fs.readFile(outside,'utf8'),'SECRET');
 });
 test('quota reservations, upload concurrency, reduced caller limits, timeout and interrupted input remain bounded',async t=>{
- const f=await mediaFixture(t),file=path.join(f.root,'wydgit.config.json'),host=JSON.parse(await fs.readFile(file));host.libraries.find(l=>l.id==='wydstream').options.limits={fileBytes:100,quotaBytes:150,stagingBytes:150,uploads:2,durationMs:10,retentionMs:1};await fs.writeFile(file,JSON.stringify(host));const registry=await initializeHost({root:f.root});
+ const f=await mediaFixture(t),file=path.join(f.root,'wydgit.config.json'),host=JSON.parse(await fs.readFile(file));host.libraries.find(l=>l.id==='wydstream').options.limits={fileBytes:100,quotaBytes:150,stagingBytes:150,uploads:2,durationMs:10,retentionMs:1};await fs.writeFile(file,JSON.stringify(host));useNativeMediaPolicyFixture(f);const registry=await initializeHost({root:f.root});
  const call=(name,input={},caller=f.caller)=>registry.bind(caller).invoke('wydstream','1.0.0',name,{resource:'media',...input});
  assert.equal((await call('create-upload',{maxBytes:100})).ok,true);assert.equal((await call('create-upload',{maxBytes:100})).code,'STREAM.QUOTA');await new Promise(resolve=>setTimeout(resolve,5));await repair(f,registry);
  const limited=f.context({limits:{mediaFileBytes:10}});await assert.rejects(registry.transfer(limited,'wydstream','create-upload',{resource:'media'},form()));
@@ -81,7 +81,7 @@ test('submission tokens bind App, Page, component, version and operation without
 });
 test('pending tickets cannot bypass lower current host/caller file ceilings after restart',async t=>{
  const f=await mediaFixture(t),ticket=await f.invoke('create-upload',{maxBytes:100}),file=path.join(f.root,'wydgit.config.json'),host=JSON.parse(await fs.readFile(file));assert.equal(ticket.ok,true);
- host.libraries.find(l=>l.id==='wydstream').options.limits={fileBytes:10};await fs.writeFile(file,JSON.stringify(host));const restarted=await initializeHost({root:f.root});
+ host.libraries.find(l=>l.id==='wydstream').options.limits={fileBytes:10};await fs.writeFile(file,JSON.stringify(host));useNativeMediaPolicyFixture(f);const restarted=await initializeHost({root:f.root});
  await assert.rejects(restarted.transfer(f.caller,'wydstream','complete-upload',{resource:'media',id:ticket.value.id,token:ticket.value.token},form()),{code:'STREAM.LIMIT'});
  assert.equal((await f.invoke('list')).value.total,0);assert.equal((await repair(f,restarted)).value.changed,0);
 });

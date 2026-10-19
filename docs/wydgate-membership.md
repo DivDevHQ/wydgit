@@ -1,5 +1,10 @@
 # WydGate identity and membership — 0.3-G
 
+The [reviewed package-policy foundation](reviewed-package-policy-reconciliation.md)
+adds native stopped-App plan/review/apply with separate policy revisions and durable
+host approval. Package requirements, execution placement, SEAM, Gate membership and
+store ownership remain independent; direct policy-file edits still fail drift checks.
+
 The [0.3-J scoped-policy increment](backoffice-scoped-policy-and-store-authorization.md)
 supersedes the installed-administration authorization described at this historical
 alpha.4 checkpoint. Gate alpha.5 requires BackOffice, current explicit permission

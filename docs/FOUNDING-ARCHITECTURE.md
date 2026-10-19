@@ -1,5 +1,10 @@
 # Wydgit Founding Architecture & Philosophy
 
+The [reviewed package-policy foundation](reviewed-package-policy-reconciliation.md)
+adds native stopped-App plan/review/apply with separate policy revisions and durable
+host approval. Package requirements, execution placement, SEAM, Gate membership and
+store ownership remain independent; direct policy-file edits still fail drift checks.
+
 **Status:** Founding architectural contract  
 **Version:** 0.1  
 **Purpose:** Define the principles and non-negotiable architectural decisions that guide Wydgit implementation.

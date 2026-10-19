@@ -1,9 +1,11 @@
 # Trusted local package lifecycle
 
 The [scoped-policy/store increment](backoffice-scoped-policy-and-store-authorization.md)
-qualifies retained site data under current Gate policy across placement and package
-lifecycle. It does not expose native maintenance to Wydgits or add an arbitrary
-accepted-host-configuration reconciliation/migration operation.
+qualifies retained site data under current Gate policy. The
+[reviewed policy increment](reviewed-package-policy-reconciliation.md) adds native
+plan/review/apply/cancel for a stopped App, with exact durable approval and policy
+revision binding through these same journals/checkpoints. Direct edits still fail
+`PACKAGE.DRIFT`; arbitrary configuration/ownership migrations remain unsupported.
 
 Status: implemented **bounded local catalog and checkpointed storage lifecycle**,
 with release blockers below. This is not full production package lifecycle qualification. See the
@@ -406,3 +408,11 @@ placement/replacement/relocation/retirement and automatic execution fencing. Cat
 readable. Manual retirement now advances to 0.3 and fences cached source authority
 even after cancellation. Existing stopped-App, recovery, data and dependency rules
 remain authoritative.
+
+## Reviewed host policy
+
+Catalog 0.4 preserves one pending reviewed policy, separate installation policy
+revisions and bounded review outcomes. It rejects older engines; 0.1–0.3 remain
+readable. Updates of reconciled installations preserve their approved grant subset,
+even when package declarations grow. Package requirements never approve authority.
+See the [API, recovery contract and acceptance evidence](reviewed-package-policy-reconciliation.md).

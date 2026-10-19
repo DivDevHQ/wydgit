@@ -10,12 +10,17 @@ import { LIMITS } from './manifest.js';
 import { authorizeLifecycle, createPackageBudget, packageBudget } from './budget.js';
 import { repositoryFromState } from '../repository.js';
 import { storeLifecycle } from './store-lifecycle.js';
+import { reserveStoppedApp } from '../execution/maintenance.js';
+import { authorizePolicy } from './policy-contract.js';
 import { claimRecovery } from './recovery-claim.js';
 
 async function syncStoreDirectory(root){const h=await fs.open(root,constants.O_RDONLY|constants.O_DIRECTORY|constants.O_NOFOLLOW);try{await h.sync();}finally{await h.close();}}
 export const EFFECTS='content/package-effects.json';
 const LOCK='content/.package-install.lock',RECOVERY='content/.package-recovery.lock';
 const serialized=value=>JSON.stringify(clean(value),null,2)+'\n';
+export function boundedPackageCheckpoint(checkpoint,reserveBytes=0) {
+  const text=serialized(checkpoint);check(Buffer.byteLength(text)+reserveBytes<=LIMITS.state,'PACKAGE.LIMIT','Lifecycle checkpoint exceeds the bounded recovery size');return text;
+}
 const same=(a,b)=>JSON.stringify(clean(a))===JSON.stringify(clean(b));
 async function read(file,max=LIMITS.state) {
   let h;
@@ -141,7 +146,7 @@ export async function publishPackageEffects({root,plan,state,configAfter,resourc
   root=path.resolve(root);
   const id=randomUUID(),checkpointName=`package-checkpoint-${id}.json`,configBefore=await read(path.join(root,'wydgit.config.json')),stateBefore=await read(path.join(root,STATE));
   const checkpoint={schema:'wydgit.package-checkpoint/1',id,app:JSON.parse(state.app).id,package:plan.package,action:plan.action,baseBefore:plan.baseFingerprint,configBefore,configAfter:configAfter??configBefore,stateBefore,stateAfter:serialized(state),resources:clean(resources),directories:await directoryList(root,roots)};
-  const text=serialized(checkpoint);check(Buffer.byteLength(text)<=LIMITS.state,'PACKAGE.LIMIT','Lifecycle checkpoint exceeds the bounded recovery size');
+  const text=boundedPackageCheckpoint(checkpoint);
   const provider=resources.length?await storeLifecycle(root):null;
   for(const r of resources)if(r.beforeDefinition&&r.afterDefinition)check(same(provider.storeOwner(r.beforeDefinition),provider.storeOwner(r.afterDefinition))&&r.beforeDefinition.root===r.afterDefinition.root&&r.beforeDefinition.provider===r.afterDefinition.provider,'PACKAGE.OWNERSHIP','Migration cannot change store ownership or adapter');
   budget.take();let handle,record;
@@ -176,6 +181,7 @@ async function loadCheckpoint(root,record) {
 async function recoverEffects({root,installationContext,direction,atStage,budget:token}) {
   root=path.resolve(root);const record=JSON.parse(await read(path.join(root,EFFECTS))),checkpoint=await loadCheckpoint(root,record);
   authorizeLifecycle(installationContext,checkpoint.app);
+  if(checkpoint.action.startsWith('policy-'))authorizePolicy(installationContext,checkpoint.app,authorizeLifecycle);
   const lock=JSON.parse(await read(path.join(root,LOCK),4096));
   check(direction===undefined||['resume','rollback'].includes(direction),'PACKAGE.ACTION','Unknown recovery direction');
   if(lock===null){
@@ -207,7 +213,8 @@ async function recoverEffects({root,installationContext,direction,atStage,budget
 }
 
 export async function recoverPackageEffects(options){
-  try{return await recoverEffects(options);}catch(e){if(e instanceof WydgitError)throw e;throw new WydgitError('PACKAGE.RECOVERY','Unrecognized recovery evidence; preserve markers for inspection');}
+  let release;
+  try{if(inspectPackageEffects(options.root)?.action?.startsWith('policy-'))release=reserveStoppedApp(options.root);return await recoverEffects(options);}catch(e){if(e instanceof WydgitError)throw e;throw new WydgitError('PACKAGE.RECOVERY','Unrecognized recovery evidence; preserve markers for inspection');}finally{release?.();}
 }
 
 export function inspectPackageEffects(root) {
@@ -229,7 +236,7 @@ export async function rollbackPackageEffects({root,installationContext,budget:to
     if(current?.receipt.id===entry.receipt.id&&same(current.executionPlacement??null,entry.executionPlacement??null)&&current.lifetimeGeneration===entry.lifetimeGeneration)continue;
     if(entry.executionPlacement){installationContext.require('packages.placement.manage');entry.executionPlacement.generation=randomUUID();entry.receipt.executionPlacement=clean(entry.executionPlacement);}
     entry.lifetimeGeneration=randomUUID();entry.receipt.lifetimeGeneration=entry.lifetimeGeneration;
-    state.schema='wydgit-installed/0.3';
+    state.schema=state.schema==='wydgit-installed/0.4'?state.schema:'wydgit-installed/0.3';
   }
   const plan={action:'rollback',package:checkpoint.package,baseFingerprint:baseFingerprint(root),catalogFingerprint:stateFingerprint(root),changes:[{package:checkpoint.package,action:'rollback'}]};
   token??=createPackageBudget(installationContext);const budget=packageBudget(token,installationContext);budget.take();

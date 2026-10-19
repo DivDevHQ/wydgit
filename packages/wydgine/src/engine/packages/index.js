@@ -9,7 +9,7 @@ import { loadRepository, repositoryFromState, compileDefinitions } from '../repo
 import { hydrate, dehydrate, PrototypeRegistry } from '../object-model/index.js';
 import { clean, freeze, jsonKeys, WydgitError, requireThat as check } from '../object-model/validation.js';
 import { validateEnvelope } from '../object-model/schema.js';
-import { ExecutionContext, checkContext, guardExecutionContext, matchesObjectGrant } from '../seam/context.js';
+import { ExecutionContext, checkContext, guardExecutionContext, matchesObjectGrant, objectGrantCovers } from '../seam/context.js';
 import { EventRegistry, prepareHandlers, prepareAction } from '../events/index.js';
 import { compileModule } from '../wydbasic/index.js';
 import { validateConfig, validateManifest as libraryManifest, satisfies, fields } from '../libraries/contracts.js';
@@ -30,6 +30,9 @@ export { createPackageBudget } from './budget.js';
 export { recoverPackageEffects, inspectPackageEffects, rollbackPackageEffects } from './effects.js';
 export { inspectPackageOperation, recoverPackageOperation } from './transaction.js';
 export { validatePackageManifest } from './manifest.js';
+import { approvedPolicyHash } from './policy-contract.js';
+import { createPolicyLifecycle } from './policy.js';
+export const {inspectPackagePolicy,planPackagePolicy,approvePackagePolicy,applyPackagePolicy,cancelPackagePolicy}=createPolicyLifecycle({validateCandidateState,resolveLibraries,approve,mapStorage});
 const plans=new WeakMap();
 const idsOf=node=>[node.id,...Object.values(node.slots).flat().flatMap(idsOf)];
 const equal=(a,b)=>JSON.stringify(clean(a))===JSON.stringify(clean(b));
@@ -95,21 +98,21 @@ async function resolveLibraries(root,manifest,hostConfig) {
   }
   return {config,resolved,available,scopeResolvers};
 }
-function approve(manifest,input,instanceIds,existingIds) {
+function approve(manifest,input,instanceIds,existingIds,subset=false) {
   const grants=permissions(input);const requested=manifest.permissions;
-  for(const key of ['capabilities','traversal','visible','editable'])check(equal(grants[key].slice().sort(),requested[key].slice().sort()),'PACKAGE.DENIED','Requested grants require explicit exact approval');
-  check(equal(grants.scopes,requested.scopes),'PACKAGE.DENIED','Requested resource scopes require explicit approval');
+  for(const key of ['capabilities','traversal','visible','editable'])check(subset?grants[key].every(g=>['visible','editable'].includes(key)?objectGrantCovers(requested[key],g):requested[key].includes(g)):equal(grants[key].slice().sort(),requested[key].slice().sort()),'PACKAGE.DENIED','Requested grants require explicit exact approval');
+  check(subset?Object.entries(grants.scopes).every(([key,values])=>values.every(v=>requested.scopes[key]?.includes(v))):equal(grants.scopes,requested.scopes),'PACKAGE.DENIED','Requested resource scopes require explicit approval');
   const patterns=[...grants.visible,...grants.editable];
   check(patterns.every(grant=>grant.endsWith('*')||instanceIds.includes(grant)), 'PACKAGE.DENIED','Exact object scopes must belong to the installable');
   check(existingIds.filter(id=>!instanceIds.includes(id)).every(id=>!matchesObjectGrant(patterns,id)), 'PACKAGE.DENIED','Object grants cover an existing object outside the installable');
   return grants;
 }
-function mapStorage(manifest,config,mappings,app) {
+function mapStorage(manifest,config,mappings,app,grants=manifest.permissions) {
   check(equal(Object.keys(mappings).sort(),manifest.storage.map(x=>x.name).sort()),'PACKAGE.STORAGE','Supply exactly the declared logical mappings');const scopes=[];
   for(const requirement of manifest.storage){const mapping=mappings[requirement.name];fields(mapping,['store','collection'],'PACKAGE.STORAGE');check(manifest.requires.libraries.some(x=>x.library==='wydstore'),'PACKAGE.STORAGE','Storage requires WydStore');
     const store=config.libraries.find(x=>x.id==='wydstore'&&x.enabled)?.options?.stores?.find(x=>x.id===mapping.store),collection=store?.collections?.find(x=>x.id===mapping.collection);
     check(store?.app===app&&store?.publisher===manifest.publisher&&store?.package===manifest.id&&collection&&equal(collection.fields,requirement.fields)&&(requirement.schemaId===undefined||collection.schemaId===requirement.schemaId&&collection.schemaVersion===requirement.schemaVersion),'PACKAGE.STORAGE','Incompatible host storage ownership/schema');
-    if(manifest.permissions.scopes.wydstore.includes(requirement.name))scopes.push(mapping);
+    if(grants.scopes.wydstore.includes(requirement.name))scopes.push(mapping);
   }
   return {mappings:clean(mappings),scopes};
 }
@@ -117,9 +120,10 @@ export async function planPackageInstall(options) {
   const plan=await planInstall(options);
   const data=plans.get(plan);packageGraph([...data.previous,data.entry]);return plan;
 }
-async function planInstall({root,packagePath,placement,approvals,storageMappings={},installationContext,hostConfig,verifiedPackages={},additions=[],page,properties={},navigation,staticLibraries,serverPlacement},snapshot) {
+async function planInstall({root,packagePath,placement,approvals,storageMappings={},installationContext,hostConfig,verifiedPackages={},additions=[],page,properties={},navigation,staticLibraries,serverPlacement},snapshot,policyOverride) {
   root=path.resolve(root);
   check(((snapshot===undefined?readInstalledState(root):snapshot)?.packages.length??0)<LIMITS.packages,'PACKAGE.LIMIT','Installed package safety ceiling reached');
+  check(!(snapshot??readInstalledState(root))?.policyReconciliation,'PACKAGE.PENDING','Reviewed policy reserves this App');
   const base=baseFingerprint(root),head=stateFingerprint(root);const model=snapshot===undefined?loadRepository(root,{verifiedPackages}):repositoryFromState(root,snapshot,{verifiedPackages});const candidate=loadPackage(packagePath),{manifest,resources,definitions,template}=candidate;
   check(!(model.installed?.retained??[]).some(r=>r.entry.manifest.id===manifest.id),'PACKAGE.RETAINED','Use lifecycle reinstall for retained data');
   check(!(model.installed?.packages??[]).some(p=>p.manifest.id===manifest.id),'PACKAGE.ALREADY_INSTALLED','Package already installed');
@@ -152,8 +156,8 @@ async function planInstall({root,packagePath,placement,approvals,storageMappings
   check(Object.keys(properties).every(id=>idsOf(template).includes(id)),'PACKAGE.TEMPLATE','Properties outside template');configure(configuredTemplate);
   const instanceIds=[...idsOf(configuredTemplate),...extra.flatMap(item=>idsOf(item.instance))];check(instanceIds.length<=LIMITS.templateNodes&&new Set(instanceIds).size===instanceIds.length,'PACKAGE.LIMIT','Invalid attachment IDs');
   check(!(model.installed?.retained??[]).some(r=>r.entry.instanceIds.some(id=>instanceIds.includes(id))),'PACKAGE.OWNERSHIP','Instance ID is reserved by retained package data');
-  const approved=approve(manifest,approvals,instanceIds,idsOf(dehydrate(model.runtime))),{config,resolved,available,scopeResolvers}=await resolveLibraries(root,manifest,hostConfig),storage=mapStorage(manifest,config,storageMappings,model.runtime.rootId);
-  const libraryScopes=Object.fromEntries(Object.entries(manifest.permissions.scopes).filter(([id])=>!['wydstore','prototypes','events'].includes(id)).map(([id,scopes])=>{check(scopeResolvers.has(id),'PACKAGE.STORAGE','Scope provider must be required');let grants;try{grants=clean(scopeResolvers.get(id)({app:model.runtime.rootId,scopes}));}catch{check(false,'PACKAGE.STORAGE','Library scope approval failed');}check(Array.isArray(grants)&&grants.length<=16,'PACKAGE.STORAGE','Invalid library grants');return [id,grants];}));
+  const approved=approve(manifest,policyOverride??approvals,instanceIds,idsOf(dehydrate(model.runtime)),policyOverride!==undefined),{config,resolved,available,scopeResolvers}=await resolveLibraries(root,manifest,hostConfig),storage=mapStorage(manifest,config,storageMappings,model.runtime.rootId,approved);
+  const libraryScopes=Object.fromEntries(Object.entries(approved.scopes).filter(([id])=>!['wydstore','prototypes','events'].includes(id)).map(([id,scopes])=>{check(scopeResolvers.has(id),'PACKAGE.STORAGE','Scope provider must be required');let grants;try{grants=clean(scopeResolvers.get(id)({app:model.runtime.rootId,scopes}));}catch{check(false,'PACKAGE.STORAGE','Library scope approval failed');}check(Array.isArray(grants)&&grants.length<=16,'PACKAGE.STORAGE','Invalid library grants');return [id,grants];}));
   check(approved.capabilities.every(cap=>available.has(cap)),'PACKAGE.DENIED','Requested capability has no required provider');
   checkContext(installationContext);check(installationContext.allows('object.instances.edit'),'MUTATION.DENIED','Mutation denied');check(installationContext.package===null,'PACKAGE.DENIED','Installation requires a host operator context');check(installationContext.app===model.runtime.rootId,'PACKAGE.DENIED','Wrong installation App');
   let runtime=hydrate(dehydrate(model.runtime,{includeSensitive:true}),registry,{revision:model.installed?.revision??0});
@@ -177,7 +181,7 @@ async function planInstall({root,packagePath,placement,approvals,storageMappings
   const plan=freeze({schema:'wydgit-install-plan/0.1',package:manifest.id,version:manifest.version,publisher:manifest.publisher,placement:clean(placement),instance:template.id,instanceIds,installable:entry.installable,prototypes:definitions.map(d=>d.id),resources:Object.fromEntries(Object.entries(resources).map(([file,text])=>[file,{bytes:Buffer.byteLength(text),sha256:digest(text)}])),libraries:resolved,requested:manifest.permissions,approved,storageMappings:storage.mappings,bindings:manifest.bindings,baseFingerprint:base,catalogFingerprint:head,...extensions});
   check(base===baseFingerprint(root)&&head===stateFingerprint(root),'PACKAGE.STALE','State changed during planning');
   if(hostConfig)check(Buffer.byteLength(JSON.stringify(validateConfig(hostConfig),null,2)+'\n')<=LIMITS.resource,'PACKAGE.LIMIT','Prospective host config too large');
-  plans.set(plan,{root,installationContext,catalogMetadata:{schema:executionPlacement?'wydgit-installed/0.3':model.installed?.schema??'wydgit-installed/0.1',...(model.installed?.replacementHistory?{replacementHistory:model.installed.replacementHistory}:{})},hostConfig:hostConfig?JSON.stringify(validateConfig(hostConfig),null,2)+'\n':null,entry,app:JSON.stringify(dehydrate(result.runtime,{includeSensitive:true})),revision:result.revision,retained:model.installed?.retained??[],previous:model.installed?.packages??[]});return plan;
+  plans.set(plan,{root,installationContext,catalogMetadata:{schema:model.installed?.schema==='wydgit-installed/0.4'?'wydgit-installed/0.4':executionPlacement?'wydgit-installed/0.3':model.installed?.schema??'wydgit-installed/0.1',...(model.installed?.policyHistory?{policyHistory:model.installed.policyHistory}:{}),...(model.installed?.replacementHistory?{replacementHistory:model.installed.replacementHistory}:{})},hostConfig:hostConfig?JSON.stringify(validateConfig(hostConfig),null,2)+'\n':null,entry,app:JSON.stringify(dehydrate(result.runtime,{includeSensitive:true})),revision:result.revision,retained:model.installed?.retained??[],previous:model.installed?.packages??[]});return plan;
 }
 export async function applyPackageInstall(plan,{beforeReplace,infrastructure,beforeConfigReplace,beforeStateReplace,beforeProviderSetup,atStage}={}) {
   check(plans.has(plan),'PACKAGE.PLAN','Expected an original host plan');const data=plans.get(plan),{root}=data;
@@ -247,8 +251,8 @@ function validateCandidateState(root,state,verifiedPackages,hostConfig) {
   const config=validateConfig(hostConfig??safeRead(root,'wydgit.config.json')),pages=new Map(),allIds=idsOf(dehydrate(model.runtime));
   for(const entry of state.packages){
     check(equal([...idsOf(JSON.parse(entry.resources[entry.manifest.resources.template])),...(entry.additions??[]).flatMap(a=>idsOf(JSON.parse(a.instance)))],entry.instanceIds),'PACKAGE.CATALOG','Installed instance metadata drift');
-    approve(entry.manifest,entry.approved,entry.instanceIds,allIds);
-    const storage=mapStorage(entry.manifest,config,entry.storageMappings,model.runtime.rootId);
+    approve(entry.manifest,entry.approved,entry.instanceIds,allIds,entry.policyRevision!==undefined);
+    const storage=mapStorage(entry.manifest,config,entry.storageMappings,model.runtime.rootId,entry.approved);
     check(equal(storage.scopes,entry.storageScopes),'PACKAGE.CATALOG','Catalog storage scope drift');
     for(const attachment of [{placement:entry.placement,id:entry.instance},...(entry.additions??[]).map(a=>({placement:a.placement,id:JSON.parse(a.instance).id}))]){
       const p=attachment.placement;
@@ -269,6 +273,7 @@ async function planOperation({root,action,package:id,candidates=[],installationC
   check(qualified(id),'PACKAGE.IDENTITY','Invalid package identity');
   check(token===undefined||signal===undefined&&parentBudget===undefined,'PACKAGE.BUDGET','Attach cancellation and parent accounting when creating the shared budget');
   const accepted=readInstalledState(root);
+  check(!accepted?.policyReconciliation,'PACKAGE.PENDING','Reviewed policy reserves this App');
   check(!accepted?.manualReplacement||manual,'PACKAGE.PENDING','A manual replacement reserves this App; finish or explicitly cancel it');
   const initial=repositoryFromState(root,accepted,{verifiedPackages});
   authorizeLifecycle(installationContext,initial.runtime.rootId);
@@ -393,9 +398,10 @@ async function planOperation({root,action,package:id,candidates=[],installationC
         ...(prior.additions?{additions:prior.additions.map(a=>({placement:a.placement,instance:JSON.parse(a.instance)}))}:{}),
         ...(prior.navigation&&saved.navigationRemoved?{navigation:prior.navigation}:{}),properties:migrating?{}:prior.properties??{}}:{};
       // Created Pages remain App-owned across uninstall and are reused on reinstall.
-      const subplan=await planInstall({...options,...previousOptions,page:prior?undefined:options.page,root,installationContext,verifiedPackages,hostConfig:config},state),data=plans.get(subplan);plans.delete(subplan);
+      const subplan=await planInstall({...options,...previousOptions,page:prior?undefined:options.page,root,installationContext,verifiedPackages,hostConfig:config},state,prior?.policyRevision!==undefined?prior.approved:undefined),data=plans.get(subplan);plans.delete(subplan);
       check(equal(candidate.manifest,data.entry.manifest),'PACKAGE.STALE','Candidate manifest changed during dependency planning');
       installations.push(subplan);
+      if(prior?.policyRevision!==undefined){data.entry.policyRevision=prior.policyRevision;}
       if(prior?.executionPlacement){
         installationContext.require('packages.placement.manage');
         check(retained||prior.executionPlacement.status==='active','PACKAGE.PENDING','Retired placement requires explicit activation');
@@ -412,13 +418,14 @@ async function planOperation({root,action,package:id,candidates=[],installationC
           const after=afterModel.registry.get(afterModel.runtime.get(instance).prototype).execution;
           check(!before||after&&before.runat===after.runat&&(before.context===undefined||before.context===after.context),'EXECUTION.RESTRICTION','Replacement cannot weaken inherited restrictions');
         }
-        state.schema='wydgit-installed/0.3';
+        state.schema=state.schema==='wydgit-installed/0.4'?state.schema:'wydgit-installed/0.3';
       }
       if(prior){
         check(equal(prior.instanceIds,data.entry.instanceIds)&&prior.instance===data.entry.instance&&equal(prior.placement,data.entry.placement),'PACKAGE.MIGRATION_REQUIRED','Changed instance footprint requires explicit migration');
         if(prior.page){data.entry.page=prior.page;}
         if(prior.navigation){data.entry.navigation=prior.navigation;}
       }
+      if(prior)check(equal(prior.approved,data.entry.approved),'PACKAGE.DENIED','Updates cannot approve changed authority; reconcile policy separately');
       if(prior&&prior.manifest.version===data.entry.manifest.version)check(equal(prior.manifest,data.entry.manifest)&&equal(prior.resources,data.entry.resources)&&equal(prior.compiledSources??null,data.entry.compiledSources??null),'PACKAGE.VERSION','Same-version package resources changed');
       data.entry.reason=prior?(action==='install'&&packageId===id?'explicit':prior.reason??'explicit'):(packageId===id?'explicit':'automatic');
       data.entry.protected=prior?.protected??protectedPackages.includes(packageId);
@@ -431,6 +438,7 @@ async function planOperation({root,action,package:id,candidates=[],installationC
       if(sameVersion&&old.lifetimeGeneration)data.entry.lifetimeGeneration=old.lifetimeGeneration;
       if(data.entry.executionPlacement)data.entry.receipt.executionPlacement=data.entry.executionPlacement;
       if(data.entry.migrationLineage)data.entry.receipt.migrationLineage=data.entry.migrationLineage;
+      if(data.entry.policyRevision!==undefined){data.entry.receipt.policyRevision=data.entry.policyRevision;data.entry.receipt.policyHash=approvedPolicyHash(data.entry,JSON.parse(state.app).id);}
       state.packages.push(data.entry);state.app=data.app;
       if(old)state.app=preserved;
       else if(retained){
@@ -450,7 +458,7 @@ async function planOperation({root,action,package:id,candidates=[],installationC
       }
     }
   }
-  if(state.packages.some(p=>p.executionPlacement))state.schema='wydgit-installed/0.3';
+  if(state.packages.some(p=>p.executionPlacement))state.schema=state.schema==='wydgit-installed/0.4'?state.schema:'wydgit-installed/0.3';
   state.revision=(accepted?.revision??0)+1;check(Number.isSafeInteger(state.revision),'PACKAGE.LIMIT','Catalog revision exhausted');
   check(usedMigrations.size===migrations.length,'PACKAGE.MIGRATION_ORDER','Unused, duplicate or unrelated migration approval');
   validateCandidateState(root,state,verifiedPackages,config);
@@ -476,6 +484,7 @@ export async function applyPackageOperation(plan,options={}){
 export async function packageOperation(options){return applyPackageOperation(await planPackageOperation(options));}
 
 export function activatePackages(model,libraries,root) {
+  check(!readInstalledState(root)?.policyReconciliation,'PACKAGE.PENDING','Reviewed policy keeps the App unavailable');
   check(!readInstalledState(root)?.manualReplacement,'PACKAGE.PENDING','Manual replacement keeps the App unavailable');
   const config=validateConfig(safeRead(root,'wydgit.config.json'));
   const entries=model.installed?.packages??[],pages=new Map(),handlers=[],actions=[];
@@ -484,11 +493,11 @@ export function activatePackages(model,libraries,root) {
     check(equal([...idsOf(template),...(entry.additions??[]).flatMap(item=>idsOf(JSON.parse(item.instance)))],entry.instanceIds)&&entry.instance===template.id,'PACKAGE.CATALOG','Installed instance metadata drift');
     const page=model.runtime.get(entry.placement.page),parent=model.runtime.get(entry.placement.parent);
     check(model.registry.isA(page.prototype,'wydgit.core/page')&&parent.slots[entry.placement.slot]?.[entry.placement.index]===entry.instance,'PACKAGE.CATALOG','Installed placement drift');
-    approve(entry.manifest,entry.approved,entry.instanceIds,idsOf(dehydrate(model.runtime)));
+    approve(entry.manifest,entry.approved,entry.instanceIds,idsOf(dehydrate(model.runtime)),entry.policyRevision!==undefined);
     const declared=JSON.parse(entry.resources[entry.manifest.resources.prototypes]).map(d=>d.id);
     for(const item of entry.additions??[]){const p=item.placement,instance=copyEnvelope(JSON.parse(item.instance));check(model.registry.isA(model.runtime.get(p.page).prototype,'wydgit.core/page'),'PACKAGE.CATALOG','Invalid attachment Page');const descendants=[];const walk=id=>{descendants.push(id);Object.values(model.runtime.get(id).slots).flat().forEach(walk);};walk(p.page);check(descendants.includes(p.parent)&&model.runtime.get(p.parent).slots[p.slot]?.[p.index]===instance.id,'PACKAGE.CATALOG','Attachment placement drift');for(const id of idsOf(instance))check(declared.includes(model.runtime.get(id).prototype),'PACKAGE.CATALOG','Attachment prototype drift');check(!pages.has(p.page)||pages.get(p.page)===entry,'PACKAGE.PRINCIPALS','Multiple package principals on Page');pages.set(p.page,entry);}
-    const libraryScopes=Object.fromEntries(Object.entries(entry.manifest.permissions.scopes).filter(([id])=>!['wydstore','prototypes','events'].includes(id)).map(([id,scopes])=>[id,libraries.resolvePackageScopes(id,scopes,model.runtime.rootId)]));check(equal(libraryScopes,entry.libraryScopes??{}),'PACKAGE.CATALOG','Library scope drift');
-    const storage=mapStorage(entry.manifest,config,entry.storageMappings,model.runtime.rootId);check(equal(storage.scopes,entry.storageScopes),'PACKAGE.CATALOG','Catalog storage scope drift');
+    const libraryScopes=Object.fromEntries(Object.entries(entry.approved.scopes).filter(([id])=>!['wydstore','prototypes','events'].includes(id)).map(([id,scopes])=>[id,libraries.resolvePackageScopes(id,scopes,model.runtime.rootId)]));check(equal(libraryScopes,entry.libraryScopes??{}),'PACKAGE.CATALOG','Library scope drift');
+    const storage=mapStorage(entry.manifest,config,entry.storageMappings,model.runtime.rootId,entry.approved);check(equal(storage.scopes,entry.storageScopes),'PACKAGE.CATALOG','Catalog storage scope drift');
     libraries.resolve(entry.manifest.requires);
     check(entry.libraries.every(mapping=>libraries.get(mapping.id).version===mapping.version&&config.libraries.find(item=>item.id===mapping.id)?.package===mapping.package),'PACKAGE.LIBRARY','Approved library mapping changed');
     const bound=packageBindings(entry,model.registry,model.runtime);handlers.push(...bound.handlers);actions.push(...bound.actions);pages.set(entry.placement.page,entry);
@@ -516,6 +525,7 @@ export async function planManualReplacement(input,{atStage}={}) {
   const budget=token??createPackageBudget(installationContext,{signal,parentBudget}),meter=packageBudget(budget,installationContext);meter.take();
   const base=baseFingerprint(root),head=stateFingerprint(root);
   const original=accepted.packages.find(p=>p.manifest.id===id),pending=accepted.manualReplacement;
+  check(!accepted.policyReconciliation,'PACKAGE.PENDING','Reviewed policy reserves this App');
   check(original,'PACKAGE.NOT_INSTALLED','Source package is not installed');
   check(action==='retire'?!pending:pending?.package===id,'PACKAGE.PENDING','Expected the exact pending replacement');
   let state=clean(accepted),resources=[],artifactChecks=[],preview;
@@ -537,7 +547,7 @@ export async function planManualReplacement(input,{atStage}={}) {
       const retiredEntry=state.packages.find(p=>p.manifest.id===id);
       retiredEntry.lifetimeGeneration=randomUUID();retiredEntry.receipt.lifetimeGeneration=retiredEntry.lifetimeGeneration;
       if(retiredEntry.executionPlacement){retiredEntry.executionPlacement.generation=randomUUID();retiredEntry.receipt.executionPlacement=clean(retiredEntry.executionPlacement);}
-      state.schema='wydgit-installed/0.3';state.manualReplacement={schema:'wydgit.manual-replacement/1',id:randomUUID(),package:id,sourceReceipt:original.receipt.id,sourceCatalog:stateFingerprint(root),sourceApp:digest(state.app),status:'RETIRED'};}
+      state.schema=state.schema==='wydgit-installed/0.4'?state.schema:'wydgit-installed/0.3';state.manualReplacement={schema:'wydgit.manual-replacement/1',id:randomUUID(),package:id,sourceReceipt:original.receipt.id,sourceCatalog:stateFingerprint(root),sourceApp:digest(state.app),status:'RETIRED'};}
     else delete state.manualReplacement; // No source data/bindings were ever changed.
   } else {
     check(Array.isArray(candidates)&&candidates.length===1&&developerMigrations!==undefined,'PACKAGE.MANUAL','Supply one exact replacement and its approved developer path; provision dependencies before retirement');
@@ -631,7 +641,7 @@ function guardInstalledExecution(root,entry,context) {
   // Trusted local-filesystem writer contract: rename and in-place writes change
   // inode/ctime. Check cheap metadata on every boundary; revalidate durable bytes
   // whenever the catalog or a recovery barrier changes. No timer/cache grace period.
-  const files=[STATE,'content/.package-install.lock','content/.package-recovery.lock',
+  const files=[STATE,'wydgit.config.json','content/.package-install.lock','content/.package-recovery.lock',
     'content/.package-infrastructure.json','content/package-effects.json','content/package-operation.json'];
   const stamp=()=>files.map(file=>{
     const s=lstatSync(path.join(root,file),{bigint:true,throwIfNoEntry:false});
@@ -639,7 +649,7 @@ function guardInstalledExecution(root,entry,context) {
   }).join('|');
   const validate=()=>{
     const state=readInstalledState(root),current=state?.packages.find(p=>p.manifest.id===entry.manifest.id);
-    check(state&&!state.manualReplacement&&current?.receipt.id===entry.receipt.id&&
+    check(state&&!state.manualReplacement&&!state.policyReconciliation&&current?.receipt.id===entry.receipt.id&&
       equal(current.executionPlacement??null,entry.executionPlacement??null)&&current.lifetimeGeneration===entry.lifetimeGeneration&&
       (!current.executionPlacement||current.executionPlacement.status==='active')&&
       JSON.parse(state.app).id===context.app,'PACKAGE.STALE','Installation snapshot is no longer current');
@@ -658,6 +668,7 @@ export async function planExecutionPlacement({root,package:id,installation,revis
   check(accepted,'PACKAGE.NOT_INSTALLED','Placement requires an accepted installation');
   authorizeLifecycle(installationContext,JSON.parse(accepted.app).id);
   installationContext.require('packages.placement.manage');
+  check(!accepted.policyReconciliation,'PACKAGE.PENDING','Reviewed policy reserves this App');
   check(!accepted.manualReplacement,'PACKAGE.PENDING','Manual replacement reserves this App');
   check(app===installationContext.app&&revision===accepted.revision,'PACKAGE.STALE','Exact site and catalog revision required');
   const state=clean(accepted),entry=state.packages.find(p=>p.manifest.id===id);
@@ -673,7 +684,7 @@ export async function planExecutionPlacement({root,package:id,installation,revis
   if(action==='relocate')check(target!==previous.context,'PACKAGE.CONFLICT','Relocation requires a different context');
   entry.executionPlacement={app,context:target,generation:randomUUID(),status:action==='retire'?'retired':'active'};
   entry.receipt.executionPlacement=clean(entry.executionPlacement);
-  state.schema='wydgit-installed/0.3';state.revision++;
+  state.schema=state.schema==='wydgit-installed/0.4'?state.schema:'wydgit-installed/0.3';state.revision++;
   validateCandidateState(root,state,verifiedPackages);
   check(base===baseFingerprint(root)&&head===stateFingerprint(root),'PACKAGE.STALE','State changed during placement planning');
   const meter=packageBudget(createPackageBudget(installationContext),installationContext);meter.take();
@@ -689,7 +700,7 @@ export async function executionPlacement(options) {
 // never silently bind to the current replacement, even with the same instance ID.
 export function acquirePackageExecution({root,package:id,installation,generation,app,self,installationContext,identity=null,verifiedPackages={}}) {
   root=path.resolve(root);const state=readInstalledState(root);
-  check(state&&!state.manualReplacement,'PACKAGE.PENDING','App unavailable');
+  check(state&&!state.manualReplacement&&!state.policyReconciliation,'PACKAGE.PENDING','App unavailable');
   authorizeLifecycle(installationContext,JSON.parse(state.app).id);
   installationContext.require('packages.placement.manage');
   const entry=state.packages.find(p=>p.manifest.id===id),p=entry?.executionPlacement;

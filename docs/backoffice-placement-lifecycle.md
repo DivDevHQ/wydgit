@@ -1,5 +1,10 @@
 # Trusted BackOffice placement and replacement — 0.3-J increment 2
 
+The [reviewed package-policy foundation](reviewed-package-policy-reconciliation.md)
+adds native stopped-App plan/review/apply with separate policy revisions and durable
+host approval. Package requirements, execution placement, SEAM, Gate membership and
+store ownership remain independent; direct policy-file edits still fail drift checks.
+
 The [implemented third increment](backoffice-scoped-policy-and-store-authorization.md)
 adds optional host-resolved `identity` to `acquirePackageExecution`, with unchanged
 receipt grants and generation fencing. Protected operations revalidate current

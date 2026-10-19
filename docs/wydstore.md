@@ -1,5 +1,10 @@
 # WydStore — 0.2-E
 
+The [reviewed package-policy foundation](reviewed-package-policy-reconciliation.md)
+adds native stopped-App plan/review/apply with separate policy revisions and durable
+host approval. Package requirements, execution placement, SEAM, Gate membership and
+store ownership remain independent; direct policy-file edits still fail drift checks.
+
 Current [0.3-J site-policy contract](backoffice-scoped-policy-and-store-authorization.md):
 Store alpha.4 adds optional versioned trusted operation rules, current Gate permission
 and execution context checks at protected provider admissions, preserving the owner

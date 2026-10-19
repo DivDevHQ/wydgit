@@ -1,5 +1,10 @@
 # SEAM foundation — 0.2-H
 
+The [reviewed package-policy foundation](reviewed-package-policy-reconciliation.md)
+adds native stopped-App plan/review/apply with separate policy revisions and durable
+host approval. Package requirements, execution placement, SEAM, Gate membership and
+store ownership remain independent; direct policy-file edits still fail drift checks.
+
 The [site-policy increment](backoffice-scoped-policy-and-store-authorization.md)
 adds live Gate permission requirements to classified protected service operations.
 Capabilities/scopes, trusted caller/context, lifetime and ownership remain independent

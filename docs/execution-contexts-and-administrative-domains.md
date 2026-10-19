@@ -1,5 +1,10 @@
 # Execution contexts, administrative domains, and WydStore isolation
 
+The [reviewed package-policy foundation](reviewed-package-policy-reconciliation.md)
+adds native stopped-App plan/review/apply with separate policy revisions and durable
+host approval. Package requirements, execution placement, SEAM, Gate membership and
+store ownership remain independent; direct policy-file edits still fail drift checks.
+
 **Status:** Governing architecture. The [first execution-context increment](execution-context-foundation.md)
 is implemented in alpha.16; wider administrative domains, isolation and provisioning
 remain targets. This document’s matrix describes requirements, not completion.

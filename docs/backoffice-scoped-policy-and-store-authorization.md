@@ -1,5 +1,10 @@
 # Scoped site policy and WydStore authorization — 0.3-J increment 3
 
+The [implemented fourth increment](reviewed-package-policy-reconciliation.md)
+provides the reviewed stopped-App reconciliation deferred at this alpha.18
+checkpoint. Direct host-policy edits remain `PACKAGE.DRIFT`; existing policy,
+SEAM/Gate/ownership boundaries and all wider-domain/UI deferrals remain in force.
+
 Status: implemented site-level security foundation, with qualification and limits
 below. Starting point: clean `develop/0.3`,
 `7b48869`, platform/Wydgine/WydHosting alpha.17, WydClient alpha.11,

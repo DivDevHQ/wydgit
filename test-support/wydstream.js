@@ -1,11 +1,12 @@
 import fs from 'node:fs/promises';
+import assert from 'node:assert/strict';
 import path from 'node:path';
 import { packageFixture } from './packages.js';
 import { configuration } from './wydgate.js';
 import { buildOperatorPolicy } from '../scripts/install-package.js';
 import { planOperatorInstall,applyOperatorInstall } from '../scripts/package-infrastructure.js';
 import { loadRepository } from '../wydgine/repository.js';
-import { ExecutionContext } from '../wydgine/seam/context.js';
+import { ExecutionContext,checkContext } from '../wydgine/seam/context.js';
 import { initializeHost } from '../wydgine/host.js';
 import { createGate } from '@wydgit/gate/client';
 import { activatePackages } from '../wydgine/packages/index.js';
@@ -33,4 +34,14 @@ export async function mediaFixture(t,provider='JSON',install=true,files=false) {
  f.context=extra=>new ExecutionContext({context:'FrontEnd',...f.caller,capabilities:[...f.caller.capabilities,'stream.media.write','stream.media.delete'],...extra});
  f.editor=f.context({});f.invoke=(op,input={},caller=f.editor)=>f.libraries.bind(caller).invoke('wydstream','1.0.0',op,{resource:'media',...input});
  return f;
+}
+
+// Provider-limit/backend tests deliberately edit raw host configuration outside
+// installed policy reconciliation. Verify that installation authority is fenced,
+// then use an independent native host principal for that provider-only scenario.
+// This test helper is never part of an engine/package execution surface.
+export function useNativeMediaPolicyFixture(f) {
+ const input=JSON.parse(JSON.stringify(f.caller));
+ assert.throws(()=>checkContext(f.caller),{code:'SEAM.CONTEXT'});
+ f.caller=new ExecutionContext(input);f.editor=f.context({});
 }
