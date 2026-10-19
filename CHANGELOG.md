@@ -1,5 +1,12 @@
 ## Unreleased
 
+- Qualify scoped site-policy increment 3 and advance platform/Wydgine/WydHosting
+  to alpha.18, Gate to alpha.5 and Store to alpha.4. Synchronize host dependency,
+  peer, lockfile and development fixture metadata; retain client alpha.11 and
+  immutable artifacts. Record operational policy versioning, safe legacy-install
+  rejection, site-only acceptance coverage and deferred configuration reconciliation.
+  BackOffice UI, account/provider scope, live cutover and HTTP reliability remain open.
+
 - Enforce versioned host WydStore operation policies at JSON/SQLite resource
   boundaries: exact context plus current site-scoped Gate permission, in addition
   to existing SEAM capabilities, collection scopes and ownership. Revalidate cached

@@ -1,5 +1,11 @@
 # Trusted BackOffice placement and replacement — 0.3-J increment 2
 
+The [implemented third increment](backoffice-scoped-policy-and-store-authorization.md)
+adds optional host-resolved `identity` to `acquirePackageExecution`, with unchanged
+receipt grants and generation fencing. Protected operations revalidate current
+site policy. Its site-level Gate/store checks supersede the corresponding deferrals
+at this alpha.17 checkpoint; UI, wider domains and live drain remain deferred.
+
 Implemented in Wydgine/platform 0.3.0-alpha.17; WydClient 0.1.0-alpha.11
 contains the shared lifetime guard. This extends the
 [execution foundation](execution-context-foundation.md) and preserves the

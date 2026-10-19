@@ -1,5 +1,10 @@
 # Trusted local package lifecycle
 
+The [scoped-policy/store increment](backoffice-scoped-policy-and-store-authorization.md)
+qualifies retained site data under current Gate policy across placement and package
+lifecycle. It does not expose native maintenance to Wydgits or add an arbitrary
+accepted-host-configuration reconciliation/migration operation.
+
 Status: implemented **bounded local catalog and checkpointed storage lifecycle**,
 with release blockers below. This is not full production package lifecycle qualification. See the
 [audit and qualification record](milestones/0.3-package-lifecycle/README.md).

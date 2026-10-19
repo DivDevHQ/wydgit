@@ -1,5 +1,10 @@
 # SEAM foundation — 0.2-H
 
+The [site-policy increment](backoffice-scoped-policy-and-store-authorization.md)
+adds live Gate permission requirements to classified protected service operations.
+Capabilities/scopes, trusted caller/context, lifetime and ownership remain independent
+requirements. No Gate role or policy result grants or expands SEAM authority.
+
 > I0 binds host-selected Apps to opaque lifetime tokens and separate library registries.
 > App identity remains the exact canonical root ID; publisher/package/signature/Session
 > identity never selects another App. See [I0 isolation and limits](milestones/0.3-I0/README.md).

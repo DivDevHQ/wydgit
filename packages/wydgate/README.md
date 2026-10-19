@@ -1,6 +1,11 @@
 # @wydgit/gate
 
-Canonical server library `wydgate`, independently versioned at `0.1.0-alpha.4`.
+Canonical server library `wydgate`, independently versioned at `0.1.0-alpha.5`.
+
+Requires platform `^0.3.0-alpha.18`. Installed administration intersects current
+App membership/session permission, BackOffice and independently approved SEAM
+authority. Private policy evaluation exposes no portable authorization token.
+See the repository contract `docs/backoffice-scoped-policy-and-store-authorization.md`.
 
 Provides local users and Argon2id username/password authentication. Persistence uses
 host-approved `wydstore` services and works with JSON or SQLite. WydGate never

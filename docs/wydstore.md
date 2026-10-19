@@ -1,5 +1,10 @@
 # WydStore — 0.2-E
 
+Current [0.3-J site-policy contract](backoffice-scoped-policy-and-store-authorization.md):
+Store alpha.4 adds optional versioned trusted operation rules, current Gate permission
+and execution context checks at protected provider admissions, preserving the owner
+tuple and both adapters. Earlier checkpoints below remain historical where superseded.
+
 > I0 uses a separate registry/resource configuration per App and retains service-level
 > App/publisher/package/scope checks even for equal logical store names. Local resource
 > roots are confined per App. See [I0](milestones/0.3-I0/README.md).

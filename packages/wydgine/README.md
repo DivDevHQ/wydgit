@@ -10,14 +10,14 @@ reliability issue. See repository `docs/decisions/0003-defer-managed-hosting-qua
 and `docs/milestones/0.3-release-status.md`. No deployment or guest changes are
 authorized by this documentation decision.
 
-Wydgine runs canonical Wydgit Apps. Version 0.3.0-alpha.17 is a private,
+Wydgine runs canonical Wydgit Apps. Version 0.3.0-alpha.18 is a private,
 locally packed development artifact; it has not been published to npm.
 Requires Node >=24.21.0. No WydHosting or Linux hosting installation is required.
 
 Install a verified local tarball in a consumer directory:
 
 ```sh
-npm install /verified/path/wydgine-0.3.0-alpha.17.tgz
+npm install /verified/path/wydgine-0.3.0-alpha.18.tgz
 ./node_modules/.bin/wydgine setup
 npm start
 ```

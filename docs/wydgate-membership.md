@@ -1,5 +1,11 @@
 # WydGate identity and membership — 0.3-G
 
+The [0.3-J scoped-policy increment](backoffice-scoped-policy-and-store-authorization.md)
+supersedes the installed-administration authorization described at this historical
+alpha.4 checkpoint. Gate alpha.5 requires BackOffice, current explicit permission
+and independent SEAM authority; role labels alone no longer authorize those actions.
+Existing account/membership data schemas and self-service contracts remain intact.
+
 > I0 hosts independent Gate directories and Session resolvers per App. Membership and
 > valid cookies from one App do not authenticate another. No SSO is added; domain and
 > cookie-origin routing remain I1. See [I0](milestones/0.3-I0/README.md).

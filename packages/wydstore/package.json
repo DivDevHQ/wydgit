@@ -1,6 +1,6 @@
 {
   "name": "@wydgit/store",
-  "version": "0.1.0-alpha.3",
+  "version": "0.1.0-alpha.4",
   "description": "WydStore adapter-neutral records with JSON and SQLite providers",
   "license": "MPL-2.0",
   "type": "module",

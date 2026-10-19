@@ -7,6 +7,11 @@ remain targets. This document’s matrix describes requirements, not completion.
 **Scope:** Wydgine, WydClient/WydSUB, WydStore, WydGate, SEAM and WydHosting.  
 **Compatibility:** 0.3 is a deliberate migration boundary for server context resolution.
 
+The [implemented site-policy increment 3](backoffice-scoped-policy-and-store-authorization.md)
+qualifies current Gate policy, context/SEAM intersection and protected JSON/SQLite
+site-store admissions. Account/provider domains and wider matrix cases below remain
+targets; the implementation record states the exact qualified subsets.
+
 ## 1. Purpose and governing contracts
 
 Define one execution model for public functionality, site administration, future

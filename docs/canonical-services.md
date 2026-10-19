@@ -1,5 +1,11 @@
 # Canonical service contracts — 0.3-A
 
+The [0.3-J site-policy increment](backoffice-scoped-policy-and-store-authorization.md)
+extends private trusted registration with one canonical Gate evaluator and
+caller-lifetime/identity derivation hooks. These are absent from portable discovery
+and invocation; no reusable authorization token or competing registry is added.
+The version discussion below records the original 0.3-A checkpoint.
+
 The existing `wydgine/libraries` registry owns canonical service discovery,
 registration, dependency order and dispatch. There is no second registry. A service
 ID is the stable library ID (`wydstore`, `wydgate`, or future `wydsearch` and
