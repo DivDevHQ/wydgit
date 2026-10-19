@@ -13,10 +13,10 @@ import {runInstaller} from '../scripts/install-package.js';
 import {createHostApp} from 'wydgine';
 
 for(const [provider,boundary] of [['JSON','precommit'],['SQLite','precommit'],['JSON','submitted-commit'],['JSON','connection-loss'],['SQLite','connection-loss']])test(`${provider}: controlled Contact ${boundary} wait crosses unchanged Page deadline`,{timeout:15000},async t=>{
- const f=await packageFixture(t),diagnostics=[],meters=[];
+ const f=await packageFixture(t),diagnostics=[],meters=[],traces=[];
  await fs.writeFile(path.join(f.root,'wydgit.config.json'),await fs.readFile('wydgit.config.json'));
  await runInstaller({args:[f.packagePath,'--root',f.root,'--apply'],input:Readable.from(['y','y','contact','contact','sections','0',provider,'','y','y'].map(a=>a+'\n')),output:{write(){}}});
- const app=await createHostApp({root:f.root,execution:{observeBudget:value=>meters.push(value)},logger:{error:value=>{if(typeof value==='string'&&value.startsWith('{"schema":"wydgine.http-event/1"'))diagnostics.push(JSON.parse(value));}}});
+ const app=await createHostApp({root:f.root,execution:{observeHttp:value=>{traces.push(value);if(traces.length>8)traces.shift();},observeBudget:value=>meters.push(value)},logger:{error:value=>{if(typeof value==='string'&&value.startsWith('{"schema":"wydgine.http-event/1"'))diagnostics.push(JSON.parse(value));}}});
  const server=app.listen(0,'127.0.0.1');await once(server,'listening');t.after(()=>app.shutdown(server));
  const url=`http://127.0.0.1:${server.address().port}/contact/`,first=await fetch(url),html=await first.text();assert.equal(first.status,200);
  const cookie=first.headers.get('set-cookie').split(';')[0],csrf=/name="_csrf" value="([^"]+)"/.exec(html)[1];
@@ -49,10 +49,11 @@ for(const [provider,boundary] of [['JSON','precommit'],['SQLite','precommit'],['
   // Store sanitizes the cancellation exception; the subsequent SEWN tick sees
   // the revoked ledger and reports LIMIT. This code alone is not timeout proof.
   assert.ok(diagnostics.some(e=>e.phase==='page'&&e.code==='SEWN.LIMIT'),JSON.stringify(diagnostics));
+  const trace=traces.findLast(m=>m.meter?.exhaustion);assert.equal(trace.headersPublished,false);assert.equal(trace.disconnected,true);assert.ok(trace.services.nativeStarted>0);assert.equal(trace.operationOutcome,'not-committed');
   const meter=meters.findLast(m=>m.exhaustion);assert.equal(meter.exhaustion.resource,'guard');assert.equal(meter.diagnostics.execution,'page');assert.ok(meter.diagnostics.spans.service.calls>0);
   mocked.mock.restore();syncBuiltinESMExports();
   const recovered=await fetch(url);assert.equal(recovered.status,200);assert.equal((await recovered.text()).includes('Budget probe'),false);
-  console.log(JSON.stringify({provider,boundary,client:'ECONNRESET',serverCloseObserved:true,meter,committed:false,recoveryStatus:200}));return;
+  console.log(JSON.stringify({provider,boundary,client:'ECONNRESET',serverCloseObserved:true,meter,trace,committed:false,recoveryStatus:200}));return;
  }
  await new Promise(r=>setTimeout(r,1100));const completedBeforeRelease=completed;release();
  const response=await pending;assert.equal(response.status,500);
@@ -60,11 +61,12 @@ for(const [provider,boundary] of [['JSON','precommit'],['SQLite','precommit'],['
  assert.equal(completedBeforeRelease,false,'Page must retain admitted I/O until cancellation settles');
  assert.equal(response.headers.get('x-wydgit-operation-outcome'),boundary==='precommit'?'not-committed':'indeterminate');
  assert.ok(diagnostics.some(e=>e.phase==='page'&&e.code==='SEWN.LIMIT'),JSON.stringify(diagnostics));
+ const trace=traces.findLast(m=>m.meter?.exhaustion);assert.equal(trace.pageAdmitted,true);assert.equal(trace.status,500);assert.equal(trace.headersPublished,true);assert.equal(trace.responseEnded,true);assert.equal(trace.services.pending,0);assert.equal(trace.operationOutcome,boundary==='precommit'?'not-committed':'indeterminate');
  const meter=meters.findLast(m=>m.exhaustion);assert.equal(meter.exhaustion.resource,'timeMs');assert.equal(meter.timeLimitMs,1000);assert.equal(meter.diagnostics.phaseAtFailure,'action');assert.ok(meter.diagnostics.spans.service.elapsedMs>=1000);
  assert.deepEqual(meter.diagnostics.accountingPath,['page','events','components','workflow','services']);assert.equal(JSON.stringify(meter).includes(f.root),false);
  mocked.mock.restore();syncBuiltinESMExports();
  const recovered=await fetch(url);assert.equal(recovered.status,200);const recoveredBody=await recovered.text();assert.equal(recoveredBody.includes('Budget probe'),boundary==='submitted-commit','observable result must match the commit boundary');
- console.log(JSON.stringify({provider,boundary:method,controlledWaitMs:1100,status:response.status,diagnostics,meter,recoveryStatus:recovered.status,completedBeforeRelease,committedRecordVisibleAfterFailure:recoveredBody.includes('Budget probe'),historicalAttribution:false}));
+ console.log(JSON.stringify({provider,boundary:method,controlledWaitMs:1100,status:response.status,diagnostics,meter,trace,recoveryStatus:recovered.status,completedBeforeRelease,committedRecordVisibleAfterFailure:recoveredBody.includes('Budget probe'),historicalAttribution:false}));
 });
 
 test('controlled held-request drain crosses unchanged Page deadline while siblings survive',{timeout:15000},async t=>{
@@ -73,9 +75,9 @@ test('controlled held-request drain crosses unchanged Page deadline while siblin
  const {createMultiAppHost}=await import('../wydgine/multi-app.js');
  const root=await fs.mkdtemp(path.join(os.tmpdir(),'wyd-held-budget-'));let host,release;
  t.after(async()=>{release?.();await host?.dispose();await fs.rm(root,{recursive:true,force:true});});
- const config=await provisionHostnameExample(root),diagnostics=[],meters=[];
+ const config=await provisionHostnameExample(root),diagnostics=[],meters=[],traces=[];
  let enter;const entered=new Promise(r=>enter=r),pause=new Promise(r=>release=r);
- host=await createMultiAppHost(config,{root,logger:{error:value=>{if(typeof value==='string'&&value.startsWith('{"schema":"wydgine.http-event/1"'))diagnostics.push(JSON.parse(value));}},execution:{'app-alpha':{observeBudget:value=>meters.push(value),handlers:[{type:'Page.Load',owner:'home',run:async function(){enter();await pause;}}]}}});
+ host=await createMultiAppHost(config,{root,logger:{error:value=>{if(typeof value==='string'&&value.startsWith('{"schema":"wydgine.http-event/1"'))diagnostics.push(JSON.parse(value));}},execution:{'app-alpha':{observeHttp:value=>{traces.push(value);if(traces.length>8)traces.shift();},observeBudget:value=>meters.push(value),handlers:[{type:'Page.Load',owner:'home',run:async function(){enter();await pause;}}]}}});
  const tokens=await Promise.all(config.apps.map(app=>host.activate(app.id))),server=await host.listenShared(0,'127.0.0.1');
  const get=hostname=>new Promise((resolve,reject)=>{const req=http.get({hostname:'127.0.0.1',port:server.address().port,headers:{Host:hostname}},res=>{res.resume();res.on('end',()=>resolve(res.statusCode));});req.on('error',reject);});
  const pending=get('alpha.localhost');await entered;const stopping=host.stop(tokens[0]);

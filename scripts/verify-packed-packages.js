@@ -35,7 +35,7 @@ for(const name of ['wydgine','wydhosting','wydstore','wydgate','wydsearch','wydf
 }
 async function consumer(name,packages){
  const root=path.join(directory,name);await fs.mkdir(root);
- await fs.writeFile(path.join(root,'package.json'),JSON.stringify({name:'wydgit',version:'0.3.0-alpha.22',private:true,type:'module',scripts:{start:'wydgine start'}}));
+ await fs.writeFile(path.join(root,'package.json'),JSON.stringify({name:'wydgit',version:'0.3.0-alpha.23',private:true,type:'module',scripts:{start:'wydgine start'}}));
  await run('npm',['install','--no-audit','--no-fund',...packages.map(name=>packed[name])],root,{log:name+'-install.log'});
  const graph=await run('npm',['ls','--all','--json'],root,{log:name+'-dependencies.json'});assert.ok(JSON.parse(graph.output).dependencies.wydgine);
  for(const name of packages)assert.equal((await fs.lstat(path.join(root,'node_modules',name.startsWith('wyd')&&!['wydgine','wydhosting'].includes(name)?'@wydgit/'+name.slice(3):name))).isSymbolicLink(),false);

@@ -1,4 +1,5 @@
 import {checkPlacement} from '../execution/placement.js';
+import {createHttpDiagnostics} from './diagnostics.js';
 import {createBackOfficeHttp} from './backoffice.js';
 import {readBackOfficeJson} from './json-body.js';
 import {credentialCookies} from './credential-cookies.js';
@@ -41,6 +42,7 @@ export function createPipeline({root,libraries,execution={},lifecycle,guard=()=>
   return {lifecycle:ownedLifecycle,ready,backoffice,httpPolicy:runtimeSettings.http,async request(req,res){
     alive();await ready;alive();
     let result,transferOutput;const cookiePolicy=credentialCookies(req.transport?.secure??true);
+    const observation=req.path.startsWith('/_transfer/')?null:createHttpDiagnostics(execution.observeHttp);
     try {
       res.setHeader('Cache-Control','no-store');
       check(stateFingerprint(root)===catalogHead,'PACKAGE.STALE','Installed packages changed; restart host');
@@ -48,11 +50,13 @@ export function createPipeline({root,libraries,execution={},lifecycle,guard=()=>
       const page=transfer?model.pages.get(transfer[3]):[...model.pages.values()].find(page=>(pagePath(page,model.site).replace(/\/$/,'')||'/')===route);
       if(!page){res.statusCode=404;res.setHeader('Content-Type','text/html; charset=utf-8');res.end(errorDocument(404));return;}
       if(!transfer&&(!['GET','HEAD','POST'].includes(req.method)||req.method==='POST'&&!(execution.actions??[]).some(a=>a.page===page.id))){res.statusCode=405;res.setHeader('Content-Type','text/html; charset=utf-8');res.setHeader('Allow','GET, HEAD');res.end('Method not allowed');return;}
+      observation?.phase('session');
       const cookies=parseCookies(parking?'':req.cookie??''),session=await sessions.resolve(cookies,{secure:req.transport?.secure??true});
       const wasActive=session.active,authorize=session.authorize;session.active=()=>{try{alive();return wasActive();}catch{return false;}};session.authorize=async()=>{alive();await authorize();alive();};
       if(execution.authenticatedPages?.includes(page.id))check(session.identity?.authenticated===true,'SEAM.DENIED','Authentication required');
       if(session.cookie)res.setHeader('Set-Cookie',[session.cookie]);
       const ids=[];const walk=id=>{ids.push(id);Object.values(model.runtime.get(id).slots).flat().forEach(walk);};walk(page.id);
+      observation?.phase('placement');
       const selectedContext=execution.context?await execution.context({session:session.view,pageId:page.id,ids}):new ExecutionContext({context:'FrontEnd',publisher:'wydgit.core',app,self:page.id,visible:ids,identity:session.identity});
       const context=contextPolicy(selectedContext);
       for(const id of ids){const node=model.runtime.get(id);checkPlacement(node,model.registry.get(node.prototype),context);}
@@ -84,7 +88,9 @@ export function createPipeline({root,libraries,execution={},lifecycle,guard=()=>
         input.action={target:single('_target'),type:single('_action'),csrf:single('_csrf'),payload:{}};
         if(input.action.type==='Change')input.action.payload={OldValue:model.runtime.get(input.action.target).properties.value,NewValue:single('value')};
       }
-      result=await executePage({model,pageId:page.id,session,input,context,runtimeSettings,handlers:execution.handlers,actions:execution.actions,events:execution.events,files:execution.files,libraries,serviceMappings:packages?.pages.get(page.id)?.storageMappings,observe:data=>{governance?.page(data);try{execution.observeBudget?.(data.meter);}catch{}},csrf:session.csrf,cancelled:()=>res.destroyed});
+      observation?.phase('page');
+      result=await executePage({model,pageId:page.id,session,input,context,runtimeSettings,handlers:execution.handlers,actions:execution.actions,events:execution.events,files:execution.files,libraries,serviceMappings:packages?.pages.get(page.id)?.storageMappings,observe:data=>{observation?.admit();observation?.meter(data.meter);governance?.page(data);try{execution.observeBudget?.(data.meter);}catch{}},csrf:session.csrf,cancelled:()=>res.destroyed});
+      if(result.error)observation?.failure(result.error);
       // executePage returns structured failures rather than throwing. Preserve
       // their diagnostic boundary without logging requests, messages or details.
       for(const [phase,error]of [['page',result.error],['cleanup',result.cleanupErrors[0]]])if(error){
@@ -92,8 +98,9 @@ export function createPipeline({root,libraries,execution={},lifecycle,guard=()=>
         try{diagnostic({schema:'wydgine.http-event/1',phase,code});}catch{}
       }
       res.setHeader('X-Wydgit-Operation-Outcome',result.outcome);
+      observation?.phase('publication');
       await result.response.send(res,req.method==='HEAD');
-    }catch(error){if(!res.headersSent){if(error.code==='GATE.SESSION_INVALID')res.setHeader('Set-Cookie',[cookiePolicy.serialize('auth','',0)]);res.statusCode=req.path.startsWith('/_transfer/')?(/DENIED|FORGERY|GATE\.SESSION_INVALID/.test(error.code??'')?403:/LIMIT|QUOTA/.test(error.code??'')?413:/UNSUPPORTED_MEDIA|INVALID_MEDIA/.test(error.code??'')?415:/CONFLICT|STATE/.test(error.code??'')?409:/NOT_FOUND/.test(error.code??'')?404:400):(/DENIED|FORGERY|GATE\.SESSION_INVALID/.test(error.code??'')?403:400);res.setHeader('Content-Type','text/html; charset=utf-8');res.end(errorDocument());}else res.destroy();}
-    finally{transferOutput?.stream?.destroy();await transferOutput?.close?.();await result?.response.close();}
+    }catch(error){observation?.failure(error);if(!res.headersSent){if(error.code==='GATE.SESSION_INVALID')res.setHeader('Set-Cookie',[cookiePolicy.serialize('auth','',0)]);res.statusCode=req.path.startsWith('/_transfer/')?(/DENIED|FORGERY|GATE\.SESSION_INVALID/.test(error.code??'')?403:/LIMIT|QUOTA/.test(error.code??'')?413:/UNSUPPORTED_MEDIA|INVALID_MEDIA/.test(error.code??'')?415:/CONFLICT|STATE/.test(error.code??'')?409:/NOT_FOUND/.test(error.code??'')?404:400):(/DENIED|FORGERY|GATE\.SESSION_INVALID/.test(error.code??'')?403:400);res.setHeader('Content-Type','text/html; charset=utf-8');res.end(errorDocument());}else res.destroy();}
+    finally{try{transferOutput?.stream?.destroy();await transferOutput?.close?.();await result?.response.close();}finally{observation?.finish(res,result);}}
   }};
 }

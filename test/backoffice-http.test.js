@@ -235,3 +235,17 @@ test('BOREL-07: expiration while canonical service admission is pending rejects 
   const pending=h.post({reference:a.reference,input:{}});await barrier.entered;clock+=1001;barrier.release();
   const r=await pending;assert.equal(r.status,503);assert.equal((await r.json()).code,'SEWN.LIMIT');assert.equal(r.headers.get('x-wydgit-action-outcome'),'rejected');
 });
+
+for(const provider of ['json','sqlite'])test(`GATECONT HTTP ${provider}: concurrent discovery and mixed invocation recover without cookie deletion`,async t=>{
+ const f=await actionFixture(t,provider),h=await listen(t,f),[action]=await h.discover();
+ for(const mixed of [false,true]){
+  const responses=await Promise.all(Array.from({length:8},(_,i)=>mixed&&i%2?h.post({reference:action.reference,input:{limit:1}}):h.get('/backoffice/api/actions')));
+  assert.ok(responses.some(r=>r.status===200));
+  for(const response of responses){
+   assert.ok([200,503].includes(response.status));assert.equal(response.headers.get('set-cookie'),null);
+   const result=await response.json();assert.equal(result.ok,response.status===200);if(!result.ok)assert.equal(result.code,'SERVICE.FAILED');
+  }
+  assert.equal((await h.discover()).length,1,'Same credential recovers after bounded contention');
+ }
+ await f.gate.logout(f.login.token);const revoked=await h.get('/backoffice/api/actions');assert.equal(revoked.status,401);await revoked.text();
+});

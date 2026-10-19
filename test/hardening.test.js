@@ -47,16 +47,16 @@ for(const provider of ['JSON','SQLite'])test(`${provider}: clean interactive Con
  const f=await packageFixture(t),configPath=path.join(f.root,'wydgit.config.json');
  // Start from the shipped disabled-library configuration, with no generated state.
  const baseline=await fs.readFile('wydgit.config.json','utf8');await fs.writeFile(configPath,baseline);
- let host;const diagnostics=[],meters=[];
+ let host;const diagnostics=[],meters=[],http=[];
  const stop=async()=>{if(host){const current=host;host=null;await current.app.shutdown(current.server);}};t.after(stop);
- const start=async()=>{const app=await createHostApp({root:f.root,execution:{observeBudget:value=>{meters.push(value);if(meters.length>8)meters.shift();}},logger:{error:value=>{if(typeof value==='string'&&value.startsWith('{"schema":"wydgine.http-event/1"')){diagnostics.push(JSON.parse(value));if(diagnostics.length>8)diagnostics.shift();}}}}),server=app.listen(0,'127.0.0.1');await once(server,'listening');host={app,server,url:`http://127.0.0.1:${server.address().port}`};};
+ const start=async()=>{const app=await createHostApp({root:f.root,execution:{observeHttp:value=>{http.push(value);if(http.length>8)http.shift();},observeBudget:value=>{meters.push(value);if(meters.length>8)meters.shift();}},logger:{error:value=>{if(typeof value==='string'&&value.startsWith('{"schema":"wydgine.http-event/1"')){diagnostics.push(JSON.parse(value));if(diagnostics.length>8)diagnostics.shift();}}}}),server=app.listen(0,'127.0.0.1');await once(server,'listening');host={app,server,url:`http://127.0.0.1:${server.address().port}`};};
  await start();for(const route of ['/','/about/','/contact/']){const response=await fetch(host.url+route);assert.equal(response.status,200);assert.doesNotMatch(await response.text(),/Guestbook/);}await stop();
  const answers=['y','y','contact','contact','sections','0',provider,'','y','y'];let transcript='';
  const installed=await runInstaller({args:[f.packagePath,'--root',f.root,'--apply'],input:Readable.from(answers.map(a=>a+'\n')),output:{write:s=>{transcript+=s;}}});
  assert.equal(installed.receipt.placement.page,'contact');assert.match(transcript,/Apply installation\?/);assert.match(transcript,/Approve this host storage provisioning/);
  await start();const first=await fetch(host.url+'/contact/'),html=await first.text();assert.match(html,/Guestbook/);assert.match(html,/wyd-form/);
  const cookie=first.headers.get('set-cookie').split(';')[0],csrf=/name="_csrf" value="([^"]+)"/.exec(html)[1];
- const post=async(name,message)=>{const response=await fetch(host.url+'/contact/',{method:'POST',headers:{cookie,'content-type':'application/x-www-form-urlencoded'},body:new URLSearchParams({_target:'guestbook-form',_action:'Submit',_csrf:csrf,name,message})});assert.equal(response.status,200,JSON.stringify({provider,phase:'Contact.POST',diagnostics,meters}));return response.text();};
+ const post=async(name,message)=>{const response=await fetch(host.url+'/contact/',{method:'POST',headers:{cookie,'content-type':'application/x-www-form-urlencoded'},body:new URLSearchParams({_target:'guestbook-form',_action:'Submit',_csrf:csrf,name,message})});assert.equal(response.status,200,JSON.stringify({provider,phase:'Contact.POST',diagnostics,meters,http}));return response.text();};
  assert.match(await post(' ','retain invalid'),/aria-invalid="true"/);
  for(const response of await Promise.all(['Ada','Grace','Linus','Margaret'].map(name=>post(name,'Hello **world** <script>unsafe()</script>')))){assert.match(response,/Thank you/);assert.doesNotMatch(response,/<script>/);}
  assert.doesNotMatch(await (await fetch(host.url)).text(),/Guestbook/);

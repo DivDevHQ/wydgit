@@ -185,5 +185,5 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
   const outcome=completion.outcome(Boolean(failure));
   if(failure&&outcome==='indeterminate')await response.failedOperation();
   else if(failure&&response.state==='Open')response.tree(errorDocument(),failure.code==='EVENT.DENIED'||failure.code==='SEAM.DENIED'||failure.code==='REQUEST.FORGERY'?403:500);
-  return {response,error:failure?.toJSON()??null,cleanupErrors:errors,outcome};
+  return {response,error:failure?.toJSON()??null,cleanupErrors:errors,outcome,services:completion.snapshot()};
 }

@@ -24,6 +24,10 @@ export function sessionOperations({read,mutate,app,ttl,idle,authenticate}) {
     check(session&&!session.revoked&&session.createdAt<=now&&(session.lastSeenAt??session.createdAt)<=now&&session.expiresAt>now&&now-(session.lastSeenAt??session.createdAt)<idle&&data.users.some(user=>user.id===session.userId&&user.active),'GATE.SESSION_INVALID');
     return session;
   };
+  const identity=(data,session)=>{
+    const member=data.membership?.members.find(m=>m.accountId===session.userId&&m.app===app);if(member)check(member.status==='active','GATE.SESSION_INVALID');
+    return {authenticated:true,app,sessionId:session.id,createdAt:session.createdAt,expiresAt:session.expiresAt,...effective(data,session.userId),...(member?{membershipId:member.id,membershipStatus:member.status,membershipRole:member.role}:{})};
+  };
   return async(operation,request)=>{
     if(operation==='login') {
       fields(request,['username','password'],['previousToken']);const verified=await authenticate({username:request.username,password:request.password});
@@ -39,8 +43,18 @@ export function sessionOperations({read,mutate,app,ttl,idle,authenticate}) {
       },'Login');
     }
     if(operation==='resolve-session') {
-      fields(request,['token']);return mutate(data=>{const session=lookup(data,request.token);session.lastSeenAt=Date.now();const member=data.membership?.members.find(m=>m.accountId===session.userId&&m.app===app);if(member)check(member.status==='active','GATE.SESSION_INVALID');
-      return {authenticated:true,app,sessionId:session.id,createdAt:session.createdAt,expiresAt:session.expiresAt,...effective(data,session.userId),...(member?{membershipId:member.id,membershipStatus:member.status,membershipRole:member.role}:{})};});
+      fields(request,['token']);let touchedAt;
+      const result=await mutate(data=>{const session=lookup(data,request.token);session.lastSeenAt=touchedAt=Date.now();return identity(data,session);});
+      // Persistence may outlive either expiration boundary. Keep the admitted
+      // timestamp; completing a slow write must not manufacture fresh activity.
+      const now=Date.now();check(now>=touchedAt&&now<result.expiresAt,'GATE.SESSION_INVALID');
+      if(now-touchedAt>=idle){
+        // A newer durable touch may have kept the session alive while this
+        // completion was delayed. Revalidate once; never clear a valid session
+        // merely because this call's older timestamp has aged out.
+        const {data}=await read();return identity(data,lookup(data,request.token));
+      }
+      return result;
     }
     if(operation==='logout') {
       fields(request,['token']);return mutate(data=>{const session=lookup(data,request.token);session.revoked=true;return {revoked:true};},'Logout');

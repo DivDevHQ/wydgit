@@ -1,5 +1,15 @@
 ## Unreleased
 
+- Advance Gate to alpha.7: reject session resolution when absolute or idle expiry
+  crosses a pending touch write. Qualify real JSON/SQLite revocation/rotation/CAS
+  races, bounded conflict/busy/I/O recovery and concurrent HTTP discovery/invocation.
+  Retain existing touch scheduling and persistence bounds.
+
+- Advance platform/Wydgine/WydHosting to alpha.23. Add optional bounded trusted
+  Page HTTP diagnostics joining resource/phase meters, native-service admission,
+  commit uncertainty and transport publication state. Keep public responses and
+  execution limits unchanged; retain the historical HTTP LIMIT issue as open.
+
 - Add an independently installed read-only operational-notices BackOffice Wydgit
   through canonical WydStore query. Qualify separate permissions/receipts, Store
   ownership, removal/reinstall and site isolation on JSON/SQLite, plus both modules

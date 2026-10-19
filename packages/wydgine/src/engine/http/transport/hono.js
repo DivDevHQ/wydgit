@@ -28,6 +28,7 @@ function outputPort(res, head, meter) {
   return {
     get statusCode() { return res.statusCode; }, set statusCode(value) { res.statusCode = value; },
     get headersSent() { return res.headersSent; }, get destroyed() { return res.destroyed; },
+    get writableEnded() { return res.writableEnded; },
     setHeader(name, value) { res.setHeader(name, value); }, getHeader(name) { return res.getHeader(name); },
     end(body) { output.end(head ? undefined : body); }, write(chunk) { return output.write(chunk); },
     destroy() { output.destroy(); },
