@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Qualify real Chrome Gate login/logout and installed roster actions across five
+  viewport sizes and light/dark/system themes. Improve heading/error focus and
+  loading/error announcements; correct skin table overflow so the named keyboard
+  scroll region owns wide results. Add a dependency-free local browser harness.
+
 - Advance platform/Wydgine/WydHosting to alpha.22. Propagate BackOffice request
   deadlines and disconnect guards into action/service admission, retain admitted
   I/O through drain, and publish conservative action outcome headers. Preserve

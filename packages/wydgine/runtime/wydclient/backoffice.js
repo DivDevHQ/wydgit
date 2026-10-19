@@ -17,10 +17,10 @@ export function mountBackOffice({document,fetch:request}){
   const nav=document.getElementById('bo-navigation'),content=document.getElementById('bo-action'),status=document.getElementById('bo-status'),refresh=document.getElementById('bo-refresh'),theme=document.getElementById('bo-theme');
   let csrf=document.querySelector('meta[name="wydgit-backoffice-csrf"]')?.content,version=0,busy=false,actions=[];
   const node=(tag,text,attrs={})=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;for(const [k,v]of Object.entries(attrs))n.setAttribute(k,String(v));return n;};
-  const say=text=>{status.textContent=text;};
+  const say=(text,error=false)=>{status.setAttribute('role',error?'alert':'status');status.textContent=text;};
   const selectTheme=()=>document.documentElement.setAttribute('data-wyd-theme',theme.value);
   theme.addEventListener('change',selectTheme);
-  const lock=value=>{busy=value;refresh.disabled=value;for(const b of nav.querySelectorAll('button'))b.disabled=value;};
+  const lock=value=>{busy=value;content.setAttribute('aria-busy',String(value));refresh.disabled=value;for(const b of nav.querySelectorAll('button'))b.disabled=value;};
   const clear=()=>{version++;actions=[];nav.replaceChildren();content.replaceChildren(node('h1','Site administration'),node('p','Select an installed action to begin.'));};
   const api=async(url,options={})=>{
     const response=await request(url,{...options,credentials:'same-origin',mode:'same-origin',cache:'no-store',redirect:'error'});
@@ -65,7 +65,7 @@ export function mountBackOffice({document,fetch:request}){
       if(!value.length)return node('p','No results.');
       const objectRows=value.every(v=>v&&typeof v==='object'&&!Array.isArray(v));
       if(objectRows){
-        const columns=[...new Set(value.flatMap(v=>Object.keys(v)))],wrap=node('div',undefined,{class:'bo-table',tabindex:0}),table=node('table'),head=node('thead'),tr=node('tr'),body=node('tbody');
+        const columns=[...new Set(value.flatMap(v=>Object.keys(v)))],wrap=node('div',undefined,{class:'bo-table',tabindex:0,role:'region','aria-label':'Scrollable action results'}),table=node('table'),head=node('thead'),tr=node('tr'),body=node('tbody');
         table.append(node('caption','Action results'));for(const k of columns)tr.append(node('th',k,{scope:'col'}));head.append(tr);table.append(head,body);
         for(const row of value){const line=node('tr');for(const k of columns){const cell=node('td');cell.append(Object.hasOwn(row,k)?output(row[k]):node('span','—'));line.append(cell);}body.append(line);}wrap.append(table);return wrap;
       }
@@ -80,11 +80,11 @@ export function mountBackOffice({document,fetch:request}){
     content.append(node('p',`${action.category} · ${action.effect==='write'?'Changes site data':'Read only'}`,{class:'bo-eyebrow'}),node('h1',action.title),node('p',action.description),form,result);
     form.append(inputs.element);let confirm;
     if(action.confirmation){const label=node('label',undefined,{class:'bo-confirm'});confirm=node('input',undefined,{type:'checkbox',required:'','aria-label':'Confirm action'});label.append(confirm,document.createTextNode(action.confirmation));form.append(label);}
-    form.append(run);say('Ready. Access is checked again when you run this action.');
+    form.append(run);const title=content.querySelector('h1');title.tabIndex=-1;title.focus();say('Ready. Access is checked again when you run this action.');
     form.addEventListener('submit',async event=>{
       event.preventDefault();if(busy||selected!==version)return;
       let input;try{input=inputs.read();if(!matchesValue(input,action.input)||confirm&&!confirm.checked)throw Error();}
-      catch{say('Check your inputs against the field limits and confirmation.');return;}
+      catch{say('Check your inputs against the field limits and confirmation.',true);return;}
       lock(true);run.disabled=true;result.replaceChildren();say('Running action…');
       // Consume confirmation on every attempt. A failed response may follow a
       // committed write; there is deliberately no retry or reference rebinding.
@@ -93,12 +93,12 @@ export function mountBackOffice({document,fetch:request}){
         const response=await api('/backoffice/api/actions/invoke',{method:'POST',headers:{'Content-Type':'application/json','X-Wydgit-CSRF':csrf},body:JSON.stringify({reference:action.reference,input,...(confirmed?{confirmed:true}:{})})});
         if(selected!==version)return;
         if(!matchesValue(response.value,action.output))throw Error('Invalid output');
-        result.append(node('h2','Result'),output(response.value));say('Action completed.');
+        const heading=node('h2','Result',{tabindex:-1});result.append(heading,output(response.value));heading.focus();say('Action completed.');
       }catch(error){
-        if(error.code==='ACTION.STALE'){clear();say('This action is no longer available. Refresh actions and select it again.');}
-        else if(error.status===401||error.status===403){clear();say('Your session or access has changed. Sign in again or refresh actions.');}
-        else say(action.effect==='write'?'The change could not be verified. It may have taken effect. Inspect current state before submitting again.':'The action could not be completed. Check your inputs or refresh actions.');
-      }finally{lock(false);run.disabled=false;}
+        if(error.code==='ACTION.STALE'){clear();say('This action is no longer available. Refresh actions and select it again.',true);}
+        else if(error.status===401||error.status===403){clear();say('Your session or access has changed. Sign in again or refresh actions.',true);}
+        else say(action.effect==='write'?'The change could not be verified. It may have taken effect. Inspect current state before submitting again.':'The action could not be completed. Check your inputs or refresh actions.',true);
+      }finally{lock(false);run.disabled=false;if(!form.isConnected)refresh.focus();}
     });
   }
   async function discover(){

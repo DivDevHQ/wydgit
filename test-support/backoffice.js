@@ -31,3 +31,15 @@ export async function actionFixture(t,provider='json',{install=true,edit=()=>{},
   f.invoke=(framework,reference,input={})=>framework.invoke({...f.request,reference,input});
   return f;
 }
+
+// Explicit disposable test installation. Provisioning remains a trusted fixture
+// step; the membership package itself neither creates admins nor approves grants.
+export async function installMembershipLogin(f){
+  const directory=path.resolve('examples/membership'),manifest=JSON.parse(await fs.readFile(path.join(directory,'manifest.json')));
+  const ids=[...f.operator.visible,...manifest.permissions.visible,'page-login'];
+  const operator=new ExecutionContext({...f.operator,visible:ids,editable:ids});
+  await packageOperation({root:f.root,package:manifest.id,action:'install',installationContext:operator,candidates:[{
+    packagePath:directory,approvals:manifest.permissions,storageMappings:{},placement:{page:'page-login',parent:'page-login',slot:'sections',index:0},
+    page:{schema:'wydgit/0.2',id:'page-login',prototype:'wydgit.core/page',properties:{title:'Sign in',slug:'sign-in'},slots:{},provenance:{}}
+  }]});
+}

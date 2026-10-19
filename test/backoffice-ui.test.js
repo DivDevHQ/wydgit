@@ -69,3 +69,10 @@ test('BOUI-08: paginated discovery handles more than ten modules and clears inac
  assert.equal(pages,2);assert.equal(d.querySelectorAll('nav button').length,12);assert.equal(d.querySelectorAll('nav h3').length,2);
  d.querySelector('nav button').click();Object.defineProperty(d,'hidden',{value:true,configurable:true});d.dispatchEvent(new d.defaultView.Event('visibilitychange'));assert.equal(d.querySelector('form'),null);assert.equal(d.querySelector('nav button'),null);assert.match(d.getElementById('bo-status').textContent,/inactive/);
 });
+
+test('BOUI-09: action/result focus, loading state and accessible stale-error recovery',async t=>{
+ let stale=false;const {d,client}=setup(t,async url=>response(url.includes('invoke')?(stale?{ok:false,code:'ACTION.STALE'}:{ok:true,value:{members:[],total:0}}):discovery([action()]),url.includes('invoke')&&stale?409:200));
+ await client.ready;d.querySelector('nav button').click();assert.equal(d.activeElement,d.querySelector('#bo-action h1'));
+ submit(d);assert.equal(d.getElementById('bo-action').getAttribute('aria-busy'),'true');await settle();assert.equal(d.activeElement,d.querySelector('#bo-action h2'));assert.equal(d.getElementById('bo-action').getAttribute('aria-busy'),'false');
+ stale=true;submit(d);await settle();assert.equal(d.getElementById('bo-status').getAttribute('role'),'alert');assert.equal(d.activeElement,d.getElementById('bo-refresh'));
+});

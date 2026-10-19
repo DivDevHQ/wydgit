@@ -8,7 +8,7 @@ a { color:var(--link); }
 button,input,select,textarea { font:inherit; }
 button,select { cursor:pointer; }
 button:disabled { opacity:.6; cursor:wait; }
-button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible { outline:3px solid var(--focus); outline-offset:3px; }
+:focus-visible { outline:3px solid var(--focus); outline-offset:3px; }
 .bo-header { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:1rem; padding:1.5rem 2rem; border-bottom:1px solid var(--line); }
 .bo-header p { margin:.25rem 0 0; font-size:.9rem; overflow-wrap:anywhere; }
 .bo-brand { font-size:1.3rem; text-decoration:none; letter-spacing:-.025em; }
@@ -42,9 +42,10 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 #bo-action dt { font-weight:650; overflow-wrap:anywhere; }
 #bo-action dd { margin:0; min-width:0; overflow-wrap:anywhere; }
 .bo-table { overflow:auto; max-width:100%; }
-.bo-table table { border-collapse:collapse; font-size:.85rem; width:100%; }
+.bo-table table { display:table; overflow:visible; border-collapse:collapse; font-size:.85rem; width:max-content; min-width:100%; max-width:none; }
 .bo-table td,.bo-table th { padding:.6rem .8rem; border:1px solid var(--line); min-width:6rem; text-align:left; vertical-align:top; overflow-wrap:anywhere; }
 .bo-table th { background:var(--surface); }
+.bo-table td > span { display:block; max-width:24rem; }
 .bo-table caption { text-align:left; color:var(--muted); margin:.5rem 0; }
 .skip { position:absolute; top:-5rem; left:1rem; background:var(--paper); padding:.5rem; }
 .skip:focus { top:0; }

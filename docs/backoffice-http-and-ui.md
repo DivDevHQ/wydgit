@@ -329,3 +329,11 @@ Transient Gate session-resolution conflict/busy/I/O failures return 503
 `SERVICE.FAILED` and preserve the auth cookie. Only genuinely invalid sessions
 return 401 with cookie deletion. Concurrent session touches can still reach Gate's
 existing optimistic-conflict bound; the transport does not retry an action.
+
+### Alpha.22 browser qualification
+
+The [real-browser record](backoffice-browser-qualification.md) supersedes the
+increment-6 unperformed-browser limitation for the explicitly listed Chrome,
+viewport, theme, keyboard and accessibility-tree cases. Focus handling and the
+named result scroll region are corrected. Human assistive-technology checks,
+Firefox and full ADM-01 remain unqualified.
