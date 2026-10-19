@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Replace raw array JSON entry with bounded recursive Add/Remove controls and
+  field-level accessible validation. Clarify required/optional/null/bounded values,
+  improve safe long/empty/nested results and pagination summaries, and reset write
+  confirmation when inputs change. Retain server validation and no mutation replay.
+
 - Qualify real Chrome Gate login/logout and installed roster actions across five
   viewport sizes and light/dark/system themes. Improve heading/error focus and
   loading/error announcements; correct skin table overflow so the named keyboard

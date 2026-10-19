@@ -337,3 +337,11 @@ increment-6 unperformed-browser limitation for the explicitly listed Chrome,
 viewport, theme, keyboard and accessibility-tree cases. Focus handling and the
 named result scroll region are corrected. Human assistive-technology checks,
 Firefox and full ADM-01 remain unqualified.
+
+### Alpha.22 bounded form and result controls
+
+The [usability record](backoffice-ui-usability.md) supersedes increment-6 JSON-array
+entry with recursive Add/Remove controls, per-field linked errors and clearer
+bounds. Results add homogeneous tables, explicit empty/null text, long-text
+native disclosures and pagination metadata. Confirmation resets on edits and on
+every attempt; all original server authority and no-replay boundaries remain.

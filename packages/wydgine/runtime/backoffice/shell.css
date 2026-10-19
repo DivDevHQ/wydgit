@@ -50,3 +50,10 @@ button:disabled { opacity:.6; cursor:wait; }
 .skip { position:absolute; top:-5rem; left:1rem; background:var(--paper); padding:.5rem; }
 .skip:focus { top:0; }
 @media(max-width:700px) { .bo-header { padding:1rem; } .bo-layout { grid-template-columns:minmax(0,1fr); } .bo-layout aside { border-right:0; border-bottom:1px solid var(--line); padding:1rem; } .bo-layout nav ul { display:flex; flex-wrap:wrap; gap:.25rem; } .bo-layout main { padding:1rem; } #bo-action dl { grid-template-columns:minmax(0,1fr); } #bo-action dd { margin-bottom:.6rem; } }
+.bo-array-count { color:var(--muted); font-size:.85rem; }
+.bo-field li { padding:.5rem; margin:.5rem 0; border-bottom:1px solid var(--line); }
+.bo-field button { padding:.4rem .7rem; border:1px solid var(--input-border); border-radius:.35rem; background:var(--surface); color:var(--ink); }
+.bo-field-error { display:block; font-weight:650; color:var(--ink); }
+.bo-field [aria-invalid="true"] { outline:2px solid var(--focus); outline-offset:2px; }
+.bo-value { white-space:pre-wrap; overflow-wrap:anywhere; max-width:24rem; }
+.bo-table details { width:20rem; max-width:100%; }
