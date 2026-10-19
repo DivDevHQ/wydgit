@@ -147,3 +147,15 @@ It adds no public diagnostic/admin URL or Session-bearing health route. I1 exact
 hostname/proxy/origin policy remains authoritative; failed tenant routes never fall
 back to parking. The Caddy reference requires sanitized forwarding metadata and a
 private backend and remains documentation-only pending executable validation.
+
+
+## 0.3-J BackOffice adapter
+
+The [alpha.21 transport and modular shell](backoffice-http-and-ui.md) reserve
+`/backoffice` for existing installed action discovery/invocation. They share the
+site's Gate cookies and Session resolver, add operation-bound CSRF and bounded UTF-8
+JSON collection, and preserve this CSP, output metering and host admission. The
+explicit native `localHostname` option applies existing local routing rules to
+standalone loopback browser development, including login/logout. Without trusted
+routing, BackOffice rejects rather than inferring an origin from request headers.
+No package-facing native RPC or independently managed administration App is added.

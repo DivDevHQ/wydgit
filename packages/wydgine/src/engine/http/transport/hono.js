@@ -1,6 +1,7 @@
 import {meteredOutput} from '../metered-output.js';
 import {createHash} from 'node:crypto';
-import { requestRoute } from '../routing.js';
+import { requestRoute,resolveRoute } from '../routing.js';
+import {backofficePath} from '../backoffice.js';
 import { Hono } from 'hono';
 import { createAdaptorServer, getRequestListener } from '@hono/node-server';
 import { RESPONSE_ALREADY_SENT } from '@hono/node-server/utils/response';
@@ -14,7 +15,7 @@ import { errorDocument } from '../../index.js';
 const policy = "default-src 'none'; style-src 'self'; img-src 'self'; media-src 'self'; script-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'";
 // Explicit browser-safe dependency closure; no server/provider modules are exposed.
 const clientModules = [
-  'wydclient/uploads.js', 'wydclient/index.js', 'wydgine/events/runtime.js', 'wydgine/events/registry.js',
+  'wydclient/uploads.js', 'wydclient/backoffice.js', 'wydclient/index.js', 'wydgine/events/runtime.js', 'wydgine/events/registry.js',
   'wydgine/object-model/class-contracts.js', 'wydgine/object-model/component-contracts.js', 'wydgine/object-model/interfaces.js', 'wydgine/object-model/members.js', 'wydgine/object-model/forms.js', 'wydgine/object-model/validation.js', 'wydgine/object-model/schema.js', 'wydgine/object-model/construction.js', 'wydgine/object-model/prototypes.js', 'wydgine/seam/context.js',
   'wydgine/execution/placement.js', 'wydgine/seam/capabilities.js', 'wydgine/http/input.js',
   'wydgine/sewn/schema.js', 'wydgine/sewn/validate.js',
@@ -103,12 +104,20 @@ async function asset(root, relative, type, res, request) {
   } finally { await file?.close(); }
 }
 
-export function createTransport({ root, projectRoot, renderer, pipeline, logger, admit = () => () => {}, onStop = async()=>{}, governance }) {
+export function createTransport({ root, projectRoot, renderer, pipeline, logger, admit = () => () => {}, onStop = async()=>{}, governance, localRouting }) {
+  // Explicit standalone local development ingress. Production uses the existing
+  // hostname/proxy boundary. Neither forwarded headers nor request site fields
+  // can manufacture a trusted route.
   const host = new Hono();
   host.all('*', async c => {
     let release;
-    const route=requestRoute(c.env.incoming);
+    let route=requestRoute(c.env.incoming);
     const request = c.req.raw, res = outputPort(c.env.outgoing, request.method === 'HEAD',governance);
+    if(localRouting&&!route){try{
+      const native=c.env.incoming;
+      if(native.rawHeaders.length/2>pipeline.httpPolicy.headerCount||!['127.0.0.1','::1','::ffff:127.0.0.1'].includes(native.socket.remoteAddress))throw Error();
+      route=resolveRoute(localRouting,native);if(!route)throw Error();
+    }catch{res.statusCode=400;res.setHeader('Cache-Control','no-store');res.end('Request rejected');return RESPONSE_ALREADY_SENT;}}
     try{release=admit();}catch(error){res.statusCode=503;res.setHeader('Cache-Control','no-store');try{res.end(error.code==='HOST.QUOTA'?undefined:'Application unavailable');}catch(failure){if(failure.code!=='HOST.QUOTA')throw failure;}return RESPONSE_ALREADY_SENT;}
     if(governance){let recorded=false;const outcome=aborted=>{if(recorded)return;recorded=true;governance.httpOutcome(aborted||res.statusCode>=400,aborted);};c.env.outgoing.once('finish',()=>outcome(false));c.env.outgoing.once('close',()=>outcome(!c.env.outgoing.writableFinished));}
     try {
@@ -118,6 +127,7 @@ export function createTransport({ root, projectRoot, renderer, pipeline, logger,
       const url = new URL(request.url), pathname = url.pathname;
       if(route?.parking&&!['GET','HEAD'].includes(request.method)){res.statusCode=405;res.setHeader('Allow','GET, HEAD');res.end('Method not allowed');return RESPONSE_ALREADY_SENT;}
       if (['GET', 'HEAD'].includes(request.method)) {
+        if(pathname==='/backoffice/assets/shell.css'&&await asset(path.join(projectRoot,'backoffice'),'shell.css','text/css; charset=utf-8',res,request))return RESPONSE_ALREADY_SENT;
         if (pathname === '/css/skins.css') {
           res.setHeader('Content-Type', 'text/css; charset=utf-8'); res.setHeader('Cache-Control', 'no-cache');
           res.end(renderer.renderStyles()); return RESPONSE_ALREADY_SENT;
@@ -129,6 +139,10 @@ export function createTransport({ root, projectRoot, renderer, pipeline, logger,
           const type = relative.endsWith('.css') ? 'text/css; charset=utf-8' : 'application/octet-stream';
           if (await asset(path.join(root, 'public/css'), relative, type, res, request)) return RESPONSE_ALREADY_SENT;
         }
+      }
+      if(backofficePath(pathname)){
+        await pipeline.backoffice({method:request.method,path:pathname,query:url.search.slice(1),transport:route,cookie:request.headers.get('cookie')??'',body:request.body,headers:{origin:request.headers.get('origin'),fetchSite:request.headers.get('sec-fetch-site'),authorization:request.headers.get('authorization'),csrf:request.headers.get('x-wydgit-csrf'),type:request.headers.get('content-type'),encoding:request.headers.get('content-encoding')}},res);
+        return RESPONSE_ALREADY_SENT;
       }
       if(pathname.startsWith('/_transfer/')) {
         await pipeline.request({method:request.method,path:pathname,query:url.search.slice(1),transport:route,cookie:route?.parking?'':request.headers.get('cookie')??'',transfer:{body:request.body,headers:{type:request.headers.get('content-type')??'',fileSize:request.headers.get('x-wydgit-file-size'),encoding:request.headers.get('content-encoding')??'identity',accept:request.headers.get('accept')??'',range:request.headers.get('range'),ifNoneMatch:request.headers.get('if-none-match'),ifRange:request.headers.get('if-range')}}},res);

@@ -1,4 +1,6 @@
 import {checkPlacement} from '../execution/placement.js';
+import {createBackOfficeHttp} from './backoffice.js';
+import {readBackOfficeJson} from './json-body.js';
 import {credentialCookies} from './credential-cookies.js';
 import { submissionToken } from './submission-authority.js';
 import { evaluate } from '../components.js';
@@ -16,8 +18,6 @@ import { executePage } from '../execution/page.js';
 import { createLifecycle,createSessionResolver } from '../execution/lifecycle.js';
 import { parseCookies,parseMap } from './input.js';
 import { ExecutionContext } from '../seam/context.js';
-import {createRequire} from 'node:module';
-import {pathToFileURL} from 'node:url';
 import { errorDocument,pagePath,escapeHtml } from '../index.js';
 export function createPipeline({root,libraries,execution={},lifecycle,guard=()=>{},contextPolicy=context=>context,parking=false,governance,diagnostic=()=>{}}) {
   execution={...execution,handlers:prepareHandlers(execution.handlers??[],execution.events),actions:(execution.actions??[]).map(record=>prepareAction(record,execution.events))};
@@ -29,13 +29,16 @@ export function createPipeline({root,libraries,execution={},lifecycle,guard=()=>
   const packages=model.installed?activatePackages(model,libraries,root):null;
   if(packages){check(!execution.context&&!execution.handlers.length&&!execution.actions.length,'PACKAGE.PRINCIPALS','Package Page authority cannot be combined with independently authorized host execution');execution={...execution,context:packages.context,handlers:packages.handlers,actions:packages.actions};}
   lifecycle??=createLifecycle({app,handlers:execution.lifecycleHandlers,context:execution.lifecycleContext,instances:execution.lifecycleInstances});
-  const gate=libraries?.list().some(item=>item.id==='wydgate')&&execution.gateContext?{async resolveSession(token){const require=createRequire(path.resolve(root,'package.json'));const {createGate}=await import(pathToFileURL(require.resolve('@wydgit/gate/client')).href);return createGate(libraries.bind(execution.gateContext)).resolveSession(token);}}:null;
+  const authentication=libraries?.list().some(item=>item.id==='wydgate')?libraries.bind(execution.gateContext??contextPolicy(new ExecutionContext({context:'FrontEnd',publisher:'wydgit.core',self:app,app,capabilities:['gate.sessions.use'],scopes:{wydgate:[app]}}))):null;
+  const gate=authentication?{async resolveSession(token){const result=await authentication.call('wydgate','resolve-session',{token});check(result.ok&&result.value?.authenticated&&result.value.app===app,'GATE.SESSION_INVALID','Invalid session');return result.value;}}:null;
   const sessions=createSessionResolver({app,gate,lifecycle,sessionless:parking});let closed=false;
   const alive=()=>{check(!closed,'EVENT.DENIED','Application stopped');guard();};
-  const ready=lifecycle.start();
+  let ready;
+  const backoffice=createBackOfficeHttp({root,model,libraries,sessions,contextPolicy,ready:()=>ready,alive,parking,verifiedPackages:execution.verifiedPackages,requestMs:runtimeSettings.http.requestMs,readJson:body=>readBackOfficeJson(body,runtimeSettings.http.requestMs)});
+  ready=lifecycle.start();
   const ownedLifecycle={...lifecycle,async stop(){closed=true;sessions.close();await lifecycle.stop();}};
   // Plain transport input and kernel output port only; no host request/context.
-  return {lifecycle:ownedLifecycle,ready,httpPolicy:runtimeSettings.http,async request(req,res){
+  return {lifecycle:ownedLifecycle,ready,backoffice,httpPolicy:runtimeSettings.http,async request(req,res){
     alive();await ready;alive();
     let result,transferOutput;const cookiePolicy=credentialCookies(req.transport?.secure??true);
     try {

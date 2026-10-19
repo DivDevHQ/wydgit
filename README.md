@@ -125,13 +125,15 @@ This scheduling decision authorizes no deployment, VM creation or guest changes.
 Installed BackOffice Wydgits can contribute site-scoped administrative actions
 through [the modular action framework](docs/backoffice-action-framework.md).
 Discovery and invocation retain current Gate/SEAM/Store authority and installation
-lifetime checks. The graphical BackOffice remains deferred.
+lifetime checks. The [BackOffice HTTP adapter and generic shell](docs/backoffice-http-and-ui.md)
+now discover installed actions, render bounded forms/results and require explicit
+write confirmation. Full administrative coverage remains incomplete.
 
 The [trusted local package lifecycle](docs/package-lifecycle.md) now supports
 dependency graphs, conservative updates and retained removal/reinstall.
 [Qualification blockers](docs/milestones/0.3-package-lifecycle/README.md) remain.
 
-Current versions are **Wydgine/WydHosting/platform 0.3.0-alpha.20**, **WydClient 0.1.0-alpha.11**
+Current versions are **Wydgine/WydHosting/platform 0.3.0-alpha.21**, **WydClient 0.1.0-alpha.11**
 and **WydSUB 0.1**. WBasic/component contracts are implemented through 0.20;
 the language reference also contains clearly marked future proposals. These are
 separate version axes. Historical browser artifacts remain immutable.

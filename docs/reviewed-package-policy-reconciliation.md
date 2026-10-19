@@ -1,9 +1,9 @@
 # Reviewed package policy reconciliation — 0.3-J foundation increment 4
 
-The [modular BackOffice action framework](backoffice-action-framework.md) adds
-installed site-scoped action declarations, private discovery and trusted service
-invocation in alpha.20. It preserves the independent authority and lifecycle checks;
-UI, AccountAdmin and HostAdmin remain deferred.
+The [modular BackOffice action framework](backoffice-action-framework.md) supplies
+installed site-scoped actions. The [alpha.21 HTTP adapter and generic shell](backoffice-http-and-ui.md)
+make those actions available in a browser while preserving independent Gate/SEAM
+and lifecycle checks. Full administrative coverage, AccountAdmin and HostAdmin remain deferred.
 
 Implemented backend contract in platform/Wydgine/WydHosting **0.3.0-alpha.19**.
 WydClient stays alpha.11, Gate alpha.5, Store alpha.4. No administration UI,

@@ -1,9 +1,9 @@
 # Execution contexts, administrative domains, and WydStore isolation
 
-The [modular BackOffice action framework](backoffice-action-framework.md) adds
-installed site-scoped action declarations, private discovery and trusted service
-invocation in alpha.20. It preserves the independent authority and lifecycle checks;
-UI, AccountAdmin and HostAdmin remain deferred.
+The [modular BackOffice action framework](backoffice-action-framework.md) supplies
+installed site-scoped actions. The [alpha.21 HTTP adapter and generic shell](backoffice-http-and-ui.md)
+make those actions available in a browser while preserving independent Gate/SEAM
+and lifecycle checks. Full administrative coverage, AccountAdmin and HostAdmin remain deferred.
 
 The [reviewed package-policy foundation](reviewed-package-policy-reconciliation.md)
 adds native stopped-App plan/review/apply with separate policy revisions and durable
@@ -546,3 +546,16 @@ establishes context and domain. WydGate manages membership and application polic
 WydStore isolates data by ownership; SEAM enforces execution authority. WydHosting
 provisions and protects future administrative boundaries. A broader administrative
 scope never automatically opens another domain's private data.
+
+
+### Increment 6 browser-facing acceptance evidence
+
+The [alpha.21 HTTP/UI contract](backoffice-http-and-ui.md#qualification-and-remaining-work)
+adds the site-scoped browser subset of ADM-01: authenticated shell, authorized
+dynamic navigation, bounded closed-contract forms/results, explicit write
+confirmation, exact-origin/CSRF checks and real WydGate roster invocation. HTTP
+and deterministic DOM tests retain independent Gate/SEAM, site, receipt/generation,
+service and stale-reference enforcement. No host-policy/lifecycle authority crosses
+HTTP. Full administration, visual browser/accessibility qualification, privileged
+review UI, live distributed lifecycle and wider domains remain deferred. Historical
+backend-only evidence above is preserved, not a current transport deferral.

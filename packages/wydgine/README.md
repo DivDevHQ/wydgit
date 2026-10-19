@@ -10,14 +10,14 @@ reliability issue. See repository `docs/decisions/0003-defer-managed-hosting-qua
 and `docs/milestones/0.3-release-status.md`. No deployment or guest changes are
 authorized by this documentation decision.
 
-Wydgine runs canonical Wydgit Apps. Version 0.3.0-alpha.20 is a private,
+Wydgine runs canonical Wydgit Apps. Version 0.3.0-alpha.21 is a private,
 locally packed development artifact; it has not been published to npm.
 Requires Node >=24.21.0. No WydHosting or Linux hosting installation is required.
 
 Install a verified local tarball in a consumer directory:
 
 ```sh
-npm install /verified/path/wydgine-0.3.0-alpha.20.tgz
+npm install /verified/path/wydgine-0.3.0-alpha.21.tgz
 ./node_modules/.bin/wydgine setup
 npm start
 ```
@@ -64,3 +64,13 @@ capabilities. This experimental lane has no privileged Linux qualification evide
 require independent lifecycle and policy-management capabilities; they are not
 portable services. See repository `docs/reviewed-package-policy-reconciliation.md`
 for exact revision/approval bindings, local recovery and cross-process drain limits.
+
+
+BackOffice in alpha.21 serves `/backoffice` and bounded action discovery/invocation
+over installed BackOffice Wydgits. The platform shell groups authorized action
+metadata and renders closed input/output contracts. Existing Gate/SEAM, exact
+site, CSRF, Origin and generation checks remain mandatory. Use trusted hostname
+routing for proxy/HTTPS; native `createHostApp({root,localHostname:'localhost'})`
+and a loopback listener enable explicit local browser development. The historical
+unbound standalone entry point rejects BackOffice. No accounts, elevated grants,
+native policy endpoint or wider administrative domains are created.

@@ -2,8 +2,9 @@
 
 Platform/Wydgine/WydHosting **0.3.0-alpha.20**, Gate **0.1.0-alpha.6**,
 Store **0.1.0-alpha.5**. WydClient remains alpha.11; canonical service API versions,
-SEWN and persisted store/catalog schemas are unchanged. This is a site-level backend
-framework. The graphical portion of ADM-01 remains unimplemented.
+SEWN and persisted store/catalog schemas are unchanged. This records the site-level backend
+framework at increment 5. [Increment 6](backoffice-http-and-ui.md) adds its secure
+HTTP transport and generic action shell; full ADM-01 coverage remains incomplete.
 
 Read with [execution domains](execution-contexts-and-administrative-domains.md),
 [placement and lifetime](backoffice-placement-lifecycle.md),

@@ -1,6 +1,7 @@
 import { requireThat as check } from './engine/object-model/validation.js';
 import { registerAppExecution } from './engine/execution/maintenance.js';
 import { createTransport } from './engine/http/transport/hono.js';
+import {validateRouting} from './engine/http/routing.js';
 import { fileURLToPath } from 'node:url';
 import { createRenderer } from './engine/index.js';
 import { createPipeline } from './engine/http/pipeline.js';
@@ -8,7 +9,7 @@ import { createLifecycle } from './engine/execution/lifecycle.js';
 import { loadRepository } from './engine/repository.js';
 import { initializeHost } from './engine/host.js';
 
-export function createApp({ root = process.cwd(), logger = console, libraries, execution = {}, lifecycle, admit, guard, contextPolicy, onStop, parking, governance } = {}) {
+export function createApp({ root = process.cwd(), logger = console, libraries, execution = {}, lifecycle, admit, guard, contextPolicy, onStop, parking, governance, localHostname } = {}) {
   const release=registerAppExecution(root),pending=new Set();let stopping=false;
   const admission=()=>{
     check(!stopping,'HOST.RETIRED','App stopping');const releaseAdmission=admit?.();
@@ -16,9 +17,11 @@ export function createApp({ root = process.cwd(), logger = console, libraries, e
     return failed=>{if(!finished){finished=true;pending.delete(work);try{releaseAdmission?.(failed);}finally{done();}}};
   };
   try {
+  const localApp=localHostname===undefined?null:loadRepository(root,{verifiedPackages:execution.verifiedPackages}).runtime.rootId;
+  const localRouting=localApp===null?null:validateRouting({schema:'wydgit.routing/0.1',transport:{mode:'local-http'},routes:[{hostname:localHostname,app:localApp,state:'active',approval:'local-development'}]},[localApp]);
   const renderer = createRenderer({ root, verifiedPackages:execution.verifiedPackages });
   const pipeline = createPipeline({ root, libraries, execution, lifecycle, guard, contextPolicy, parking, governance, diagnostic:event=>{try{logger.error(JSON.stringify(event));}catch{}} });
-  const app = createTransport({ root, projectRoot: fileURLToPath(new URL('../runtime/',import.meta.url)), renderer, pipeline, logger, admit:admission, onStop:async()=>{stopping=true;await Promise.all([...pending]);await onStop?.();release();}, governance });
+  const app = createTransport({ root, projectRoot: fileURLToPath(new URL('../runtime/',import.meta.url)), renderer, pipeline, logger, admit:admission, onStop:async()=>{stopping=true;await Promise.all([...pending]);await onStop?.();release();}, governance, localRouting });
   return app;
   }catch(error){release();throw error;}
 }

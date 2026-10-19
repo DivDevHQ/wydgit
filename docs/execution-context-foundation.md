@@ -1,5 +1,8 @@
 # Execution context foundation — implemented contract
 
+The [alpha.21 BackOffice HTTP/UI increment](backoffice-http-and-ui.md) adds a
+site-scoped action shell; wider-domain and lifecycle limits below still apply.
+
 The [reviewed package-policy foundation](reviewed-package-policy-reconciliation.md)
 adds native stopped-App plan/review/apply with separate policy revisions and durable
 host approval. Package requirements, execution placement, SEAM, Gate membership and

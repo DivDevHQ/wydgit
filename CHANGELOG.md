@@ -1,5 +1,16 @@
 ## Unreleased
 
+- Add site-scoped BackOffice HTTP transport and the first modular graphical shell
+  over the existing installed action framework. Reuse Gate cookie authentication,
+  trusted routing, session-bound CSRF, live Gate/SEAM checks and lifetime fences;
+  expose only bounded discovery and fixed action invocation. Render dynamic
+  category navigation, supported contract inputs and escaped results with theme
+  and responsive layout support. Require per-attempt write confirmation without
+  automatic replay. Qualify real JSON/SQLite rosters, browser-form login and DOM
+  security; document explicit local setup and incomplete ADM-01/browser visual
+  coverage. Advance platform/Wydgine/WydHosting to alpha.21 without new dependencies
+  or persisted migrations. Historical HTTP SEWN.LIMIT reliability remains open.
+
 - Add the modular site-level BackOffice action framework: installed declarations,
   authorized discovery, exact receipt/contract/generation references and fixed
   caller-bound canonical service invocation. Preserve live Gate/SEAM/Store checks,
