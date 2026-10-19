@@ -54,8 +54,10 @@ export async function openJsonAdapter(root, owner, definitions, metadata, limits
     }
   }
   async function transaction(operation, initialize = false, completion) {
+    const queued=completion?.stage?.('jsonQueue');
     const previous = queues.get(file) ?? Promise.resolve();
     const next = previous.catch(() => {}).then(async () => {
+      queued?.();const worked=completion?.stage?.('jsonWork');
       let lockHandle;
       try {
         completion?.check();
@@ -70,7 +72,7 @@ export async function openJsonAdapter(root, owner, definitions, metadata, limits
         if (result.changed) await write(result.document ?? data,completion,result.validate);
         return result.value;
       } catch (error) { throw safeIO(error); }
-      finally { if(lockHandle) { await lockHandle.close(); await unlink(lock).catch(() => {}); } }
+      finally {try{if(lockHandle) { await lockHandle.close(); await unlink(lock).catch(() => {}); }}finally{worked?.();}}
     });
     queues.set(file,next);
     try { return await next; } finally { if(queues.get(file) === next) queues.delete(file); }

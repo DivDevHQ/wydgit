@@ -155,11 +155,12 @@ export async function openSqliteAdapter(root, owner, definitions, metadata, limi
     return next.deleted ? {id:next.id, version:next.version, deleted:true} : snapshot(next);
   }
   async function transaction(operation, request, initialize = false, completion) {
-    let db;
+    let db,worked;const preflight=completion?.stage?.('sqlitePreflight');
     try {
       await inspectFiles();
       await checkLifecycleLock(root,name,lifecycle);
       completion?.check();
+      preflight?.();worked=completion?.stage?.('sqliteTransaction');
       db = new Database(file, {fileMustExist:true, timeout:1000});
       db.pragma('trusted_schema = OFF');
       db.pragma('foreign_keys = ON');
@@ -184,7 +185,7 @@ export async function openSqliteAdapter(root, owner, definitions, metadata, limi
       value=run.immediate();
       completion?.committed();return value;
     } catch (error) { throw providerError(error); }
-    finally { if (db) { try { db.close(); } catch { throw new StoreError('STORE.IO'); } } }
+    finally {try{if (db) { try { db.close(); } catch { throw new StoreError('STORE.IO'); } }}finally{preflight?.();worked?.();}}
   }
   // Only a newly, exclusively created file may be initialized. An existing empty
   // or incompatible database is never silently reinitialized.

@@ -32,8 +32,15 @@ test('progress: monotonic intervals and Date deadline remain distinct at equalit
  const clock=clocks(t),{ledger,progress,meter}=observed(context());progress.phase('action');
  clock.set(-500,400);ledger.check();assert.equal(ledger.meter().elapsedMs,0);progress.phase('load');
  clock.set(999,700);ledger.check();clock.set(1000,701);assert.throws(()=>ledger.take('serviceCalls'),{code:'SEWN.LIMIT'});
- const result=meter();assert.deepEqual(result.exhaustion,{resource:'timeMs',used:1000,limit:1000});assert.equal(result.charges.serviceCalls,undefined);assert.equal(result.progress.durationMs,701);assert.equal(result.progress.phases.action.elapsedMs,400);
+ const result=meter();assert.deepEqual(result.timing,{startedAtMs:2000,deadlineAtMs:3000});assert.ok(Object.isFrozen(result.timing));assert.deepEqual(result.exhaustion,{resource:'timeMs',used:1000,limit:1000});assert.equal(result.charges.serviceCalls,undefined);assert.equal(result.progress.durationMs,701);assert.equal(result.progress.phases.action.elapsedMs,400);
  clock.set(2000,900);assert.throws(()=>ledger.check(),error=>error.details.used===1000);assert.deepEqual(ledger.meter().exhaustion,result.exhaustion);assert.equal(meter().progress,result.progress);
+});
+test('progress: wall anchors preserve a clipped parent deadline without an extra clock read',t=>{
+ clocks(t);let reads=0;t.mock.method(Date,'now',()=>{reads++;return 2000;});
+ const {meter}=observed(context(),{deadline:2200});assert.equal(reads,1);
+ const result=meter();assert.equal(reads,2);assert.equal(result.timeLimitMs,200);assert.deepEqual(result.timing,{startedAtMs:2000,deadlineAtMs:2200});
+ const ctx=context(),disabled=createObservedExecutionBudget(ctx);assert.equal(observedExecutionMeter(disabled,ctx).timing,undefined);
+ const expired=observed(context(),{deadline:1900});assert.equal(expired.meter().timing.startedAtMs,null,'an already expired parent cannot recover start from the clamped allowance');
 });
 test('progress: disabled ledger uses the original path and guard/first-exhaustion are preserved',t=>{
  const clock=clocks(t),ctx=context();let reads=0;t.mock.method(performance,'now',()=>{reads++;return 0;});

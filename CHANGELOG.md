@@ -1,5 +1,12 @@
 ## Unreleased
 
+- Advance platform/Wydgine/WydHosting to alpha.25 and Store to alpha.6 for
+  bounded private dispatch/JSON queue/SQLite stage timing. Add an isolated Contact
+  concurrency harness, admission/observer/provider controls and diagnostic/cleanup
+  regressions. Preserve matching committed-but-indeterminate deadline failures
+  at twelve overlapping Pages; root cause and mitigation remain open. Keep all
+  deadlines, authority, cancellation and publication contracts unchanged.
+
 - Advance platform/Wydgine/WydHosting to alpha.24. Add an opt-in shared HTTP
   scheduling-lateness sampler and bounded ledger progress at trusted boundaries,
   with deterministic waiting/lateness/clock/commit controls and measured overhead.

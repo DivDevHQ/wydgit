@@ -12,8 +12,10 @@ export function createObservedExecutionBudget(context,{guard=()=>{},deadline=Inf
 }
 export const budgetProgress=token=>observations.get(token)??null;
 export function observedExecutionMeter(token,context){
-  const meter=executionBudget(token,context).meter(),observation=budgetProgress(token);
-  return observation?Object.freeze({...meter,progress:observation.finish()}):meter;
+  const ledger=executionBudget(token,context),meter=ledger.meter(),observation=budgetProgress(token);
+  // Derive the original wall-clock anchors from the ledger's existing deadline.
+  // No extra clock read, portable ledger change or new deadline policy.
+  return observation?Object.freeze({...meter,timing:Object.freeze({startedAtMs:meter.timeLimitMs>0?ledger.deadline-meter.timeLimitMs:null,deadlineAtMs:ledger.deadline}),progress:observation.finish()}):meter;
 }
 // Fixed-size, monotonic intervals at safe boundaries. These are not CPU time.
 export function createLedgerProgress(counts,{now=()=>performance.now()}={}) {

@@ -50,6 +50,7 @@ for(const [provider,boundary] of [['JSON','precommit'],['SQLite','precommit'],['
   // the revoked ledger and reports LIMIT. This code alone is not timeout proof.
   assert.ok(diagnostics.some(e=>e.phase==='page'&&e.code==='SEWN.LIMIT'),JSON.stringify(diagnostics));
   const trace=traces.findLast(m=>m.meter?.exhaustion);assert.equal(trace.headersPublished,false);assert.equal(trace.disconnected,true);assert.ok(trace.services.nativeStarted>0);assert.equal(trace.operationOutcome,'not-committed');
+  assert.equal(trace.meter.diagnostics.nativeStages.nativeHandler.completed,trace.services.nativeStarted);assert.ok(Object.values(trace.meter.diagnostics.nativeStages).every(stage=>stage.completed===stage.calls));
   const meter=meters.findLast(m=>m.exhaustion);assert.equal(meter.exhaustion.resource,'guard');assert.equal(meter.diagnostics.execution,'page');assert.ok(meter.diagnostics.spans.service.calls>0);
   mocked.mock.restore();syncBuiltinESMExports();
   const recovered=await fetch(url);assert.equal(recovered.status,200);assert.equal((await recovered.text()).includes('Budget probe'),false);
@@ -62,6 +63,7 @@ for(const [provider,boundary] of [['JSON','precommit'],['SQLite','precommit'],['
  assert.equal(response.headers.get('x-wydgit-operation-outcome'),boundary==='precommit'?'not-committed':'indeterminate');
  assert.ok(diagnostics.some(e=>e.phase==='page'&&e.code==='SEWN.LIMIT'),JSON.stringify(diagnostics));
  const trace=traces.findLast(m=>m.meter?.exhaustion);assert.equal(trace.pageAdmitted,true);assert.equal(trace.status,500);assert.equal(trace.headersPublished,true);assert.equal(trace.responseEnded,true);assert.equal(trace.services.pending,0);assert.equal(trace.operationOutcome,boundary==='precommit'?'not-committed':'indeterminate');
+ assert.equal(trace.meter.diagnostics.nativeStages.nativeHandler.completed,trace.services.nativeStarted);assert.ok(Object.values(trace.meter.diagnostics.nativeStages).every(stage=>stage.completed===stage.calls));
  const meter=meters.findLast(m=>m.exhaustion);assert.equal(meter.exhaustion.resource,'timeMs');assert.equal(meter.timeLimitMs,1000);assert.equal(meter.diagnostics.phaseAtFailure,'action');assert.ok(meter.diagnostics.spans.service.elapsedMs>=1000);
  assert.deepEqual(meter.diagnostics.accountingPath,['page','events','components','workflow','services']);assert.equal(JSON.stringify(meter).includes(f.root),false);
  mocked.mock.restore();syncBuiltinESMExports();

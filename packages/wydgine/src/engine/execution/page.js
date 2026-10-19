@@ -25,7 +25,7 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
   const presentationLedger=createPresentationLedger(context,pageId,runtimeSettings);
   let runtime=hydrate(dehydrate(model.runtime,{includeSensitive:true}),model.registry),alive=true,writable=true,unloading=false;
   const executionLedger=createObservedExecutionBudget(context,{progress:diagnosticProgress,guard:()=>check(alive&&session.active()&&!cancelled(),'EVENT.DENIED','Page execution ended')});
-  const completion=createCompletion(()=>executionBudget(executionLedger,context).check());
+  const completion=createCompletion(()=>executionBudget(executionLedger,context).check(),{diagnosticTiming:diagnosticProgress});
   diagnostics.budgetStarted(budgetProgress(executionLedger),completion);
   handlers=diagnostics.handlers(handlers);actions=diagnostics.handlers(actions);
   try{onAdmission?.();}catch{/* Trusted observation cannot alter admission. */}

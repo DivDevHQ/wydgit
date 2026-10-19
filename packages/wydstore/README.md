@@ -1,6 +1,12 @@
 # @wydgit/store
 
-Canonical library `wydstore`, independently versioned at `0.1.0-alpha.5`.
+Canonical library `wydstore`, independently versioned at `0.1.0-alpha.6`.
+
+Alpha.6 adds private opt-in JSON enqueue/dequeue/work and SQLite preflight/synchronous
+transaction timing through an observed engine completion control. Fixed numeric
+aggregates contain no request data, SQL or paths; transaction authority, cancellation
+and commit semantics are unchanged. See the platform's
+[HTTP concurrency qualification](../../docs/http-concurrency-qualification.md).
 
 Requires platform `^0.3.0-alpha.20`. Trusted optional `wydstore.authorization/1`
 rules classify collection operations by context and current site-scoped Gate

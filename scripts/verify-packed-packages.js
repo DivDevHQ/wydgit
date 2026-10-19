@@ -35,7 +35,7 @@ for(const name of ['wydgine','wydhosting','wydstore','wydgate','wydsearch','wydf
 }
 async function consumer(name,packages){
  const root=path.join(directory,name);await fs.mkdir(root);
- await fs.writeFile(path.join(root,'package.json'),JSON.stringify({name:'wydgit',version:'0.3.0-alpha.24',private:true,type:'module',scripts:{start:'wydgine start'}}));
+ await fs.writeFile(path.join(root,'package.json'),JSON.stringify({name:'wydgit',version:'0.3.0-alpha.25',private:true,type:'module',scripts:{start:'wydgine start'}}));
  await run('npm',['install','--no-audit','--no-fund',...packages.map(name=>packed[name])],root,{log:name+'-install.log'});
  const graph=await run('npm',['ls','--all','--json'],root,{log:name+'-dependencies.json'});assert.ok(JSON.parse(graph.output).dependencies.wydgine);
  for(const name of packages)assert.equal((await fs.lstat(path.join(root,'node_modules',name.startsWith('wyd')&&!['wydgine','wydhosting'].includes(name)?'@wydgit/'+name.slice(3):name))).isSymbolicLink(),false);
@@ -49,7 +49,7 @@ await fs.copyFile(path.join(repository,'test-support/packed/service-free.mjs'),p
 await run(process.execPath,['--import',path.join(serviceFree,'proof-register.mjs'),'service-free.mjs'],serviceFree,{log:'service-free.log'});
 console.log('PASS service-free installed binary, validation, HTTP/assets, restart, closed configuration');
 const full=await consumer('five-library',['wydgine','wydstore','wydgate','wydsearch','wydfiles','wydstream']);
-const selected=['http-scheduling','execution-progress','sewn-shared-budget','gate-session-contention','http-diagnostics','backoffice-actions','backoffice-http','backoffice-ui','backoffice-modules','multi-app','hostname-host','hosting-operations','hardening','guestbook-package','packages','package-infrastructure','wydgate-http','wydstream-http','wydstream-search','wydstream-security','wydsearch-package','wydfiles','wydstore-sqlite','operation-completion','process-supervision','linux-isolation'];
+const selected=['http-concurrency','native-stage-timing','http-scheduling','execution-progress','sewn-shared-budget','gate-session-contention','http-diagnostics','backoffice-actions','backoffice-http','backoffice-ui','backoffice-modules','multi-app','hostname-host','hosting-operations','hardening','guestbook-package','packages','package-infrastructure','wydgate-http','wydstream-http','wydstream-search','wydstream-security','wydsearch-package','wydfiles','wydstore-sqlite','operation-completion','process-supervision','linux-isolation'];
 async function stage(root){
  await fs.copyFile(path.join(repository,'wydgit.config.json'),path.join(root,'wydgit.config.json'));
  await fs.mkdir(path.join(root,'.fixtures'));

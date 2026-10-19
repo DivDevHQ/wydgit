@@ -18,15 +18,24 @@ export function bindServices(context, lookup, describe = () => undefined, operat
     const policy=Object.freeze({...effectiveLimits(service.limits ?? SERVICE_DEFAULTS,context),...(operation?{operation}:{})});
     const limited=versioned || service.enforceLegacyLimits === true;
     let request;
+    const validation=operation?.stage?.('dispatchValidation');
     try { if(limited)checkJsonBudget(input,policy.request);
       request=freeze(clean(input)); }
     catch { return failure('SERVICE.INVALID_REQUEST').toJSON(); }
+    finally {validation?.();}
     try {
-      if (await service.authorize(request, context, policy) !== true) return failure('SEAM.DENIED').toJSON();
-      if (versioned && (!service.validate || await service.validate(request, context, policy) !== true)) return failure('SERVICE.INVALID_REQUEST').toJSON();
+      let authorized;const authorization=operation?.stage?.('dispatchAuthorization');
+      try {authorized=await service.authorize(request, context, policy);}finally{authorization?.();}
+      if (authorized !== true) return failure('SEAM.DENIED').toJSON();
+      if (versioned) {
+        let valid;const validation=operation?.stage?.('dispatchValidation');
+        try{valid=service.validate&&await service.validate(request, context, policy);}finally{validation?.();}
+        if(valid!==true)return failure('SERVICE.INVALID_REQUEST').toJSON();
+      }
       checkContext(context);
       operation?.begin();
-      const result = await service.handler(request, context, policy);
+      let result;const native=operation?.stage?.('nativeHandler');
+      try{result=await service.handler(request, context, policy);}finally{native?.();}
       checkContext(context);
       let value;
       try { if(limited)checkJsonBudget(result,policy.response);

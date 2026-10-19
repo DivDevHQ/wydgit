@@ -41,3 +41,12 @@ test('scheduling: disabled observation allocates no resources; exceptional finis
  const exceptional=createHttpDiagnostics(()=>{},{sampler:f.sampler});
  assert.throws(()=>exceptional.finish({get statusCode(){throw Error('output');}},null),/output/);assert.equal(f.pending.size,0);
 });
+test('scheduling: throwing HTTP observer removal preserves live siblings and releases the last timer',()=>{
+ const f=fixture(),records=[];
+ const first=createHttpDiagnostics(record=>{records.push(record);throw Error('private observer');},{sampler:f.sampler});
+ const second=createHttpDiagnostics(record=>records.push(record),{sampler:f.sampler});
+ f.fire(50);first.finish({statusCode:500,destroyed:true},null);assert.equal(f.pending.size,1);
+ f.fire(100);second.finish({statusCode:200,headersSent:true,writableEnded:true},null);
+ assert.equal(records[0].scheduling.callbacks,1);assert.equal(records[1].scheduling.callbacks,2);assert.equal(f.pending.size,0);
+ assert.equal(records[1].status,200);assert.doesNotMatch(JSON.stringify(records),/private observer/);
+});
