@@ -105,6 +105,7 @@ export async function openStores(input, rawCheckJson, {authorizeSitePolicy,check
     return request;
   };
   const execute = async (operation, raw, caller, policy) => {
+    policy.operation?.storeEntry?.();
     try {
       const request=validate(operation,raw,caller,policy),store=stores.get(request.store);
       // Prepared inputs cache only structural work. Policy is read afresh on

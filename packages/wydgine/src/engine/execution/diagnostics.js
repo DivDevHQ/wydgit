@@ -6,7 +6,7 @@ export function createPageDiagnostics() {
   let phase='prepare',phaseStarted=started,budgetStarted=started,failed=null;
   const elapsed=value=>Math.max(0,performance.now()-value);
   const add=(map,key,ms)=>{const entry=map[key]??={calls:0,elapsedMs:0};entry.calls++;entry.elapsedMs+=ms;map[key]=entry;};
-  const measure=async(name,operation)=>{progress?.checkpoint(services?.snapshot(),name);const since=performance.now();try{return await operation();}finally{add(spans,name,elapsed(since));progress?.checkpoint(services?.snapshot(),name);}};
+  const measure=async(name,operation,resume)=>{progress?.checkpoint(services?.snapshot(),name);const since=performance.now();try{return await operation();}finally{resume?.();add(spans,name,elapsed(since));progress?.checkpoint(services?.snapshot(),name);}};
   return Object.freeze({
     budgetStarted(observation,completion){budgetStarted=performance.now();progress=observation;services=completion;},
     phase(name){progress?.phase(name,services?.snapshot());add(phases,phase,elapsed(phaseStarted));phase=name;phaseStarted=performance.now();},

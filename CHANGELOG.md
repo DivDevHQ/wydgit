@@ -1,5 +1,12 @@
 ## Unreleased
 
+- Partition native completion to the next SQLite inspection with opt-in bounded
+  Page/dispatch/Store markers. One retained twelve-way Contact window has twelve
+  complete call-pair partitions; Form Clear occupies much of the largest Page
+  interval. Preserve 2 HTTP 200 / 10 indeterminate HTTP 500 outcomes, including a
+  successful response with cleanup exhaustion. Keep alpha.28 versions and
+  WYDGINE-0.3-HTTP-LIMIT open; no runtime correction or release.
+
 - Extend test-only SQLite FSREQPROMISE attribution to individual root/inspection
   lstat operations and retain overlapping per-native-call timelines. One twelve-way
   Contact window uniquely maps 216 POST inspection operations and 24 lifecycle

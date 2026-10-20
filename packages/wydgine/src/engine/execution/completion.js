@@ -2,7 +2,7 @@
 import {performance} from 'node:perf_hooks';
 import {createContinuationTiming} from './continuation.js';
 const stages=new Set(['dispatchValidation','dispatchAuthorization','nativeHandler','jsonQueue','jsonWork','sqlitePreflight','sqliteLifecycle','sqliteTransaction']);
-export function createCompletion(check,{diagnosticTiming=false,observeLifecycleLstat,observeSqliteInspection,now=()=>performance.now()}={}) {
+export function createCompletion(check,{diagnosticTiming=false,observeLifecycleLstat,observeSqliteInspection,observeNativeGap,now=()=>performance.now()}={}) {
   const pending=new Set(),effects=[];let closed=false;
   const timings=diagnosticTiming?Object.create(null):null;
   const continuations=diagnosticTiming?createContinuationTiming(now):null;
@@ -16,6 +16,12 @@ export function createCompletion(check,{diagnosticTiming=false,observeLifecycleL
     async run(work) {
       check();if(closed)throw new Error('Execution closed');
       const effect={state:'none',started:false};effects.push(effect);
+      let gapObserver;
+      const gap=key=>{try{gapObserver?.[key]?.();}catch{try{gapObserver?.cancel?.();}catch{}gapObserver=null;}};
+      if(diagnosticTiming&&typeof observeNativeGap==='function'){
+        try{gapObserver=observeNativeGap({operation:effects.length});}catch{}
+      }
+      if(gapObserver)effect.gap=gap;gap('dispatch');
       let inspectionObserver;
       const notify=(key,...args)=>{try{return inspectionObserver?.[key]?.(...args);}catch{try{inspectionObserver?.cancel?.();}catch{}inspectionObserver=null;}};
       const observedStage=name=>{
@@ -25,6 +31,7 @@ export function createCompletion(check,{diagnosticTiming=false,observeLifecycleL
         return ()=>{end?.();notify('transactionEnd');};
       };
       const operation=Object.freeze({
+        ...(gapObserver?{storeEntry:()=>gap('storeEntry'),pageContinuation:()=>{effect.returned=true;gap('pageContinuation');}} : {}),
         check:diagnosticTiming&&typeof observeSqliteInspection==='function'?()=>{notify('checkpoint');check();}:check,
         ...(diagnosticTiming?{stage:typeof observeSqliteInspection==='function'?observedStage:stage,continuation:name=>{
           const observation=continuations.begin(name);
@@ -56,7 +63,12 @@ export function createCompletion(check,{diagnosticTiming=false,observeLifecycleL
         committed(){effect.state='committed';}
       });
       const task=Promise.resolve().then(()=>work(operation));pending.add(task);
-      try{return await task;}finally{pending.delete(task);notify('settled');}
+      try{return await task;}finally{pending.delete(task);notify('settled');gap('complete');}
+    },
+    // Only the synchronous Clear following an observed native return is bracketed.
+    pageClear(){
+      const effect=effects.at(-1);if(!effect?.gap||!effect.returned)return undefined;
+      effect.gap('clearStart');return ()=>effect.gap('clearEnd');
     },
     async settle(){closed=true;await Promise.allSettled([...pending]);},
     // Fixed counters only; begin may run more than once for one service call.

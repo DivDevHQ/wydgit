@@ -2,12 +2,11 @@
 import {createHook, executionAsyncId} from 'node:async_hooks';
 import {performance} from 'node:perf_hooks';
 
-export function createFsreqpromiseProbe({enabled=false,maxCalls=64,maxResources=128}={}) {
+export function createFsreqpromiseProbe({enabled=false,maxCalls=64,maxResources=128,now=()=>performance.now()}={}) {
   if(!Number.isInteger(maxCalls)||maxCalls<1||maxCalls>1024||!Number.isInteger(maxResources)||maxResources<1||maxResources>2048)
     throw new RangeError('Invalid probe bounds');
-  const calls=[],inspections=[],resources=new Map();
+  const calls=[],inspections=[],nativeCalls=[],resources=new Map();
   let active=null,stopped=false,seen=0,droppedCalls=0,droppedResources=0,hookErrors=0;
-  const now=()=>performance.now();
   const increment=value=>Math.min(1000000,value+1);
   // Hook callbacks never escape exceptions, log, schedule work, or retain resource objects.
   const safe=work=>(...args)=>{try{work(...args);}catch{hookErrors=increment(hookErrors);stop();}};
@@ -69,6 +68,15 @@ export function createFsreqpromiseProbe({enabled=false,maxCalls=64,maxResources=
         resume:mark(row,'resumeMs'),validated:mark(row,'validatedMs'),cancel:stop
       });
     },
+    native({request,operation}){
+      if(!enabled||stopped)return undefined;
+      if(!Number.isInteger(request)||request<0||request>12||!Number.isInteger(operation)||operation<1||operation>64)
+        throw new RangeError('Invalid fixture identity');
+      if(nativeCalls.length>=64){droppedCalls=increment(droppedCalls);stop();return undefined;}
+      const row={request,operation,dispatchMs:null,completeMs:null,pageContinuationMs:null,storeEntryMs:null,clearStartMs:null,clearEndMs:null};
+      nativeCalls.push(row);
+      return Object.freeze(Object.fromEntries(['dispatch','complete','pageContinuation','storeEntry','clearStart','clearEnd'].map(stage=>[stage,mark(row,stage+'Ms')]).concat([['cancel',stop]])));
+    },
     inspect({request,operation}){
       if(!enabled||stopped)return undefined;
       if(!Number.isInteger(request)||request<0||request>12||!Number.isInteger(operation)||operation<1||operation>64)
@@ -91,7 +99,7 @@ export function createFsreqpromiseProbe({enabled=false,maxCalls=64,maxResources=
       });
     },
     stop,
-    snapshot(){return {enabled,stopped,seen,droppedCalls,droppedResources,hookErrors,tracked:resources.size,inspections:inspections.map(row=>({...row})),calls:calls.map(row=>{
+    snapshot(){return {enabled,stopped,seen,droppedCalls,droppedResources,hookErrors,tracked:resources.size,nativeCalls:nativeCalls.map(row=>({...row})),inspections:inspections.map(row=>({...row})),calls:calls.map(row=>{
       const resource=row.resources[0];
       const unique=!row.overflow&&row.candidates===1&&row.invocationMs!==null&&resource.trigger===row.executionId&&resource.initMs>=row.invocationMs;
       const continuation=row.mode==='inspection'?row.resumeMs:row.recoveryMs;

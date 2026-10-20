@@ -13,12 +13,13 @@ if(process.argv[2]==='--worker') {
   process.stdout.write(JSON.stringify(result)+'\n');
 }else {
   const args=process.argv.slice(2);
-  const inspection=args[2]==='--inspection-correlation';
+  const nativeGap=args[2]==='--native-gap';
+  const inspection=nativeGap||args[2]==='--inspection-correlation';
   const resource=inspection||args[2]==='--resource-correlation';
   const lifecycle=resource||args[2]==='--lifecycle-lstat';
   const isolation=args[2]==='--process-isolation',continuation=lifecycle||args[2]==='--preflight-continuation',isolated=isolation||continuation;
   const counter=args[2]==='--admission-control',native=args[2]==='--provider-control',observer=args[2]==='--observer-control';
-  if(![2,3].includes(args.length)||args[0]!=='--output'||args.length===3&&!counter&&!native&&!observer&&!isolated)throw Error('Usage: node test-support/http-concurrency-probe.mjs --output NEW_DIRECTORY [--admission-control|--provider-control|--observer-control|--process-isolation|--preflight-continuation|--lifecycle-lstat|--resource-correlation|--inspection-correlation]');
+  if(![2,3].includes(args.length)||args[0]!=='--output'||args.length===3&&!counter&&!native&&!observer&&!isolated)throw Error('Usage: node test-support/http-concurrency-probe.mjs --output NEW_DIRECTORY [--admission-control|--provider-control|--observer-control|--process-isolation|--preflight-continuation|--lifecycle-lstat|--resource-correlation|--inspection-correlation|--native-gap]');
   const directory=path.resolve(args[1]);
   // Refuse reuse: earlier failures cannot be overwritten by a passing rerun.
   await fs.mkdir(directory,{recursive:false});
@@ -119,7 +120,7 @@ if(process.argv[2]==='--worker') {
   try {
     for(const provider of summary.configuration.providers){
       if(continuation){
-        for(let repetition=1;repetition<=(resource?1:3);repetition++)await run({provider,concurrency:12,repetition,series:inspection?'inspection-correlation':resource?'resource-correlation':lifecycle?'lifecycle-lstat':'preflight-continuation',clientPlacement:'separate',diagnosticsEnabled:true,...(resource?{resourceCorrelation:true,...(inspection?{inspectionCorrelation:true}:{})}:{})});
+        for(let repetition=1;repetition<=(resource?1:3);repetition++)await run({provider,concurrency:12,repetition,series:inspection?'inspection-correlation':resource?'resource-correlation':lifecycle?'lifecycle-lstat':'preflight-continuation',clientPlacement:'separate',diagnosticsEnabled:true,...(resource?{resourceCorrelation:true,...(inspection?{inspectionCorrelation:true,...(nativeGap?{nativeGap:true}:{})}:{})}:{})});
       }else if(isolation){
         for(const [index,clientPlacement]of ['shared','separate','shared','separate'].entries())
           for(let repetition=1;repetition<=3;repetition++)await run({provider,concurrency:12,repetition,series:['A1','B1','A2','B2'][index],clientPlacement,diagnosticsEnabled:true});
