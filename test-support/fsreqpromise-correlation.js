@@ -1,0 +1,50 @@
+// Test-only: importing this module installs no hook. Never imported by runtime code.
+import {createHook, executionAsyncId} from 'node:async_hooks';
+import {performance} from 'node:perf_hooks';
+
+export function createFsreqpromiseProbe({enabled=false,maxCalls=64,maxResources=128}={}) {
+  if(!Number.isInteger(maxCalls)||maxCalls<1||maxCalls>1024||!Number.isInteger(maxResources)||maxResources<1||maxResources>2048)
+    throw new RangeError('Invalid probe bounds');
+  const calls=[],resources=new Map();
+  let active=null,stopped=false,seen=0,droppedCalls=0,droppedResources=0,hookErrors=0;
+  const now=()=>performance.now();
+  // Hook callbacks never escape exceptions, log, schedule work, or retain resource objects.
+  const safe=work=>(...args)=>{try{work(...args);}catch{hookErrors++;}};
+  const hook=enabled?createHook({
+    init:safe((id,type,trigger)=>{
+      if(type!=='FSREQPROMISE'||!active)return;
+      active.candidates++;
+      if(seen>=maxResources){droppedResources++;active.overflow=true;return;}
+      seen++;
+      const row={id,type,trigger,initMs:now(),beforeCount:0,afterCount:0,firstBeforeMs:null,lastAfterMs:null,destroyMs:null};
+      active.resources.push(row);resources.set(id,row);
+    }),
+    before:safe(id=>{const row=resources.get(id);if(row){row.beforeCount++;row.firstBeforeMs??=now();}}),
+    after:safe(id=>{const row=resources.get(id);if(row){row.afterCount++;row.lastAfterMs=now();}}),
+    destroy:safe(id=>{const row=resources.get(id);if(row){row.destroyMs=now();resources.delete(id);}})
+  }):null;
+  hook?.enable();
+  return Object.freeze({
+    // The callback must synchronously invoke ONLY the known helper up to its first
+    // await. No async wrapper/reaction is inserted. Concurrent pending calls may
+    // coexist, but synchronous capture windows must not overlap.
+    capture(invoke){
+      if(!enabled||stopped)return invoke(undefined);
+      if(active)throw new Error('Nested capture is not supported');
+      if(calls.length>=maxCalls){droppedCalls++;return invoke(undefined);}
+      const row={call:calls.length+1,executionId:executionAsyncId(),invocationMs:null,recoveryMs:null,producerMs:null,resumeMs:null,validatedMs:null,candidates:0,overflow:false,resources:[]};
+      calls.push(row);active=row;
+      const mark=key=>()=>{row[key]??=now();};
+      const completion={continuation(name){if(name!=='sqliteLifecycleLstat')return undefined;return {
+        start:mark('invocationMs'),recoveryEntry:mark('recoveryMs'),enoent(){},complete:mark('producerMs'),resume:mark('resumeMs'),validated:mark('validatedMs')
+      };}};
+      try{return invoke(completion);}finally{active=null;}
+    },
+    stop(){hook?.disable();resources.clear();stopped=true;},
+    snapshot(){return {enabled,stopped,seen,droppedCalls,droppedResources,hookErrors,tracked:resources.size,calls:calls.map(row=>{
+      const resource=row.resources[0];
+      const correlation=!row.overflow&&row.candidates===1&&row.invocationMs!==null&&resource.trigger===row.executionId&&resource.initMs>=row.invocationMs?'isolated-single-resource':'ambiguous';
+      return {...row,resources:row.resources.map(resource=>({...resource})),correlation};
+    })};}
+  });
+}

@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Add a default-disabled test-only FSREQPROMISE correlation probe. Isolated real
+  lifecycle fixtures establish bounded resource attribution and callback/Promise
+  marker evidence; concurrent Contact attribution remains unproven. Retain alpha.28
+  versions and keep WYDGINE-0.3-HTTP-LIMIT open; no runtime changes.
+
 - Advance platform/Wydgine/WydHosting to alpha.28 and Store to alpha.8. Add bounded
   opt-in lifecycle lstat recovery/continuation observations using the existing
   Promise callback, with no scheduling or decision changes. Three isolated twelve-way

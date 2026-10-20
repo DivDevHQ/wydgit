@@ -1,0 +1,489 @@
+{
+  "schema": "wydgine.fsreqpromise-correlation-evidence/1",
+  "date": "2026-10-19",
+  "startingHead": "b24d11e34382c95d74c4ced59773c3315ad7e8dd",
+  "branch": "develop/0.3",
+  "node": "v24.21.0",
+  "release": "0.3.0-alpha.28",
+  "issue": {
+    "id": "WYDGINE-0.3-HTTP-LIMIT",
+    "status": "OPEN"
+  },
+  "command": "node test-support/fsreqpromise-correlation-probe.mjs --observe",
+  "scope": "Real lifecycle helper, isolated synchronous capture; not an HTTP reproduction or production timing baseline",
+  "contract": "Only the known helper is invoked inside each capture window; source inspection identifies exactly one fs/promises.lstat before its first await. Unique FSREQPROMISE init must follow start and have trigger equal to captured executionAsyncId. Multiple candidates or overflow are ambiguous.",
+  "clock": "performance.now monotonic milliseconds in this process",
+  "outcomes": [
+    "STORE.BUSY",
+    "allowed"
+  ],
+  "concurrentMissingCalls": 12,
+  "observation": {
+    "enabled": true,
+    "stopped": false,
+    "seen": 14,
+    "droppedCalls": 0,
+    "droppedResources": 0,
+    "hookErrors": 0,
+    "tracked": 0,
+    "calls": [
+      {
+        "call": 1,
+        "executionId": 10,
+        "invocationMs": 25.199688,
+        "recoveryMs": null,
+        "producerMs": null,
+        "resumeMs": 25.387983,
+        "validatedMs": 25.517177,
+        "candidates": 1,
+        "overflow": false,
+        "resources": [
+          {
+            "id": 32,
+            "type": "FSREQPROMISE",
+            "trigger": 10,
+            "initMs": 25.280911,
+            "beforeCount": 1,
+            "afterCount": 1,
+            "firstBeforeMs": 25.341375,
+            "lastAfterMs": 25.344782,
+            "destroyMs": 25.583211
+          }
+        ],
+        "correlation": "isolated-single-resource"
+      },
+      {
+        "call": 2,
+        "executionId": 37,
+        "invocationMs": 25.546542,
+        "recoveryMs": 25.701464,
+        "producerMs": 25.713357,
+        "resumeMs": 25.716853,
+        "validatedMs": 25.717434,
+        "candidates": 1,
+        "overflow": false,
+        "resources": [
+          {
+            "id": 41,
+            "type": "FSREQPROMISE",
+            "trigger": 37,
+            "initMs": 25.568464,
+            "beforeCount": 1,
+            "afterCount": 1,
+            "firstBeforeMs": 25.6145,
+            "lastAfterMs": 25.616604,
+            "destroyMs": 26.146032
+          }
+        ],
+        "correlation": "isolated-single-resource"
+      },
+      {
+        "call": 3,
+        "executionId": 46,
+        "invocationMs": 25.760596,
+        "recoveryMs": 26.191037,
+        "producerMs": 26.19263,
+        "resumeMs": 26.198962,
+        "validatedMs": 26.199523,
+        "candidates": 1,
+        "overflow": false,
+        "resources": [
+          {
+            "id": 52,
+            "type": "FSREQPROMISE",
+            "trigger": 46,
+            "initMs": 25.782227,
+            "beforeCount": 1,
+            "afterCount": 1,
+            "firstBeforeMs": 26.156763,
+            "lastAfterMs": 26.159177,
+            "destroyMs": 26.868244
+          }
+        ],
+        "correlation": "isolated-single-resource"
+      },
+      {
+        "call": 4,
+        "executionId": 46,
+        "invocationMs": 25.804819,
+        "recoveryMs": 26.235591,
+        "producerMs": 26.236152,
+        "resumeMs": 26.237675,
+        "validatedMs": 26.238206,
+        "candidates": 1,
+        "overflow": false,
+        "resources": [
+          {
+            "id": 60,
+            "type": "FSREQPROMISE",
+            "trigger": 46,
+            "initMs": 25.828784,
+            "beforeCount": 1,
+            "afterCount": 1,
+            "firstBeforeMs": 26.211566,
+            "lastAfterMs": 26.212538,
+            "destroyMs": 26.869066
+          }
+        ],
+        "correlation": "isolated-single-resource"
+      },
+      {
+        "call": 5,
+        "executionId": 46,
+        "invocationMs": 25.848692,
+        "recoveryMs": 26.27754,
+        "producerMs": 26.278051,
+        "resumeMs": 26.279484,
+        "validatedMs": 26.279905,
+        "candidates": 1,
+        "overflow": false,
+        "resources": [
+          {
+            "id": 68,
+            "type": "FSREQPROMISE",
+            "trigger": 46,
+            "initMs": 25.860354,
+            "beforeCount": 1,
+            "afterCount": 1,
+            "firstBeforeMs": 26.254146,
+            "lastAfterMs": 26.255559,
+            "destroyMs": 26.869567
+          }
+        ],
+        "correlation": "isolated-single-resource"
+      },
+      {
+        "call": 6,
+        "executionId": 46,
+        "invocationMs": 25.881684,
+        "recoveryMs": 26.314019,
+        "producerMs": 26.31457,
+        "resumeMs": 26.315973,
+        "validatedMs": 26.316394,
+        "candidates": 1,
+        "overflow": false,
+        "resources": [
+          {
+            "id": 76,
+            "type": "FSREQPROMISE",
+            "trigger": 46,
+            "initMs": 25.893867,
+            "beforeCount": 1,
+            "afterCount": 1,
+            "firstBeforeMs": 26.289293,
+            "lastAfterMs": 26.290074,
+            "destroyMs": 26.875788
+          }
+        ],
+        "correlation": "isolated-single-resource"
+      },
+      {
+        "call": 7,
+        "executionId": 46,
+        "invocationMs": 25.908785,
+        "recoveryMs": 26.348374,
+        "producerMs": 26.348795,
+        "resumeMs": 26.350177,
+        "validatedMs": 26.350608,
+        "candidates": 1,
+        "overflow": false,
+        "resources": [
+          {
+            "id": 84,
+            "type": "FSREQPROMISE",
+            "trigger": 46,
+            "initMs": 25.920227,
+            "beforeCount": 1,
+            "afterCount": 1,
+            "firstBeforeMs": 26.328356,
+            "lastAfterMs": 26.329047,
+            "destroyMs": 26.878584
+          }
+        ],
+        "correlation": "isolated-single-resource"
+      },
+      {
+        "call": 8,
+        "executionId": 46,
+        "invocationMs": 25.935115,
+        "recoveryMs": 26.376717,
+        "producerMs": 26.377078,
+        "resumeMs": 26.382959,
+        "validatedMs": 26.38332,
+        "candidates": 1,
+        "overflow": false,
+        "resources": [
+          {
+            "id": 92,
+            "type": "FSREQPROMISE",
+            "trigger": 46,
+            "initMs": 25.947568,
+            "beforeCount": 1,
+            "afterCount": 1,
+            "firstBeforeMs": 26.357671,
+            "lastAfterMs": 26.358353,
+            "destroyMs": 26.880317
+          }
+        ],
+        "correlation": "isolated-single-resource"
+      },
+      {
+        "call": 9,
+        "executionId": 46,
+        "invocationMs": 25.963047,
+        "recoveryMs": 26.428044,
+        "producerMs": 26.428635,
+        "resumeMs": 26.430078,
+        "validatedMs": 26.430509,
+        "candidates": 1,
+        "overflow": false,
+        "resources": [
+          {
+            "id": 100,
+            "type": "FSREQPROMISE",
+            "trigger": 46,
+            "initMs": 25.96993,
+            "beforeCount": 1,
+            "afterCount": 1,
+            "firstBeforeMs": 26.390363,
+            "lastAfterMs": 26.398408,
+            "destroyMs": 26.880838
+          }
+        ],
+        "correlation": "isolated-single-resource"
+      },
+      {
+        "call": 10,
+        "executionId": 46,
+        "invocationMs": 25.993084,
+        "recoveryMs": 26.470624,
+        "producerMs": 26.471346,
+        "resumeMs": 26.474432,
+        "validatedMs": 26.475454,
+        "candidates": 1,
+        "overflow": false,
+        "resources": [
+          {
+            "id": 108,
+            "type": "FSREQPROMISE",
+            "trigger": 46,
+            "initMs": 26.005327,
+            "beforeCount": 1,
+            "afterCount": 1,
+            "firstBeforeMs": 26.444896,
+            "lastAfterMs": 26.445697,
+            "destroyMs": 26.881218
+          }
+        ],
+        "correlation": "isolated-single-resource"
+      },
+      {
+        "call": 11,
+        "executionId": 46,
+        "invocationMs": 26.023391,
+        "recoveryMs": 26.516771,
+        "producerMs": 26.517843,
+        "resumeMs": 26.525328,
+        "validatedMs": 26.525959,
+        "candidates": 1,
+        "overflow": false,
+        "resources": [
+          {
+            "id": 116,
+            "type": "FSREQPROMISE",
+            "trigger": 46,
+            "initMs": 26.029894,
+            "beforeCount": 1,
+            "afterCount": 1,
+            "firstBeforeMs": 26.488719,
+            "lastAfterMs": 26.48943,
+            "destroyMs": 26.881559
+          }
+        ],
+        "correlation": "isolated-single-resource"
+      },
+      {
+        "call": 12,
+        "executionId": 46,
+        "invocationMs": 26.045753,
+        "recoveryMs": 26.562898,
+        "producerMs": 26.563449,
+        "resumeMs": 26.564822,
+        "validatedMs": 26.565233,
+        "candidates": 1,
+        "overflow": false,
+        "resources": [
+          {
+            "id": 124,
+            "type": "FSREQPROMISE",
+            "trigger": 46,
+            "initMs": 26.055472,
+            "beforeCount": 1,
+            "afterCount": 1,
+            "firstBeforeMs": 26.54239,
+            "lastAfterMs": 26.543201,
+            "destroyMs": 26.882361
+          }
+        ],
+        "correlation": "isolated-single-resource"
+      },
+      {
+        "call": 13,
+        "executionId": 46,
+        "invocationMs": 26.0654,
+        "recoveryMs": 26.662717,
+        "producerMs": 26.663288,
+        "resumeMs": 26.66479,
+        "validatedMs": 26.665141,
+        "candidates": 1,
+        "overflow": false,
+        "resources": [
+          {
+            "id": 132,
+            "type": "FSREQPROMISE",
+            "trigger": 46,
+            "initMs": 26.071081,
+            "beforeCount": 1,
+            "afterCount": 1,
+            "firstBeforeMs": 26.581924,
+            "lastAfterMs": 26.63788,
+            "destroyMs": 26.882771
+          }
+        ],
+        "correlation": "isolated-single-resource"
+      },
+      {
+        "call": 14,
+        "executionId": 46,
+        "invocationMs": 26.080769,
+        "recoveryMs": 26.694006,
+        "producerMs": 26.694356,
+        "resumeMs": 26.695629,
+        "validatedMs": 26.695909,
+        "candidates": 1,
+        "overflow": false,
+        "resources": [
+          {
+            "id": 140,
+            "type": "FSREQPROMISE",
+            "trigger": 46,
+            "initMs": 26.088955,
+            "beforeCount": 1,
+            "afterCount": 1,
+            "firstBeforeMs": 26.674328,
+            "lastAfterMs": 26.67509,
+            "destroyMs": 26.883292
+          }
+        ],
+        "correlation": "isolated-single-resource"
+      }
+    ]
+  },
+  "intervals": [
+    {
+      "call": 1,
+      "invocationToBeforeMs": 0.141687000000001,
+      "afterToRecoveryMs": null
+    },
+    {
+      "call": 2,
+      "invocationToBeforeMs": 0.06795800000000085,
+      "afterToRecoveryMs": 0.0848600000000026
+    },
+    {
+      "call": 3,
+      "invocationToBeforeMs": 0.39616700000000193,
+      "afterToRecoveryMs": 0.031860000000001776
+    },
+    {
+      "call": 4,
+      "invocationToBeforeMs": 0.40674700000000286,
+      "afterToRecoveryMs": 0.02305300000000088
+    },
+    {
+      "call": 5,
+      "invocationToBeforeMs": 0.40545399999999887,
+      "afterToRecoveryMs": 0.021980999999996698
+    },
+    {
+      "call": 6,
+      "invocationToBeforeMs": 0.4076090000000008,
+      "afterToRecoveryMs": 0.023944999999997663
+    },
+    {
+      "call": 7,
+      "invocationToBeforeMs": 0.4195709999999977,
+      "afterToRecoveryMs": 0.019327000000000538
+    },
+    {
+      "call": 8,
+      "invocationToBeforeMs": 0.42255600000000015,
+      "afterToRecoveryMs": 0.01836399999999827
+    },
+    {
+      "call": 9,
+      "invocationToBeforeMs": 0.42731600000000114,
+      "afterToRecoveryMs": 0.029635999999999996
+    },
+    {
+      "call": 10,
+      "invocationToBeforeMs": 0.4518120000000003,
+      "afterToRecoveryMs": 0.024927000000001698
+    },
+    {
+      "call": 11,
+      "invocationToBeforeMs": 0.4653279999999995,
+      "afterToRecoveryMs": 0.027340999999999838
+    },
+    {
+      "call": 12,
+      "invocationToBeforeMs": 0.4966369999999998,
+      "afterToRecoveryMs": 0.01969700000000074
+    },
+    {
+      "call": 13,
+      "invocationToBeforeMs": 0.5165240000000004,
+      "afterToRecoveryMs": 0.024837000000001552
+    },
+    {
+      "call": 14,
+      "invocationToBeforeMs": 0.5935589999999991,
+      "afterToRecoveryMs": 0.01891600000000082
+    }
+  ],
+  "cleanup": {
+    "hookStopped": true,
+    "trackedAfterStop": 0,
+    "fixtureRemoved": true
+  },
+  "limitations": [
+    "No OS completion, Promise settlement, or exclusive filesystem/thread-pool attribution.",
+    "before/after are resource callback boundaries; counts are retained without assuming one-to-one operation mapping.",
+    "destroy is optional lifetime evidence, never a completion timestamp.",
+    "Capture contract is established only for this helper fixture; Contact integration is not established.",
+    "Global hook dispatch and synchronous marker overhead are uncalibrated; this run is not comparable to alpha.28 load timings."
+  ],
+  "http": {
+    "performed": false,
+    "reason": "No existing synchronous per-lifecycle capture seam in Contact harness; omitted to keep this diagnostic spike bounded."
+  },
+  "verification": {
+    "focusedCommand": "node --test --test-isolation=none test/fsreqpromise-correlation.test.js test/lifecycle-lstat-timing.test.js test/http-diagnostics.test.js test/wydstore-sqlite.test.js",
+    "passed": 29,
+    "failed": 0,
+    "skipped": 0,
+    "initialSandboxSelection": {
+      "passed": 15,
+      "failed": 4,
+      "reason": "HTTP loopback listen EPERM; subsequently passed outside sandbox"
+    },
+    "check": "npm run check: 3 complete pages, 42 internal links and unique anchors",
+    "syntax": "three changed JavaScript files pass node --check",
+    "dependencyManifests": "unchanged",
+    "omitted": [
+      "full npm test",
+      "installed qualification suites",
+      "Contact reproduction"
+    ]
+  }
+}
