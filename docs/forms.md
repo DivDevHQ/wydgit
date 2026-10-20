@@ -81,7 +81,10 @@ CALL Me.Clear()
   Call Validate after changing values. Page submission always validates first.
 - `Clear()` uses the empty values above, resets validation to its initial valid
   state and preserves every configuration/layout property. It does not restore
-  authored defaults. A distinct Reset operation is deferred.
+  authored defaults. A distinct Reset operation is deferred. Page Clear skips
+  redundant primitive/empty-array candidates inside the ordinary authorized edit
+  session, while retaining all guards and a fresh validated commit. It stores no
+  initialization or saved-state snapshot; see [Spike E qualification](work-in-progress/http-form-clear-spike-e.md).
 
 Disabled fields may be bound and collected: enabled controls interaction, not
 existence. Visible controls presentation, not membership. Each request starts from

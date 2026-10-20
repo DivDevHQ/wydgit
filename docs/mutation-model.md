@@ -40,6 +40,14 @@ its edit API: a genuine context and explicit grants are mandatory.
 | `abort()` | Close the session without producing a new runtime. |
 
 All operation return values except `changes()` and `commit()` are undefined.
+Page Form Clear alone avoids submitting redundant primitive/empty-array writes,
+after checking the same live capability and visibility/edit grants for each
+requested write. Its trusted helper compares each distinct generated property
+against the current canonical pre-Clear runtime; it is not a general edit API.
+Changed properties retain ordinary sequential candidate validation. Even an
+unchanged Clear commits a fresh validated snapshot and advances the revision.
+See [Spike E qualification](work-in-progress/http-form-clear-spike-e.md).
+
 Successful commit/abort closes the session; subsequent calls fail with
 `MUTATION.CLOSED`. Failed operations and failed commits leave it open for repair
 or retry. References to caller-supplied envelopes and property values are never
@@ -80,8 +88,8 @@ field-level persistence tracker.
 
 ## Validation and atomicity
 
-Each operation copies the accepted working tree, makes its candidate change, and
-runs the same canonical hydration validation. The candidate replaces working state
+Each applied operation copies the accepted working tree, makes its candidate
+change, and runs the same canonical hydration validation. The candidate replaces working state
 only after validation succeeds. Minimum/maximum cardinality, child types,
 properties, duplicate IDs, cycles and single-root/single-parent containment apply
 immediately. Invalid intermediate states are deliberately unsupported. Use replace

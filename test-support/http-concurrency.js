@@ -70,6 +70,7 @@ export async function runContactWindow(configuration,{signal}={}) {
   const after=[],local=new AsyncLocalStorage(),records=new Map(),serverRequests=new Map(),admissions=new Map();
   const result={schema:'wydgine.http-concurrency-window/1',...configuration,clientPlacement,runtime:process.version,platform:process.platform,
     setup:null,requests:[],nativeRequests:[],traces:[],actualConcurrency:null,fixtureFailure:null,cleanupComplete:false};
+  const clearRows=[];let droppedClears=0;
   const resourceProbe=createFsreqpromiseProbe({enabled:configuration.resourceCorrelation===true,maxCalls:configuration.inspectionCorrelation?512:32,maxResources:configuration.inspectionCorrelation?512:32});
   let server,app,barrier;
   const agent=new http.Agent({keepAlive:false,maxSockets:12});
@@ -80,7 +81,7 @@ export async function runContactWindow(configuration,{signal}={}) {
       input:Readable.from(['y','y','contact','contact','sections','0',provider,'','y','y'].map(value=>value+'\n')),output:{write(){}}});
     app=await createHostApp({root:fixture.root,logger:{error(){}},
       admit(){const index=local.getStore(),span={start:performance.now(),end:null};admissions.set(index,span);return ()=>{span.end=performance.now();};},
-      execution:diagnosticsEnabled?{...(configuration.resourceCorrelation===true?{...(configuration.nativeGap?{observeNativeGap:({operation})=>resourceProbe.native({request:local.getStore(),operation})}:{}),observeLifecycleLstat:({operation})=>resourceProbe.observe({request:local.getStore(),operation}),...(configuration.inspectionCorrelation?{observeSqliteInspection:({operation})=>resourceProbe.inspect({request:local.getStore(),operation})}:{})}:{}),observeHttp:record=>{const index=local.getStore();if(Number.isInteger(index)&&index>=0&&index<=12&&!records.has(index))records.set(index,record);}}:{}});
+      execution:diagnosticsEnabled?{...(configuration.formClear?{observeFormClear:row=>{if(clearRows.length<64)clearRows.push({request:local.getStore(),...row});else droppedClears++;}}:{}),...(configuration.resourceCorrelation===true?{...(configuration.nativeGap?{observeNativeGap:({operation})=>resourceProbe.native({request:local.getStore(),operation})}:{}),observeLifecycleLstat:({operation})=>resourceProbe.observe({request:local.getStore(),operation}),...(configuration.inspectionCorrelation?{observeSqliteInspection:({operation})=>resourceProbe.inspect({request:local.getStore(),operation})}:{})}:{}),observeHttp:record=>{const index=local.getStore();if(Number.isInteger(index)&&index>=0&&index<=12&&!records.has(index))records.set(index,record);}}:{}});
     server=http.createServer({maxHeaderSize:8192},(req,res)=>{
       const index=Number(req.headers['x-fixture-sequence']),span={start:performance.now(),end:null};serverRequests.set(index,span);
       const end=()=>{span.end??=performance.now();};res.once('finish',end);res.once('close',end);
@@ -130,6 +131,7 @@ export async function runContactWindow(configuration,{signal}={}) {
     }]);
     resourceProbe.stop();
     if(configuration.resourceCorrelation===true)result.resourceCorrelation=resourceProbe.snapshot();
+    if(configuration.formClear)result.formClear={rows:clearRows,dropped:droppedClears};
     result.cleanupComplete=failed===0;if(failed)result.fixtureFailure??='cleanup';
   }
   for(const request of result.requests){request.classification=classifyOutcome(request.client,records.get(request.index));

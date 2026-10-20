@@ -1,5 +1,12 @@
 ## Unreleased
 
+- Qualify Form Clear cost with opt-in stage timing and repeated serial/Contact
+  comparisons. Page Clear skips redundant primitive and empty-array candidates
+  after ordinary mutation checks, preserving fresh commits and empty-value
+  semantics without snapshots. Contact improves from 11/36 to 16/36 HTTP 200 in
+  the retained comparison; 20 indeterminate failures remain. Keep versions and
+  the 1,000 ms Page limit unchanged; WYDGINE-0.3-HTTP-LIMIT remains open.
+
 - Partition native completion to the next SQLite inspection with opt-in bounded
   Page/dispatch/Store markers. One retained twelve-way Contact window has twelve
   complete call-pair partitions; Form Clear occupies much of the largest Page

@@ -1,4 +1,6 @@
 import {createPageDiagnostics} from './diagnostics.js';
+import {formClearObservation} from './form-clear-observation.js';
+import {setClearProperty} from './form-clear-edit.js';
 import {createInstanceController} from './instances.js';
 import {createCompletion} from './completion.js';
 import {executionBudget} from '../sewn/budget.js';
@@ -17,7 +19,7 @@ import { webModel } from '../web-model.js';
 import { renderSite,errorDocument } from '../index.js';
 import { prepareComponents,createPresentationLedger } from '../components.js';
 
-export async function executePage({model,pageId,session,input,context,runtimeSettings={},handlers=[],actions=[],events=new EventRegistry(),files,libraries,serviceMappings,csrf,render=renderSite,observe,onAdmission,observeLifecycleLstat,observeSqliteInspection,observeNativeGap,diagnosticProgress=typeof observe==='function',cancelled=()=>false}) {
+export async function executePage({model,pageId,session,input,context,runtimeSettings={},handlers=[],actions=[],events=new EventRegistry(),files,libraries,serviceMappings,csrf,render=renderSite,observe,onAdmission,observeLifecycleLstat,observeSqliteInspection,observeNativeGap,observeFormClear,diagnosticProgress=typeof observe==='function',cancelled=()=>false}) {
   const diagnostics=createPageDiagnostics();
   handlers=prepareHandlers(handlers,events);actions=actions.map(record=>prepareAction(record,events));
   check(context.app===session.view.app&&session.active(),'EVENT.DENIED','Invalid owning Session');
@@ -51,7 +53,31 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
       check(added.every(value=>!reserved.has(value)),'MUTATION.IDENTITY','Request IDs cannot be reused');added.forEach(value=>reserved.add(value));runtime=next;
     };
     const result=Object.freeze({get id(){guard();return id;},get prototype(){guard();return node().prototype;},get properties(){guard();return publicProperties(node(),model.registry);},
-      FormState(operation,data){const end=operation==='clear'?completion.pageClear():undefined;try{guard();check(model.registry.isA(node().prototype,'wydgit.core/form'),'FORM.OPERATION','Receiver must be Form');check(context.traversal.includes('children'),'SEAM.TRAVERSAL','Form traversal denied');const fields=descendantFields(runtime,model.registry,id,context);check(fields.every(f=>matchesObjectGrant(context.visible, f.id)),'SEAM.VISIBILITY','Invisible Form field');const changes=[];const value=formOperation(fields,model.registry,operation,data,(id,p)=>changes.push([id,p]));if(operation==='validate')changes.push([id,{valid:value}]);if(operation==='clear')changes.push([id,{valid:true}]);if(changes.length){guard();check(writable&&!unloading&&response.state==='Open','EVENT.DENIED','Tree is read-only');const edit=runtime.edit(context);for(const [id,p] of changes)for(const [key,v] of Object.entries(p))edit.setProperty(id,key,v);runtime=edit.commit().runtime;}return value;}finally{end?.();}},
+      FormState(operation,data){
+        const end=operation==='clear'?completion.pageClear():undefined;
+        const observation=operation==='clear'?formClearObservation(diagnosticProgress,observeFormClear):null;
+        const measure=(stage,work)=>observation?observation.measure(stage,work):work();
+        try{
+          guard();check(model.registry.isA(node().prototype,'wydgit.core/form'),'FORM.OPERATION','Receiver must be Form');
+          check(context.traversal.includes('children'),'SEAM.TRAVERSAL','Form traversal denied');
+          const fields=measure('traversalMs',()=>{
+            const fields=descendantFields(runtime,model.registry,id,context);
+            check(fields.every(f=>matchesObjectGrant(context.visible,f.id)),'SEAM.VISIBILITY','Invisible Form field');return fields;
+          });
+          observation?.fields(fields.length);
+          const changes=[];
+          const value=measure('calculationMs',()=>formOperation(fields,model.registry,operation,data,(id,p)=>changes.push([id,p])));
+          if(operation==='validate')changes.push([id,{valid:value}]);
+          if(operation==='clear')changes.push([id,{valid:true}]);
+          if(changes.length){
+            guard();check(writable&&!unloading&&response.state==='Open','EVENT.DENIED','Tree is read-only');
+            const edit=measure('editSetupMs',()=>runtime.edit(context));
+            measure('runtimeEditsMs',()=>{for(const [id,p] of changes)for(const [key,v] of Object.entries(p)){const applied=operation==='clear'?setClearProperty(edit,runtime,context,id,key,v):edit.setProperty(id,key,v);observation?.write(applied!==false);}});
+            runtime=measure('commitMs',()=>edit.commit().runtime);
+          }
+          observation?.complete();return value;
+        }finally{observation?.finish();end?.();}
+      },
       related(relation,slot){guard();check(exists(id),'EVENT.DENIED','Removed object');const related=runtime.scope(context,id).related(relation,slot);const wrap=value=>{check(exists(value.id),'EVENT.DENIED','Outside Page');return handle(value.id,invocation);};return Array.isArray(related)?Object.freeze(related.map(wrap)):related?wrap(related):null;},
       Set(name,value){authorizeMember(model.registry,resolveMember(model.registry.get(node().prototype),'property',name),null,context);edit('setProperty',name,value);},Insert(slot,index,envelope){edit('insertChild',slot,index,envelope);},Remove(){check(id!==pageId,'EVENT.DENIED','Page root immutable');edit('remove');},Replace(envelope){check(id!==pageId,'EVENT.DENIED','Page root immutable');edit('replaceChild',envelope);},Move(parent,slot,index){check(ownedHandles.has(parent),'EVENT.DENIED','Foreign handle');check(id!==pageId,'EVENT.DENIED','Page root immutable');edit('moveChild',parent.id,slot,index);}
     });bindMembers(result,{context,executable:()=>check(componentsRuntime.executable(id),'EVENT.DENIED','Disposed instance method'),node:()=>{guard();return node();},read:name=>{guard();return name==='value'&&model.registry.isA(node().prototype,'wydgit.core/password-input')?'':node().properties[name];},set:(name,value)=>edit('setProperty',name,value)});ownedHandles.add(result);cache.set(id,result);return result;

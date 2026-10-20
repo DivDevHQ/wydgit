@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createHook} from 'node:async_hooks';
+import {createHook,AsyncLocalStorage} from 'node:async_hooks';
 import {createCompletion} from '../wydgine/execution/completion.js';
 import {createPageDiagnostics} from '../packages/wydgine/src/engine/execution/diagnostics.js';
 import {createFsreqpromiseProbe} from '../test-support/fsreqpromise-correlation.js';
@@ -60,9 +60,11 @@ test('disabled/failing factory or markers preserve results and resource counts',
       calls++;if(mode==='factory')throw Error('private');
       const observer=probe.native({request:1,operation});return mode==='marker'?{...observer,dispatch(){throw Error('private');}}:observer;
     }});
-    const row={},hook=createHook({init(_id,type){if(['PROMISE','Timeout','Immediate','FSREQPROMISE'].includes(type))row[type]=(row[type]??0)+1;}});
+    const row={},local=new AsyncLocalStorage(),token=Object.freeze({}),hook=createHook({init(_id,type){if(local.getStore()===token&&['PROMISE','Timeout','Immediate','FSREQPROMISE'].includes(type))row[type]=(row[type]??0)+1;}});
     await Promise.resolve();
-    hook.enable();try{assert.equal(await c.run(op=>{op.storeEntry?.();return 'unchanged';}),'unchanged');await c.settle();}finally{hook.disable();}
+    // Count only resources created inside this measured operation's async scope;
+    // unrelated test-runner reactions may otherwise arrive between modes.
+    hook.enable();try{await local.run(token,async()=>{assert.equal(await c.run(op=>{op.storeEntry?.();return 'unchanged';}),'unchanged');await c.settle();});}finally{hook.disable();local.disable();}
     counts.push(row);if(mode==='disabled')assert.equal(calls,0);if(mode==='marker')assert.equal(probe.snapshot().stopped,true);
   }
   // Diagnostic continuation accounting is enabled in the three observed modes.

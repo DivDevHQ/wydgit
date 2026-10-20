@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {createHash} from 'node:crypto';
+import {gunzipSync} from 'node:zlib';
 import {partitionNativeGaps} from '../test-support/native-settlement-gap.js';
 const evidence=JSON.parse(await fs.readFile(new URL('../test-support/http-native-settlement-gap-evidence-2026-10-19.json',import.meta.url)));
 
@@ -11,11 +12,19 @@ test('retained Spike D artifacts and captured source fingerprint reproduce their
   const artifacts={'summary.json':evidence.series,[file]:evidence.window,
     'first-matching-trace.json':{configuration,window:file,trace:evidence.window.traces.find(t=>t.matchingHistoricalSignature)}};
   for(const [name,value]of Object.entries(artifacts))assert.equal(createHash('sha256').update(JSON.stringify(value,null,2)+'\n').digest('hex'),evidence.artifacts[name].sha256,name);
-  const hash=createHash('sha256');
-  const visit=async file=>{const stat=await fs.stat(file);if(stat.isDirectory())for(const name of(await fs.readdir(file)).sort())await visit(file+'/'+name);
-    else{const bytes=await fs.readFile(file);hash.update(file+'\0'+bytes.length+'\0');hash.update(bytes);}};
-  for(const root of ['packages/wydgine/src','packages/wydstore/src'])await visit(root);
-  assert.equal(hash.digest('hex'),evidence.series.fingerprints.implementation,'capture/runtime code unchanged since the single run');
+  // Spike E intentionally changes runtime code. Verify the immutable captured
+  // source, rather than requiring every future runtime to equal Spike D.
+  const source=JSON.parse(gunzipSync(await fs.readFile(new URL('../test-support/http-native-settlement-gap-source-2026-10-19.json.gz',import.meta.url))));
+  assert.equal(source.schema,'wydgine.captured-source/1');
+  assert.equal(source.sourceCommit,'0eb374f105c73b9c8ca555ec5bd4dc5ee3ecb3c5');
+  assert.deepEqual(source.roots,['packages/wydgine/src','packages/wydstore/src']);
+  const hash=createHash('sha256'),seen=new Set();
+  for(const {path,base64}of source.files){
+    assert.ok(source.roots.some(root=>path.startsWith(root+'/'))&&!path.split('/').includes('..')&&!seen.has(path));seen.add(path);
+    const bytes=Buffer.from(base64,'base64');hash.update(path+'\0'+bytes.length+'\0');hash.update(bytes);
+  }
+  assert.equal(hash.digest('hex'),evidence.series.fingerprints.implementation,'original capture source fingerprint');
+  assert.equal(source.implementationSha256,evidence.series.fingerprints.implementation);
 });
 
 test('retained Spike D identities, partitions, outcomes and FS resources independently audit',async()=>{
