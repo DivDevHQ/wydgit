@@ -8,7 +8,10 @@ export async function checkLifecycleLock(root, name, lifecycle = false, completi
   let marker;
   observation?.start();
   try {
-    marker = await lstat(path.join(root, name + '.lifecycle')).catch(error => {
+    let pending;
+    try { pending = lstat(path.join(root, name + '.lifecycle')); }
+    finally { observation?.invoked?.(); }
+    marker = await pending.catch(error => {
       // This is the existing Promise rejection reaction, NOT a raw fs callback.
       observation?.recoveryEntry();
       try {

@@ -17,7 +17,7 @@ import { webModel } from '../web-model.js';
 import { renderSite,errorDocument } from '../index.js';
 import { prepareComponents,createPresentationLedger } from '../components.js';
 
-export async function executePage({model,pageId,session,input,context,runtimeSettings={},handlers=[],actions=[],events=new EventRegistry(),files,libraries,serviceMappings,csrf,render=renderSite,observe,onAdmission,diagnosticProgress=typeof observe==='function',cancelled=()=>false}) {
+export async function executePage({model,pageId,session,input,context,runtimeSettings={},handlers=[],actions=[],events=new EventRegistry(),files,libraries,serviceMappings,csrf,render=renderSite,observe,onAdmission,observeLifecycleLstat,diagnosticProgress=typeof observe==='function',cancelled=()=>false}) {
   const diagnostics=createPageDiagnostics();
   handlers=prepareHandlers(handlers,events);actions=actions.map(record=>prepareAction(record,events));
   check(context.app===session.view.app&&session.active(),'EVENT.DENIED','Invalid owning Session');
@@ -25,7 +25,7 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
   const presentationLedger=createPresentationLedger(context,pageId,runtimeSettings);
   let runtime=hydrate(dehydrate(model.runtime,{includeSensitive:true}),model.registry),alive=true,writable=true,unloading=false;
   const executionLedger=createObservedExecutionBudget(context,{progress:diagnosticProgress,guard:()=>check(alive&&session.active()&&!cancelled(),'EVENT.DENIED','Page execution ended')});
-  const completion=createCompletion(()=>executionBudget(executionLedger,context).check(),{diagnosticTiming:diagnosticProgress});
+  const completion=createCompletion(()=>executionBudget(executionLedger,context).check(),{diagnosticTiming:diagnosticProgress,observeLifecycleLstat});
   diagnostics.budgetStarted(budgetProgress(executionLedger),completion);
   handlers=diagnostics.handlers(handlers);actions=diagnostics.handlers(actions);
   try{onAdmission?.();}catch{/* Trusted observation cannot alter admission. */}

@@ -1,5 +1,11 @@
 ## Unreleased
 
+- Establish test-only per-invocation Contact lifecycle FSREQPROMISE attribution
+  through an optional synchronous diagnostic seam. One twelve-way SQLite window
+  correlates all 24 POST lifecycle calls and preserves 1 HTTP 200 / 11 deadline
+  HTTP 500 outcomes. Keep alpha.28 versions and WYDGINE-0.3-HTTP-LIMIT open;
+  no production correction or release.
+
 - Add a default-disabled test-only FSREQPROMISE correlation probe. Isolated real
   lifecycle fixtures establish bounded resource attribution and callback/Promise
   marker evidence; concurrent Contact attribution remains unproven. Retain alpha.28

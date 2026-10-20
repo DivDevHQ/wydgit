@@ -2,7 +2,7 @@
 import {performance} from 'node:perf_hooks';
 import {createContinuationTiming} from './continuation.js';
 const stages=new Set(['dispatchValidation','dispatchAuthorization','nativeHandler','jsonQueue','jsonWork','sqlitePreflight','sqliteLifecycle','sqliteTransaction']);
-export function createCompletion(check,{diagnosticTiming=false,now=()=>performance.now()}={}) {
+export function createCompletion(check,{diagnosticTiming=false,observeLifecycleLstat,now=()=>performance.now()}={}) {
   const pending=new Set(),effects=[];let closed=false;
   const timings=diagnosticTiming?Object.create(null):null;
   const continuations=diagnosticTiming?createContinuationTiming(now):null;
@@ -18,7 +18,17 @@ export function createCompletion(check,{diagnosticTiming=false,now=()=>performan
       const effect={state:'none',started:false};effects.push(effect);
       const operation=Object.freeze({
         check,
-        ...(diagnosticTiming?{stage,continuation:name=>continuations.begin(name)}:{}),
+        ...(diagnosticTiming?{stage,continuation:name=>{
+          const observation=continuations.begin(name);
+          if(name!=='sqliteLifecycleLstat'||typeof observeLifecycleLstat!=='function')return observation;
+          // Trusted qualification seam. Fixed markers only; never canonical data.
+          let observer;
+          try { observer=observeLifecycleLstat({operation:effects.indexOf(effect)+1}); } catch { return observation; }
+          return Object.freeze(Object.fromEntries(['start','invoked','recoveryEntry','enoent','complete','resume','validated'].map(key=>[key,()=>{
+            observation?.[key]?.();
+            try { observer?.[key]?.(); } catch { try { observer?.cancel?.(); } catch {} observer=null; }
+          }])));
+        }}:{}),
         begin(){check();effect.started=true;effect.state='indeterminate';},
         cancelled(){if(effect.state==='indeterminate')effect.state='none';},
         committed(){effect.state='committed';}
