@@ -659,10 +659,11 @@ function guardInstalledExecution(root,entry,context) {
   // Trusted local-filesystem writer contract: rename and in-place writes change
   // inode/ctime. Check cheap metadata on every boundary; revalidate durable bytes
   // whenever the catalog or a recovery barrier changes. No timer/cache grace period.
+  // Resolve immutable names once; every stamp still obtains fresh metadata.
   const files=[STATE,'wydgit.config.json','content/.package-install.lock','content/.package-recovery.lock',
-    'content/.package-infrastructure.json','content/package-effects.json','content/package-operation.json'];
+    'content/.package-infrastructure.json','content/package-effects.json','content/package-operation.json'].map(file=>path.join(root,file));
   const stamp=()=>files.map(file=>{
-    const s=lstatSync(path.join(root,file),{bigint:true,throwIfNoEntry:false});
+    const s=lstatSync(file,{bigint:true,throwIfNoEntry:false});
     return s;
   });
   const validate=()=>{

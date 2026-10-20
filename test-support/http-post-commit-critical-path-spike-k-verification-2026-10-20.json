@@ -1,0 +1,271 @@
+{
+  "schema": "wydgine.post-commit-spike-k-verification/1",
+  "date": "2026-10-20",
+  "node": "v24.21.0",
+  "branch": "develop/0.3",
+  "baseline": "1277d456dcc600f076c88efc68a26e1f8fb7eec0",
+  "runs": {
+    "initialFocused": {
+      "command": "node --test: 8 deadline/canonical/Form/completion/installation/authorization files",
+      "exitCode": 0,
+      "log": "/tmp/wyd-spike-k/focused-initial.log",
+      "logSha256": "ba33420158f2cd2a5ea354af015f48cf849c2d1affca2a1daf0861dbaab269cc",
+      "tests": 138,
+      "pass": 138,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 4595.331832
+    },
+    "focused": {
+      "command": "node --test test/deadline-ledger.test.js test/post-commit-scenarios.test.js test/post-commit-evidence.test.js test/installation-stamp.test.js test/canonical-page-edit.test.js test/form-clear.test.js test/operation-completion.test.js test/sewn-shared-budget.test.js test/backoffice-placement.test.js test/scoped-store-authorization.test.js test/http-diagnostics.test.js test/http-concurrency.test.js test/package-lifecycle.test.js test/scoped-policy-lifecycle.test.js packages/wydclient/test/artifact-policy.test.js packages/wydclient/test/bundle.test.js",
+      "exitCode": 0,
+      "log": "/tmp/wyd-spike-k/focused-verified.log",
+      "logSha256": "54ede85721560486383859e819a4de9b4642f36ebd718d2c3800fbdc0f9286a7",
+      "tests": 228,
+      "pass": 228,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 9949.120992
+    },
+    "finalScenario": {
+      "command": "node --test test/post-commit-scenarios.test.js",
+      "exitCode": 0,
+      "log": "/tmp/wyd-spike-k/scenarios-final.log",
+      "logSha256": "1a899d9e2374c1e94d0aac65a9aabb0de03844650c9377a186b2fb788375b149",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 956.373459
+    },
+    "full": {
+      "command": "npm test (includes npm run build:client pretest)",
+      "exitCode": 0,
+      "log": "/tmp/wyd-spike-k/full.log",
+      "logSha256": "479f5e3ca55b8f8bab91e909d09da3c1baf5f96253bf1c0bc328b1779a03346b",
+      "tests": 1759,
+      "pass": 1759,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 75807.255009
+    },
+    "installedIntegration": {
+      "command": "node scripts/verify-packed-packages.js: installed five-library integration",
+      "exitCode": 0,
+      "log": "/tmp/wyd-i54-packed-bT1uqt/five-library-tests.log",
+      "logSha256": "744529ee6a5243b739ab24c237360c89efec764346e759d46f8a3cc10324393d",
+      "tests": 413,
+      "pass": 413,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 19464.139602
+    },
+    "provider": {
+      "command": "node scripts/verify-packed-packages.js: installed provider qualification",
+      "exitCode": 0,
+      "log": "/tmp/wyd-i54-packed-bT1uqt/provider-tests.log",
+      "logSha256": "40bdaf8233c42492648be1760bae261f5ec9feed722629d9114d2c4a4a97aba7",
+      "tests": 35,
+      "pass": 35,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 2058.858507
+    },
+    "processSupervision": {
+      "command": "node scripts/verify-packed-packages.js: actual installed worker supervision",
+      "exitCode": 0,
+      "log": "/tmp/wyd-i54-packed-bT1uqt/process-supervision.log",
+      "logSha256": "769efb56b315edc5fd9bf637f076cb66bc5d6880b1b39a91913344abed57e3e6",
+      "tests": 20,
+      "pass": 20,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 43008.942515
+    },
+    "linuxBoundaries": {
+      "command": "node scripts/verify-packed-packages.js: Linux/Unix boundaries",
+      "exitCode": 0,
+      "log": "/tmp/wyd-i54-packed-bT1uqt/linux-boundaries.log",
+      "logSha256": "619001d616215c69de515eb7da78c3cda9d74415ec75d512c3dd5abd382f06cc",
+      "tests": 25,
+      "pass": 25,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 4677.353659
+    }
+  },
+  "focusedFiles": [
+    "test/deadline-ledger.test.js",
+    "test/post-commit-scenarios.test.js",
+    "test/post-commit-evidence.test.js",
+    "test/installation-stamp.test.js",
+    "test/canonical-page-edit.test.js",
+    "test/form-clear.test.js",
+    "test/operation-completion.test.js",
+    "test/sewn-shared-budget.test.js",
+    "test/backoffice-placement.test.js",
+    "test/scoped-store-authorization.test.js",
+    "test/http-diagnostics.test.js",
+    "test/http-concurrency.test.js",
+    "test/package-lifecycle.test.js",
+    "test/scoped-policy-lifecycle.test.js",
+    "packages/wydclient/test/artifact-policy.test.js",
+    "packages/wydclient/test/bundle.test.js"
+  ],
+  "contentCheck": {
+    "command": "npm run check",
+    "exitCode": 0,
+    "pages": 3,
+    "internalLinksAndUniqueAnchors": 42,
+    "logSha256": "1dcdec3effdcf658e3ba58a49d0e4da2c29bd4f126ca270ef5bce1e9acddf607"
+  },
+  "installedProof": {
+    "command": "node scripts/verify-packed-packages.js",
+    "exitCode": 0,
+    "evidenceDirectory": "/tmp/wyd-i54-packed-bT1uqt",
+    "logSha256": "83201f51908ad2dbdd81a03da1e66f611371b645b38db26ef2f501affb736e28",
+    "serviceFreeBinaryHttpAssetsRestart": true,
+    "checkoutImportsRejected": true,
+    "oneEnginePerConsumer": true,
+    "skipCount": 0
+  },
+  "frozenClient": {
+    "version": "0.1.0-alpha.11",
+    "pretestBuildPassed": true,
+    "approvedHistoryAndRebuildTestsPassed": true,
+    "artifactChanges": false,
+    "sharedImportClosureChanged": false
+  },
+  "preservedEarlierFailures": {
+    "restrictedScenarioInvocation": {
+      "command": "node --test test/post-commit-scenarios.test.js (restricted environment)",
+      "exitCode": 1,
+      "log": "/tmp/wyd-spike-k/scenarios.log",
+      "logSha256": "06cba011c91a321b2be2e43839ae76e9f4c2b7ae3d668164517a1a3d5b891fdb",
+      "tests": 1,
+      "pass": 0,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 331.127818
+    },
+    "evidenceFieldAssertion": {
+      "command": "same 16-file focused selection, before code -> exitCode evidence assertion fix",
+      "exitCode": 1,
+      "log": "/tmp/wyd-spike-k/focused-final.log",
+      "logSha256": "840b0a698e25977672bdb347790c483e6c27a106b88653bb598f88fd25e827ab",
+      "tests": 228,
+      "pass": 227,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 10018.678446
+    },
+    "nativeEvidenceCorrection": {
+      "command": "node --test test/post-commit-evidence.test.js",
+      "exitCode": 0,
+      "log": "/tmp/wyd-spike-k/evidence-fixed.log",
+      "logSha256": "435f608fcf2798b1953919d33ab725b4be33343d275d44120e116b59462147ed",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 433.95327
+    },
+    "notes": [
+      "Restricted scenario invocation reported a process-level test failure without a detailed assertion; identical native rerun passed. It is not credited as a pass.",
+      "Initial restricted Contact preflight returned setup-or-execution with no HTTP requests; raw result is archived.",
+      "One exploratory extended worker failed strict diagnostic-hook composition, exited 1, preserved with stderr and no requests. Primary series began after repair.",
+      "No runtime/security failure is waived; final full and focused runs have zero failures/cancellations/skips."
+    ]
+  },
+  "deliveryPreflight": {
+    "fetch": "git fetch origin",
+    "head": "1277d456dcc600f076c88efc68a26e1f8fb7eec0",
+    "remoteHead": "1277d456dcc600f076c88efc68a26e1f8fb7eec0",
+    "ahead": 0,
+    "behind": 0,
+    "initialWorkingTree": "clean"
+  },
+  "checks": {
+    "diffCheck": true,
+    "versionsChanged": false,
+    "shippedRuntimeChanged": true,
+    "shippedRuntimeScope": "Only packages/wydgine/src/engine/packages/index.js: precompute 7 lexical paths; retain every inspection.",
+    "clientArtifactsChanged": false,
+    "cirChanged": false,
+    "priorEvidenceChanged": false
+  },
+  "http": {
+    "primary-before": {
+      "windows": 31,
+      "requests": 339,
+      "http200": 309,
+      "http500": 30,
+      "knownCommits": 219,
+      "knownCompletedNative": 438,
+      "observedDeadlineExhaustions": 34,
+      "reconciledRecords": 339,
+      "classifications": {
+        "1": 0,
+        "2": 0,
+        "3": 30,
+        "4": 0,
+        "5": 0,
+        "6": 0,
+        "7": 309,
+        "unknown": 0
+      }
+    },
+    "primary-after": {
+      "windows": 31,
+      "requests": 339,
+      "http200": 336,
+      "http500": 3,
+      "knownCommits": 219,
+      "knownCompletedNative": 438,
+      "observedDeadlineExhaustions": 4,
+      "reconciledRecords": 339,
+      "classifications": {
+        "1": 0,
+        "2": 0,
+        "3": 3,
+        "4": 0,
+        "5": 0,
+        "6": 0,
+        "7": 336,
+        "unknown": 0
+      }
+    }
+  },
+  "issue": {
+    "id": "WYDGINE-0.3-HTTP-LIMIT",
+    "status": "OPEN"
+  },
+  "notes": [
+    "All authored source/tests/docs and final source archive preceded the final required check/full suite. This generated record only records their completed outputs; it is not a runtime edit.",
+    "Exactly one full repository suite was run. No test was removed, skipped or weakened.",
+    "Installed qualification uses private local tarballs and real Unix/process boundaries; no package publication, release tag or deployment.",
+    "Commit/push hash and final remote/working-tree proof are reported in the delivery handoff; a commit cannot contain its own hash."
+  ]
+}

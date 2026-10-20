@@ -1,5 +1,11 @@
 # HTTP concurrency qualification — alpha.25
 
+The later [Spike K post-commit audit](work-in-progress/http-post-commit-critical-path-spike-k.md)
+records exact Page-budget boundaries and repeated committed-write/deadline failure
+timelines. Resolving immutable installation paths once reduces stamp cost while
+preserving every fresh inspection. Corrected attributed windows still fail;
+WYDGINE-0.3-HTTP-LIMIT remains OPEN.
+
 The later [Spike J production/observer audit](work-in-progress/http-production-observer-spike-j.md)
 repeats ten-window production samples and isolated observer controls with independent
 post-window provider counts. Optional-observer-disabled HTTP failures still

@@ -1,5 +1,12 @@
 ## Unreleased
 
+- Resolve fixed installed-artifact paths once per execution binding, retaining
+  every fresh metadata, integrity and lifecycle check. Add a bounded opt-in
+  post-commit deadline ledger and qualify SQLite/JSON Contact critical paths in
+  Spike K. Repeated path-construction cost falls; post-commit deadline failures
+  remain indeterminate and WYDGINE-0.3-HTTP-LIMIT remains OPEN. No version,
+  deadline, native protocol or frozen-client changes.
+
 - Separate production Contact failures from optional observer overhead in Spike J.
   Add fresh-process observer controls and post-window provider reconciliation;
   bound reuse of diagnostic artifact labels without skipping metadata operations.

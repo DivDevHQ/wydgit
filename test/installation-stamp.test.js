@@ -7,6 +7,8 @@ import {lifecycleFixture} from '../test-support/package-lifecycle.js';
 import {packageOperation,activatePackages} from '../wydgine/packages/index.js';
 import {loadRepository} from '../wydgine/repository.js';
 import {checkContext} from '../wydgine/seam/context.js';
+import fsSync from 'node:fs';
+import {syncBuiltinESMExports} from 'node:module';
 const fields=['dev','ino','size','mtimeNs','ctimeNs'];
 const stat=()=>({dev:3n,ino:123n,size:500n,mtimeNs:1000000000000000000n,ctimeNs:1000000000000000001n});
 const legacy=rows=>rows.map(s=>s?`${s.dev}:${s.ino}:${s.size}:${s.mtimeNs}:${s.ctimeNs}`:'absent').join('|');
@@ -58,4 +60,13 @@ test('fresh installation stamps revalidate byte-identical replacement and reject
   await fs.rename(f.catalog,f.catalog+'.held');await fs.symlink(f.catalog+'.held',f.catalog);
   assert.throws(()=>checkContext(context),{code:'SEAM.CONTEXT'});
   await fs.unlink(f.catalog);await fs.rename(f.catalog+'.held',f.catalog);assert.throws(()=>checkContext(context),{code:'SEAM.CONTEXT'});
+});
+test('immutable installed path reuse retains seven fresh ordered BigInt inspections on every check',async t=>{
+  const f=await installed(t),context=f.bind(),calls=[],original=fsSync.lstatSync;
+  const expected=['content/installed-packages.json','wydgit.config.json','content/.package-install.lock','content/.package-recovery.lock',
+    'content/.package-infrastructure.json','content/package-effects.json','content/package-operation.json'].map(file=>path.join(f.root,file));
+  const mock=t.mock.method(fsSync,'lstatSync',(file,options)=>{calls.push({file,options});return original(file,options);});
+  syncBuiltinESMExports();t.after(()=>{mock.mock.restore();syncBuiltinESMExports();});
+  for(let i=0;i<3;i++){checkContext(context);assert.deepEqual(calls.slice(i*7).map(c=>c.file),expected);}
+  assert.equal(calls.length,21);assert.ok(calls.every(c=>c.options.bigint===true&&c.options.throwIfNoEntry===false));
 });

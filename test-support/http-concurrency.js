@@ -70,6 +70,7 @@ export async function runContactWindow(configuration,{signal}={}) {
   // this harness. Ordinary fixture/production execution installs no such hooks.
   const attribution=configuration.synchronousAttribution?await import('./prerender-integrity-attribution.js'):null;
   const synchronousCaptures=new Map();
+  const deadlineModule=configuration.deadlineLedger?await import('./deadline-ledger.js'):null,deadlineCaptures=new Map();
   const {provider,concurrency,diagnosticsEnabled,admissionSpacingMs=0,clientPlacement='shared'}=configuration;
   const after=[],local=new AsyncLocalStorage(),records=new Map(),serverRequests=new Map(),admissions=new Map();
   const result={schema:'wydgine.http-concurrency-window/1',...configuration,clientPlacement,runtime:process.version,platform:process.platform,
@@ -91,9 +92,14 @@ export async function runContactWindow(configuration,{signal}={}) {
       const index=Number(req.headers['x-fixture-sequence']),span={start:performance.now(),end:null};serverRequests.set(index,span);
       const end=()=>{span.end??=performance.now();};res.once('finish',end);res.once('close',end);
       local.run(index,()=>{
+        const invoke=()=>{
         if(!attribution)return app.handle(req,res);
         const capture=attribution.createSynchronousAttribution({generation:configuration.generation??1,request:index});
         synchronousCaptures.set(index,capture);return capture.run(()=>app.handle(req,res));
+        };
+        if(!deadlineModule)return invoke();
+        const capture=deadlineModule.createDeadlineLedger({request:index,generation:configuration.generation??1});
+        deadlineCaptures.set(index,capture);return capture.run(invoke);
       });
     });
     server.requestTimeout=120000;server.headersTimeout=15000;server.maxHeadersCount=64;
@@ -155,6 +161,7 @@ export async function runContactWindow(configuration,{signal}={}) {
     if(configuration.resourceCorrelation===true||configuration.scheduling===true)result.resourceCorrelation=resourceProbe.snapshot();
     if(configuration.formClear)result.formClear={rows:clearRows,dropped:droppedClears};
     if(attribution)result.synchronousAttribution=[...synchronousCaptures.values()].map(capture=>capture.finish());
+    if(deadlineModule)result.deadlineLedgers=[...deadlineCaptures.values()].map(capture=>capture.finish());
     result.cleanupComplete=failed===0;if(failed)result.fixtureFailure??='cleanup';
   }
   for(const request of result.requests){request.classification=classifyOutcome(request.client,records.get(request.index));
