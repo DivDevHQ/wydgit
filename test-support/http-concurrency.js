@@ -15,32 +15,23 @@ import {loadRepository} from '../wydgine/repository.js';
 import {activatePackages} from '../wydgine/packages/index.js';
 import {createExecutionBudget,executionBudget} from '../wydgine/sewn/budget.js';
 import {createCompletion} from '../wydgine/execution/completion.js';
+import {createStartBarrier,loopbackRequest,clientRecord,runContactClient} from './http-contact-client.js';
+import {runSeparateClient} from './http-client-process.js';
 
 export const LEVELS=Object.freeze([1,2,4,8,12]);
 export const CONTROLS=Object.freeze([false,true,true,false]);
-export const REQUEST_MS=10000;
+export {createStartBarrier,loopbackRequest,REQUEST_MS} from './http-contact-client.js';
 // Same identifier shape as SEWN NewId(), including its required letter prefix.
 export const fixtureRecordId=()=> 'w'+randomUUID().replaceAll('-','');
 
-export function validateWindow({provider,concurrency,diagnosticsEnabled,admissionSpacingMs=0,workload='contact'}) {
+export function validateWindow({provider,concurrency,diagnosticsEnabled,admissionSpacingMs=0,workload='contact',clientPlacement='shared'}) {
   assert.ok(['JSON','SQLite'].includes(provider),'Unsupported fixture provider');
   assert.ok(LEVELS.includes(concurrency),'Unsupported concurrency');
   assert.equal(typeof diagnosticsEnabled,'boolean');
   assert.ok([0,20].includes(admissionSpacingMs),'Unsupported admission spacing');
   assert.ok(['contact','native-services'].includes(workload),'Unsupported workload');
-}
-
-// Preparation barrier only: never holds Page execution or provider work.
-export function createStartBarrier(parties,{timeoutMs=1000}={}) {
-  assert.ok(Number.isInteger(parties)&&parties>0&&parties<=12);
-  let resolve,reject,arrived=0,done=false;
-  const promise=new Promise((yes,no)=>{resolve=yes;reject=no;});
-  const timer=setTimeout(()=>{done=true;reject(Object.assign(new Error('Fixture barrier expired'),{code:'FIXTURE.BARRIER'}));},timeoutMs);
-  return Object.freeze({
-    wait(){assert.ok(!done&&arrived<parties);arrived++;return promise;},
-    release(){assert.equal(arrived,parties);if(!done){done=true;clearTimeout(timer);resolve();}},
-    cancel(){if(!done){done=true;clearTimeout(timer);reject(Object.assign(new Error('Fixture barrier cancelled'),{code:'FIXTURE.BARRIER'}));}}
-  });
+  assert.ok(['shared','separate'].includes(clientPlacement),'Unsupported client placement');
+  assert.ok(workload==='contact'||clientPlacement==='shared');
 }
 
 // Half-open intervals. Ends at the same timestamp as another start do not overlap.
@@ -66,46 +57,17 @@ export function matchesHistoricalContact(trace) {
     trace.headersPublished===true&&trace.responseEnded===true&&Boolean(trace.meter?.progress)&&Boolean(trace.scheduling);
 }
 
-// Only loopback and a numeric ephemeral port. Errors, headers and bodies are never
-// copied wholesale into artifacts. complete requires the actual client end event.
-export function loopbackRequest(port,{index=0,body,cookie,agent,timeoutMs=REQUEST_MS}={}) {
-  assert.ok(Number.isInteger(port)&&port>0&&port<=65535);
-  const start=performance.now();
-  return new Promise(resolve=>{
-    let ended=false,response,status=null,outcome=null,bytes=0,parts=[];
-    const finish=(complete,timedOut=false)=>{
-      if(ended)return;ended=true;clearTimeout(timer);
-      resolve({start,end:performance.now(),status,outcome,complete,timedOut,bytes,
-        // Private transient setup data; the caller explicitly projects artifacts.
-        body:complete?Buffer.concat(parts).toString('utf8'):'',cookie:response?.headers['set-cookie']?.[0]?.split(';')[0]??null});
-    };
-    const req=http.request({hostname:'127.0.0.1',port,path:'/contact/',method:body===undefined?'GET':'POST',agent,
-      headers:{'x-fixture-sequence':String(index),...(cookie?{cookie}:{}),...(body===undefined?{}:{'content-type':'application/x-www-form-urlencoded','content-length':Buffer.byteLength(body)})}},res=>{
-      response=res;status=res.statusCode;
-      const header=res.headers['x-wydgit-operation-outcome'];
-      outcome=['committed','not-committed','indeterminate'].includes(header)?header:null;
-      res.on('data',chunk=>{bytes+=chunk.length;if(bytes>2*1024*1024){finish(false);res.destroy();req.destroy();}else parts.push(chunk);});
-      res.on('end',()=>finish(res.complete));res.on('error',()=>finish(false));res.on('aborted',()=>finish(false));
-    });
-    const timer=setTimeout(()=>{finish(false,true);response?.destroy();req.destroy();},timeoutMs);
-    req.on('error',()=>finish(false));req.end(body);
-  });
-}
-
-const clientRecord=value=>({...Object.fromEntries(['start','end','status','outcome','complete','timedOut','bytes'].map(key=>[key,value[key]])),
-  contactAcknowledged:value.complete&&/Thank you/.test(value.body)});
-
 export async function cleanupAll(callbacks) {
   let failed=0;
   for(const callback of [...callbacks].reverse())try{await callback();}catch{failed++;}
   return failed;
 }
 
-export async function runContactWindow(configuration) {
+export async function runContactWindow(configuration,{signal}={}) {
   validateWindow(configuration);
-  const {provider,concurrency,diagnosticsEnabled,admissionSpacingMs=0}=configuration;
+  const {provider,concurrency,diagnosticsEnabled,admissionSpacingMs=0,clientPlacement='shared'}=configuration;
   const after=[],local=new AsyncLocalStorage(),records=new Map(),serverRequests=new Map(),admissions=new Map();
-  const result={schema:'wydgine.http-concurrency-window/1',...configuration,runtime:process.version,platform:process.platform,
+  const result={schema:'wydgine.http-concurrency-window/1',...configuration,clientPlacement,runtime:process.version,platform:process.platform,
     setup:null,requests:[],nativeRequests:[],traces:[],actualConcurrency:null,fixtureFailure:null,cleanupComplete:false};
   let server,app,barrier;
   const agent=new http.Agent({keepAlive:false,maxSockets:12});
@@ -124,23 +86,23 @@ export async function runContactWindow(configuration) {
     });
     server.requestTimeout=120000;server.headersTimeout=15000;server.maxHeadersCount=64;
     server.listen(0,'127.0.0.1');await once(server,'listening');
-    const initial=await loopbackRequest(server.address().port,{agent});
-    result.setup={client:clientRecord(initial),trace:records.get(0)??null};
-    assert.equal(initial.complete,true);assert.equal(initial.status,200);assert.match(initial.body,/Guestbook/);
-    assert.doesNotMatch(initial.body,/id="guestbook-entry-/);
-    assert.ok(initial.cookie);const csrf=/name="_csrf" value="([^"]+)"/.exec(initial.body)?.[1];assert.ok(csrf);
-    // Every request uses identical fixture data; never retry a failed mutation.
-    const body=new URLSearchParams({_target:'guestbook-form',_action:'Submit',_csrf:csrf,name:'Concurrency fixture',message:'Bounded Contact concurrency experiment'}).toString();
-    let native;
-    if(configuration.workload==='native-services'){
+    if(configuration.workload!=='native-services'){
+      const clientConfiguration={port:server.address().port,concurrency,admissionSpacingMs};
+      const value=clientPlacement==='separate'?await runSeparateClient(clientConfiguration,{signal}):await runContactClient(clientConfiguration);
+      result.setup={client:value.setup,trace:records.get(0)??null};result.requests=value.requests;
+      result.clientProcess=value.supervision??null;
+    }else{
+      const initial=await loopbackRequest(server.address().port,{agent});
+      result.setup={client:clientRecord(initial),trace:records.get(0)??null};
+      assert.equal(initial.complete,true);assert.equal(initial.status,200);assert.match(initial.body,/Guestbook/);
+      assert.doesNotMatch(initial.body,/id="guestbook-entry-/);
+      assert.ok(initial.cookie);const csrf=/name="_csrf" value="([^"]+)"/.exec(initial.body)?.[1];assert.ok(csrf);
       const model=loadRepository(fixture.root),packages=activatePackages(model,app.locals.libraries,fixture.root);
-      native={context:packages.context({pageId:'contact',session:{identity:null},ids:[]}),mapping:packages.pages.get('contact').storageMappings.entries};
-    }
-    barrier=createStartBarrier(concurrency);
-    const pending=Array.from({length:concurrency},(_,offset)=>(async()=>{
-      await barrier.wait();const index=offset+1;
-      if(admissionSpacingMs&&offset)await new Promise(resolve=>setTimeout(resolve,offset*admissionSpacingMs));
-      if(native){
+      const native={context:packages.context({pageId:'contact',session:{identity:null},ids:[]}),mapping:packages.pages.get('contact').storageMappings.entries};
+      barrier=createStartBarrier(concurrency);
+      const pending=Array.from({length:concurrency},(_,offset)=>(async()=>{
+        await barrier.wait();const index=offset+1;
+        if(admissionSpacingMs&&offset)await new Promise(resolve=>setTimeout(resolve,offset*admissionSpacingMs));
         const start=performance.now(),token=createExecutionBudget(native.context),ledger=executionBudget(token,native.context);
         const completion=createCompletion(()=>ledger.check(),{diagnosticTiming:true});
         const call=(name,input)=>completion.run(operation=>app.locals.libraries.bind(native.context,operation).call('wydstore',name,input));
@@ -150,15 +112,13 @@ export async function runContactWindow(configuration) {
           return {index,start,end:performance.now(),createOk:created.ok,queryOk:queried.ok,queryRows:queried.ok?queried.value.length:null,
             meter:ledger.meter(),services:completion.snapshot(),nativeStages:completion.timing(),httpPublication:false};
         }finally{await completion.settle();ledger.close();}
-      }
-      const client=await loopbackRequest(server.address().port,{index,body,cookie:initial.cookie,agent});
-      return {index,client:clientRecord(client)};
-    })());
-    barrier.release();const completed=await Promise.all(pending);
-    if(native)result.nativeRequests=completed;else result.requests=completed;
+      })());
+      barrier.release();const completed=await Promise.all(pending);
+      result.nativeRequests=completed;
+    }
     if(result.nativeRequests.some(value=>!value.createOk||!value.queryOk))result.fixtureFailure='native-service-failure';
     if(result.requests.some(({client})=>client.complete&&client.status===200&&(!client.contactAcknowledged||client.outcome!=='committed')))result.fixtureFailure='unexpected-success-contract';
-  }catch(error){result.fixtureFailure=error.code==='FIXTURE.BARRIER'?'barrier':'setup-or-execution';}
+  }catch(error){result.fixtureFailure=error.code?.startsWith('CLIENT.')?error.code:error.code==='FIXTURE.BARRIER'?'barrier':'setup-or-execution';}
   finally {
     barrier?.cancel();agent.destroy();
     // Drain admitted I/O before removing fixture data. The parent process watchdog

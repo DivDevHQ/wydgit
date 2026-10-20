@@ -1,5 +1,11 @@
 ## Unreleased
 
+- Advance platform/Wydgine/WydHosting to alpha.26. Add a supervised separate-client
+  mode to the existing Contact harness, shared wire construction and failure/reaping
+  regressions. The bounded SQLite comparison reproduces matching deadline failures
+  in both placements: sharing the process is not necessary. Preserve all outcomes
+  and server observations; WYDGINE-0.3-HTTP-LIMIT remains open with no runtime fix.
+
 - Advance platform/Wydgine/WydHosting to alpha.25 and Store to alpha.6 for
   bounded private dispatch/JSON queue/SQLite stage timing. Add an isolated Contact
   concurrency harness, admission/observer/provider controls and diagnostic/cleanup

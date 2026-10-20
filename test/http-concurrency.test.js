@@ -11,7 +11,7 @@ test('concurrency fixture: release requires all clients and does not change work
   assert.throws(()=>barrier.wait());barrier.cancel();
   for(const provider of ['JSON','SQLite'])for(const concurrency of [1,2,4,8,12])validateWindow({provider,concurrency,diagnosticsEnabled:true});
   for(let index=0;index<100;index++)assert.match(fixtureRecordId(),/^w[a-f0-9]{32}$/);
-  for(const configuration of [{provider:'remote',concurrency:1,diagnosticsEnabled:true},{provider:'JSON',concurrency:100,diagnosticsEnabled:true},{provider:'SQLite',concurrency:1}])assert.throws(()=>validateWindow(configuration));
+  for(const configuration of [{provider:'remote',concurrency:1,diagnosticsEnabled:true},{provider:'JSON',concurrency:100,diagnosticsEnabled:true},{provider:'SQLite',concurrency:1},{provider:'SQLite',concurrency:1,diagnosticsEnabled:true,clientPlacement:'external'},{provider:'SQLite',concurrency:1,diagnosticsEnabled:true,clientPlacement:'separate',workload:'native-services'}])assert.throws(()=>validateWindow(configuration));
 });
 
 for(const provider of ['JSON','SQLite'])test(`concurrency fixture: ${provider} isolated native control performs the same two successful services`,{timeout:15000},async()=>{

@@ -16,7 +16,7 @@
     "sanitize-html": "^2.18.0"
   },
   "peerDependencies": {
-    "wydgine": "0.3.0-alpha.13 || 0.3.0-alpha.14 || 0.3.0-alpha.15 || 0.3.0-alpha.16 || 0.3.0-alpha.17 || 0.3.0-alpha.18 || 0.3.0-alpha.19 || 0.3.0-alpha.20 || 0.3.0-alpha.21 || 0.3.0-alpha.22 || 0.3.0-alpha.23 || 0.3.0-alpha.24 || 0.3.0-alpha.25"
+    "wydgine": "0.3.0-alpha.13 || 0.3.0-alpha.14 || 0.3.0-alpha.15 || 0.3.0-alpha.16 || 0.3.0-alpha.17 || 0.3.0-alpha.18 || 0.3.0-alpha.19 || 0.3.0-alpha.20 || 0.3.0-alpha.21 || 0.3.0-alpha.22 || 0.3.0-alpha.23 || 0.3.0-alpha.24 || 0.3.0-alpha.25 || 0.3.0-alpha.26"
   },
   "files": [
     "src",
