@@ -1,8 +1,14 @@
 # @wydgit/store
 
-Canonical library `wydstore`, independently versioned at `0.1.0-alpha.7`.
+Canonical library `wydstore`, independently versioned at `0.1.0-alpha.8`.
 
-Alpha.7 adds a provider-owned SQLite inspection completion marker and a separate
+Alpha.8 adds bounded invocation/recovery/continuation/validation observations inside
+the existing lifecycle `fs/promises.lstat().catch` path. The recovery callback is
+a Promise reaction; the raw filesystem callback is unobserved. The producer-side
+completion marker precedes settlement. No scheduling or lifecycle decision changes.
+See the [lifecycle qualification](../../docs/http-lifecycle-lstat-qualification.md).
+
+Alpha.7 added a provider-owned SQLite inspection completion marker and a separate
 lifecycle elapsed stage through the same trusted, opt-in control. No Promise
 reaction or scheduling barrier is added. The completion marker precedes Promise
 settlement; inspection includes internal filesystem continuations. See the

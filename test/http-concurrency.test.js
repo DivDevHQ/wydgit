@@ -36,6 +36,9 @@ for(const provider of ['JSON','SQLite'])test(`concurrency fixture: ${provider} r
       assert.equal(row.calls,2);assert.equal(row.providerCompleted,2);assert.equal(row.resumed,2);
       assert.equal(row.incomplete,0);assert.equal(row.missingCompletion,0);assert.equal(row.completeBeforeAwait,0);
       assert.equal(trace.meter.diagnostics.nativeStages.sqliteLifecycle.completed,2);
+      const lifecycle=trace.meter.diagnostics.continuations.sqliteLifecycleLstat;
+      for(const key of ['calls','recoveryEntered','enoent','producerCompleted','resumed','validated'])assert.equal(lifecycle[key],2);
+      assert.equal(lifecycle.incomplete,0);assert.equal(lifecycle.missingCompletion,0);
     }else assert.deepEqual(trace.meter.diagnostics.continuations,{});
   }
   assert.doesNotMatch(JSON.stringify(result),/set-cookie|_csrf|wydpackage-|node_modules|Bounded Contact concurrency experiment/);

@@ -2,11 +2,22 @@
 import { lstat } from 'node:fs/promises';
 import path from 'node:path';
 import { check } from './data.js';
-export async function checkLifecycleLock(root, name, lifecycle = false) {
+export async function checkLifecycleLock(root, name, lifecycle = false, completion) {
   if (lifecycle) return;
-  const marker = await lstat(path.join(root, name + '.lifecycle')).catch(error => {
-    if (error.code !== 'ENOENT') throw error;
-    return null;
-  });
-  check(!marker, 'STORE.BUSY');
+  const observation = completion?.continuation?.('sqliteLifecycleLstat');
+  let marker;
+  observation?.start();
+  try {
+    marker = await lstat(path.join(root, name + '.lifecycle')).catch(error => {
+      // This is the existing Promise rejection reaction, NOT a raw fs callback.
+      observation?.recoveryEntry();
+      try {
+        if (error.code !== 'ENOENT') throw error;
+        observation?.enoent();
+        return null;
+      } finally { observation?.complete(); }
+    });
+  } finally { observation?.resume(); }
+  try { check(!marker, 'STORE.BUSY'); }
+  finally { observation?.validated(); }
 }

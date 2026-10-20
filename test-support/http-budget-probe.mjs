@@ -16,7 +16,7 @@ for(const [provider,boundary] of [['JSON','precommit'],['SQLite','precommit'],['
  const f=await packageFixture(t),diagnostics=[],meters=[],traces=[];
  await fs.writeFile(path.join(f.root,'wydgit.config.json'),await fs.readFile('wydgit.config.json'));
  await runInstaller({args:[f.packagePath,'--root',f.root,'--apply'],input:Readable.from(['y','y','contact','contact','sections','0',provider,'','y','y'].map(a=>a+'\n')),output:{write(){}}});
- const app=await createHostApp({root:f.root,execution:{observeHttp:value=>{traces.push(value);if(traces.length>8)traces.shift();},observeBudget:value=>meters.push(value)},logger:{error:value=>{if(typeof value==='string'&&value.startsWith('{"schema":"wydgine.http-event/1"'))diagnostics.push(JSON.parse(value));}}});
+ const app=await createHostApp({root:f.root,execution:{observeHttp:value=>{traces.push(value);if(traces.length>8)traces.shift();if(provider==='SQLite')throw Error('private lifecycle observer');},observeBudget:value=>meters.push(value)},logger:{error:value=>{if(typeof value==='string'&&value.startsWith('{"schema":"wydgine.http-event/1"'))diagnostics.push(JSON.parse(value));}}});
  const server=app.listen(0,'127.0.0.1');await once(server,'listening');t.after(()=>app.shutdown(server));
  const url=`http://127.0.0.1:${server.address().port}/contact/`,first=await fetch(url),html=await first.text();assert.equal(first.status,200);
  const cookie=first.headers.get('set-cookie').split(';')[0],csrf=/name="_csrf" value="([^"]+)"/.exec(html)[1];

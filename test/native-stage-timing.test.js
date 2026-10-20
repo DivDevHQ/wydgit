@@ -138,7 +138,7 @@ test('SQLite continuation: real inspection barrier and producer completion point
   });syncBuiltinESMExports();t.after(()=>{mocked.mock.restore();syncBuiltinESMExports();});
   const completion=createCompletion(()=>{},{diagnosticTiming:true,now:()=>time});
   const call=completion.run(operation=>f.registry.bind(context(),{...operation,continuation(name){
-    const observation=operation.continuation(name);return {...observation,complete(){observation.complete();queueMicrotask(()=>{time+=80;});}};
+    const observation=operation.continuation(name);if(name!=='sqliteInspectFiles')return observation;return {...observation,complete(){observation.complete();queueMicrotask(()=>{time+=80;});}};
   }}).call('wydstore','create',input('continuation')));
   await entered.promise;time=70;release.resolve();assert.equal((await call).ok,true);await completion.settle();
   const row=completion.continuations().sqliteInspectFiles;
@@ -181,6 +181,7 @@ test('continuation observation allocates no Promise, timer or immediate resource
   hook.enable();
   try{const timing=createContinuationTiming(()=>0);for(let i=0;i<100;i++){
     const observation=timing.begin('sqliteInspectFiles');observation.start();observation.awaiting();observation.complete();observation.resume();
-  }assert.equal(timing.snapshot().sqliteInspectFiles.resumed,100);}finally{hook.disable();}
+    const lifecycle=timing.begin('sqliteLifecycleLstat');lifecycle.start();lifecycle.recoveryEntry();lifecycle.enoent();lifecycle.complete();lifecycle.resume();lifecycle.validated();
+  }assert.equal(timing.snapshot().sqliteInspectFiles.resumed,100);assert.equal(timing.snapshot().sqliteLifecycleLstat.resumed,100);}finally{hook.disable();}
   assert.deepEqual(resources,[]);
 });

@@ -1,7 +1,7 @@
 import { openStores } from './core.js';
 import { StoreError } from './data.js';
 export const manifest = {
-  schema:'wydgit.library/0.1', apiVersion:'1.0.0', legacyOperations:['get','query','history','create','update','delete'], id:'wydstore', version:'0.1.0-alpha.7',
+  schema:'wydgit.library/0.1', apiVersion:'1.0.0', legacyOperations:['get','query','history','create','update','delete'], id:'wydstore', version:'0.1.0-alpha.8',
   publisher:'wydgit.core', trust:'canonical', platform:'^0.3.0-alpha.20', targets:['server'],
   capabilities:['store.records.read','store.records.create','store.records.write','store.records.delete'],
   services:[

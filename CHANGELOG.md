@@ -1,5 +1,12 @@
 ## Unreleased
 
+- Advance platform/Wydgine/WydHosting to alpha.28 and Store to alpha.8. Add bounded
+  opt-in lifecycle lstat recovery/continuation observations using the existing
+  Promise callback, with no scheduling or decision changes. Three isolated twelve-way
+  SQLite Contact fixtures reproduce 23/36 matching deadline failures; long lifecycle
+  waits precede recovery callback execution. Raw filesystem callback timing remains
+  unobserved. Preserve every outcome; WYDGINE-0.3-HTTP-LIMIT stays open with no fix.
+
 - Advance platform/Wydgine/WydHosting to alpha.27 and Store to alpha.7. Add bounded
   opt-in SQLite inspection completion/continuation observations without Promise
   reactions, plus separate lifecycle elapsed timing and deterministic calibration.

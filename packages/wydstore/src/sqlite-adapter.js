@@ -165,7 +165,7 @@ export async function openSqliteAdapter(root, owner, definitions, metadata, limi
       observation?.awaiting();
       try { await inspection; } finally { observation?.resume(); }
       const lifecycleStage=completion?.stage?.('sqliteLifecycle');
-      try { await checkLifecycleLock(root,name,lifecycle); } finally { lifecycleStage?.(); }
+      try { await checkLifecycleLock(root,name,lifecycle,completion); } finally { lifecycleStage?.(); }
       completion?.check();
       preflight?.();worked=completion?.stage?.('sqliteTransaction');
       db = new Database(file, {fileMustExist:true, timeout:1000});
