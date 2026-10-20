@@ -36,7 +36,7 @@ its edit API: a genuine context and explicit grants are mandatory.
 | `replaceChild(id, envelope)` | Atomically delete a subtree and insert a new one at the same position. Useful for required single-child slots. |
 | `cloneChild(id, parentId, slot, index, idPairs)` | Copy a subtree with an explicit complete array of `[oldId, newId]` pairs. Every destination ID must be fresh. |
 | `changes()` | Return a frozen net change report without exposing the working tree. |
-| `commit({ currentRevision }?)` | Revalidate, check the base revision, close the session, and return a new immutable runtime plus changes/revisions. |
+| `commit({ currentRevision }?)` | Check the base revision, establish a validated next snapshot, close the session, and return its immutable runtime plus changes/revisions. |
 | `abort()` | Close the session without producing a new runtime. |
 
 All operation return values except `changes()` and `commit()` are undefined.
@@ -95,7 +95,9 @@ properties, duplicate IDs, cycles and single-root/single-parent containment appl
 immediately. Invalid intermediate states are deliberately unsupported. Use replace
 for a required slot rather than remove followed by insert.
 
-Commit validates again. Failed operations/commits cannot modify the original
+Portable commit hydrates again. The server Page adapter can reuse the exact
+private immutable candidate already validated for the next revision, as described
+below. Failed operations/commits cannot modify the original
 runtime or previously accepted working state. Successful commit always produces a
 new immutable snapshot, even for a no-op edit. Implementation uses whole-tree
 copying/validation for simplicity; it is intended for small bounded trees, not
@@ -108,24 +110,36 @@ canonical data and prototype failures. Mutation-specific failures use
 `CLOSED` (all with the `MUTATION.` prefix). Wrap host calls in `resultOf` at a
 synchronous SEAM boundary to hide unexpected internal exceptions.
 
-## Server Page candidate copying (Spike H)
+## Server Page candidate copying and commit (Spikes H/I)
 
-The server-only `execution/canonical-edit.js` adapter retains this same mutation
+The server-only `execution/canonical-edit.js` adapter retains the portable mutation
 factory. During pre-operation copying it recognizes the exact private accepted
 working envelope and uses the existing `copyEnvelope` shape/JSON copier instead
-of hydrating and immediately dehydrating unchanged data. Only successful full
-candidate hydration/dehydration establishes the next accepted envelope. Commit
-always hydrates with the next revision. No mutable candidate, caller input,
-authorization decision, installed-policy result or cross-session state is reused.
+of hydrating and immediately dehydrating unchanged data (Spike H).
 
-For M successful edits in one session, full hydration/semantic validation and
-canonical dehydrate counts fall from `2M+1` each to `M+1` each; M defensive
-shape-validation/copy passes remain. Per-operation isolation, error ordering,
-intermediate setter visibility and fresh immutable commits are unchanged. This
-adapter is used only at the two server Page edit sites; portable/client edits,
+Spike I fully hydrates each new candidate at the next revision, then dehydrates it
+normally. The adapter privately associates that exact isolated envelope with its
+fully validated, recursively frozen runtime. Commit still checks the live context,
+base revision and exhaustion before consuming this same snapshot. No candidate
+runtime is visible before commit. An empty session, or one with only failed
+operations, still hydrates at commit. Maximum-revision candidates retain ordinary
+validation; exhaustion remains a commit error. A failed operation cannot replace
+accepted state. There is no cross-session or cross-request reuse, authority cache,
+installation-integrity cache, transferable certificate or mutation batching.
+
+For M > 0 successful edits in one session, full hydration/semantic validation falls
+from Spike H's `M+1` to `M`. Canonical dehydration remains `M+1`; M defensive
+shape/JSON copies remain. Each independent setter therefore uses one full candidate
+hydration instead of two, and still commits before returning. Public/private
+serialization, identity, inheritance, derived relationships and error ordering
+remain those of the portable reference. The adapter retains at most one additional
+accepted immutable graph during a session; no graph history accumulates.
+
+Only the two server Page edit sites use this adapter. Portable/client edits,
 shared component-controller edits, trusted `systemSet` and package lifecycle
 mutation retain their existing implementation. Frozen client distributions and
-their shared import closure are untouched. See [Spike H evidence and limits](work-in-progress/http-canonical-mutation-spike-h.md).
+their shared import closure are untouched. See [Spike H evidence](work-in-progress/http-canonical-mutation-spike-h.md)
+and the [Spike I safety proof and qualification](work-in-progress/http-incremental-validation-spike-i.md).
 
 ## Authority
 

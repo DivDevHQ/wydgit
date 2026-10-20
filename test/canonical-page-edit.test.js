@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {createPageEdit} from '../packages/wydgine/src/engine/execution/canonical-edit.js';
-import {PrototypeRegistry,hydrate,dehydrate,serialize,ExecutionContext,resultOf} from '../wydgine/object-model/index.js';
+import {PrototypeRegistry,hydrate,dehydrate,serialize,ExecutionContext,resultOf,WydgitError} from '../wydgine/object-model/index.js';
 import {compile,compilePrototype} from '../wydgine/wydbasic/index.js';
 import {execute} from '../wydgine/sewn/execute.js';
 import {endExecutionContext} from '../wydgine/seam/context.js';
@@ -116,4 +116,128 @@ test('concurrent real Pages retain independent intermediate property states',asy
  const run=label=>measureClear(f,{handlers:[{owner:'field0',type:'Page.Load',run:async function(){this.ME.Set('label',label);await Promise.resolve();assert.equal(this.ME.properties.label,label);this.ME.Set('label',label+' again');assert.equal(this.ME.properties.label,label+' again');}}]});
  const results=await Promise.all([run('first'),run('second')]);for(const r of results)assert.equal(r.result.error,null);
  assert.equal(f.model.runtime.get('field0').properties.label,'Field 0');
+});
+
+// Spike I: compare every meaningful observable, without flattening canonical data.
+function sameSnapshot(left,right,context){
+ assert.equal(right.revision,left.revision);assert.equal(right.rootId,left.rootId);
+ assert.deepEqual(dehydrate(right,{includeSensitive:true}),dehydrate(left,{includeSensitive:true}));
+ assert.equal(serialize(right),serialize(left));
+ const visit=id=>{
+  const a=left.get(id),b=right.get(id);assert.deepEqual(b.properties,a.properties);assert.deepEqual(b.slots,a.slots);assert.equal(b.prototype,a.prototype);
+  for(const key of ['id','prototype','properties','slots','provenance']){
+   const {value:av,...ad}=Object.getOwnPropertyDescriptor(a,key),{value:bv,...bd}=Object.getOwnPropertyDescriptor(b,key);assert.deepEqual(bd,ad);assert.deepEqual(bv,av);
+  }
+  assert.ok(Object.isFrozen(b)&&Object.isFrozen(b.properties)&&Object.isFrozen(b.slots));
+  for(const relation of ['parent','root','previousSibling','nextSibling'])assert.equal(right.scope(context,id).related(relation)?.id,left.scope(context,id).related(relation)?.id);
+  for(const ids of Object.values(a.slots))ids.forEach(visit);
+ };visit(left.rootId);
+}
+for(let seed=1;seed<=6;seed++)test(`Spike I bounded generated differential sequence ${seed}`,()=>{
+ const f=fixture();let left=f.runtime,right=f.runtime,state=seed;
+ const random=()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;return state;};
+ for(let batch=0;batch<6;batch++){
+  const a=left.edit(f.context),b=createPageEdit(right,f.context,f.registry);
+  for(let i=0;i<10;i++){
+   const id=['a','aa','b'][random()%3],kind=random()%9;
+   const args=kind===0?['label','label '+random()]:kind===1?['count',random()%100]:kind===2?['data',{nested:[random(),{ok:true}]}]:kind===3?['list',[random(),{items:[false,null]}]]:kind===4?['label',false]:kind===5?['missing',null]:kind===6?['id','forged']:kind===7?['label',left.get(id).properties.label]:['count',0];
+   assert.deepEqual(resultOf(()=>a.setProperty(id,...args)),resultOf(()=>b.setProperty(id,...args)));
+   assert.deepEqual(b.changes(),a.changes());sameSnapshot(left,right,f.context);
+  }
+  assert.deepEqual(resultOf(()=>a.commit({currentRevision:left.revision+1})),resultOf(()=>b.commit({currentRevision:right.revision+1})));
+  const ca=a.commit(),cb=b.commit();assert.deepEqual(cb.changes,ca.changes);assert.equal(cb.baseRevision,ca.baseRevision);left=ca.runtime;right=cb.runtime;sameSnapshot(left,right,f.context);
+ }
+});
+for(const invalid of ['getter','setter','hidden','symbol','prototype','cycle','bigint','undefined','nan','sparse'])test(`Spike I rejected ${invalid} after a successful candidate cannot damage the accepted snapshot`,()=>{
+ const f=fixture(),a=f.runtime.edit(f.context),b=createPageEdit(f.runtime,f.context,f.registry);
+ const make=()=>{
+  const v={};
+  if(invalid==='getter')Object.defineProperty(v,'x',{enumerable:true,get(){assert.fail('getter executed');}});
+  if(invalid==='setter')Object.defineProperty(v,'x',{enumerable:true,set(){assert.fail('setter executed');}});
+  if(invalid==='hidden')Object.defineProperty(v,'x',{value:1});
+  if(invalid==='symbol')v[Symbol('x')]=1;
+  if(invalid==='prototype')Object.setPrototypeOf(v,{foreign:true});
+  if(invalid==='cycle')v.x=v;
+  if(invalid==='bigint')v.x=1n;
+  if(invalid==='undefined')v.x=undefined;
+  if(invalid==='nan')v.x=NaN;
+  if(invalid==='sparse')v.x=new Array(2);
+  return v;
+ };
+ for(const edit of [a,b])edit.setProperty('a','label','accepted');
+ const x=resultOf(()=>a.setProperty('a','data',make())),y=resultOf(()=>b.setProperty('a','data',make()));assert.equal(x.ok,false);assert.deepEqual(y,x);
+ sameSnapshot(a.commit().runtime,b.commit().runtime,f.context);
+});
+for(const malformed of ['duplicate','cycle','descriptor','unknown-prototype','root','multiple-parents'])test(`Spike I malformed incoming ${malformed} retains portable error precedence and commit rollback`,()=>{
+ const f=fixture(),a=f.runtime.edit(f.context),b=createPageEdit(f.runtime,f.context,f.registry);
+ const make=()=>{
+  const n=f.node('new');
+  if(malformed==='duplicate')n.id='aa';
+  if(malformed==='cycle')n.slots.items.push(n);
+  if(malformed==='descriptor')Object.defineProperty(n,'id',{enumerable:true,get(){assert.fail('identity accessor executed');}});
+  if(malformed==='unknown-prototype')n.prototype='acme/missing';
+  if(malformed==='root')n.prototype='wydgit.core/app';
+  if(malformed==='multiple-parents'){const child=f.node('copy');n.slots.items=[child,child];}
+  return n;
+ };
+ const x=resultOf(()=>a.insertChild('a','items',0,make())),y=resultOf(()=>b.insertChild('a','items',0,make()));assert.equal(x.ok,false);assert.deepEqual(y,x);
+ sameSnapshot(a.commit().runtime,b.commit().runtime,f.context);
+});
+test('Spike I maximum revision validates candidates and reports conflict only at commit',()=>{
+ const f=fixture(),runtime=hydrate(dehydrate(f.runtime),f.registry,{revision:Number.MAX_SAFE_INTEGER}),a=runtime.edit(f.context),b=createPageEdit(runtime,f.context,f.registry);
+ for(const [name,value] of [['label','accepted'],['label',false],['count',2]])assert.deepEqual(resultOf(()=>b.setProperty('a',name,value)),resultOf(()=>a.setProperty('a',name,value)));
+ assert.deepEqual(b.changes(),a.changes());assert.deepEqual(resultOf(()=>b.commit()),resultOf(()=>a.commit()));
+ assert.equal(resultOf(()=>b.commit()).code,'MUTATION.CONFLICT');
+});
+test('Spike I empty sessions and failed first candidates still commit a fresh runtime',()=>{
+ const f=fixture();
+ for(const failed of [false,true]){
+  const a=f.runtime.edit(f.context),b=createPageEdit(f.runtime,f.context,f.registry);
+  if(failed)for(const edit of [a,b])assert.throws(()=>edit.setProperty('a','label',false),{code:'MUTATION.INVALID_PROPERTY'});
+  const left=a.commit(),right=b.commit();assert.notEqual(right.runtime,f.runtime);sameSnapshot(left.runtime,right.runtime,f.context);assert.deepEqual(right.changes,left.changes);
+ }
+});
+for(const change of ['symlink','restored-mtime','revoke','retirement','tamper','replacement'])test(`Spike I installed commit checks ${change} after the last successful candidate`,async t=>{
+ const f=await lifecycleFixture(t),a=await f.candidate('a');a.approvals.capabilities=['object.instances.edit'];a.approvals.editable=['pkg-a'];
+ const manifest=JSON.parse(await fs.readFile(path.join(a.packagePath,'manifest.json')));manifest.permissions=a.approvals;await writeJson(path.join(a.packagePath,'manifest.json'),manifest);
+ await packageOperation(f.operation('install','acme/a',[a]));
+ const catalog=path.join(f.root,'content/installed-packages.json'),bytes=await fs.readFile(catalog),seconds=1700000000;
+ if(change==='restored-mtime')await fs.utimes(catalog,seconds,seconds);
+ const model=loadRepository(f.root),context=activatePackages(model,{resolve(){},resolvePackageScopes(){}},f.root).context({pageId:'page-a',session:{},ids:[]}),edit=createPageEdit(model.runtime,context,model.registry);
+ edit.setProperty('pkg-a','setting','accepted');
+ if(change==='symlink'){await fs.rename(catalog,catalog+'.held');await fs.symlink(catalog+'.held',catalog);}
+ if(change==='restored-mtime'){
+  const before=await fs.stat(catalog,{bigint:true}),state=JSON.parse(bytes),entry=state.packages[0],source=entry.manifest.resources.prototypes;
+  const old=JSON.stringify(entry.resources[source]),next=JSON.stringify(entry.resources[source].replace('package default','Package default'));
+  assert.notEqual(old,next);await fs.writeFile(catalog,bytes.toString().replace(old,next));await fs.utimes(catalog,seconds,seconds);
+  const after=await fs.stat(catalog,{bigint:true});assert.equal(after.size,before.size);assert.equal(after.mtimeNs,before.mtimeNs);assert.notEqual(after.ctimeNs,before.ctimeNs);
+ }
+ if(change==='revoke')endExecutionContext(context);
+ if(change==='retirement')await manualReplacement({schema:'wydgit.manual-replacement-request/1',root:f.root,package:'acme/a',action:'retire',installationContext:f.context});
+ if(change==='tamper'){const state=JSON.parse(bytes),entry=state.packages[0];entry.resources[entry.manifest.resources.prototypes]+=' ';await writeJson(catalog,state);}
+ if(change==='replacement'){await fs.writeFile(catalog+'.new',bytes);await fs.rename(catalog+'.new',catalog);assert.equal(edit.commit().runtime.get('pkg-a').properties.setting,'accepted');return;}
+
+ assert.throws(()=>edit.commit(),{code:'SEAM.CONTEXT'});assert.equal(model.runtime.get('pkg-a').properties.setting,'package default');
+});
+
+test('Spike I global Form invariants and select normalization remain full candidate checks',()=>{
+ const f=clearFixture({count:8}),registry=f.model.registry;let left=f.model.runtime,right=left;
+ const steps=[['setProperty','field0','label','accepted'],['setProperty','field0','name','field1'],['setProperty','field0','maxLength',-1],['setProperty','field3','options',[{value:'x',label:'X',enabled:true,extra:1}]],['resetProperty','field6','value'],['setProperty','field6','multiple',false],['resetProperty','field6','value'],['setProperty','field7','value','secret'],['setProperty','field1','format',{nested:[{flag:true}]}]];
+ for(const [method,...args] of steps){
+  const a=left.edit(f.context),b=createPageEdit(right,f.context,registry);
+  assert.deepEqual(resultOf(()=>b[method](...args)),resultOf(()=>a[method](...args)));
+  const ca=a.commit(),cb=b.commit();assert.deepEqual(cb.changes,ca.changes);left=ca.runtime;right=cb.runtime;
+  assert.deepEqual(dehydrate(right,{includeSensitive:true}),dehydrate(left,{includeSensitive:true}));assert.equal(serialize(right),serialize(left));assert.equal(right.revision,left.revision);
+ }
+ assert.equal(right.get('field7').properties.value,'secret');assert.equal(right.scope(f.context,'field7').properties.value,'');
+});
+
+// Trusted fault injection exercises the full-validation fallback, not a mutable
+// registry supported for production reuse. Page registries have frozen definitions.
+test('Spike I failed commit validation without an accepted candidate leaves the session repairable',()=>{
+ const f=fixture();let fail=false;
+ const registry={get(id){if(fail)throw new WydgitError('PROTOTYPE.UNKNOWN','Injected lookup failure');return f.registry.get(id);},isA:(...args)=>f.registry.isA(...args)};
+ const original=hydrate(dehydrate(f.runtime),registry,{revision:7}),a=original.edit(f.context),b=createPageEdit(original,f.context,registry);
+ fail=true;const left=resultOf(()=>a.commit()),right=resultOf(()=>b.commit());assert.equal(left.code,'PROTOTYPE.UNKNOWN');assert.deepEqual(right,left);assert.equal(original.revision,7);
+ fail=false;sameSnapshot(a.commit().runtime,b.commit().runtime,f.context);
 });

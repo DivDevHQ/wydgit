@@ -1,5 +1,11 @@
 ## Unreleased
 
+- Reuse the fully validated immutable candidate at server Page commit when its
+  exact private envelope and next revision match. Keep full candidate validation,
+  per-setter publication, live authority/lifetime checks and portable/client code
+  unchanged. Record differential, performance and SQLite/JSON HTTP qualification
+  in Spike I; WYDGINE-0.3-HTTP-LIMIT remains OPEN. No version or deadline changes.
+
 - Remove redundant pre-operation hydration from server Page edits using the existing
   mutation factory and defensive envelope copier. Keep candidate/commit validation,
   independent setter visibility, live authority and installation checks unchanged.

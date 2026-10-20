@@ -5,7 +5,7 @@ const engine='/packages/wydgine/src/engine/';
 const observer=new URL('./prerender-integrity-attribution.js',import.meta.url).href;
 const targets=new Set(['object-model/index.js','object-model/mutation.js','object-model/construction.js','packages/index.js',
   'packages/state.js','repository.js','execution/page.js','execution/diagnostics.js','execution/progress.js','seam/context.js']);
-export function installAttributionHooks(){
+export function installAttributionHooks({incrementalValidation=false}={}){
   return registerHooks({load(url,context,next){
     const result=next(url,context),name=url.split(engine)[1];if(!targets.has(name))return result;
     let source=String(result.source);
@@ -22,6 +22,11 @@ export function installAttributionHooks(){
       replace('return emit(root);','gCount("copiedNodes",nodes.size);return emit(root);');
     }
     if(name==='object-model/mutation.js'){
+      if(incrementalValidation){
+        replace('const candidate = dehydrate(validated(working),{includeSensitive:true});','const candidate = gSync("candidateConstruction",()=>dehydrate(validated(working),{includeSensitive:true}));');
+        replace('const next = dehydrate(validated(candidate),{includeSensitive:true});','const validatedCandidate = gSync("candidateValidation",()=>validated(candidate));\n    const next = dehydrate(validatedCandidate,{includeSensitive:true});');
+        replace('const runtime = hydrate(working, registry, { revision: baseRevision + 1 });','const runtime = gSync("commitValidation",()=>hydrate(working, registry, { revision: baseRevision + 1 }));');
+      }
       wrap('createEdit','editSetup',{setProperty:'mutation',resetProperty:'mutation',insertChild:'mutation',remove:'mutation',moveChild:'mutation',replaceChild:'mutation',cloneChild:'mutation',commit:'commit',changes:'changes'});
     }
     if(name==='object-model/construction.js'){

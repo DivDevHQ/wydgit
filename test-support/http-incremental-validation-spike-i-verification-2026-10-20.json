@@ -1,0 +1,153 @@
+{
+  "schema": "wydgine.incremental-validation-spike-i-verification/1",
+  "date": "2026-10-20",
+  "node": "v24.21.0",
+  "branch": "develop/0.3",
+  "baseline": "b82a9809f72c9e99a1c733813f3864064f1a0221",
+  "runs": {
+    "focused": {
+      "command": "node --test test/canonical-page-edit.test.js test/mutation.test.js test/object-model.test.js test/form-clear.test.js test/forms.test.js test/events.test.js test/execution-contexts.test.js test/oop-contract.test.js test/installation-stamp.test.js test/backoffice-placement.test.js test/operation-completion.test.js test/sewn-shared-budget.test.js test/scoped-store-authorization.test.js test/policy-reconciliation.test.js",
+      "tests": 262,
+      "pass": 262,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 13993.154915,
+      "log": "/tmp/wyd-spike-i/focused.log",
+      "logSha256": "9e9da7640904000d4eadf62ec2b03fa4390e0a7bb16d77f1c202548b7a74acd6"
+    },
+    "finalFocused": {
+      "command": "node --test test/canonical-page-edit.test.js test/incremental-validation-evidence.test.js test/canonical-mutation-evidence.test.js test/mutation.test.js test/form-clear.test.js test/backoffice-placement.test.js test/installation-stamp.test.js",
+      "tests": 124,
+      "pass": 124,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 4463.214081,
+      "log": "/tmp/wyd-spike-i/final-focused.log",
+      "logSha256": "19e3466939f29449bb70b8c4db4b1b05d414a525c4a2b64a86c1a36b82fe9add"
+    },
+    "dedicatedAndEvidenceFinal": {
+      "command": "node --test test/incremental-validation-evidence.test.js test/canonical-page-edit.test.js",
+      "tests": 53,
+      "pass": 53,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 1570.928267,
+      "log": "/tmp/wyd-spike-i/evidence-final.log",
+      "logSha256": "875d88e6b4bd1433b5164de7a4ec9d5a9eb91fea3c705aeaf5312f4f72da65cc"
+    },
+    "full": {
+      "command": "npm test",
+      "tests": 1737,
+      "pass": 1737,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 80498.514789,
+      "log": "/tmp/wyd-spike-i/full.log",
+      "logSha256": "5c020ad8a950668d027d09b3767ca64b8207087be130f8be7c0f3c81ef474879"
+    },
+    "installedIntegration": {
+      "command": "node scripts/verify-packed-packages.js: installed five-library integration",
+      "tests": 412,
+      "pass": 412,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 20094.684201,
+      "log": "/tmp/wyd-i54-packed-HH6kGv/five-library-tests.log",
+      "logSha256": "3772b1d6f699676abb4de13314da2d591cd2dd1a55c7b6b27488e47690c4673f"
+    },
+    "installedProvider": {
+      "command": "node scripts/verify-packed-packages.js: installed provider",
+      "tests": 35,
+      "pass": 35,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 2131.215051,
+      "log": "/tmp/wyd-i54-packed-HH6kGv/provider-tests.log",
+      "logSha256": "eec66eb70fcaa6378a1629f7506567798b8a5aec647f2ed73788cf6f7820ac62"
+    },
+    "installedProcess": {
+      "command": "node scripts/verify-packed-packages.js: actual installed process supervision",
+      "tests": 20,
+      "pass": 20,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 44617.332298,
+      "log": "/tmp/wyd-i54-packed-HH6kGv/process-supervision.log",
+      "logSha256": "b44bd76910ff5d58bf2454b11710c787f87584b5244b7af4318f37e057e9f56e"
+    },
+    "installedLinux": {
+      "command": "node scripts/verify-packed-packages.js: installed Linux boundaries",
+      "tests": 25,
+      "pass": 25,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 4733.250292,
+      "log": "/tmp/wyd-i54-packed-HH6kGv/linux-boundaries.log",
+      "logSha256": "21fd73cbac9c30e59a9d5ab0ba0a4734a3795b7d40b1145c5a46e2951a559191"
+    }
+  },
+  "contentCheck": {
+    "command": "npm run check",
+    "exitCode": 0,
+    "pages": 3,
+    "internalLinksAndUniqueAnchors": 42,
+    "logSha256": "1dcdec3effdcf658e3ba58a49d0e4da2c29bd4f126ca270ef5bce1e9acddf607"
+  },
+  "frozenClient": {
+    "pretestBuildPassed": true,
+    "version": "0.1.0-alpha.11",
+    "approvedHistoryAndRebuildTestsPassed": true,
+    "sharedImportClosureChanged": false,
+    "artifactChanges": false
+  },
+  "installedProof": {
+    "serviceFree": true,
+    "checkoutImportsRejected": true,
+    "oneEnginePerConsumer": true,
+    "shippedHelperAndPageMatchCheckout": true,
+    "helperSha256": "7ffe28ae52e947e636806d7f2a5c4ef23913d256f3808a0d6a3c9f7eaff42305",
+    "skipCount": 0
+  },
+  "deliveryPreflight": {
+    "fetch": "git fetch origin",
+    "head": "b82a9809f72c9e99a1c733813f3864064f1a0221",
+    "remoteHead": "b82a9809f72c9e99a1c733813f3864064f1a0221",
+    "ahead": 0,
+    "behind": 0,
+    "initialWorkingTree": "clean"
+  },
+  "checks": {
+    "diffCheck": true,
+    "versionsChanged": false,
+    "clientArtifactsChanged": false,
+    "sharedClientImportClosureChanged": false,
+    "cirChanged": false,
+    "priorEvidenceChanged": false
+  },
+  "issue": {
+    "id": "WYDGINE-0.3-HTTP-LIMIT",
+    "status": "OPEN"
+  },
+  "notes": [
+    "All authored runtime, tests, probes, evidence and documentation preceded the recorded required checks. This verification artifact is generated from their completed output.",
+    "No full-suite failure or skip; no unnecessary repeated full run. Final partial-visit assertions passed in the 53-case dedicated/evidence selection and the full suite.",
+    "Two excluded exploratory fixture failures are preserved in the source archive; retained timing/HTTP captures were not overwritten or retried to hide failures.",
+    "No release, version bump, package publication, deployment, history rewrite or downstream edits. Git delivery and remote/working-tree proof are reported in the final handoff."
+  ]
+}

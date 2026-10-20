@@ -55,6 +55,8 @@ const selected=['lifecycle-lstat-timing','http-client-process','http-concurrency
 selected.push('installation-stamp','backoffice-placement');
 // Spike H optimizes only the server Page adapter; qualify its differential,
 // installed-lifetime and real Page/Clear regressions from shipped engine bytes.
+// This selection also runs Spike I validation-reuse, generated differential and
+// commit-time installed tamper/lifetime cases against the shipped adapter.
 selected.push('canonical-page-edit','form-clear');
 async function stage(root){
  await fs.copyFile(path.join(repository,'wydgit.config.json'),path.join(root,'wydgit.config.json'));

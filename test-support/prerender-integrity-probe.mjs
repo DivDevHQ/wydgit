@@ -10,13 +10,13 @@ import {distribution,summarizeWindow} from './scheduling-attribution.js';
 const [mode,argument]=process.argv.slice(2);
 if(mode==='--worker'){
   const config=JSON.parse(argument);
-  if(config.synchronousAttribution){const {installAttributionHooks}=await import('./prerender-integrity-hooks.mjs');installAttributionHooks();}
+  if(config.synchronousAttribution){const {installAttributionHooks}=await import('./prerender-integrity-hooks.mjs');installAttributionHooks({incrementalValidation:config.incrementalValidation===true});}
   const {runContactWindow}=await import('./http-concurrency.js');
   const value=await runContactWindow(config);
   value.clock={timeOriginMs:performance.timeOrigin,mainThread:process.pid};
   process.stdout.write(JSON.stringify(value)+'\n');
 }else if(mode==='--micro-worker'){
-  const {installAttributionHooks}=await import('./prerender-integrity-hooks.mjs');installAttributionHooks();
+  const {installAttributionHooks}=await import('./prerender-integrity-hooks.mjs');installAttributionHooks({incrementalValidation:JSON.parse(argument).incrementalValidation===true});
   const {createSynchronousAttribution}=await import('./prerender-integrity-attribution.js');
   const {clearFixture}=await import('./form-clear.js');
   const {dehydrate}=await import('../wydgine/object-model/index.js');
@@ -38,9 +38,9 @@ if(mode==='--worker'){
   }
   const installed=await installedExperiment(createSynchronousAttribution);
   process.stdout.write(JSON.stringify({schema:'wydgine.spike-g-micro/1',cases,installed})+'\n');
-}else if(['--output','--trace-output'].includes(mode)&&argument){
+}else if(['--output','--trace-output','--incremental-output'].includes(mode)&&argument){
   const directory=path.resolve(argument);await fs.mkdir(directory,{recursive:false});const started=performance.now();
-  const sources=['test-support/prerender-integrity-probe.mjs','test-support/prerender-integrity-hooks.mjs','test-support/prerender-integrity-attribution.js','test-support/http-concurrency.js',
+  const sources=['packages/wydgine/src/engine/execution/canonical-edit.js','test-support/prerender-integrity-probe.mjs','test-support/prerender-integrity-hooks.mjs','test-support/prerender-integrity-attribution.js','test-support/http-concurrency.js',
     'packages/wydgine/src/engine/execution/page.js','packages/wydgine/src/engine/object-model/index.js','packages/wydgine/src/engine/object-model/mutation.js',
     'packages/wydgine/src/engine/object-model/construction.js','packages/wydgine/src/engine/packages/index.js','packages/wydgine/src/engine/packages/state.js',
     'packages/wydgine/src/engine/packages/installation-stamp.js','packages/wydgine/src/engine/seam/context.js','packages/wydgine/src/engine/execution/diagnostics.js',
@@ -51,7 +51,7 @@ if(mode==='--worker'){
   const windows=[],failures=[];let generation=0;
   async function run(label,config,micro=false){
     if(performance.now()-started>360000)throw Error('Spike G series ceiling');
-    config={...config,generation:++generation};const name=String(generation).padStart(2,'0')+'-'+label+'.json';
+    config={...config,generation:++generation,...(mode==='--incremental-output'?{incrementalValidation:true}:{})};const name=String(generation).padStart(2,'0')+'-'+label+'.json';
     const scratch=await fs.mkdtemp(path.join(os.tmpdir(),'wyd-spikeg-worker-'));
     try{
       const env={...process.env,TMPDIR:scratch};delete env.NODE_OPTIONS;delete env.NODE_PATH;

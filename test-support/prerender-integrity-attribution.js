@@ -7,7 +7,8 @@ import {createHmac,randomBytes} from 'node:crypto';
 const local=new AsyncLocalStorage();
 const stages=new Set(['repositoryLoad','repositoryBuild','hydrate','dehydrate','editSetup','mutation','commit','changes',
   'draftCreate','draftSet','draftInsert','draftEnvelope','draftValidate','systemSet','installedBind','installedStamp',
-  'installedValidate','installedRead','installedStateValidate','baseFingerprint','safeRead','contextCheck','metadata']);
+  'installedValidate','installedRead','installedStateValidate','baseFingerprint','safeRead','contextCheck','metadata',
+  'candidateConstruction','candidateValidation','commitValidation']);
 const phases=new Set(['prepare','start','initialize','load','validate','action','prerender','render','cleanup','settle']);
 const key=randomBytes(32);
 const installationArtifacts=['content/installed-packages.json','wydgit.config.json','content/.package-install.lock','content/.package-recovery.lock',
