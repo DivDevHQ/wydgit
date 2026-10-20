@@ -1,5 +1,10 @@
 # HTTP concurrency qualification — alpha.25
 
+The later [Spike G attribution](work-in-progress/http-prerender-integrity-spike-g.md)
+adds an opt-in synchronous sidecar to the same separate-client Contact fixture,
+with source-pinned before/after, overhead, canonical-scaling and integrity-negative
+captures. It retains every production metadata check and keeps the HTTP issue OPEN.
+
 2026-10-19, 0.3-J increment 10. Node **24.21.0**, npm **11.19.0**, Linux.
 Started clean on `develop/0.3` at `f6ce1590f60d0d6b13d18e8c6fbaf6cd7ae18a78`;
 fetched origin matched. The local npm workspace metadata initially described older

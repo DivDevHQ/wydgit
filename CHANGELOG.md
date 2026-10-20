@@ -1,5 +1,11 @@
 ## Unreleased
 
+- Attribute PreRender/canonical and installation-check costs with bounded opt-in
+  Contact diagnostics, repeated provider/overhead/scaling controls and preserved
+  source captures. Compare fresh installation metadata BigInts directly, retaining
+  every filesystem inspection and integrity/lifecycle boundary. The narrow cost
+  improvement does not qualify an HTTP fix; WYDGINE-0.3-HTTP-LIMIT remains OPEN.
+
 - Attribute concurrent HTTP deadline pressure with opt-in test-only event-loop,
   filesystem callback, syscall and CPU-sampling evidence. Repeated controls point
   to synchronous Page mutation/validation and installed-lifetime metadata checks;

@@ -1,0 +1,117 @@
+{
+  "schema": "wydgine.spike-g-verification/1",
+  "date": "2026-10-20",
+  "node": "v24.21.0",
+  "baseline": "3242934d328917395d6441e6fdd920e0b6292410",
+  "runs": {
+    "initialFocused": {
+      "command": "node --test test/prerender-integrity-attribution.test.js test/prerender-integrity-evidence.test.js test/installation-stamp.test.js test/packages.test.js test/package-lifecycle.test.js test/package-effects-adversarial.test.js test/package-provisioning-recovery.test.js test/manual-replacements.test.js test/scoped-store-authorization.test.js test/backoffice-placement.test.js test/wydstore-sqlite.test.js test/operation-completion.test.js test/sewn-shared-budget.test.js test/policy-reconciliation.test.js",
+      "tests": 364,
+      "pass": 364,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 49966.920334
+    },
+    "full": {
+      "command": "npm test",
+      "tests": 1682,
+      "pass": 1682,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 71132.275495
+    },
+    "installedIntegration": {
+      "command": "node scripts/verify-packed-packages.js: installed five-library integration",
+      "tests": 335,
+      "pass": 335,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 19377.32704
+    },
+    "installedProvider": {
+      "command": "node scripts/verify-packed-packages.js: installed provider",
+      "tests": 35,
+      "pass": 35,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 1997.992784
+    },
+    "installedProcess": {
+      "command": "node scripts/verify-packed-packages.js: actual installed worker supervision",
+      "tests": 20,
+      "pass": 20,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 44543.193094
+    },
+    "installedLinux": {
+      "command": "node scripts/verify-packed-packages.js: installed Linux boundaries",
+      "tests": 25,
+      "pass": 25,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 4789.038661
+    },
+    "installedStrengthenedStamp": {
+      "command": "node --import ./proof-register.mjs --test test/installation-stamp.test.js (independent installed consumer cwd; checkout imports forbidden)",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 420.320272
+    }
+  },
+  "contentCheck": {
+    "command": "npm run check",
+    "exitCode": 0,
+    "pages": 3,
+    "internalLinksAndUniqueAnchors": 42
+  },
+  "additionalFocused": {
+    "command": "node --test test/installation-stamp.test.js test/prerender-integrity-attribution.test.js test/mutation.test.js test/form-clear.test.js test/backoffice-placement.test.js",
+    "tests": 77,
+    "pass": 77,
+    "fail": 0,
+    "skipped": 0
+  },
+  "finalSourceStamp": {
+    "command": "node --test test/installation-stamp.test.js",
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "skipped": 0
+  },
+  "notes": [
+    "All final authored runtime, diagnostics, test and documentation edits preceded the full 1682-test pass and final content check. This verification artifact records command output after completion.",
+    "The broad focused and initial installed selections preceded strengthening the same-size exact-mtime adversary. The final full suite, separate source 4/4 run and independent installed 4/4 run include the strengthened fixture.",
+    "Installed acceptance also passed service-free binary/HTTP/restart, checkout-import denial and exactly one installed engine per consumer. Local private tarballs only; no publication.",
+    "Restricted sandbox test subprocess output was unavailable; native-access diagnostics passed 8/8. Early exploratory captures are excluded from final measurements.",
+    "The first strengthened adversarial fixture reformatted catalog bytes and failed its own size assertion: 3 pass / 1 fail. Corrected to preserve raw formatting and exact size; no runtime correction was needed.",
+    "No qualification skips. Browser manual checks, power-loss/network-filesystem qualification and deployment are outside this bounded spike."
+  ],
+  "checks": {
+    "diffCheck": true,
+    "versionsChanged": false,
+    "clientArtifactsChanged": false,
+    "cirChanged": false,
+    "priorEvidenceChanged": false
+  },
+  "issue": {
+    "id": "WYDGINE-0.3-HTTP-LIMIT",
+    "status": "OPEN"
+  }
+}

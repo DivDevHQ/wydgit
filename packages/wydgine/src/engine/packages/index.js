@@ -5,6 +5,7 @@ import {interfaceTypes} from '../object-model/interfaces.js';
 import {validate as validateWorkflow} from '../sewn/validate.js';
 import {StaticLibraryRegistry} from '../static-libraries/index.js';
 import { lstatSync } from 'node:fs';
+import {sameInstallationStamp} from './installation-stamp.js';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { loadRepository, repositoryFromState, compileDefinitions } from '../repository.js';
@@ -662,8 +663,8 @@ function guardInstalledExecution(root,entry,context) {
     'content/.package-infrastructure.json','content/package-effects.json','content/package-operation.json'];
   const stamp=()=>files.map(file=>{
     const s=lstatSync(path.join(root,file),{bigint:true,throwIfNoEntry:false});
-    return s?`${s.dev}:${s.ino}:${s.size}:${s.mtimeNs}:${s.ctimeNs}`:'absent';
-  }).join('|');
+    return s;
+  });
   const validate=()=>{
     const state=readInstalledState(root),current=state?.packages.find(p=>p.manifest.id===entry.manifest.id);
     check(state&&!state.manualReplacement&&!state.policyReconciliation&&current?.receipt.id===entry.receipt.id&&
@@ -672,10 +673,10 @@ function guardInstalledExecution(root,entry,context) {
       JSON.parse(state.app).id===context.app,'PACKAGE.STALE','Installation snapshot is no longer current');
   };
   let accepted=stamp();validate();
-  check(stamp()===accepted,'PACKAGE.STALE','Installation changed while binding');
+  check(sameInstallationStamp(stamp(),accepted),'PACKAGE.STALE','Installation changed while binding');
   return guardExecutionContext(context,()=>{
     const observed=stamp();
-    if(observed!==accepted){validate();check(stamp()===observed,'PACKAGE.STALE','Installation changed during validation');accepted=observed;}
+    if(!sameInstallationStamp(observed,accepted)){validate();check(sameInstallationStamp(stamp(),observed),'PACKAGE.STALE','Installation changed during validation');accepted=observed;}
   });
 }
 export async function planExecutionPlacement({root,package:id,installation,revision,app,action,context,installationContext,verifiedPackages={}}) {

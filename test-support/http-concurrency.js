@@ -66,6 +66,10 @@ export async function cleanupAll(callbacks) {
 
 export async function runContactWindow(configuration,{signal}={}) {
   validateWindow(configuration);
+  // Spike G workers install strict diagnostic-only source hooks before importing
+  // this harness. Ordinary fixture/production execution installs no such hooks.
+  const attribution=configuration.synchronousAttribution?await import('./prerender-integrity-attribution.js'):null;
+  const synchronousCaptures=new Map();
   const {provider,concurrency,diagnosticsEnabled,admissionSpacingMs=0,clientPlacement='shared'}=configuration;
   const after=[],local=new AsyncLocalStorage(),records=new Map(),serverRequests=new Map(),admissions=new Map();
   const result={schema:'wydgine.http-concurrency-window/1',...configuration,clientPlacement,runtime:process.version,platform:process.platform,
@@ -86,7 +90,11 @@ export async function runContactWindow(configuration,{signal}={}) {
     server=http.createServer({maxHeaderSize:8192},(req,res)=>{
       const index=Number(req.headers['x-fixture-sequence']),span={start:performance.now(),end:null};serverRequests.set(index,span);
       const end=()=>{span.end??=performance.now();};res.once('finish',end);res.once('close',end);
-      local.run(index,()=>app.handle(req,res));
+      local.run(index,()=>{
+        if(!attribution)return app.handle(req,res);
+        const capture=attribution.createSynchronousAttribution({generation:configuration.generation??1,request:index});
+        synchronousCaptures.set(index,capture);return capture.run(()=>app.handle(req,res));
+      });
     });
     server.requestTimeout=120000;server.headersTimeout=15000;server.maxHeadersCount=64;
     server.listen(0,'127.0.0.1');await once(server,'listening');
@@ -135,6 +143,7 @@ export async function runContactWindow(configuration,{signal}={}) {
     resourceProbe.stop();
     if(configuration.resourceCorrelation===true)result.resourceCorrelation=resourceProbe.snapshot();
     if(configuration.formClear)result.formClear={rows:clearRows,dropped:droppedClears};
+    if(attribution)result.synchronousAttribution=[...synchronousCaptures.values()].map(capture=>capture.finish());
     result.cleanupComplete=failed===0;if(failed)result.fixtureFailure??='cleanup';
   }
   for(const request of result.requests){request.classification=classifyOutcome(request.client,records.get(request.index));

@@ -50,6 +50,9 @@ await run(process.execPath,['--import',path.join(serviceFree,'proof-register.mjs
 console.log('PASS service-free installed binary, validation, HTTP/assets, restart, closed configuration');
 const full=await consumer('five-library',['wydgine','wydstore','wydgate','wydsearch','wydfiles','wydstream']);
 const selected=['lifecycle-lstat-timing','http-client-process','http-concurrency','native-stage-timing','http-scheduling','execution-progress','sewn-shared-budget','gate-session-contention','http-diagnostics','backoffice-actions','backoffice-http','backoffice-ui','backoffice-modules','multi-app','hostname-host','hosting-operations','hardening','guestbook-package','packages','package-infrastructure','wydgate-http','wydstream-http','wydstream-search','wydstream-security','wydsearch-package','wydfiles','wydstore-sqlite','operation-completion','process-supervision','linux-isolation'];
+// Spike G changes the shipped installation guard. Exercise its exact tuple and
+// filesystem adversaries, plus generation fencing, against installed tarballs.
+selected.push('installation-stamp','backoffice-placement');
 async function stage(root){
  await fs.copyFile(path.join(repository,'wydgit.config.json'),path.join(root,'wydgit.config.json'));
  await fs.mkdir(path.join(root,'.fixtures'));
