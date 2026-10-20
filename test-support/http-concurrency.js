@@ -71,7 +71,8 @@ export async function runContactWindow(configuration,{signal}={}) {
   const result={schema:'wydgine.http-concurrency-window/1',...configuration,clientPlacement,runtime:process.version,platform:process.platform,
     setup:null,requests:[],nativeRequests:[],traces:[],actualConcurrency:null,fixtureFailure:null,cleanupComplete:false};
   const clearRows=[];let droppedClears=0;
-  const resourceProbe=createFsreqpromiseProbe({enabled:configuration.resourceCorrelation===true,maxCalls:configuration.inspectionCorrelation?512:32,maxResources:configuration.inspectionCorrelation?512:32});
+  const resourceProbe=createFsreqpromiseProbe({enabled:configuration.resourceCorrelation===true,maxCalls:configuration.inspectionCorrelation?512:32,maxResources:configuration.inspectionCorrelation?512:32,
+    scheduling:configuration.scheduling===true,request:()=>local.getStore(),generation:configuration.generation??1});
   let server,app,barrier;
   const agent=new http.Agent({keepAlive:false,maxSockets:12});
   try {
@@ -80,7 +81,7 @@ export async function runContactWindow(configuration,{signal}={}) {
     await runInstaller({args:[fixture.packagePath,'--root',fixture.root,'--apply'],
       input:Readable.from(['y','y','contact','contact','sections','0',provider,'','y','y'].map(value=>value+'\n')),output:{write(){}}});
     app=await createHostApp({root:fixture.root,logger:{error(){}},
-      admit(){const index=local.getStore(),span={start:performance.now(),end:null};admissions.set(index,span);return ()=>{span.end=performance.now();};},
+      admit(){const index=local.getStore(),span={start:performance.now(),end:null,...(configuration.scheduling?{wallMs:Date.now()}:{})};admissions.set(index,span);return ()=>{span.end=performance.now();};},
       execution:diagnosticsEnabled?{...(configuration.formClear?{observeFormClear:row=>{if(clearRows.length<64)clearRows.push({request:local.getStore(),...row});else droppedClears++;}}:{}),...(configuration.resourceCorrelation===true?{...(configuration.nativeGap?{observeNativeGap:({operation})=>resourceProbe.native({request:local.getStore(),operation})}:{}),observeLifecycleLstat:({operation})=>resourceProbe.observe({request:local.getStore(),operation}),...(configuration.inspectionCorrelation?{observeSqliteInspection:({operation})=>resourceProbe.inspect({request:local.getStore(),operation})}:{})}:{}),observeHttp:record=>{const index=local.getStore();if(Number.isInteger(index)&&index>=0&&index<=12&&!records.has(index))records.set(index,record);}}:{}});
     server=http.createServer({maxHeaderSize:8192},(req,res)=>{
       const index=Number(req.headers['x-fixture-sequence']),span={start:performance.now(),end:null};serverRequests.set(index,span);
@@ -90,8 +91,10 @@ export async function runContactWindow(configuration,{signal}={}) {
     server.requestTimeout=120000;server.headersTimeout=15000;server.maxHeadersCount=64;
     server.listen(0,'127.0.0.1');await once(server,'listening');
     if(configuration.workload!=='native-services'){
+      resourceProbe.beginScheduling();
       const clientConfiguration={port:server.address().port,concurrency,admissionSpacingMs};
       const value=clientPlacement==='separate'?await runSeparateClient(clientConfiguration,{signal}):await runContactClient(clientConfiguration);
+      resourceProbe.finishScheduling();
       result.setup={client:value.setup,trace:records.get(0)??null};result.requests=value.requests;
       result.clientProcess=value.supervision??null;
     }else{

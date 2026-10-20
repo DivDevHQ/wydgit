@@ -1,5 +1,11 @@
 ## Unreleased
 
+- Attribute concurrent HTTP deadline pressure with opt-in test-only event-loop,
+  filesystem callback, syscall and CPU-sampling evidence. Repeated controls point
+  to synchronous Page mutation/validation and installed-lifetime metadata checks;
+  worker-pool expansion does not qualify a fix. Preserve runtime/client artifacts,
+  versions, the 1,000 ms ceiling and OPEN WYDGINE-0.3-HTTP-LIMIT status.
+
 - Qualify Form Clear cost with opt-in stage timing and repeated serial/Contact
   comparisons. Page Clear skips redundant primitive and empty-array candidates
   after ordinary mutation checks, preserving fresh commits and empty-value

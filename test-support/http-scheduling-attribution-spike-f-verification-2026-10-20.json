@@ -1,0 +1,36 @@
+{
+  "schema": "wydgine.spike-f-verification/1",
+  "date": "2026-10-20",
+  "node": "v24.21.0",
+  "runs": [
+    {
+      "command": "node --test --test-isolation=none test/scheduling-attribution.test.js test/fsreqpromise-correlation.test.js test/fsreqpromise-inspection-correlation.test.js test/native-settlement-gap.test.js",
+      "pass": 37,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0
+    },
+    {
+      "command": "node --test --test-isolation=none test/scheduling-attribution.test.js test/scheduling-attribution-evidence.test.js test/fsreqpromise-correlation.test.js test/fsreqpromise-contact-correlation.test.js test/fsreqpromise-inspection-correlation.test.js test/native-settlement-gap.test.js test/native-settlement-gap-evidence.test.js test/form-clear.test.js test/form-clear-evidence.test.js test/http-diagnostics.test.js test/http-scheduling.test.js test/http-client-process.test.js test/engine-boundary.test.js test/wydstore-sqlite.test.js test/operation-completion.test.js test/lifecycle-lstat-timing.test.js test/native-stage-timing.test.js",
+      "pass": 145,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0
+    },
+    {
+      "command": "npm run check",
+      "exit": 0,
+      "result": "Verified 3 complete pages, 42 internal links and unique anchors."
+    },
+    {
+      "command": "npm test",
+      "pass": 1665,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "durationMs": 81083.976985,
+      "pretest": "immutable client build passed"
+    }
+  ],
+  "scope": "Diagnostic-only changes. No runtime code, package manifests, lockfiles, immutable client artifacts or earlier evidence changed. Existing engine-boundary and client-process regressions included; standalone tarball installation was not rerun because shipped runtime/package contents are unchanged. No production security/reliability qualification or issue closure."
+}

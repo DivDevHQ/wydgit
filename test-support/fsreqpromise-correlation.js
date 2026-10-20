@@ -1,11 +1,19 @@
 // Test-only: importing this module installs no hook. Never imported by runtime code.
 import {createHook, executionAsyncId} from 'node:async_hooks';
-import {performance} from 'node:perf_hooks';
+import {performance,monitorEventLoopDelay} from 'node:perf_hooks';
 
-export function createFsreqpromiseProbe({enabled=false,maxCalls=64,maxResources=128,now=()=>performance.now()}={}) {
+export function createFsreqpromiseProbe({enabled=false,maxCalls=64,maxResources=128,now=()=>performance.now(),scheduling=false,request=()=>null,generation=1,maxSpans=2048}={}) {
   if(!Number.isInteger(maxCalls)||maxCalls<1||maxCalls>1024||!Number.isInteger(maxResources)||maxResources<1||maxResources>2048)
     throw new RangeError('Invalid probe bounds');
+  if(!Number.isInteger(generation)||generation<1||generation>1000000||!Number.isInteger(maxSpans)||maxSpans<1||maxSpans>4096)
+    throw new RangeError('Invalid scheduling bounds');
   const calls=[],inspections=[],nativeCalls=[],resources=new Map();
+  // Extends this hook rather than installing another global observer. Callback
+  // spans contain synchronous callback wall time (including native work/GC/OS
+  // preemption), never CPU time. Short callbacks are counted but not retained.
+  const spans=[],stack=[];let scheduleStart=null,scheduleResult=null,histogram=null,callbackCount=0,droppedSpans=0,stackOverflow=0;
+  const elu=()=>performance.eventLoopUtilization();
+  const numericRequest=()=>{const n=request();return Number.isInteger(n)&&n>=0&&n<=12?n:null;};
   let active=null,stopped=false,seen=0,droppedCalls=0,droppedResources=0,hookErrors=0;
   const increment=value=>Math.min(1000000,value+1);
   // Hook callbacks never escape exceptions, log, schedule work, or retain resource objects.
@@ -17,22 +25,53 @@ export function createFsreqpromiseProbe({enabled=false,maxCalls=64,maxResources=
       if(seen>=maxResources){droppedResources=increment(droppedResources);active.overflow=true;if(active.mode==='inspection')stop();return;}
       seen++;
       const row={id,type,trigger,initMs:now(),beforeCount:0,afterCount:0,firstBeforeMs:null,lastAfterMs:null,destroyMs:null};
+      if(scheduleStart&&!scheduleResult)row.initElu=elu();
       active.resources.push(row);resources.set(id,row);
     }),
-    before:safe(id=>{const row=resources.get(id);if(row){row.beforeCount=increment(row.beforeCount);row.firstBeforeMs??=now();}}),
-    after:safe(id=>{const row=resources.get(id);if(row){row.afterCount=increment(row.afterCount);row.lastAfterMs=now();}}),
+    before:safe(id=>{
+      if(scheduleStart&&!scheduleResult){
+        callbackCount=increment(callbackCount);
+        if(stack.length<32)stack.push({id,request:numericRequest(),startMs:now()});else {stackOverflow=increment(stackOverflow);stop();return;}
+      }
+      const row=resources.get(id);if(row){row.beforeCount=increment(row.beforeCount);row.firstBeforeMs??=now();if(row.initElu)row.beforeElu??=elu();}
+    }),
+    after:safe(id=>{
+      const row=resources.get(id);if(row){row.afterCount=increment(row.afterCount);row.lastAfterMs=now();}
+      if(scheduleStart&&!scheduleResult&&stack.at(-1)?.id===id){
+        const span=stack.pop(),endMs=now();
+        if(endMs-span.startMs>=0.5){if(spans.length<maxSpans)spans.push({...span,endMs});else droppedSpans=increment(droppedSpans);}
+      }
+    }),
     destroy:safe(id=>{const row=resources.get(id);if(row){row.destroyMs=now();resources.delete(id);}})
   }):null;
   const allocate=(mode,request=null,operation=null)=>{
     if(!enabled||stopped)return undefined;
     if(calls.length>=maxCalls){droppedCalls=increment(droppedCalls);return undefined;}
-    const row={call:calls.length+1,mode,request,operation,entryMs:now(),executionId:null,invocationMs:null,invokedMs:null,recoveryMs:null,producerMs:null,resumeMs:null,validatedMs:null,candidates:0,overflow:false,resources:[]};
+    const row={generation,call:calls.length+1,mode,request,operation,entryMs:now(),executionId:null,invocationMs:null,invokedMs:null,recoveryMs:null,producerMs:null,resumeMs:null,validatedMs:null,candidates:0,overflow:false,resources:[]};
     calls.push(row);return row;
   };
-  const mark=(row,key)=>()=>{if(!stopped)row[key]??=now();};
-  const stop=()=>{hook?.disable();resources.clear();active=null;stopped=true;};
+  const mark=(row,key)=>()=>{if(!stopped&&row[key]===null){row[key]=now();if(scheduling)row[key+'WallMs']=Date.now();}};
+  const finishScheduling=()=>{
+    if(!scheduleStart||scheduleResult)return scheduleResult;
+    const endMs=now(),loop=performance.eventLoopUtilization(scheduleStart.elu),cpu=process.cpuUsage(scheduleStart.cpu);
+    histogram.disable();
+    scheduleResult={generation,startMs:scheduleStart.ms,endMs,resolutionMs:10,
+      eventLoop:{activeMs:loop.active,idleMs:loop.idle,utilization:loop.utilization},
+      processCpuMs:{user:cpu.user/1000,system:cpu.system/1000},
+      delay:{count:histogram.count,minMs:histogram.count?histogram.min/1e6:null,meanMs:histogram.count?histogram.mean/1e6:null,
+        p50Ms:histogram.count?histogram.percentile(50)/1e6:null,p99Ms:histogram.count?histogram.percentile(99)/1e6:null,maxMs:histogram.count?histogram.max/1e6:null},
+      callbackCount,minimumSpanMs:0.5,droppedSpans,stackOverflow,spans:spans.map(row=>({...row}))};
+    stack.length=0;return scheduleResult;
+  };
+  const stop=()=>{finishScheduling();hook?.disable();resources.clear();active=null;stopped=true;};
   hook?.enable();
   return Object.freeze({
+    beginScheduling(){
+      if(!enabled||!scheduling||stopped||scheduleStart)return;
+      histogram=monitorEventLoopDelay({resolution:10});histogram.enable();
+      scheduleStart={ms:now(),elu:elu(),cpu:process.cpuUsage()};
+    },
+    finishScheduling,
     // The callback must synchronously invoke ONLY the known helper up to its first
     // await. No async wrapper/reaction is inserted. Concurrent pending calls may
     // coexist, but synchronous capture windows must not overlap.
@@ -99,7 +138,7 @@ export function createFsreqpromiseProbe({enabled=false,maxCalls=64,maxResources=
       });
     },
     stop,
-    snapshot(){return {enabled,stopped,seen,droppedCalls,droppedResources,hookErrors,tracked:resources.size,nativeCalls:nativeCalls.map(row=>({...row})),inspections:inspections.map(row=>({...row})),calls:calls.map(row=>{
+    snapshot(){return {enabled,stopped,seen,droppedCalls,droppedResources,hookErrors,tracked:resources.size,...(scheduling?{generation,scheduling:scheduleResult}:{}),nativeCalls:nativeCalls.map(row=>({...row})),inspections:inspections.map(row=>({...row})),calls:calls.map(row=>{
       const resource=row.resources[0];
       const unique=!row.overflow&&row.candidates===1&&row.invocationMs!==null&&resource.trigger===row.executionId&&resource.initMs>=row.invocationMs;
       const continuation=row.mode==='inspection'?row.resumeMs:row.recoveryMs;
