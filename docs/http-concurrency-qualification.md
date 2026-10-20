@@ -1,5 +1,10 @@
 # HTTP concurrency qualification — alpha.25
 
+The later [Spike J production/observer audit](work-in-progress/http-production-observer-spike-j.md)
+repeats ten-window production samples and isolated observer controls with independent
+post-window provider counts. Optional-observer-disabled HTTP failures still
+reproduce; the issue remains OPEN. Its retained correction is diagnostic-only.
+
 The later [Spike G attribution](work-in-progress/http-prerender-integrity-spike-g.md)
 adds an opt-in synchronous sidecar to the same separate-client Contact fixture,
 with source-pinned before/after, overhead, canonical-scaling and integrity-negative

@@ -1,0 +1,198 @@
+{
+  "schema": "wydgine.production-observer-spike-j-verification/1",
+  "date": "2026-10-20",
+  "node": "v24.21.0",
+  "branch": "develop/0.3",
+  "baseline": "d97b06c37c9363f9652e1eebd1879dfaf412a029",
+  "runs": {
+    "focused": {
+      "command": "node --test: 12 observer, Contact, integrity, canonical, budget, completion and scoped-authorization files",
+      "exitCode": 0,
+      "log": "/tmp/wyd-spike-j/focused.log",
+      "logSha256": "f5c9d3ee89133459cff9ae5b6456c8885e98561b861795989b70d9753993aa3a",
+      "tests": 165,
+      "pass": 165,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 4892.349281
+    },
+    "finalFocusedAndFrozenClient": {
+      "command": "node --test: same 12 files plus production-observer-evidence, WydClient artifact-policy and bundle tests",
+      "exitCode": 0,
+      "log": "/tmp/wyd-spike-j/final-focused.log",
+      "logSha256": "433f2dad7c12c262d5667ee651fb201a784933c0470e8f33bdfb63a702514a78",
+      "tests": 176,
+      "pass": 176,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 4943.52391
+    },
+    "full": {
+      "command": "npm test (includes npm run build:client pretest)",
+      "exitCode": 0,
+      "log": "/tmp/wyd-spike-j/full.log",
+      "logSha256": "753847dcbc0c8808c6745d73ca8ef082be4b7c92583baaf09dcd24d527497e73",
+      "tests": 1750,
+      "pass": 1750,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 75612.898569
+    },
+    "installedIntegration": {
+      "command": "node scripts/verify-packed-packages.js: installed five-library integration",
+      "exitCode": 0,
+      "log": "/tmp/wyd-i54-packed-qQ6atj/five-library-tests.log",
+      "logSha256": "145e7eadbd6ec59bc3976d801f644c296b4c1fba576587cb8ff3f442cbe8b1c6",
+      "tests": 412,
+      "pass": 412,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 19534.156709
+    },
+    "provider": {
+      "command": "node scripts/verify-packed-packages.js: installed provider qualification",
+      "exitCode": 0,
+      "log": "/tmp/wyd-i54-packed-qQ6atj/provider-tests.log",
+      "logSha256": "4bc81003ec39beed241ce3bcfb9c482ea8e4582c2d9c34eda271326ab1dbaba1",
+      "tests": 35,
+      "pass": 35,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 2018.129334
+    },
+    "processSupervision": {
+      "command": "node scripts/verify-packed-packages.js: actual installed worker process supervision",
+      "exitCode": 0,
+      "log": "/tmp/wyd-i54-packed-qQ6atj/process-supervision.log",
+      "logSha256": "84602659efeefcccb3a53d9c9e3587dda211cba0269d0e274a66e45796e53770",
+      "tests": 20,
+      "pass": 20,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 42890.482482
+    },
+    "linuxBoundaries": {
+      "command": "node scripts/verify-packed-packages.js: actual Linux/Unix boundaries",
+      "exitCode": 0,
+      "log": "/tmp/wyd-i54-packed-qQ6atj/linux-boundaries.log",
+      "logSha256": "c5f04a9d89ad7ab3c5f9a6e02658ff4bfd469f0aa214a7c527c9e0aa01056ce1",
+      "tests": 25,
+      "pass": 25,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 4582.148986
+    }
+  },
+  "focusedFiles": [
+    "test/production-observer.test.js",
+    "test/prerender-integrity-attribution.test.js",
+    "test/scheduling-attribution.test.js",
+    "test/fsreqpromise-correlation.test.js",
+    "test/fsreqpromise-inspection-correlation.test.js",
+    "test/http-concurrency.test.js",
+    "test/backoffice-placement.test.js",
+    "test/installation-stamp.test.js",
+    "test/canonical-page-edit.test.js",
+    "test/sewn-shared-budget.test.js",
+    "test/operation-completion.test.js",
+    "test/scoped-store-authorization.test.js"
+  ],
+  "finalAdditionalFiles": [
+    "test/production-observer-evidence.test.js",
+    "packages/wydclient/test/artifact-policy.test.js",
+    "packages/wydclient/test/bundle.test.js"
+  ],
+  "contentCheck": {
+    "command": "npm run check",
+    "exitCode": 0,
+    "pages": 3,
+    "internalLinksAndUniqueAnchors": 42,
+    "logSha256": "1dcdec3effdcf658e3ba58a49d0e4da2c29bd4f126ca270ef5bce1e9acddf607"
+  },
+  "installedProof": {
+    "command": "node scripts/verify-packed-packages.js",
+    "exitCode": 0,
+    "logSha256": "c7ba2631e8e04306cc4b78c1f1172c40810aa8b6b9d04bfe5837205b8fc2ce49",
+    "serviceFreeBinaryHttpAssetsRestart": true,
+    "checkoutImportsRejected": true,
+    "oneEnginePerConsumer": true,
+    "skipCount": 0
+  },
+  "frozenClient": {
+    "version": "0.1.0-alpha.11",
+    "pretestBuildPassed": true,
+    "approvedHistoryAndRebuildTestsPassed": true,
+    "artifactChanges": false,
+    "sharedImportClosureChanged": false
+  },
+  "deliveryPreflight": {
+    "fetch": "git fetch origin",
+    "head": "d97b06c37c9363f9652e1eebd1879dfaf412a029",
+    "remoteHead": "d97b06c37c9363f9652e1eebd1879dfaf412a029",
+    "ahead": 0,
+    "behind": 0,
+    "initialWorkingTree": "clean"
+  },
+  "checks": {
+    "diffCheck": true,
+    "versionsChanged": false,
+    "shippedRuntimeChanged": false,
+    "clientArtifactsChanged": false,
+    "cirChanged": false,
+    "priorEvidenceChanged": false
+  },
+  "http": {
+    "windows": 95,
+    "requests": 909,
+    "http200": 853,
+    "http500Indeterminate": 56,
+    "independentlyReconciledRecords": 909,
+    "reportedNativeCommits": 522,
+    "completedNativeOperations": 1044,
+    "offModeNativeCounts": "unobserved, not inferred from record counts",
+    "dedicatedProductionBefore": {
+      "windows": 10,
+      "http200": 119,
+      "http500Indeterminate": 1
+    },
+    "dedicatedProductionAfter": {
+      "windows": 10,
+      "http200": 119,
+      "http500Indeterminate": 1
+    },
+    "actualConcurrentPeak": {
+      "client": 12,
+      "server": 12,
+      "admitted": 12,
+      "observedPageLedger": 12
+    },
+    "unexpectedHttpOrWorkerErrors": 0,
+    "clientExitCode": 0,
+    "workerExitCode": 0,
+    "cleanupComplete": true
+  },
+  "issue": {
+    "id": "WYDGINE-0.3-HTTP-LIMIT",
+    "status": "OPEN"
+  },
+  "notes": [
+    "All authored source, tests and docs precede required check/full commands; this artifact is generated from their completed output. Final focused tests preceded only a comment correction and archive regeneration, both covered by the final full suite.",
+    "Exactly one full repository suite was run. No failure, cancellation, skip or security regression was suppressed. Restricted-sandbox preflight failure is preserved separately and excluded from native HTTP samples.",
+    "Only a bounded diagnostic label correction is retained; all underlying metadata calls still execute. No shipped runtime, authority, deadline, native semantics, release, version, publication or deployment changes.",
+    "Commit/push and final remote HEAD/working-tree verification are reported in the delivery handoff; a commit cannot include its own final hash."
+  ]
+}

@@ -1,5 +1,11 @@
 ## Unreleased
 
+- Separate production Contact failures from optional observer overhead in Spike J.
+  Add fresh-process observer controls and post-window provider reconciliation;
+  bound reuse of diagnostic artifact labels without skipping metadata operations.
+  Production failures still reproduce; WYDGINE-0.3-HTTP-LIMIT remains OPEN. No
+  shipped runtime, version, deadline or frozen-client changes.
+
 - Reuse the fully validated immutable candidate at server Page commit when its
   exact private envelope and next revision match. Keep full candidate validation,
   per-setter publication, live authority/lifetime checks and portable/client code

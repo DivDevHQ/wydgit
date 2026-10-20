@@ -2,7 +2,8 @@
 import {createHook, executionAsyncId} from 'node:async_hooks';
 import {performance,monitorEventLoopDelay} from 'node:perf_hooks';
 
-export function createFsreqpromiseProbe({enabled=false,maxCalls=64,maxResources=128,now=()=>performance.now(),scheduling=false,request=()=>null,generation=1,maxSpans=2048}={}) {
+export function createFsreqpromiseProbe({enabled=false,maxCalls=64,maxResources=128,now=()=>performance.now(),scheduling=false,monitorOnly=false,request=()=>null,generation=1,maxSpans=2048}={}) {
+  if(typeof monitorOnly!=='boolean'||monitorOnly&&enabled)throw new RangeError('Invalid monitor-only mode');
   if(!Number.isInteger(maxCalls)||maxCalls<1||maxCalls>1024||!Number.isInteger(maxResources)||maxResources<1||maxResources>2048)
     throw new RangeError('Invalid probe bounds');
   if(!Number.isInteger(generation)||generation<1||generation>1000000||!Number.isInteger(maxSpans)||maxSpans<1||maxSpans>4096)
@@ -67,7 +68,9 @@ export function createFsreqpromiseProbe({enabled=false,maxCalls=64,maxResources=
   hook?.enable();
   return Object.freeze({
     beginScheduling(){
-      if(!enabled||!scheduling||stopped||scheduleStart)return;
+      // Histogram/ELU measurement can run without global async hooks. This lets
+      // the existing fixture measure the hook's observer effect independently.
+      if((!enabled&&!monitorOnly)||!scheduling||stopped||scheduleStart)return;
       histogram=monitorEventLoopDelay({resolution:10});histogram.enable();
       scheduleStart={ms:now(),elu:elu(),cpu:process.cpuUsage()};
     },

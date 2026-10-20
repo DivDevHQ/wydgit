@@ -10,7 +10,7 @@ import {distribution,summarizeWindow} from './scheduling-attribution.js';
 const [mode,argument]=process.argv.slice(2);
 if(mode==='--worker'){
   const config=JSON.parse(argument);
-  if(config.synchronousAttribution){const {installAttributionHooks}=await import('./prerender-integrity-hooks.mjs');installAttributionHooks({incrementalValidation:config.incrementalValidation===true});}
+  if(config.synchronousAttribution){const {installAttributionHooks}=await import('./prerender-integrity-hooks.mjs');installAttributionHooks({incrementalValidation:config.incrementalValidation===true,category:config.attributionCategory??'all'});}
   const {runContactWindow}=await import('./http-concurrency.js');
   const value=await runContactWindow(config);
   value.clock={timeOriginMs:performance.timeOrigin,mainThread:process.pid};

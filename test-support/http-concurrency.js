@@ -76,7 +76,7 @@ export async function runContactWindow(configuration,{signal}={}) {
     setup:null,requests:[],nativeRequests:[],traces:[],actualConcurrency:null,fixtureFailure:null,cleanupComplete:false};
   const clearRows=[];let droppedClears=0;
   const resourceProbe=createFsreqpromiseProbe({enabled:configuration.resourceCorrelation===true,maxCalls:configuration.inspectionCorrelation?512:32,maxResources:configuration.inspectionCorrelation?512:32,
-    scheduling:configuration.scheduling===true,request:()=>local.getStore(),generation:configuration.generation??1});
+    scheduling:configuration.scheduling===true,monitorOnly:configuration.scheduling===true&&configuration.resourceCorrelation!==true,request:()=>local.getStore(),generation:configuration.generation??1});
   let server,app,barrier;
   const agent=new http.Agent({keepAlive:false,maxSockets:12});
   try {
@@ -132,6 +132,17 @@ export async function runContactWindow(configuration,{signal}={}) {
     }
     if(result.nativeRequests.some(value=>!value.createOk||!value.queryOk))result.fixtureFailure='native-service-failure';
     if(result.requests.some(({client})=>client.complete&&client.status===200&&(!client.contactAcknowledged||client.outcome!=='committed')))result.fixtureFailure='unexpected-success-contract';
+    // Independent read after ALL HTTP responses settle. This never runs on a
+    // request's Page path and never retries a write or changes its HTTP outcome.
+    if(configuration.reconcile===true&&result.requests.length){
+      const model=loadRepository(fixture.root),packages=activatePackages(model,app.locals.libraries,fixture.root);
+      const context=packages.context({pageId:'contact',session:{identity:null},ids:[]});
+      const mapping=packages.pages.get('contact').storageMappings.entries;
+      const rows=await app.locals.libraries.bind(context).call('wydstore','query',{...mapping,limit:20});
+      assert.equal(rows.ok,true,'Post-window provider read');
+      result.reconciliation={method:'fresh authorized provider query after all HTTP responses',records:rows.value.length,
+        expected:concurrency,complete:rows.value.length===concurrency};
+    }
   }catch(error){result.fixtureFailure=error.code?.startsWith('CLIENT.')?error.code:error.code==='FIXTURE.BARRIER'?'barrier':'setup-or-execution';}
   finally {
     barrier?.cancel();agent.destroy();
@@ -141,7 +152,7 @@ export async function runContactWindow(configuration,{signal}={}) {
       if(server){server.closeAllConnections();await app.shutdown(server);}else await app?.stop();
     }]);
     resourceProbe.stop();
-    if(configuration.resourceCorrelation===true)result.resourceCorrelation=resourceProbe.snapshot();
+    if(configuration.resourceCorrelation===true||configuration.scheduling===true)result.resourceCorrelation=resourceProbe.snapshot();
     if(configuration.formClear)result.formClear={rows:clearRows,dropped:droppedClears};
     if(attribution)result.synchronousAttribution=[...synchronousCaptures.values()].map(capture=>capture.finish());
     result.cleanupComplete=failed===0;if(failed)result.fixtureFailure??='cleanup';

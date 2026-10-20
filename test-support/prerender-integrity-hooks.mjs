@@ -5,9 +5,13 @@ const engine='/packages/wydgine/src/engine/';
 const observer=new URL('./prerender-integrity-attribution.js',import.meta.url).href;
 const targets=new Set(['object-model/index.js','object-model/mutation.js','object-model/construction.js','packages/index.js',
   'packages/state.js','repository.js','execution/page.js','execution/diagnostics.js','execution/progress.js','seam/context.js']);
-export function installAttributionHooks({incrementalValidation=false}={}){
+export function installAttributionHooks({incrementalValidation=false,category='all'}={}){
+  if(!['all','canonical','guard'].includes(category))throw new RangeError('Attribution category');
+  const selected=new Set(category==='all'?targets:category==='canonical'?
+    ['object-model/index.js','object-model/mutation.js','object-model/construction.js','execution/page.js','execution/diagnostics.js','execution/progress.js']:
+    ['packages/index.js','packages/state.js','repository.js','seam/context.js','execution/diagnostics.js','execution/progress.js']);
   return registerHooks({load(url,context,next){
-    const result=next(url,context),name=url.split(engine)[1];if(!targets.has(name))return result;
+    const result=next(url,context),name=url.split(engine)[1];if(!selected.has(name))return result;
     let source=String(result.source);
     const replace=(before,after)=>{if(source.split(before).length!==2)throw Error('Spike G source anchor: '+name);source=source.replace(before,after);};
     const wrap=(fn,stage,methods)=>{

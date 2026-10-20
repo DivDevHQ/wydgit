@@ -18,7 +18,7 @@ export function createSynchronousAttribution({generation=1,request=0,maxArtifact
   if(!Number.isSafeInteger(generation)||generation<1||!Number.isInteger(request)||request<0||request>12||
     !Number.isInteger(maxArtifacts)||maxArtifacts<1||maxArtifacts>1024)throw new RangeError('Attribution bounds');
   const state={generation,request,now,phase:'prepare',deadline:null,stack:[],rows:new Map(),metadata:new Map(),artifacts:new Set(),
-    maxArtifacts,droppedArtifacts:0,overflow:0,counts:Object.create(null),boundaries:[],lifetimes:new WeakMap(),nextLifetime:0,closed:false};
+    knownFiles:new Map(),maxArtifacts,droppedArtifacts:0,overflow:0,counts:Object.create(null),boundaries:[],lifetimes:new WeakMap(),nextLifetime:0,closed:false};
   let result;
   return Object.freeze({
     run(operation){return local.run(state,operation);},
@@ -29,7 +29,7 @@ export function createSynchronousAttribution({generation=1,request=0,maxArtifact
         spans:[...state.rows.values()].map(row=>({...row})),metadata:[...state.metadata.values()].map(row=>({...row})),
         uniqueArtifacts:state.artifacts.size,droppedArtifacts:state.droppedArtifacts,stackOverflow:state.overflow,
         counts:{...state.counts},boundaries:state.boundaries.map(row=>({...row})),observedLifetimes:state.nextLifetime};
-      state.rows.clear();state.metadata.clear();state.artifacts.clear();
+      state.rows.clear();state.metadata.clear();state.artifacts.clear();state.knownFiles.clear();
       return result;
     }
   });
@@ -76,9 +76,16 @@ export function observedFs(site,operation,fn,...args){
   const row=s.metadata.get(mapKey)??{phase:s.phase,insideBudget,site,operation,caller,cause,calls:0,elapsedMs:0};s.metadata.set(mapKey,row);
   // Each capture covers one installation. Recognize its seven fixed logical
   // artifacts without hashing each repeated stamp; other paths become ephemeral
-  // keyed digests. No private path or file bytes are retained or emitted.
-  const file=String(args[0]),known=installationArtifacts.findIndex(name=>file.endsWith('/'+name));
-  const digest=known<0?createHmac('sha256',key).update(file).digest('hex'):'installation-artifact-'+known;
+  // keyed digests. No private path or file bytes are emitted; the label cache
+  // below privately retains at most seven path strings until capture finish.
+  const file=String(args[0]);let digest=s.knownFiles.get(file);
+  if(digest===undefined){
+    const known=installationArtifacts.findIndex(name=>file.endsWith('/'+name));
+    digest=known<0?createHmac('sha256',key).update(file).digest('hex'):'installation-artifact-'+known;
+    // Diagnostic labels only. At most seven path strings per request, discarded
+    // at finish. NEVER retain metadata, validation results or authority decisions.
+    if(known>=0&&s.knownFiles.size<7)s.knownFiles.set(file,digest);
+  }
   if(!s.artifacts.has(digest)){if(s.artifacts.size<s.maxArtifacts)s.artifacts.add(digest);else s.droppedArtifacts++;}
   const start=s.now();try{return syncSpan('metadata',()=>fn(...args));}finally{row.calls++;row.elapsedMs+=Math.max(0,s.now()-start);}
 }
