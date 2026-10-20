@@ -2,7 +2,7 @@
 import {performance} from 'node:perf_hooks';
 import {createContinuationTiming} from './continuation.js';
 const stages=new Set(['dispatchValidation','dispatchAuthorization','nativeHandler','jsonQueue','jsonWork','sqlitePreflight','sqliteLifecycle','sqliteTransaction']);
-export function createCompletion(check,{diagnosticTiming=false,observeLifecycleLstat,now=()=>performance.now()}={}) {
+export function createCompletion(check,{diagnosticTiming=false,observeLifecycleLstat,observeSqliteInspection,now=()=>performance.now()}={}) {
   const pending=new Set(),effects=[];let closed=false;
   const timings=diagnosticTiming?Object.create(null):null;
   const continuations=diagnosticTiming?createContinuationTiming(now):null;
@@ -16,10 +16,32 @@ export function createCompletion(check,{diagnosticTiming=false,observeLifecycleL
     async run(work) {
       check();if(closed)throw new Error('Execution closed');
       const effect={state:'none',started:false};effects.push(effect);
+      let inspectionObserver;
+      const notify=(key,...args)=>{try{return inspectionObserver?.[key]?.(...args);}catch{try{inspectionObserver?.cancel?.();}catch{}inspectionObserver=null;}};
+      const observedStage=name=>{
+        const end=stage(name);
+        if(name!=='sqliteTransaction')return end;
+        notify('transactionStart');
+        return ()=>{end?.();notify('transactionEnd');};
+      };
       const operation=Object.freeze({
-        check,
-        ...(diagnosticTiming?{stage,continuation:name=>{
+        check:diagnosticTiming&&typeof observeSqliteInspection==='function'?()=>{notify('checkpoint');check();}:check,
+        ...(diagnosticTiming?{stage:typeof observeSqliteInspection==='function'?observedStage:stage,continuation:name=>{
           const observation=continuations.begin(name);
+          if(name==='sqliteInspectFiles'&&typeof observeSqliteInspection==='function'){
+            try{inspectionObserver=observeSqliteInspection({operation:effects.indexOf(effect)+1});}catch{return observation;}
+            // Synchronous qualification markers only; keep the existing awaits.
+            return Object.freeze({
+              ...Object.fromEntries(['start','awaiting','complete','resume'].map(key=>[key,()=>{observation?.[key]?.();notify(key);} ])),
+              filesystem(stage,ordinal){
+                const filesystem=notify('filesystem',stage,ordinal);
+                if(!filesystem)return undefined;
+                return Object.freeze(Object.fromEntries(['start','invoked','resume'].map(key=>[key,()=>{
+                  try{filesystem[key]?.();}catch{try{filesystem.cancel?.();}catch{}notify('cancel');}
+                }])));
+              }
+            });
+          }
           if(name!=='sqliteLifecycleLstat'||typeof observeLifecycleLstat!=='function')return observation;
           // Trusted qualification seam. Fixed markers only; never canonical data.
           let observer;
@@ -34,7 +56,7 @@ export function createCompletion(check,{diagnosticTiming=false,observeLifecycleL
         committed(){effect.state='committed';}
       });
       const task=Promise.resolve().then(()=>work(operation));pending.add(task);
-      try{return await task;}finally{pending.delete(task);}
+      try{return await task;}finally{pending.delete(task);notify('settled');}
     },
     async settle(){closed=true;await Promise.allSettled([...pending]);},
     // Fixed counters only; begin may run more than once for one service call.

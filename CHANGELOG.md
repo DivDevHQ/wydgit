@@ -1,5 +1,11 @@
 ## Unreleased
 
+- Extend test-only SQLite FSREQPROMISE attribution to individual root/inspection
+  lstat operations and retain overlapping per-native-call timelines. One twelve-way
+  Contact window uniquely maps 216 POST inspection operations and 24 lifecycle
+  operations, with 1 HTTP 200 / 11 deadline HTTP 500 outcomes. Preserve alpha.28
+  versions and keep WYDGINE-0.3-HTTP-LIMIT open; no runtime correction or release.
+
 - Establish test-only per-invocation Contact lifecycle FSREQPROMISE attribution
   through an optional synchronous diagnostic seam. One twelve-way SQLite window
   correlates all 24 POST lifecycle calls and preserves 1 HTTP 200 / 11 deadline

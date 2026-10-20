@@ -40,11 +40,18 @@ export async function openSqliteAdapter(root, owner, definitions, metadata, limi
   const collections = Object.fromEntries([...persisted].sort(([a],[b]) => a < b ? -1 : a > b ? 1 : 0));
   async function inspectFiles(observation) {
     try {
-    await safeRoot(root);
+    await safeRoot(root,observation);
     // SQLite owns these sidecars. Reject links before the native driver opens any.
+    let ordinal=0;
     for (const suffix of ['', '-journal', '-wal', '-shm']) {
       let info;
-      try { info = await lstat(file + suffix); }
+      const filesystem=observation?.filesystem?.('sqliteFileLstat',++ordinal);
+      filesystem?.start();
+      try {
+        let pending;
+        try { pending=lstat(file + suffix); } finally { filesystem?.invoked(); }
+        try { info=await pending; } finally { filesystem?.resume(); }
+      }
       catch (error) { if (error.code === 'ENOENT' && suffix) continue; if(error.code === 'ENOENT') throw new StoreError('STORE.CORRUPT'); throw error; }
       check(info.isFile() && !info.isSymbolicLink() && info.nlink === 1, 'STORE.CORRUPT');
       check(info.size <= limits.sqliteDatabaseBytes, 'STORE.LIMIT');

@@ -13,11 +13,12 @@ if(process.argv[2]==='--worker') {
   process.stdout.write(JSON.stringify(result)+'\n');
 }else {
   const args=process.argv.slice(2);
-  const resource=args[2]==='--resource-correlation';
+  const inspection=args[2]==='--inspection-correlation';
+  const resource=inspection||args[2]==='--resource-correlation';
   const lifecycle=resource||args[2]==='--lifecycle-lstat';
   const isolation=args[2]==='--process-isolation',continuation=lifecycle||args[2]==='--preflight-continuation',isolated=isolation||continuation;
   const counter=args[2]==='--admission-control',native=args[2]==='--provider-control',observer=args[2]==='--observer-control';
-  if(![2,3].includes(args.length)||args[0]!=='--output'||args.length===3&&!counter&&!native&&!observer&&!isolated)throw Error('Usage: node test-support/http-concurrency-probe.mjs --output NEW_DIRECTORY [--admission-control|--provider-control|--observer-control|--process-isolation|--preflight-continuation|--lifecycle-lstat|--resource-correlation]');
+  if(![2,3].includes(args.length)||args[0]!=='--output'||args.length===3&&!counter&&!native&&!observer&&!isolated)throw Error('Usage: node test-support/http-concurrency-probe.mjs --output NEW_DIRECTORY [--admission-control|--provider-control|--observer-control|--process-isolation|--preflight-continuation|--lifecycle-lstat|--resource-correlation|--inspection-correlation]');
   const directory=path.resolve(args[1]);
   // Refuse reuse: earlier failures cannot be overwritten by a passing rerun.
   await fs.mkdir(directory,{recursive:false});
@@ -92,11 +93,21 @@ if(process.argv[2]==='--worker') {
     // Write a checkpoint without replacing any per-window evidence.
     await fs.writeFile(path.join(directory,'summary.json'),JSON.stringify(summary,null,2)+'\n');
     if(isolated&&(result.workerFailure||result.fixtureFailure||!result.cleanupComplete||result.requests?.length!==configuration.concurrency||!result.nativeStageTiming||['client','server','admitted','pageLedger'].some(key=>result.actualConcurrency?.[key]!==configuration.concurrency)))throw Error('Invalid isolated window');
-    if(resource&&(!result.resourceCorrelation?.stopped||result.resourceCorrelation.tracked||result.resourceCorrelation.hookErrors||result.resourceCorrelation.droppedCalls||result.resourceCorrelation.droppedResources||result.resourceCorrelation.calls.some(row=>row.correlation!=='lifecycle-single-resource')))throw Error('Incomplete resource correlation');
+    if(resource&&(!result.resourceCorrelation?.stopped||result.resourceCorrelation.tracked||result.resourceCorrelation.hookErrors||result.resourceCorrelation.droppedCalls||result.resourceCorrelation.droppedResources||result.resourceCorrelation.calls.some(row=>row.correlation!==(row.mode==='inspection'?'inspection-single-resource':'lifecycle-single-resource'))))throw Error('Incomplete resource correlation');
     if(resource){
       const calls=result.resourceCorrelation.calls;
       for(const [request,record]of [[0,result.setup.trace],...result.traces.map(({index,record})=>[index,record])]){
-        const own=calls.filter(row=>row.request===request);
+        const own=calls.filter(row=>row.request===request&&row.mode==='lifecycle');
+        if(inspection){
+          const spans=result.resourceCorrelation.inspections.filter(row=>row.request===request);
+          if(spans.length!==record.services.admitted||spans.some(row=>row.settledMs===null||row.resumeMs===null||
+            (row.transactionStartMs===null)!==(row.transactionEndMs===null)||row.checkpointCount<1)||
+            spans.filter(row=>row.transactionEndMs!==null).length!==(record.meter.diagnostics.nativeStages.sqliteTransaction?.calls??0))throw Error('Incomplete native timeline');
+          for(const span of spans){
+            const files=calls.filter(row=>row.inspection===span.inspection);
+            if(files.filter(row=>row.stage==='sqliteFileLstat').length!==4||!files.some(row=>row.stage==='rootLstat')||files.some(row=>row.request!==request||row.operation!==span.operation))throw Error('Inspection identity mismatch');
+          }
+        }
         if(own.length!==record.meter.diagnostics.continuations.sqliteLifecycleLstat.calls||
           own.length!==record.services.admitted||own.some((row,index)=>row.operation!==index+1))throw Error('Invocation identity mismatch');
       }
@@ -108,7 +119,7 @@ if(process.argv[2]==='--worker') {
   try {
     for(const provider of summary.configuration.providers){
       if(continuation){
-        for(let repetition=1;repetition<=(resource?1:3);repetition++)await run({provider,concurrency:12,repetition,series:resource?'resource-correlation':lifecycle?'lifecycle-lstat':'preflight-continuation',clientPlacement:'separate',diagnosticsEnabled:true,...(resource?{resourceCorrelation:true}:{})});
+        for(let repetition=1;repetition<=(resource?1:3);repetition++)await run({provider,concurrency:12,repetition,series:inspection?'inspection-correlation':resource?'resource-correlation':lifecycle?'lifecycle-lstat':'preflight-continuation',clientPlacement:'separate',diagnosticsEnabled:true,...(resource?{resourceCorrelation:true,...(inspection?{inspectionCorrelation:true}:{})}:{})});
       }else if(isolation){
         for(const [index,clientPlacement]of ['shared','separate','shared','separate'].entries())
           for(let repetition=1;repetition<=3;repetition++)await run({provider,concurrency:12,repetition,series:['A1','B1','A2','B2'][index],clientPlacement,diagnosticsEnabled:true});

@@ -70,7 +70,7 @@ export async function runContactWindow(configuration,{signal}={}) {
   const after=[],local=new AsyncLocalStorage(),records=new Map(),serverRequests=new Map(),admissions=new Map();
   const result={schema:'wydgine.http-concurrency-window/1',...configuration,clientPlacement,runtime:process.version,platform:process.platform,
     setup:null,requests:[],nativeRequests:[],traces:[],actualConcurrency:null,fixtureFailure:null,cleanupComplete:false};
-  const resourceProbe=createFsreqpromiseProbe({enabled:configuration.resourceCorrelation===true,maxCalls:32,maxResources:32});
+  const resourceProbe=createFsreqpromiseProbe({enabled:configuration.resourceCorrelation===true,maxCalls:configuration.inspectionCorrelation?512:32,maxResources:configuration.inspectionCorrelation?512:32});
   let server,app,barrier;
   const agent=new http.Agent({keepAlive:false,maxSockets:12});
   try {
@@ -80,7 +80,7 @@ export async function runContactWindow(configuration,{signal}={}) {
       input:Readable.from(['y','y','contact','contact','sections','0',provider,'','y','y'].map(value=>value+'\n')),output:{write(){}}});
     app=await createHostApp({root:fixture.root,logger:{error(){}},
       admit(){const index=local.getStore(),span={start:performance.now(),end:null};admissions.set(index,span);return ()=>{span.end=performance.now();};},
-      execution:diagnosticsEnabled?{...(configuration.resourceCorrelation===true?{observeLifecycleLstat:({operation})=>resourceProbe.observe({request:local.getStore(),operation})}:{}),observeHttp:record=>{const index=local.getStore();if(Number.isInteger(index)&&index>=0&&index<=12&&!records.has(index))records.set(index,record);}}:{}});
+      execution:diagnosticsEnabled?{...(configuration.resourceCorrelation===true?{observeLifecycleLstat:({operation})=>resourceProbe.observe({request:local.getStore(),operation}),...(configuration.inspectionCorrelation?{observeSqliteInspection:({operation})=>resourceProbe.inspect({request:local.getStore(),operation})}:{})}:{}),observeHttp:record=>{const index=local.getStore();if(Number.isInteger(index)&&index>=0&&index<=12&&!records.has(index))records.set(index,record);}}:{}});
     server=http.createServer({maxHeaderSize:8192},(req,res)=>{
       const index=Number(req.headers['x-fixture-sequence']),span={start:performance.now(),end:null};serverRequests.set(index,span);
       const end=()=>{span.end??=performance.now();};res.once('finish',end);res.once('close',end);
