@@ -1,5 +1,13 @@
 ## Unreleased
 
+- Advance platform/Wydgine/WydHosting to alpha.27 and Store to alpha.7. Add bounded
+  opt-in SQLite inspection completion/continuation observations without Promise
+  reactions, plus separate lifecycle elapsed timing and deterministic calibration.
+  Three separate-client twelve-way Contact fixtures reproduce 25/36 matching
+  deadline failures; post-inspection resumption is fast, while inspection/lifecycle
+  internal waiting remains unresolved. Preserve every outcome and existing security,
+  deadline and commit semantics; WYDGINE-0.3-HTTP-LIMIT remains open with no runtime fix.
+
 - Advance platform/Wydgine/WydHosting to alpha.26. Add a supervised separate-client
   mode to the existing Contact harness, shared wire construction and failure/reaping
   regressions. The bounded SQLite comparison reproduces matching deadline failures

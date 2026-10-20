@@ -13,9 +13,9 @@ if(process.argv[2]==='--worker') {
   process.stdout.write(JSON.stringify(result)+'\n');
 }else {
   const args=process.argv.slice(2);
-  const isolation=args[2]==='--process-isolation';
+  const isolation=args[2]==='--process-isolation',continuation=args[2]==='--preflight-continuation',isolated=isolation||continuation;
   const counter=args[2]==='--admission-control',native=args[2]==='--provider-control',observer=args[2]==='--observer-control';
-  if(![2,3].includes(args.length)||args[0]!=='--output'||args.length===3&&!counter&&!native&&!observer&&!isolation)throw Error('Usage: node test-support/http-concurrency-probe.mjs --output NEW_DIRECTORY [--admission-control|--provider-control|--observer-control|--process-isolation]');
+  if(![2,3].includes(args.length)||args[0]!=='--output'||args.length===3&&!counter&&!native&&!observer&&!isolated)throw Error('Usage: node test-support/http-concurrency-probe.mjs --output NEW_DIRECTORY [--admission-control|--provider-control|--observer-control|--process-isolation|--preflight-continuation]');
   const directory=path.resolve(args[1]);
   // Refuse reuse: earlier failures cannot be overwritten by a passing rerun.
   await fs.mkdir(directory,{recursive:false});
@@ -31,11 +31,12 @@ if(process.argv[2]==='--worker') {
   const windows=[],failures=[],started=Date.now();let firstMatch=false;
   const summary={schema:'wydgine.http-concurrency-series/1',node:process.version,platform:process.platform,
     fingerprints,versions,
-    configuration:{providers:isolation?['SQLite']:['JSON','SQLite'],levels:isolation?[12,8]:LEVELS,repetitions:3,controlConcurrency:observer?12:4,controlOrder:CONTROLS,
-      maxWindows:isolation?14:native?6:counter||observer?8:38,maxPosts:isolation?160:native?0:counter||observer?96:194,maxSetupGets:isolation?14:native?6:counter||observer?8:38,
+    configuration:{providers:isolated?['SQLite']:['JSON','SQLite'],levels:continuation?[12]:isolation?[12,8]:LEVELS,repetitions:3,controlConcurrency:observer?12:4,controlOrder:CONTROLS,
+      maxWindows:continuation?3:isolation?14:native?6:counter||observer?8:38,maxPosts:continuation?36:isolation?160:native?0:counter||observer?96:194,maxSetupGets:continuation?3:isolation?14:native?6:counter||observer?8:38,
       maxNativeSequences:native?72:0,windowTimeoutMs:45000,totalTimeoutMs:12*60*1000,
       pageLedgerMs:1000,ledgerClock:'Date.now',diagnosticClock:'performance.now',samplerIntervalMs:50,
-      topology:isolation?'one fresh server worker per window; shared or supervised separate client; one window at a time':'one fresh worker process per window; client and server share worker; one window at a time',
+      topology:isolated?'one fresh server worker per window; shared or supervised separate client; one window at a time':'one fresh worker process per window; client and server share worker; one window at a time',
+      preflightContinuation:continuation?{clientPlacement:'separate',concurrency:12,repetitions:3}:null,
       processIsolation:isolation?{order:['A1','B1','A2','B2'],placements:['shared','separate','shared','separate'],repetitions:3,primaryConcurrency:12,secondaryConcurrency:8,clientStartupMs:5000,clientExecutionMs:25000}:null,
       transport:'Node HTTP/1.1 loopback, agent keepAlive=false (no forced Connection header), maxSockets=12, maxHeaderSize=8192, maxHeadersCount=64, requestTimeout=120000, headersTimeout=15000',
       requestTimeoutMs:10000,fixture:'interactive Contact guestbook install; fresh empty dataset per window; no retries',
@@ -86,11 +87,14 @@ if(process.argv[2]==='--worker') {
       matching:matching.length,fixtureFailure:result.fixtureFailure??result.workerFailure??null}));
     // Write a checkpoint without replacing any per-window evidence.
     await fs.writeFile(path.join(directory,'summary.json'),JSON.stringify(summary,null,2)+'\n');
-    if(isolation&&(result.workerFailure||result.fixtureFailure||!result.cleanupComplete||result.requests?.length!==configuration.concurrency||!result.nativeStageTiming||['client','server','admitted','pageLedger'].some(key=>result.actualConcurrency?.[key]!==configuration.concurrency)))throw Error('Invalid isolation window');
+    if(isolated&&(result.workerFailure||result.fixtureFailure||!result.cleanupComplete||result.requests?.length!==configuration.concurrency||!result.nativeStageTiming||['client','server','admitted','pageLedger'].some(key=>result.actualConcurrency?.[key]!==configuration.concurrency)))throw Error('Invalid isolated window');
+    if(continuation&&result.traces.some(({record})=>{const row=record.meter?.diagnostics?.continuations?.sqliteInspectFiles;return !row||row.calls!==2||row.resumed!==2||row.providerCompleted!==2||row.incomplete||row.missingCompletion;}))throw Error('Incomplete continuation observations');
   };
   try {
     for(const provider of summary.configuration.providers){
-      if(isolation){
+      if(continuation){
+        for(let repetition=1;repetition<=3;repetition++)await run({provider,concurrency:12,repetition,series:'preflight-continuation',clientPlacement:'separate',diagnosticsEnabled:true});
+      }else if(isolation){
         for(const [index,clientPlacement]of ['shared','separate','shared','separate'].entries())
           for(let repetition=1;repetition<=3;repetition++)await run({provider,concurrency:12,repetition,series:['A1','B1','A2','B2'][index],clientPlacement,diagnosticsEnabled:true});
         for(const clientPlacement of ['shared','separate'])await run({provider,concurrency:8,repetition:1,series:'secondary-'+clientPlacement,clientPlacement,diagnosticsEnabled:true});

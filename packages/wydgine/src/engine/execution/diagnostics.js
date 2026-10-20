@@ -20,7 +20,8 @@ export function createPageDiagnostics() {
       add(phases,phase,elapsed(phaseStarted));phaseStarted=performance.now();
       const snapshot=map=>Object.freeze(Object.fromEntries(Object.entries(map).map(([k,v])=>[k,Object.freeze({calls:v.calls,elapsedMs:Math.round(v.elapsedMs*1000)/1000})])));
       const nativeStages=services?.timing();
-      return Object.freeze({...meter,diagnostics:Object.freeze({schema:'wydgit.page-diagnostics/1',execution:'page',accountingPath:Object.freeze(['page','events','components','workflow','services']),phaseAtFailure:failed,preparationMs:Math.max(0,budgetStarted-started),phases:snapshot(phases),spans:snapshot(spans),...(nativeStages?{nativeStages}:{})})});
+      const continuations=services?.continuations();
+      return Object.freeze({...meter,diagnostics:Object.freeze({schema:'wydgit.page-diagnostics/1',execution:'page',accountingPath:Object.freeze(['page','events','components','workflow','services']),phaseAtFailure:failed,preparationMs:Math.max(0,budgetStarted-started),phases:snapshot(phases),spans:snapshot(spans),...(nativeStages?{nativeStages}:{}),...(continuations?{continuations}:{})})});
     }
   });
 }

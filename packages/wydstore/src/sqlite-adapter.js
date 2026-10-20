@@ -38,7 +38,8 @@ export async function openSqliteAdapter(root, owner, definitions, metadata, limi
   const file = path.join(root, `${name}.sqlite`);
   const persisted = new Map([...definitions].map(([id,fields]) => [id,metadata?.get(id).schemaId ? metadata.get(id) : fields]));
   const collections = Object.fromEntries([...persisted].sort(([a],[b]) => a < b ? -1 : a > b ? 1 : 0));
-  async function inspectFiles() {
+  async function inspectFiles(observation) {
+    try {
     await safeRoot(root);
     // SQLite owns these sidecars. Reject links before the native driver opens any.
     for (const suffix of ['', '-journal', '-wal', '-shm']) {
@@ -48,6 +49,7 @@ export async function openSqliteAdapter(root, owner, definitions, metadata, limi
       check(info.isFile() && !info.isSymbolicLink() && info.nlink === 1, 'STORE.CORRUPT');
       check(info.size <= limits.sqliteDatabaseBytes, 'STORE.LIMIT');
     }
+    } finally { observation?.complete(); }
   }
   function validateMetadata(db) {
     check(db.pragma('user_version', {simple:true}) === 1, 'STORE.CORRUPT');
@@ -156,9 +158,14 @@ export async function openSqliteAdapter(root, owner, definitions, metadata, limi
   }
   async function transaction(operation, request, initialize = false, completion) {
     let db,worked;const preflight=completion?.stage?.('sqlitePreflight');
+    const observation=completion?.continuation?.('sqliteInspectFiles');
     try {
-      await inspectFiles();
-      await checkLifecycleLock(root,name,lifecycle);
+      observation?.start();
+      const inspection=inspectFiles(observation);
+      observation?.awaiting();
+      try { await inspection; } finally { observation?.resume(); }
+      const lifecycleStage=completion?.stage?.('sqliteLifecycle');
+      try { await checkLifecycleLock(root,name,lifecycle); } finally { lifecycleStage?.(); }
       completion?.check();
       preflight?.();worked=completion?.stage?.('sqliteTransaction');
       db = new Database(file, {fileMustExist:true, timeout:1000});

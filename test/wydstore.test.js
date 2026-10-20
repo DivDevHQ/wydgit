@@ -10,7 +10,7 @@ import {project, context, reject, load, temp, fixture, file} from '../test-suppo
 
 test('WydStore workspace loads independently through canonical loader without granting authority',async t=>{
  const {registry,root}=await fixture(t);const require=createRequire(import.meta.url),pkg=require('@wydgit/store/package.json');
- assert.equal(pkg.version,'0.1.0-alpha.6');assert.equal(pkg.version,manifest.version);assert.equal(registry.get('wydstore').id,'wydstore');
+ assert.equal(pkg.version,'0.1.0-alpha.7');assert.equal(pkg.version,manifest.version);assert.equal(registry.get('wydstore').id,'wydstore');
  assert.equal(await fs.realpath(path.dirname(require.resolve('@wydgit/store/package.json'))),path.join(project,'packages/wydstore'));
  const ctx=context({capabilities:[]});assert.equal((await registry.bind(ctx).call('wydstore','query',{store:'main',collection:'users'})).code,'SEAM.DENIED');assert.deepEqual(ctx.capabilities,[]);
  assert.deepEqual(await fs.readdir(root).then(x=>x.map(n=>path.extname(n))),['.json']);
@@ -41,7 +41,7 @@ test('generic dispatcher retains context, requires authorization and sanitizes u
 
 test('platform metadata, workspace metadata and demo remain synchronized and portable',async()=>{
  const lock=JSON.parse(await fs.readFile(path.join(project,'package-lock.json'))),app=JSON.parse(await fs.readFile(path.join(project,'content/app.json')));
- assert.equal(platform.version,'0.3.0-alpha.26');assert.equal(lock.version,platform.version);assert.equal(lock.packages[''].version,platform.version);assert.equal(lock.packages[''].name,platform.name);assert.equal(lock.packages['packages/wydstore'].version,manifest.version);assert.equal(app.properties.revision,'Wydgit 0.3 alpha 26');assert.doesNotMatch(JSON.stringify(app),/node_modules|@wydgit\/store|filesystem|provider|sqlite|pragma|SELECT/i);
+ assert.equal(platform.version,'0.3.0-alpha.27');assert.equal(lock.version,platform.version);assert.equal(lock.packages[''].version,platform.version);assert.equal(lock.packages[''].name,platform.name);assert.equal(lock.packages['packages/wydstore'].version,manifest.version);assert.equal(app.properties.revision,'Wydgit 0.3 alpha 27');assert.doesNotMatch(JSON.stringify(app),/node_modules|@wydgit\/store|filesystem|provider|sqlite|pragma|SELECT/i);
 });
 
 test('equivalent record inputs persist deterministically and input aliases cannot change saved values',async t=>{

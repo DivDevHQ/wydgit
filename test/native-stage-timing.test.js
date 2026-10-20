@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {syncBuiltinESMExports} from 'node:module';
+import {createHook} from 'node:async_hooks';
+import {createContinuationTiming} from '../packages/wydgine/src/engine/execution/continuation.js';
 import {createCompletion} from '../wydgine/execution/completion.js';
 import {bindServices} from '../wydgine/libraries/dispatch.js';
 import {ExecutionContext} from '../wydgine/seam/context.js';
@@ -90,4 +92,95 @@ test('SQLite stages: actual async preflight and synchronous transaction are sepa
   assert.equal((await invoke(1)).ok,true);fail=true;assert.equal((await invoke(2)).ok,false);await completion.settle();
   const stages=completion.timing();assert.deepEqual(stages.sqlitePreflight,{calls:2,completed:2,elapsedMs:140,maxMs:70});
   assert.deepEqual(stages.sqliteTransaction,{calls:1,completed:1,elapsedMs:5,maxMs:5});assert.equal(completion.snapshot().commitReported,1);await f.registry.close();
+});
+
+test('continuation calibration: provider pending, continuation withheld, and synchronous completion are distinct',async()=>{
+  for(const mode of ['provider','continuation','immediate']){
+    let time=0;const completion=createCompletion(()=>{},{diagnosticTiming:true,now:()=>time});
+    await completion.run(async operation=>{
+      const observation=operation.continuation('sqliteInspectFiles');observation.start();
+      const barrier=deferred();
+      const provider=async()=>{if(mode==='provider')await barrier.promise;observation.complete();if(mode==='continuation')queueMicrotask(()=>{time=80;});};
+      const task=provider();observation.awaiting();
+      if(mode==='provider'){time=70;barrier.resolve();}
+      try{await task;}finally{observation.resume();observation.resume();}
+    });await completion.settle();
+    const row=completion.continuations().sqliteInspectFiles;
+    assert.equal(row.operation.totalMs,mode==='provider'?70:0);
+    assert.equal(row.continuation.totalMs,mode==='continuation'?80:0);
+    assert.equal(row.preflightToResume.totalMs,mode==='provider'?70:mode==='continuation'?80:0);
+    assert.equal(row.completeBeforeAwait,mode==='provider'?0:1);assert.equal(row.incomplete,0);assert.equal(row.missingCompletion,0);
+  }
+});
+
+test('continuation calibration: fixed bounded aggregates, incomplete observations and disabled controls',async()=>{
+  let time=0,reads=0;const disabled=createCompletion(()=>{},{now:()=>{reads++;return time;}});
+  await disabled.run(operation=>assert.equal(operation.continuation,undefined));assert.equal(disabled.continuations(),null);assert.equal(reads,0);
+  const completion=createCompletion(()=>{},{diagnosticTiming:true,now:()=>time});
+  await completion.run(operation=>{
+    assert.equal(operation.continuation('private-path'),undefined);
+    operation.continuation('sqliteInspectFiles');
+    const missing=operation.continuation('sqliteInspectFiles');missing.start();time++;missing.resume();
+    for(let i=0;i<10000;i++){const observation=operation.continuation('sqliteInspectFiles');observation.start();time++;observation.complete();observation.complete();observation.awaiting();observation.resume();}
+  });
+  const snapshot=completion.continuations(),row=snapshot.sqliteInspectFiles;
+  assert.equal(row.calls,10002);assert.equal(row.incomplete,1);assert.equal(row.missingCompletion,1);assert.equal(row.providerCompleted,10000);
+  assert.equal(row.operation.totalMs,10000);assert.equal(row.continuation.totalMs,0);assert.ok(JSON.stringify(snapshot).length<500);
+  assert.ok(Object.isFrozen(row.operation));assert.doesNotMatch(JSON.stringify(snapshot),/private-path/);
+});
+
+test('SQLite continuation: real inspection barrier and producer completion point precede transaction resumption',{timeout:10000},async t=>{
+  const f=await fixture(t,'sqlite'),entered=deferred(),release=deferred();let time=0,armed=true;
+  t.after(()=>release.resolve());const original=fs.lstat;
+  const mocked=t.mock.method(fs,'lstat',async(...args)=>{
+    if(armed&&typeof args[0]==='string'&&args[0].startsWith(f.root+'/')&&args[0].endsWith('.sqlite')){armed=false;entered.resolve();await release.promise;}
+    return original(...args);
+  });syncBuiltinESMExports();t.after(()=>{mocked.mock.restore();syncBuiltinESMExports();});
+  const completion=createCompletion(()=>{},{diagnosticTiming:true,now:()=>time});
+  const call=completion.run(operation=>f.registry.bind(context(),{...operation,continuation(name){
+    const observation=operation.continuation(name);return {...observation,complete(){observation.complete();queueMicrotask(()=>{time+=80;});}};
+  }}).call('wydstore','create',input('continuation')));
+  await entered.promise;time=70;release.resolve();assert.equal((await call).ok,true);await completion.settle();
+  const row=completion.continuations().sqliteInspectFiles;
+  assert.equal(row.operation.totalMs,70);assert.equal(row.continuation.totalMs,80);assert.equal(row.preflightToResume.totalMs,150);
+  assert.equal(row.completeBeforeAwait,0);assert.equal(row.incomplete,0);assert.equal(row.missingCompletion,0);
+  assert.equal(completion.snapshot().commitReported,1);await f.registry.close();
+});
+
+test('SQLite continuation: cancellation at the preflight guard preserves enabled/disabled settlement and commit semantics',{timeout:10000},async t=>{
+  const f=await fixture(t,'sqlite');const snapshots=[];
+  for(const diagnosticTiming of [false,true]){
+    let expired=false;const completion=createCompletion(()=>{if(expired)throw Error('cancelled');},{diagnosticTiming});
+    const original=fs.lstat;let armed=true;
+    const mocked=t.mock.method(fs,'lstat',async(...args)=>{
+      if(armed&&typeof args[0]==='string'&&args[0].startsWith(f.root+'/')&&args[0].endsWith('.sqlite')){armed=false;expired=true;}
+      return original(...args);
+    });syncBuiltinESMExports();
+    try{const result=await completion.run(operation=>f.registry.bind(context(),operation).call('wydstore','create',input('cancel-'+diagnosticTiming)));
+      assert.equal(result.ok,false);await completion.settle();snapshots.push({services:completion.snapshot(),outcome:completion.outcome(true)});
+      if(diagnosticTiming){const row=completion.continuations().sqliteInspectFiles;assert.equal(row.resumed,1);assert.equal(row.providerCompleted,1);assert.equal(row.incomplete,0);assert.equal(completion.timing().sqliteTransaction,undefined);}
+    }finally{mocked.mock.restore();syncBuiltinESMExports();}
+  }
+  assert.deepEqual(snapshots[0],snapshots[1]);assert.equal(snapshots[0].services.pending,0);assert.equal(snapshots[0].services.commitReported,0);
+  await f.registry.close();
+});
+
+test('continuation calibration: concurrent observations retain ordering without allocating Promise reactions',async()=>{
+  const completion=createCompletion(()=>{},{diagnosticTiming:true,now:()=>0}),order=[];
+  const provider=async observation=>{await Promise.resolve();order.push('producer');observation?.complete();queueMicrotask(()=>order.push('queued'));};
+  await Promise.all([false,true].map(enabled=>completion.run(async operation=>{
+    const observation=enabled?operation.continuation('sqliteInspectFiles'):undefined;observation?.start();
+    const task=provider(observation);observation?.awaiting();await task;observation?.resume();order.push('resume');
+  })));
+  await completion.settle();assert.deepEqual(order,['producer','producer','queued','resume','queued','resume']);
+  assert.equal(completion.continuations().sqliteInspectFiles.calls,1);assert.equal(completion.snapshot().pending,0);
+});
+
+test('continuation observation allocates no Promise, timer or immediate resources',()=>{
+  const resources=[];const hook=createHook({init(_id,type){if(['PROMISE','Timeout','Immediate'].includes(type))resources.push(type);}});
+  hook.enable();
+  try{const timing=createContinuationTiming(()=>0);for(let i=0;i<100;i++){
+    const observation=timing.begin('sqliteInspectFiles');observation.start();observation.awaiting();observation.complete();observation.resume();
+  }assert.equal(timing.snapshot().sqliteInspectFiles.resumed,100);}finally{hook.disable();}
+  assert.deepEqual(resources,[]);
 });

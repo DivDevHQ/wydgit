@@ -31,6 +31,12 @@ for(const provider of ['JSON','SQLite'])test(`concurrency fixture: ${provider} r
     const trace=result.traces.find(value=>value.index===request.index).record;assert.equal(trace.operationOutcome,'committed');assert.equal(trace.services.commitReported,1);
     assert.equal(trace.services.nativeStarted,2);assert.equal(trace.services.pending,0);assert.ok(trace.meter.timing.deadlineAtMs>trace.meter.timing.startedAtMs);
     assert.ok(request.admission.start<request.admission.end);assert.equal(trace.meter.diagnostics.nativeStages.nativeHandler.completed,2);
+    if(provider==='SQLite'){
+      const row=trace.meter.diagnostics.continuations.sqliteInspectFiles;
+      assert.equal(row.calls,2);assert.equal(row.providerCompleted,2);assert.equal(row.resumed,2);
+      assert.equal(row.incomplete,0);assert.equal(row.missingCompletion,0);assert.equal(row.completeBeforeAwait,0);
+      assert.equal(trace.meter.diagnostics.nativeStages.sqliteLifecycle.completed,2);
+    }else assert.deepEqual(trace.meter.diagnostics.continuations,{});
   }
   assert.doesNotMatch(JSON.stringify(result),/set-cookie|_csrf|wydpackage-|node_modules|Bounded Contact concurrency experiment/);
 });

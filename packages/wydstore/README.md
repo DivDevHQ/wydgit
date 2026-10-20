@@ -1,8 +1,14 @@
 # @wydgit/store
 
-Canonical library `wydstore`, independently versioned at `0.1.0-alpha.6`.
+Canonical library `wydstore`, independently versioned at `0.1.0-alpha.7`.
 
-Alpha.6 adds private opt-in JSON enqueue/dequeue/work and SQLite preflight/synchronous
+Alpha.7 adds a provider-owned SQLite inspection completion marker and a separate
+lifecycle elapsed stage through the same trusted, opt-in control. No Promise
+reaction or scheduling barrier is added. The completion marker precedes Promise
+settlement; inspection includes internal filesystem continuations. See the
+[preflight continuation qualification](../../docs/http-preflight-continuation-qualification.md).
+
+Alpha.6 added private opt-in JSON enqueue/dequeue/work and SQLite preflight/synchronous
 transaction timing through an observed engine completion control. Fixed numeric
 aggregates contain no request data, SQL or paths; transaction authority, cancellation
 and commit semantics are unchanged. See the platform's
