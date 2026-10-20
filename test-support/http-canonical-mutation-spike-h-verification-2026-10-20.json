@@ -1,0 +1,140 @@
+{
+  "schema": "wydgine.canonical-mutation-spike-h-verification/1",
+  "date": "2026-10-20",
+  "node": "v24.21.0",
+  "branch": "develop/0.3",
+  "baseline": "d674f304a818cf589980cb192f8b979cd013c79d",
+  "runs": {
+    "initialFocused": {
+      "command": "node --test test/canonical-page-edit.test.js test/mutation.test.js test/object-model.test.js test/form-clear.test.js test/forms.test.js test/events.test.js test/execution-contexts.test.js test/oop-contract.test.js test/installation-stamp.test.js test/backoffice-placement.test.js test/operation-completion.test.js test/sewn-shared-budget.test.js test/scoped-store-authorization.test.js test/policy-reconciliation.test.js",
+      "tests": 228,
+      "pass": 228,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 16606.737941
+    },
+    "dedicatedFinal": {
+      "command": "node --test test/canonical-page-edit.test.js",
+      "tests": 19,
+      "pass": 19,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 597.377605
+    },
+    "finalFocused": {
+      "command": "node --test test/canonical-page-edit.test.js test/canonical-mutation-evidence.test.js test/mutation.test.js test/form-clear.test.js test/backoffice-placement.test.js test/installation-stamp.test.js",
+      "tests": 90,
+      "pass": 90,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 4681.887432
+    },
+    "full": {
+      "command": "npm test",
+      "tests": 1703,
+      "pass": 1703,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 82066.850217
+    },
+    "installedIntegration": {
+      "command": "node scripts/verify-packed-packages.js: installed five-library integration",
+      "tests": 380,
+      "pass": 380,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 19827.532073
+    },
+    "installedProvider": {
+      "command": "node scripts/verify-packed-packages.js: installed provider",
+      "tests": 35,
+      "pass": 35,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 2113.53433
+    },
+    "installedProcess": {
+      "command": "node scripts/verify-packed-packages.js: actual installed process supervision",
+      "tests": 20,
+      "pass": 20,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 43498.434011
+    },
+    "installedLinux": {
+      "command": "node scripts/verify-packed-packages.js: installed Linux boundaries",
+      "tests": 25,
+      "pass": 25,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 4626.613665
+    }
+  },
+  "contentCheck": {
+    "command": "npm run check",
+    "exitCode": 0,
+    "pages": 3,
+    "internalLinksAndUniqueAnchors": 42
+  },
+  "installedProof": {
+    "serviceFree": true,
+    "checkoutImportsRejected": true,
+    "oneEnginePerConsumer": true,
+    "shippedHelperAndPageMatchCheckout": true,
+    "skipCount": 0
+  },
+  "deliveryPreflight": {
+    "fetch": "git fetch origin",
+    "head": "d674f304a818cf589980cb192f8b979cd013c79d",
+    "remoteHead": "d674f304a818cf589980cb192f8b979cd013c79d",
+    "ahead": 0,
+    "behind": 0,
+    "initialWorkingTree": "clean"
+  },
+  "checks": {
+    "diffCheck": true,
+    "versionsChanged": false,
+    "clientArtifactsChanged": false,
+    "sharedClientImportClosureChanged": false,
+    "cirChanged": false,
+    "priorEvidenceChanged": false
+  },
+  "exploratory": {
+    "initialNativeTestFixture": {
+      "tests": 16,
+      "pass": 14,
+      "fail": 2,
+      "reason": "Incorrect expected errors after shared context lifetime termination. Fixed expectations without changing the runtime."
+    },
+    "sandboxTests": "node:test could not produce usable child output under restricted subprocess access. Native runs used for qualification.",
+    "sandboxHTTP": "19 unusable worker failures excluded; both retained native series completed 19/19 captures without fixture failures.",
+    "benchmarkAssertion": "Initial object comparison expected ordinary prototypes instead of normalized null-prototype JSON; fixed before retained samples.",
+    "offlinePackager": "Fixed handling of false diagnostic flag before packaging; no captures replaced."
+  },
+  "notes": [
+    "All authored runtime, regression, probe, evidence and documentation changes precede the recorded full/content pass. This output record is generated afterward; required checks are repeated before commit after writing it.",
+    "No verification skips. Browser manual, deployment, hostile-root, power-loss and network-filesystem qualification are outside this bounded spike.",
+    "Local private tarballs only. No package publication, release tag, version bump, deployment or downstream edits.",
+    "Delivery commit/push and final remote/working-tree proof are reported in the final handoff."
+  ],
+  "issue": {
+    "id": "WYDGINE-0.3-HTTP-LIMIT",
+    "status": "OPEN"
+  }
+}

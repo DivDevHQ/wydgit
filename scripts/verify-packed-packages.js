@@ -53,6 +53,9 @@ const selected=['lifecycle-lstat-timing','http-client-process','http-concurrency
 // Spike G changes the shipped installation guard. Exercise its exact tuple and
 // filesystem adversaries, plus generation fencing, against installed tarballs.
 selected.push('installation-stamp','backoffice-placement');
+// Spike H optimizes only the server Page adapter; qualify its differential,
+// installed-lifetime and real Page/Clear regressions from shipped engine bytes.
+selected.push('canonical-page-edit','form-clear');
 async function stage(root){
  await fs.copyFile(path.join(repository,'wydgit.config.json'),path.join(root,'wydgit.config.json'));
  await fs.mkdir(path.join(root,'.fixtures'));

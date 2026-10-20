@@ -108,6 +108,25 @@ canonical data and prototype failures. Mutation-specific failures use
 `CLOSED` (all with the `MUTATION.` prefix). Wrap host calls in `resultOf` at a
 synchronous SEAM boundary to hide unexpected internal exceptions.
 
+## Server Page candidate copying (Spike H)
+
+The server-only `execution/canonical-edit.js` adapter retains this same mutation
+factory. During pre-operation copying it recognizes the exact private accepted
+working envelope and uses the existing `copyEnvelope` shape/JSON copier instead
+of hydrating and immediately dehydrating unchanged data. Only successful full
+candidate hydration/dehydration establishes the next accepted envelope. Commit
+always hydrates with the next revision. No mutable candidate, caller input,
+authorization decision, installed-policy result or cross-session state is reused.
+
+For M successful edits in one session, full hydration/semantic validation and
+canonical dehydrate counts fall from `2M+1` each to `M+1` each; M defensive
+shape-validation/copy passes remain. Per-operation isolation, error ordering,
+intermediate setter visibility and fresh immutable commits are unchanged. This
+adapter is used only at the two server Page edit sites; portable/client edits,
+shared component-controller edits, trusted `systemSet` and package lifecycle
+mutation retain their existing implementation. Frozen client distributions and
+their shared import closure are untouched. See [Spike H evidence and limits](work-in-progress/http-canonical-mutation-spike-h.md).
+
 ## Authority
 
 The caller must have `object.instances.edit`, and every affected ID must be in

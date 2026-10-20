@@ -1,3 +1,4 @@
+import {createPageEdit} from './canonical-edit.js';
 import {createPageDiagnostics} from './diagnostics.js';
 import {formClearObservation} from './form-clear-observation.js';
 import {setClearProperty} from './form-clear-edit.js';
@@ -46,7 +47,7 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
       guard();check(writable&&!unloading&&response.state==='Open'&&exists(id),'EVENT.DENIED','Tree is read-only');
       if(operation==='moveChild')check(exists(args[0]),'EVENT.DENIED','Parent outside Page');
       for(const old of tree())if(initialized.has(old))archive.set(old,runtime.get(old));
-      const session=runtime.edit(context);session[operation](id,...args);const next=session.commit().runtime;
+      const session=createPageEdit(runtime,context,model.registry);session[operation](id,...args);const next=session.commit().runtime;
       // Never detach the lifecycle root or move content outside its Page.
       check(next.get(pageId).prototype===runtime.get(pageId).prototype,'EVENT.DENIED','Page root immutable');
       const oldIds=new Set(tree()),added=tree(next).filter(value=>!oldIds.has(value));
@@ -71,7 +72,7 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
           if(operation==='clear')changes.push([id,{valid:true}]);
           if(changes.length){
             guard();check(writable&&!unloading&&response.state==='Open','EVENT.DENIED','Tree is read-only');
-            const edit=measure('editSetupMs',()=>runtime.edit(context));
+            const edit=measure('editSetupMs',()=>createPageEdit(runtime,context,model.registry));
             measure('runtimeEditsMs',()=>{for(const [id,p] of changes)for(const [key,v] of Object.entries(p)){const applied=operation==='clear'?setClearProperty(edit,runtime,context,id,key,v):edit.setProperty(id,key,v);observation?.write(applied!==false);}});
             runtime=measure('commitMs',()=>edit.commit().runtime);
           }

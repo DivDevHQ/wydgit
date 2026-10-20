@@ -1,5 +1,11 @@
 ## Unreleased
 
+- Remove redundant pre-operation hydration from server Page edits using the existing
+  mutation factory and defensive envelope copier. Keep candidate/commit validation,
+  independent setter visibility, live authority and installation checks unchanged.
+  Record repeated canonical and SQLite/JSON HTTP qualification in Spike H;
+  WYDGINE-0.3-HTTP-LIMIT remains OPEN. No versions or frozen client artifacts change.
+
 - Attribute PreRender/canonical and installation-check costs with bounded opt-in
   Contact diagnostics, repeated provider/overhead/scaling controls and preserved
   source captures. Compare fresh installation metadata BigInts directly, retaining
