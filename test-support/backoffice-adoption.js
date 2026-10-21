@@ -17,7 +17,9 @@ export function adoptionFixture(f){
     const report=f.preflight({pageProposals:proposals});
     if(report.status==='blocked')throw Error(JSON.stringify(report));
     return {actions:ids.map(id=>{const a=report.actions.find(a=>a.package===f.manifest.id&&a.action===id);return {reference:a.reference,contractHash:a.contractHash,scope:a.restrictiveScope};}),
-      pages:proposals.map(proposal=>({proposal,contractHash:report.pages.find(p=>p.identity?.page===proposal.page).contractHash}))};
+      // Multiple entry keys can publish the same Page. Obtain each candidate's
+      // own digest rather than accidentally reusing the first Page's digest.
+      pages:proposals.map(proposal=>({proposal,contractHash:trusted.validateBackOfficePageEntry({proposal,entry:f.entry(),app:f.entry().executionPlacement.app,...f.pageFacts()}).contractHash}))};
   };
   f.policyRequest=backoffice=>{const s=f.state(),e=f.entry();return {root:f.root,app:e.executionPlacement.app,package:e.manifest.id,installation:e.receipt.id,
     revision:s.revision,packageRevision:e.receipt.revision,policyRevision:e.policyRevision??0,policy:{grants:e.approved,stores:[],...(backoffice===undefined?{}:{backoffice})},installationContext:f.operator};};

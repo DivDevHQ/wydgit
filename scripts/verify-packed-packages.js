@@ -62,7 +62,7 @@ selected.push('canonical-page-edit','form-clear');
 // through shipped modules as well as the real action/HTTP installation fixtures.
 selected.push('execution-contexts','scoped-policy','scoped-store-authorization',
  'scoped-policy-lifecycle','policy-reconciliation','backoffice-body',
- 'backoffice-action-scope','backoffice-page-foundation','backoffice-preflight','backoffice-adoption','backoffice-enforcement');
+ 'backoffice-action-scope','backoffice-page-foundation','backoffice-preflight','backoffice-adoption','backoffice-enforcement','backoffice-b5');
 async function stage(root){
  await fs.copyFile(path.join(repository,'wydgit.config.json'),path.join(root,'wydgit.config.json'));
  await fs.mkdir(path.join(root,'.fixtures'));

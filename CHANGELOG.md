@@ -1,5 +1,11 @@
 ## Unreleased
 
+- B5: qualify disposable installed BackOffice applications, canonical browser Page
+  intents and JSON/SQLite authorization/lifecycle parity. Sanitize ambiguous local
+  admission-mutex diagnostics without reclaiming locks. Retain partial human
+  accessibility and reusable editor/dashboard requirements; no foundation-complete
+  claim, version change or HTTP-LIMIT resolution.
+
 - B4b: enforce complete reviewed BackOffice migration before App admission, live
   per-action resource maxima, canonical independently authorized Page HTTP entry,
   and typed same-installation action bindings. Coordinate stopped-App review with

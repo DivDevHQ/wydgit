@@ -9,13 +9,14 @@ import {spawn,execFileSync} from 'node:child_process';
 import {once} from 'node:events';
 import {installMembershipLogin} from '../test-support/backoffice.js';
 import {modulesFixture} from '../test-support/backoffice-modules.js';
+import {reviewFixture} from '../test-support/backoffice-enforcement.js';
 import {createApp} from '../app.js';
 const cleanup=[],t={after:fn=>cleanup.push(fn)},isFirefox=process.env.WYDCLIENT_BROWSER==='firefox',pointerOnly=isFirefox&&process.env.WYDCLIENT_FIREFOX_POINTER_ONLY==='1',browser=isFirefox?(process.env.WYDCLIENT_FIREFOX??'firefox'):(process.env.WYDCLIENT_CHROME??'google-chrome');
 const artifacts=await fs.mkdtemp(path.join(os.tmpdir(),'wyd-backoffice-browser-'));
 console.log('Browser artifacts: '+artifacts);
 let chrome,ws,sequence=0;const calls=new Map(),evidence={browser:execFileSync(browser,['--version'],{encoding:'utf8'}).trim(),viewports:[],checks:[],screenshots:[]};
 try{
- const f=await modulesFixture(t);await installMembershipLogin(f);
+ const f=await modulesFixture(t);await installMembershipLogin(f);await reviewFixture(f);
  await f.gate.register({username:'reader',password:f.password,displayName:'Disposable reader'});
  const app=createApp({root:f.root,libraries:f.libraries,localHostname:'127.0.0.1'}),server=app.listen(0,'127.0.0.1');await once(server,'listening');
  cleanup.push(()=>app.shutdown(server));const base='http://127.0.0.1:'+server.address().port;

@@ -20,7 +20,12 @@ function serialized(root,work){
   // Never race to reclaim an abandoned mutex by unlinking it. A death inside
   // this synchronous critical section needs stopped-host inspection/removal;
   // runtime/maintenance leases can be reclaimed only under this exclusive lock.
-  try{const owner=readLease(mutex);check(false,live(owner.pid)?'PACKAGE.BUSY':'PACKAGE.RECOVERY','Local App admission lock requires inspection');}catch(e){if(e.code!=='ENOENT')throw e;}
+  let owner;
+  try{owner=readLease(mutex);}catch(e){
+    if(e.code!=='ENOENT')check(false,'PACKAGE.BUSY','Invalid local App admission mutex (.wydgine-admission-mutex); stop all local App processes and inspect coordination evidence');
+  }
+  if(owner){const active=live(owner.pid);check(false,active?'PACKAGE.BUSY':'PACKAGE.RECOVERY',
+    `Local App admission mutex (.wydgine-admission-mutex) is ${active?'potentially live':'abandoned'} (PID ${owner.pid}); stop all local App processes and inspect coordination evidence`);}
   try{createLease(mutex);}catch(e){check(e.code!=='EEXIST','PACKAGE.BUSY','Concurrent App admission');throw e;}
   try{return work();}finally{unlinkSync(mutex);}
 }

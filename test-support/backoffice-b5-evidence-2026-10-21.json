@@ -1,0 +1,2882 @@
+{
+  "mission": "Wydgine 0.3 Operation BackOffice B5",
+  "date": "2026-10-21",
+  "branch": "develop/0.3",
+  "baseline": "0a869c68e5e55f390caee51a0c29d4e587e86340",
+  "baselineTree": "clean",
+  "fetchedBaselineDivergence": [
+    0,
+    0
+  ],
+  "decisions": {
+    "DEC-01": "APPROVED unchanged",
+    "DEC-02": "APPROVED unchanged"
+  },
+  "conformance": {
+    "inScope": 64,
+    "implementedVerified": 62,
+    "partial": 2,
+    "missing": 0,
+    "unverified": 0,
+    "deferred": 12,
+    "promotions": [],
+    "remainingPartial": [
+      "BO-HTTP-12",
+      "BO-REU-06"
+    ],
+    "foundationComplete": false
+  },
+  "initialGaps": [
+    {
+      "id": "BO-HTTP-12",
+      "contract": "Browser/accessibility qualification covers the renderer's promised interactions",
+      "outstanding": "Human assistive-technology evaluation and complete Firefox keyboard journey; automated Chrome results alone cannot satisfy this."
+    },
+    {
+      "id": "BO-REU-06",
+      "contract": "Modular layout/property editing/content editors/dashboard support is reusable",
+      "outstanding": "Complete reusable layout/property editing, content editors and dashboard support; existing composition/forms/informational Taskboard insufficient."
+    }
+  ],
+  "boundaries": {
+    "productionInstallationsModified": false,
+    "automaticAdoption": false,
+    "testOnlyBindingAdapter": true,
+    "productionBrowserAutomaticBindingConsumptionShipped": false,
+    "pageDeadlineMs": 1000,
+    "reviewPlanLimitBytes": 65536,
+    "httpLimitIssue": "OPEN",
+    "versionsOrManifestsChanged": false,
+    "frozenArtifactsChanged": false,
+    "archivedSourcePinsChanged": false,
+    "forceUnlockAdded": false,
+    "unqualifiedConformancePromotions": false
+  },
+  "fixtures": {
+    "recordsArchive": {
+      "providers": [
+        "json",
+        "sqlite"
+      ],
+      "actions": [
+        "get",
+        "create",
+        "update",
+        "delete",
+        "transaction",
+        "archive-get",
+        "list"
+      ],
+      "page": "/backoffice/pages/records",
+      "bindings": {
+        "prepare": [
+          "load"
+        ],
+        "intent": [
+          "create",
+          "list",
+          "get"
+        ]
+      },
+      "publication": "explicit stopped-App native plan/approve/apply, after membership login install"
+    },
+    "independentModules": {
+      "providers": [
+        "json",
+        "sqlite"
+      ],
+      "pages": [
+        "/backoffice/pages/members",
+        "/backoffice/pages/notices"
+      ],
+      "actions": [
+        "list-members",
+        "list-notices"
+      ]
+    },
+    "taskboard": {
+      "page": "/backoffice/pages/taskboard",
+      "actions": 0,
+      "bindings": 0,
+      "runtimeCreatedChildren": true
+    }
+  },
+  "mutationAssertions": {
+    "authorizedCreate": {
+      "version": 1
+    },
+    "authorizedUpdate": {
+      "version": 2
+    },
+    "staleRevision": "409; original accepted value remains",
+    "delete": "absent after real provider reopen/restart",
+    "typedAndForeignTargets": "rejected; denied ID absent",
+    "transaction": "both approved records version 1; denied actual second member writes neither collection; foreign member writes neither",
+    "browser": "approved create version 1 before and after retirement/replacement/review/restart; revoked-intent ID absent",
+    "uncertainTransport": "No rollback assertion or replay"
+  },
+  "operatorDiagnostics": {
+    "potentiallyLive": "PACKAGE.BUSY; PID and local mutex named",
+    "deadMutex": "PACKAGE.RECOVERY; abandoned condition named",
+    "invalidMutex": "PACKAGE.BUSY; sanitized inspection instruction; malformed JSON/null/schema/size/symlink/directory/hardlink covered",
+    "automaticCleanup": false,
+    "inspection": "read-only preflight/policy identifies selected App/installation without granting authority",
+    "operatorRecovery": "exclusive offline stopped/drained root control and preserved evidence; existing authorized package journal recovery separately; no force unlock API"
+  },
+  "finalRequiredRecheck": {
+    "commands": [
+      "npm test",
+      "npm run check"
+    ],
+    "fullLog": "/tmp/b5-full-final.log",
+    "checkLog": "/tmp/b5-check-final.log",
+    "outcomes": "Run after this report/evidence snapshot; exact results are recorded in the commit message and final owner handoff, not predicted by this snapshot."
+  },
+  "qualificationRuns": [
+    {
+      "name": "initial-app",
+      "argv": [
+        "node",
+        "--test",
+        "--test-isolation=none",
+        "--test-reporter=tap",
+        "test/backoffice-b5.test.js"
+      ],
+      "command": "node --test --test-isolation=none --test-reporter=tap test/backoffice-b5.test.js",
+      "exit": 1,
+      "log": "/tmp/b5-initial-app.log",
+      "sha256": "57dbaa3b55d7fdafe716f0a571f4fdb2131a7d2a255f1099d29c2a32909faf1d",
+      "seconds": 3.168,
+      "tests": 7,
+      "pass": 0,
+      "fail": 7,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "note": "Initial required content property omitted in the new fixture; sandbox also refused loopback listeners. Not native qualification."
+    },
+    {
+      "name": "app-before-diagnostics",
+      "argv": [
+        "node",
+        "--test",
+        "--test-isolation=none",
+        "--test-reporter=tap",
+        "test/backoffice-b5.test.js"
+      ],
+      "command": "node --test --test-isolation=none --test-reporter=tap test/backoffice-b5.test.js",
+      "exit": 1,
+      "log": "/tmp/b5-app-before-diagnostics.log",
+      "sha256": "2e077a7f131d2f66809b65b35f92190d30027eee5110d2231d4a5500cba63e19",
+      "seconds": 6.791,
+      "tests": 7,
+      "pass": 0,
+      "fail": 7,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "note": "Corrected required content; Page proposal helper reused the first hash for two keys on one Page. Roster assertion also expected array rather than documented members envelope."
+    },
+    {
+      "name": "app-fixture-corrected",
+      "argv": [
+        "node",
+        "--test",
+        "--test-isolation=none",
+        "--test-reporter=tap",
+        "test/backoffice-b5.test.js"
+      ],
+      "command": "node --test --test-isolation=none --test-reporter=tap test/backoffice-b5.test.js",
+      "exit": 1,
+      "log": "/tmp/b5-app-fixture-corrected.log",
+      "sha256": "d7b1a32f3d3d81a20b6b66144dc9a7db46f21e26e87a327d9f829a3a4162b445",
+      "seconds": 4.177,
+      "tests": 7,
+      "pass": 0,
+      "fail": 7,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "note": "First helper correction incorrectly assumed a key field in the preflight report. Replaced with exact per-proposal pure digest, independently checked by native review."
+    },
+    {
+      "name": "app-before-fix",
+      "argv": [
+        "node",
+        "--test",
+        "--test-isolation=none",
+        "--test-reporter=tap",
+        "test/backoffice-b5.test.js"
+      ],
+      "command": "node --test --test-isolation=none --test-reporter=tap test/backoffice-b5.test.js",
+      "exit": 1,
+      "log": "/tmp/b5-app-before-fix.log",
+      "sha256": "bd095684a4f26a1e030d0ec0ecbd26698bd7fc42e68ae4d8a7c67933669ae875",
+      "seconds": 8.543,
+      "tests": 7,
+      "pass": 2,
+      "fail": 5,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "note": "Members/Notices pass; complete record approval plan exceeds 64 KiB. No limit change."
+    },
+    {
+      "name": "app-before-mutex-fix",
+      "argv": [
+        "node",
+        "--test",
+        "--test-isolation=none",
+        "--test-reporter=tap",
+        "test/backoffice-b5.test.js"
+      ],
+      "command": "node --test --test-isolation=none --test-reporter=tap test/backoffice-b5.test.js",
+      "exit": 1,
+      "log": "/tmp/b5-app-before-mutex-fix.log",
+      "sha256": "d66cc7fd485d3515892fd19291ba99ab57c0501f9cb7191eac308fc5d160907e",
+      "seconds": 8.086,
+      "tests": 7,
+      "pass": 2,
+      "fail": 5,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "note": "Initial narrowing still exceeded 64 KiB. Further bounded to one Page and four bindings, reusing raw independently authorized actions."
+    },
+    {
+      "name": "app-before-diagnostic-change",
+      "argv": [
+        "node",
+        "--test",
+        "--test-isolation=none",
+        "--test-reporter=tap",
+        "test/backoffice-b5.test.js"
+      ],
+      "command": "node --test --test-isolation=none --test-reporter=tap test/backoffice-b5.test.js",
+      "exit": 1,
+      "log": "/tmp/b5-app-before-diagnostic-change.log",
+      "sha256": "67d24fc0e1f91ca36ea500c158371fd78447e91667cb537a20356ca28653d9cc",
+      "seconds": 37.307,
+      "tests": 7,
+      "pass": 6,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "note": "Six installed provider tests pass; new mutex diagnostic regression fails against prior generic lock message."
+    },
+    {
+      "name": "chrome-initial",
+      "argv": [
+        "node",
+        "scripts/verify-backoffice-b5-browser.js"
+      ],
+      "command": "node scripts/verify-backoffice-b5-browser.js",
+      "exit": 0,
+      "log": "/tmp/b5-chrome-initial.log",
+      "sha256": "a4a483a5c822299b494b28ff27523094acc615ede1a96f871db83f21f1f6f4c8",
+      "seconds": 15.823,
+      "browserEvidence": {
+        "file": "/tmp/wyd-backoffice-b5-browser-M62ukM/result.json",
+        "sha256": "e2a9f6fb9c1d2a8f1492e2f9518581c66b1fa726d57fd077855a774f4fc7794a",
+        "result": {
+          "ok": true,
+          "firefox": false,
+          "pointerOnly": false,
+          "providers": [
+            {
+              "provider": "json",
+              "checks": [
+                "Real Gate form login, HttpOnly session, canonical installed Page with approved read preparation",
+                "Native Tab order text \u2192 confirmation \u2192 submit, Space confirmation, visible focus outline",
+                "Native semantic form submits exact published binding, real CSRF, explicit confirmation and protected create",
+                "Retained intent after live action/service revocation denied; independent detail binding proves one success and absent denied record",
+                "Missing/unauthorized Page, public alternate ingress, forged query and expired genuine browser Session denied",
+                "Stopped retirement removes Page; fresh replacement/review/restart retains exactly one persisted mutation"
+              ],
+              "audit": {
+                "main": 1,
+                "headings": [
+                  "Records administration",
+                  "Current records",
+                  "New record"
+                ],
+                "unnamed": 0,
+                "errors": true,
+                "dialogs": 0
+              },
+              "focus": [
+                "confirmed",
+                "Create record"
+              ],
+              "layouts": [
+                {
+                  "width": 320,
+                  "documentWidth": 305
+                },
+                {
+                  "width": 360,
+                  "documentWidth": 345
+                },
+                {
+                  "width": 768,
+                  "documentWidth": 753
+                },
+                {
+                  "width": 1280,
+                  "documentWidth": 1265
+                }
+              ],
+              "contrast": {
+                "light": {
+                  "text": 13.320950605055367,
+                  "input": 13.320950605055367,
+                  "button": 6.701618401398807
+                },
+                "dark": {
+                  "text": 16.193006440967938,
+                  "input": 13.399258849587758,
+                  "button": 9.83750053606076
+                }
+              },
+              "mutation": {
+                "createdVersion": 1,
+                "deniedAbsent": true,
+                "restartVersion": 1
+              }
+            },
+            {
+              "provider": "sqlite",
+              "checks": [
+                "Real Gate form login, HttpOnly session, canonical installed Page with approved read preparation",
+                "Native Tab order text \u2192 confirmation \u2192 submit, Space confirmation, visible focus outline",
+                "Native semantic form submits exact published binding, real CSRF, explicit confirmation and protected create",
+                "Retained intent after live action/service revocation denied; independent detail binding proves one success and absent denied record",
+                "Missing/unauthorized Page, public alternate ingress, forged query and expired genuine browser Session denied",
+                "Stopped retirement removes Page; fresh replacement/review/restart retains exactly one persisted mutation"
+              ],
+              "audit": {
+                "main": 1,
+                "headings": [
+                  "Records administration",
+                  "Current records",
+                  "New record"
+                ],
+                "unnamed": 0,
+                "errors": true,
+                "dialogs": 0
+              },
+              "focus": [
+                "confirmed",
+                "Create record"
+              ],
+              "layouts": [
+                {
+                  "width": 320,
+                  "documentWidth": 305
+                },
+                {
+                  "width": 360,
+                  "documentWidth": 345
+                },
+                {
+                  "width": 768,
+                  "documentWidth": 753
+                },
+                {
+                  "width": 1280,
+                  "documentWidth": 1265
+                }
+              ],
+              "contrast": {
+                "light": {
+                  "text": 13.320950605055367,
+                  "input": 13.320950605055367,
+                  "button": 6.701618401398807
+                },
+                "dark": {
+                  "text": 16.193006440967938,
+                  "input": 13.399258849587758,
+                  "button": 9.83750053606076
+                }
+              },
+              "mutation": {
+                "createdVersion": 1,
+                "deniedAbsent": true,
+                "restartVersion": 1
+              }
+            }
+          ],
+          "limitations": [
+            "Human assistive technology, speech, actual zoom/forced-colors/touch remain unverified.",
+            "Bound intent integration uses an explicit trusted test client, not a shipped frozen WydClient feature."
+          ],
+          "browser": "Google Chrome 156.0.8078.47"
+        },
+        "screenshots": [
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-M62ukM/json-dark.png",
+            "sha256": "829c0aba1d2859d5abee6c55c28820b1e67f8400299bf0e493feadc131ac5100",
+            "pixels": [
+              1280,
+              1596
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-M62ukM/json-light.png",
+            "sha256": "6d584468eb9f5969fa23d7b57e54ae1291444bfccd06ce833fbc93fad2e52775",
+            "pixels": [
+              1265,
+              1596
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-M62ukM/json-mobile.png",
+            "sha256": "46886e74ec86fa6fb1022e428e7298a79855bb3a5b616180fc0367cede976230",
+            "pixels": [
+              1265,
+              1596
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-M62ukM/sqlite-dark.png",
+            "sha256": "829c0aba1d2859d5abee6c55c28820b1e67f8400299bf0e493feadc131ac5100",
+            "pixels": [
+              1280,
+              1596
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-M62ukM/sqlite-light.png",
+            "sha256": "6d584468eb9f5969fa23d7b57e54ae1291444bfccd06ce833fbc93fad2e52775",
+            "pixels": [
+              1265,
+              1596
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-M62ukM/sqlite-mobile.png",
+            "sha256": "46886e74ec86fa6fb1022e428e7298a79855bb3a5b616180fc0367cede976230",
+            "pixels": [
+              1265,
+              1596
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "app-mutex-after",
+      "argv": [
+        "node",
+        "--test",
+        "--test-isolation=none",
+        "--test-reporter=tap",
+        "test/backoffice-b5.test.js"
+      ],
+      "command": "node --test --test-isolation=none --test-reporter=tap test/backoffice-b5.test.js",
+      "exit": 0,
+      "log": "/tmp/b5-app-mutex-after.log",
+      "sha256": "e9aaf07cd58dbbd35945b5ab9641f0f784f4842dbd9b8311ab5445e50ab8ff24",
+      "seconds": 37.863,
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "note": "Seven installed tests pass after sanitized mutex diagnostics; later focused run includes expanded malformed-state cases and actual transaction-member denial."
+    },
+    {
+      "name": "chrome-preparation",
+      "argv": [
+        "node",
+        "scripts/verify-backoffice-b5-browser.js"
+      ],
+      "command": "node scripts/verify-backoffice-b5-browser.js",
+      "exit": 0,
+      "log": "/tmp/b5-chrome-preparation.log",
+      "sha256": "6a52fa93c5be11cf9ffdadddf953827a5bcbdeaae8a8c7d5588d1880647cbe3f",
+      "seconds": 19.052,
+      "browserEvidence": {
+        "file": "/tmp/wyd-backoffice-b5-browser-J7pfdO/result.json",
+        "sha256": "b6d7fff44009e196be0781044dd7e218876014a975f6fbb2ef72aebdb2dfd92f",
+        "result": {
+          "ok": true,
+          "firefox": false,
+          "pointerOnly": false,
+          "providers": [
+            {
+              "provider": "json",
+              "checks": [
+                "Real Gate form login, HttpOnly session, canonical installed Page with approved read preparation",
+                "Native Tab order text \u2192 confirmation \u2192 submit, Space confirmation, visible focus outline",
+                "Native semantic form submits exact published binding, real CSRF, explicit confirmation and protected create",
+                "Retained intent after live action/service revocation denied; independent detail binding proves one success and absent denied record",
+                "Missing/unauthorized Page, public alternate ingress, forged query and expired genuine browser Session denied",
+                "Stopped retirement removes Page; fresh replacement/review/restart retains exactly one persisted mutation"
+              ],
+              "audit": {
+                "main": 1,
+                "headings": [
+                  "Records administration",
+                  "Current records",
+                  "New record"
+                ],
+                "unnamed": 0,
+                "errors": true,
+                "dialogs": 0
+              },
+              "focus": [
+                "confirmed",
+                "Create record"
+              ],
+              "layouts": [
+                {
+                  "width": 320,
+                  "documentWidth": 305
+                },
+                {
+                  "width": 360,
+                  "documentWidth": 345
+                },
+                {
+                  "width": 768,
+                  "documentWidth": 753
+                },
+                {
+                  "width": 1280,
+                  "documentWidth": 1265
+                }
+              ],
+              "contrast": {
+                "light": {
+                  "text": 13.320950605055367,
+                  "input": 13.320950605055367,
+                  "button": 6.701618401398807
+                },
+                "dark": {
+                  "text": 16.193006440967938,
+                  "input": 13.399258849587758,
+                  "button": 9.83750053606076
+                }
+              },
+              "mutation": {
+                "createdVersion": 1,
+                "deniedAbsent": true,
+                "restartVersion": 1
+              }
+            },
+            {
+              "provider": "sqlite",
+              "checks": [
+                "Real Gate form login, HttpOnly session, canonical installed Page with approved read preparation",
+                "Native Tab order text \u2192 confirmation \u2192 submit, Space confirmation, visible focus outline",
+                "Native semantic form submits exact published binding, real CSRF, explicit confirmation and protected create",
+                "Retained intent after live action/service revocation denied; independent detail binding proves one success and absent denied record",
+                "Missing/unauthorized Page, public alternate ingress, forged query and expired genuine browser Session denied",
+                "Stopped retirement removes Page; fresh replacement/review/restart retains exactly one persisted mutation"
+              ],
+              "audit": {
+                "main": 1,
+                "headings": [
+                  "Records administration",
+                  "Current records",
+                  "New record"
+                ],
+                "unnamed": 0,
+                "errors": true,
+                "dialogs": 0
+              },
+              "focus": [
+                "confirmed",
+                "Create record"
+              ],
+              "layouts": [
+                {
+                  "width": 320,
+                  "documentWidth": 305
+                },
+                {
+                  "width": 360,
+                  "documentWidth": 345
+                },
+                {
+                  "width": 768,
+                  "documentWidth": 753
+                },
+                {
+                  "width": 1280,
+                  "documentWidth": 1265
+                }
+              ],
+              "contrast": {
+                "light": {
+                  "text": 13.320950605055367,
+                  "input": 13.320950605055367,
+                  "button": 6.701618401398807
+                },
+                "dark": {
+                  "text": 16.193006440967938,
+                  "input": 13.399258849587758,
+                  "button": 9.83750053606076
+                }
+              },
+              "mutation": {
+                "createdVersion": 1,
+                "deniedAbsent": true,
+                "restartVersion": 1
+              }
+            }
+          ],
+          "limitations": [
+            "Human assistive technology, speech, actual zoom/forced-colors/touch remain unverified.",
+            "Bound intent integration uses an explicit trusted test client, not a shipped frozen WydClient feature."
+          ],
+          "browser": "Google Chrome 156.0.8078.47",
+          "taskboard": {
+            "canonicalRoute": "/backoffice/pages/taskboard",
+            "installed": true,
+            "informational": true,
+            "bindings": 0,
+            "repeatedChildrenRendered": true
+          }
+        },
+        "screenshots": [
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-J7pfdO/json-dark.png",
+            "sha256": "829c0aba1d2859d5abee6c55c28820b1e67f8400299bf0e493feadc131ac5100",
+            "pixels": [
+              1280,
+              1596
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-J7pfdO/json-light.png",
+            "sha256": "6d584468eb9f5969fa23d7b57e54ae1291444bfccd06ce833fbc93fad2e52775",
+            "pixels": [
+              1265,
+              1596
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-J7pfdO/json-mobile.png",
+            "sha256": "46886e74ec86fa6fb1022e428e7298a79855bb3a5b616180fc0367cede976230",
+            "pixels": [
+              1265,
+              1596
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-J7pfdO/sqlite-dark.png",
+            "sha256": "829c0aba1d2859d5abee6c55c28820b1e67f8400299bf0e493feadc131ac5100",
+            "pixels": [
+              1280,
+              1596
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-J7pfdO/sqlite-light.png",
+            "sha256": "6d584468eb9f5969fa23d7b57e54ae1291444bfccd06ce833fbc93fad2e52775",
+            "pixels": [
+              1265,
+              1596
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-J7pfdO/sqlite-mobile.png",
+            "sha256": "46886e74ec86fa6fb1022e428e7298a79855bb3a5b616180fc0367cede976230",
+            "pixels": [
+              1265,
+              1596
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-J7pfdO/taskboard.png",
+            "sha256": "759f9cb6d95c067699a8cd65943f093cc69b83ce472873619aaf18c324ad9dbe",
+            "pixels": [
+              1265,
+              1995
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "firefox-keyboard",
+      "argv": [
+        "env",
+        "WYDCLIENT_BROWSER=firefox",
+        "node",
+        "scripts/verify-backoffice-b5-browser.js"
+      ],
+      "command": "env WYDCLIENT_BROWSER=firefox node scripts/verify-backoffice-b5-browser.js",
+      "exit": 1,
+      "log": "/tmp/b5-firefox-keyboard.log",
+      "sha256": "3c35f71647b2b05a9806645277ce5f1f6f20c2b799ddbfe26108708d4e7a4481",
+      "seconds": 4.174,
+      "note": "Real Firefox headless document.hasFocus() was false. Native keyboard prerequisite failed; not skipped or counted as success.",
+      "browserEvidence": {
+        "file": "/tmp/wyd-backoffice-b5-browser-RU9PxO/result.json",
+        "sha256": "960d7f6b8ed2fe3e832e6bb38e34d4001e44054711083abab0655cdbf4a18ab0",
+        "result": {
+          "ok": false,
+          "firefox": true,
+          "pointerOnly": false,
+          "providers": [],
+          "limitations": [
+            "Human assistive technology, speech, actual zoom/forced-colors/touch remain unverified.",
+            "Bound intent integration uses an explicit trusted test client, not a shipped frozen WydClient feature."
+          ],
+          "browser": "Mozilla Firefox 158.0"
+        },
+        "screenshots": []
+      }
+    },
+    {
+      "name": "focused",
+      "argv": [
+        "node",
+        "--test",
+        "--test-reporter=tap",
+        "test/backoffice-b5.test.js",
+        "test/backoffice-enforcement.test.js",
+        "test/backoffice-adoption.test.js",
+        "test/backoffice-preflight.test.js",
+        "test/backoffice-action-scope.test.js",
+        "test/backoffice-page-foundation.test.js",
+        "test/backoffice-actions.test.js",
+        "test/backoffice-http.test.js",
+        "test/backoffice-modules.test.js",
+        "test/backoffice-placement.test.js",
+        "test/policy-reconciliation.test.js",
+        "test/deadline-ledger.test.js",
+        "test/native-scheduling-evidence.test.js"
+      ],
+      "command": "node --test --test-reporter=tap test/backoffice-b5.test.js test/backoffice-enforcement.test.js test/backoffice-adoption.test.js test/backoffice-preflight.test.js test/backoffice-action-scope.test.js test/backoffice-page-foundation.test.js test/backoffice-actions.test.js test/backoffice-http.test.js test/backoffice-modules.test.js test/backoffice-placement.test.js test/policy-reconciliation.test.js test/deadline-ledger.test.js test/native-scheduling-evidence.test.js",
+      "exit": 0,
+      "log": "/tmp/b5-focused.log",
+      "sha256": "481b727d977bed580896ac5549c4e2302634d67f9dd43bc551fdcff59417eeca",
+      "seconds": 50.868,
+      "tests": 318,
+      "pass": 318,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    {
+      "name": "firefox-pointer",
+      "argv": [
+        "env",
+        "WYDCLIENT_BROWSER=firefox",
+        "WYDCLIENT_FIREFOX_POINTER_ONLY=1",
+        "node",
+        "scripts/verify-backoffice-b5-browser.js"
+      ],
+      "command": "env WYDCLIENT_BROWSER=firefox WYDCLIENT_FIREFOX_POINTER_ONLY=1 node scripts/verify-backoffice-b5-browser.js",
+      "exit": 0,
+      "log": "/tmp/b5-firefox-pointer.log",
+      "sha256": "4a1b68e1e4ca0d9a278fb93342bc112bf0f0db207c6be9073e5f56db4ba62d1d",
+      "seconds": 22.153,
+      "browserEvidence": {
+        "file": "/tmp/wyd-backoffice-b5-browser-U5VeEc/result.json",
+        "sha256": "384e2abf003c5b549b4b918b3cda679417abde6db8ba166ef9e74452cbbd4e10",
+        "result": {
+          "ok": true,
+          "firefox": true,
+          "pointerOnly": true,
+          "providers": [
+            {
+              "provider": "json",
+              "checks": [
+                "Real Gate form login, HttpOnly session, canonical installed Page with approved read preparation",
+                "Native semantic form submits exact published binding, real CSRF, explicit confirmation and protected create",
+                "Retained intent after live action/service revocation denied; independent detail binding proves one success and absent denied record",
+                "Missing/unauthorized Page, public alternate ingress, forged query and expired genuine browser Session denied",
+                "Stopped retirement removes Page; fresh replacement/review/restart retains exactly one persisted mutation"
+              ],
+              "audit": {
+                "main": 1,
+                "headings": [
+                  "Records administration",
+                  "Current records",
+                  "New record"
+                ],
+                "unnamed": 0,
+                "errors": true,
+                "dialogs": 0
+              },
+              "focus": [],
+              "layouts": [
+                {
+                  "width": 320,
+                  "documentWidth": 308
+                },
+                {
+                  "width": 360,
+                  "documentWidth": 348
+                },
+                {
+                  "width": 768,
+                  "documentWidth": 756
+                },
+                {
+                  "width": 1280,
+                  "documentWidth": 1268
+                }
+              ],
+              "contrast": {
+                "light": {
+                  "text": 13.320950605055367,
+                  "input": 13.320950605055367,
+                  "button": 6.701618401398807
+                },
+                "dark": {
+                  "text": 16.193006440967938,
+                  "input": 13.399258849587758,
+                  "button": 9.83750053606076
+                }
+              },
+              "mutation": {
+                "createdVersion": 1,
+                "deniedAbsent": true,
+                "restartVersion": 1
+              }
+            },
+            {
+              "provider": "sqlite",
+              "checks": [
+                "Real Gate form login, HttpOnly session, canonical installed Page with approved read preparation",
+                "Native semantic form submits exact published binding, real CSRF, explicit confirmation and protected create",
+                "Retained intent after live action/service revocation denied; independent detail binding proves one success and absent denied record",
+                "Missing/unauthorized Page, public alternate ingress, forged query and expired genuine browser Session denied",
+                "Stopped retirement removes Page; fresh replacement/review/restart retains exactly one persisted mutation"
+              ],
+              "audit": {
+                "main": 1,
+                "headings": [
+                  "Records administration",
+                  "Current records",
+                  "New record"
+                ],
+                "unnamed": 0,
+                "errors": true,
+                "dialogs": 0
+              },
+              "focus": [],
+              "layouts": [
+                {
+                  "width": 320,
+                  "documentWidth": 308
+                },
+                {
+                  "width": 360,
+                  "documentWidth": 348
+                },
+                {
+                  "width": 768,
+                  "documentWidth": 756
+                },
+                {
+                  "width": 1280,
+                  "documentWidth": 1268
+                }
+              ],
+              "contrast": {
+                "light": {
+                  "text": 13.320950605055367,
+                  "input": 13.320950605055367,
+                  "button": 6.701618401398807
+                },
+                "dark": {
+                  "text": 16.193006440967938,
+                  "input": 13.399258849587758,
+                  "button": 9.83750053606076
+                }
+              },
+              "mutation": {
+                "createdVersion": 1,
+                "deniedAbsent": true,
+                "restartVersion": 1
+              }
+            }
+          ],
+          "limitations": [
+            "Human assistive technology, speech, actual zoom/forced-colors/touch remain unverified.",
+            "Bound intent integration uses an explicit trusted test client, not a shipped frozen WydClient feature."
+          ],
+          "browser": "Mozilla Firefox 158.0",
+          "taskboard": {
+            "canonicalRoute": "/backoffice/pages/taskboard",
+            "installed": true,
+            "informational": true,
+            "bindings": 0,
+            "repeatedChildrenRendered": true
+          }
+        },
+        "screenshots": [
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-U5VeEc/json-dark.png",
+            "sha256": "6d2336eedee0c69452a6c9d3e5d90966a80eb46c4e4a3ca0becece314720b396",
+            "pixels": [
+              1268,
+              1595
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-U5VeEc/json-light.png",
+            "sha256": "5ac5a9a0781aaa2062b09808e7efeba5a0490de7828d6da89c238fbdadb3ba97",
+            "pixels": [
+              1268,
+              1595
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-U5VeEc/json-mobile.png",
+            "sha256": "5f4a00622ad19077e8fc11fc71db2e76b28e91701a9432a404867e53e6ba58c7",
+            "pixels": [
+              1268,
+              1595
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-U5VeEc/sqlite-dark.png",
+            "sha256": "6d2336eedee0c69452a6c9d3e5d90966a80eb46c4e4a3ca0becece314720b396",
+            "pixels": [
+              1268,
+              1595
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-U5VeEc/sqlite-light.png",
+            "sha256": "5ac5a9a0781aaa2062b09808e7efeba5a0490de7828d6da89c238fbdadb3ba97",
+            "pixels": [
+              1268,
+              1595
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-U5VeEc/sqlite-mobile.png",
+            "sha256": "5f4a00622ad19077e8fc11fc71db2e76b28e91701a9432a404867e53e6ba58c7",
+            "pixels": [
+              1268,
+              1595
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-U5VeEc/taskboard.png",
+            "sha256": "809918e5276a76bd02574db464117b47802390891be9bc1eb5e9312f1ea69b6b",
+            "pixels": [
+              1268,
+              1995
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "pins",
+      "argv": [
+        "node",
+        "--test",
+        "--test-isolation=none",
+        "--test-reporter=tap",
+        "test/native-scheduling-evidence.test.js"
+      ],
+      "command": "node --test --test-isolation=none --test-reporter=tap test/native-scheduling-evidence.test.js",
+      "exit": 0,
+      "log": "/tmp/b5-pins.log",
+      "sha256": "a705776f5ac69ee9dadd32df38d8be5e60c992392e2e7aab9229e27b36a3ada8",
+      "seconds": 0.204,
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    {
+      "name": "immutable",
+      "argv": [
+        "node",
+        "--input-type=module",
+        "-e",
+        "import {verifyArtifacts} from \"./packages/wydclient/artifact-policy.js\"; console.log(JSON.stringify({immutableArtifacts:verifyArtifacts({root:process.cwd()})}));"
+      ],
+      "command": "node --input-type=module -e 'import {verifyArtifacts} from \"./packages/wydclient/artifact-policy.js\"; console.log(JSON.stringify({immutableArtifacts:verifyArtifacts({root:process.cwd()})}));'",
+      "exit": 0,
+      "log": "/tmp/b5-immutable.log",
+      "sha256": "b28f0a50f3b9f8e0df3a0cf46031171102e8cd3fe6f0c950c7efb31abee8a98b",
+      "seconds": 0.455
+    },
+    {
+      "name": "chrome-keyboard-final",
+      "argv": [
+        "node",
+        "scripts/verify-backoffice-b5-browser.js"
+      ],
+      "command": "node scripts/verify-backoffice-b5-browser.js",
+      "exit": 1,
+      "log": "/tmp/b5-chrome-keyboard-final.log",
+      "sha256": "dccd8c39feb42232f7651295a74b37a26b72d07ec15c004482a593cbda51e96a",
+      "seconds": 2.587,
+      "note": "Strengthened keyboard-only journey exposed actual unfocused tab after navigation. No synthetic focus assertion; corrected using native Page.bringToFront.",
+      "browserEvidence": {
+        "file": "/tmp/wyd-backoffice-b5-browser-IaKSYL/result.json",
+        "sha256": "fffb69b55d53b3bd0a6c9f815ee85464cb5c83dddc674e5bda42ba8877d26e39",
+        "result": {
+          "ok": false,
+          "firefox": false,
+          "pointerOnly": false,
+          "providers": [],
+          "limitations": [
+            "Human assistive technology, speech, actual zoom/forced-colors/touch remain unverified.",
+            "Bound intent integration uses an explicit trusted test client, not a shipped frozen WydClient feature."
+          ],
+          "browser": "Google Chrome 156.0.8078.47"
+        },
+        "screenshots": []
+      }
+    },
+    {
+      "name": "chrome-keyboard-activated",
+      "argv": [
+        "node",
+        "scripts/verify-backoffice-b5-browser.js"
+      ],
+      "command": "node scripts/verify-backoffice-b5-browser.js",
+      "exit": 0,
+      "log": "/tmp/b5-chrome-keyboard-activated.log",
+      "sha256": "e77cefbdb17f659e72b513bb15605cff2fc31fc5c80f5bd309ce0a0a6201f515",
+      "seconds": 34.571,
+      "note": "Native Chrome tab activation; full stronger keyboard, provider and Taskboard journeys pass.",
+      "browserEvidence": {
+        "file": "/tmp/wyd-backoffice-b5-browser-rKjdut/result.json",
+        "sha256": "591918cc177dba20b6cb2f485e1ef8a9db923035cff5abafece84f800cf3ac21",
+        "result": {
+          "ok": true,
+          "firefox": false,
+          "pointerOnly": false,
+          "providers": [
+            {
+              "provider": "json",
+              "checks": [
+                "Real Gate form login, HttpOnly session, canonical installed Page with approved read preparation",
+                "Keyboard-only login, skip link and native invalid-required submission with linked errors and no HTTP mutation",
+                "Native Tab order text \u2192 confirmation \u2192 submit, Space confirmation, visible focus outline",
+                "Native semantic form submits exact published binding, real CSRF, explicit confirmation and protected create",
+                "Retained intent after live action/service revocation denied; independent detail binding proves one success and absent denied record",
+                "Missing/unauthorized Page, public alternate ingress, forged query and expired genuine browser Session denied",
+                "Stopped retirement removes Page; fresh replacement/review/restart retains exactly one persisted mutation"
+              ],
+              "audit": {
+                "main": 1,
+                "headings": [
+                  "Records administration",
+                  "Current records",
+                  "New record"
+                ],
+                "unnamed": 0,
+                "errors": true,
+                "dialogs": 0
+              },
+              "focus": [
+                "confirmed",
+                "Create record"
+              ],
+              "layouts": [
+                {
+                  "width": 320,
+                  "documentWidth": 305
+                },
+                {
+                  "width": 360,
+                  "documentWidth": 345
+                },
+                {
+                  "width": 768,
+                  "documentWidth": 753
+                },
+                {
+                  "width": 1280,
+                  "documentWidth": 1265
+                }
+              ],
+              "contrast": {
+                "light": {
+                  "text": 13.320950605055367,
+                  "input": 13.320950605055367,
+                  "button": 6.701618401398807
+                },
+                "dark": {
+                  "text": 16.193006440967938,
+                  "input": 13.399258849587758,
+                  "button": 9.83750053606076
+                }
+              },
+              "mutation": {
+                "createdVersion": 1,
+                "deniedAbsent": true,
+                "restartVersion": 1
+              }
+            },
+            {
+              "provider": "sqlite",
+              "checks": [
+                "Real Gate form login, HttpOnly session, canonical installed Page with approved read preparation",
+                "Keyboard-only login, skip link and native invalid-required submission with linked errors and no HTTP mutation",
+                "Native Tab order text \u2192 confirmation \u2192 submit, Space confirmation, visible focus outline",
+                "Native semantic form submits exact published binding, real CSRF, explicit confirmation and protected create",
+                "Retained intent after live action/service revocation denied; independent detail binding proves one success and absent denied record",
+                "Missing/unauthorized Page, public alternate ingress, forged query and expired genuine browser Session denied",
+                "Stopped retirement removes Page; fresh replacement/review/restart retains exactly one persisted mutation"
+              ],
+              "audit": {
+                "main": 1,
+                "headings": [
+                  "Records administration",
+                  "Current records",
+                  "New record"
+                ],
+                "unnamed": 0,
+                "errors": true,
+                "dialogs": 0
+              },
+              "focus": [
+                "confirmed",
+                "Create record"
+              ],
+              "layouts": [
+                {
+                  "width": 320,
+                  "documentWidth": 305
+                },
+                {
+                  "width": 360,
+                  "documentWidth": 345
+                },
+                {
+                  "width": 768,
+                  "documentWidth": 753
+                },
+                {
+                  "width": 1280,
+                  "documentWidth": 1265
+                }
+              ],
+              "contrast": {
+                "light": {
+                  "text": 13.320950605055367,
+                  "input": 13.320950605055367,
+                  "button": 6.701618401398807
+                },
+                "dark": {
+                  "text": 16.193006440967938,
+                  "input": 13.399258849587758,
+                  "button": 9.83750053606076
+                }
+              },
+              "mutation": {
+                "createdVersion": 1,
+                "deniedAbsent": true,
+                "restartVersion": 1
+              }
+            }
+          ],
+          "limitations": [
+            "Human assistive technology, speech, actual zoom/forced-colors/touch remain unverified.",
+            "Bound intent integration uses an explicit trusted test client, not a shipped frozen WydClient feature."
+          ],
+          "browser": "Google Chrome 156.0.8078.47",
+          "taskboard": {
+            "canonicalRoute": "/backoffice/pages/taskboard",
+            "installed": true,
+            "informational": true,
+            "bindings": 0,
+            "repeatedChildrenRendered": true
+          }
+        },
+        "screenshots": [
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-rKjdut/json-dark.png",
+            "sha256": "0960f37b7538e3cec50bb88ab67e2a36a7e0d97ce02bd8ebacdd688df7df8288",
+            "pixels": [
+              1280,
+              1596
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-rKjdut/json-light.png",
+            "sha256": "13b695ba4a08f3e5c21386f3c431e158e1e3b70cc773024780f3ffa7a06bca90",
+            "pixels": [
+              1265,
+              1596
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-rKjdut/json-mobile.png",
+            "sha256": "46886e74ec86fa6fb1022e428e7298a79855bb3a5b616180fc0367cede976230",
+            "pixels": [
+              1265,
+              1596
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-rKjdut/sqlite-dark.png",
+            "sha256": "0960f37b7538e3cec50bb88ab67e2a36a7e0d97ce02bd8ebacdd688df7df8288",
+            "pixels": [
+              1280,
+              1596
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-rKjdut/sqlite-light.png",
+            "sha256": "13b695ba4a08f3e5c21386f3c431e158e1e3b70cc773024780f3ffa7a06bca90",
+            "pixels": [
+              1265,
+              1596
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-rKjdut/sqlite-mobile.png",
+            "sha256": "46886e74ec86fa6fb1022e428e7298a79855bb3a5b616180fc0367cede976230",
+            "pixels": [
+              1265,
+              1596
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-rKjdut/taskboard.png",
+            "sha256": "759f9cb6d95c067699a8cd65943f093cc69b83ce472873619aaf18c324ad9dbe",
+            "pixels": [
+              1265,
+              1995
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "existing-chrome-before",
+      "argv": [
+        "node",
+        "scripts/verify-backoffice-browser.js"
+      ],
+      "command": "node scripts/verify-backoffice-browser.js",
+      "exit": 1,
+      "log": "/tmp/b5-existing-chrome-before.log",
+      "sha256": "afe6800d6fb89c7ba3782f1fb32e500912f3da90713b2d2d9b781e6ceaf34fb5",
+      "seconds": 1.59,
+      "note": "Existing browser script omitted B4b explicit fixture adoption. Startup correctly refused BACKOFFICE.MIGRATION_REQUIRED. Added trusted disposable fixture review after installs."
+    },
+    {
+      "name": "full-before-docs",
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "command": "npm test",
+      "exit": 0,
+      "log": "/tmp/b5-full-before-docs.log",
+      "sha256": "2e66ef97ddcae876c4399e07513d88c800b8ee2ee69360479f2fa6a27d99adbf",
+      "seconds": 102.708,
+      "tests": 1961,
+      "pass": 1961,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    {
+      "name": "existing-chrome",
+      "argv": [
+        "node",
+        "scripts/verify-backoffice-browser.js"
+      ],
+      "command": "node scripts/verify-backoffice-browser.js",
+      "exit": 0,
+      "log": "/tmp/b5-existing-chrome.log",
+      "sha256": "d6756774b0e94e1e7656c6122460c10df605b4bc672f0e667515f2d6fed611a3",
+      "seconds": 4.591,
+      "browserEvidence": {
+        "file": "/tmp/wyd-backoffice-browser-RJuGNN/result.json",
+        "sha256": "425dfa4b41aa410fd0e935cb5d415ca1d78c455e39412a4785c2c9a477a0c6bb",
+        "result": {
+          "browser": "Google Chrome 156.0.8078.47",
+          "viewports": [
+            {
+              "width": 360,
+              "documentWidth": 345,
+              "mainWidth": 345,
+              "navWidth": 313,
+              "tableScrolls": true,
+              "tableWidth": 313,
+              "tableContentWidth": 1064,
+              "columns": 6
+            },
+            {
+              "width": 768,
+              "documentWidth": 753,
+              "mainWidth": 433,
+              "navWidth": 271,
+              "tableScrolls": true,
+              "tableWidth": 256,
+              "tableContentWidth": 1064,
+              "columns": 6
+            },
+            {
+              "width": 1280,
+              "documentWidth": 1265,
+              "mainWidth": 945,
+              "navWidth": 271,
+              "tableScrolls": true,
+              "tableWidth": 727,
+              "tableContentWidth": 1064,
+              "columns": 6
+            },
+            {
+              "width": 1920,
+              "documentWidth": 1905,
+              "mainWidth": 1280,
+              "navWidth": 271,
+              "tableScrolls": true,
+              "tableWidth": 1036,
+              "tableContentWidth": 1064,
+              "columns": 6
+            },
+            {
+              "width": 320,
+              "documentWidth": 305,
+              "mainWidth": 305,
+              "navWidth": 273,
+              "tableScrolls": true,
+              "tableWidth": 273,
+              "tableContentWidth": 1064,
+              "columns": 6
+            }
+          ],
+          "checks": [
+            "Gate form login, authenticated shell and installed discovery",
+            "Keyboard navigation and invocation, real member roster result, table semantics",
+            "Chrome accessibility tree contains main and table; native controls have names",
+            "360/768/1280/1920 responsive layout and 320 CSS-pixel reflow; wide table scroll remains local",
+            "Light/dark theme switching and system dark preference; reduced-motion preference enabled",
+            "Second independently installed Store module, native keyboard array add/remove/max and genuine sorted query through the same shell",
+            "Refresh clears selection; revoked permission rejects real invocation and clears stale display",
+            "Gate logout revokes BackOffice; valid member without administrative permission sees zero actions"
+          ],
+          "screenshots": [
+            "member-roster.png",
+            "mobile.png",
+            "desktop-light.png",
+            "desktop-dark.png",
+            "access-error.png"
+          ],
+          "accessibility": {
+            "landmarks": {
+              "main": 1,
+              "nav": 1
+            },
+            "headings": 1,
+            "unlabelled": 0,
+            "status": "status"
+          },
+          "contrast": {
+            "light": {
+              "ink/paper": 13.320950605055367,
+              "muted/paper": 4.758842787868666,
+              "muted/surface": 4.758842787868666,
+              "link/paper": 6.701618401398807,
+              "primary-text/primary": 6.701618401398807,
+              "input-text/input-background": 13.320950605055367
+            },
+            "dark": {
+              "ink/paper": 16.193006440967938,
+              "muted/paper": 10.039610154785718,
+              "muted/surface": 8.307495936800388,
+              "link/paper": 9.83750053606076,
+              "primary-text/primary": 9.83750053606076,
+              "input-text/input-background": 13.399258849587758
+            },
+            "system": {
+              "ink/paper": 16.193006440967938,
+              "muted/paper": 10.039610154785718,
+              "muted/surface": 8.307495936800388,
+              "link/paper": 9.83750053606076,
+              "primary-text/primary": 9.83750053606076,
+              "input-text/input-background": 13.399258849587758
+            }
+          },
+          "limitations": [],
+          "ok": true
+        },
+        "screenshots": [
+          {
+            "file": "/tmp/wyd-backoffice-browser-RJuGNN/access-error.png",
+            "sha256": "e60d59f6c5ea850326873f72f24f9204d2386e6e9aa01f35375aebe43e57f40f",
+            "pixels": [
+              1280,
+              900
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-browser-RJuGNN/desktop-dark.png",
+            "sha256": "89cad2e1e5634adc8dc1fbcda2e8f35181ad1e6e229fb5ca078d1adc6005856a",
+            "pixels": [
+              1265,
+              1402
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-browser-RJuGNN/desktop-light.png",
+            "sha256": "ebf39a95f337e1e4925cf1ac1bf0694c67f93c11cdac653ce56f5eba2fbfe296",
+            "pixels": [
+              1265,
+              1402
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-browser-RJuGNN/member-roster.png",
+            "sha256": "b09d8960ee3d8828192dfca6a5895565f52865e84eccd09632f96a3ffa5d2a42",
+            "pixels": [
+              1280,
+              900
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-browser-RJuGNN/mobile.png",
+            "sha256": "f16830cbe6251f9d937bbdf8dbfeff0b9ec089a2ca029c0b35f930633a129540",
+            "pixels": [
+              345,
+              1911
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "docs",
+      "argv": [
+        "python3",
+        "/tmp/b5-verify-docs.py"
+      ],
+      "command": "python3 /tmp/b5-verify-docs.py",
+      "exit": 0,
+      "log": "/tmp/b5-docs.log",
+      "sha256": "4587ca068c3aabaff05fe181408f9b80f88bcef44a5392d4a342673ce5d9c909",
+      "seconds": 0.041
+    },
+    {
+      "name": "check",
+      "argv": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "command": "npm run check",
+      "exit": 0,
+      "log": "/tmp/b5-check.log",
+      "sha256": "1dcdec3effdcf658e3ba58a49d0e4da2c29bd4f126ca270ef5bce1e9acddf607",
+      "seconds": 0.405
+    },
+    {
+      "name": "hostname-browser",
+      "argv": [
+        "node",
+        "scripts/verify-hostname-browser.js"
+      ],
+      "command": "node scripts/verify-hostname-browser.js",
+      "exit": 0,
+      "log": "/tmp/b5-hostname-browser.log",
+      "sha256": "93102058f028799407de76cb7917df7289b35757f99ba22eb285226b066e3a98",
+      "seconds": 4.396
+    },
+    {
+      "name": "application-final",
+      "argv": [
+        "node",
+        "--test",
+        "--test-isolation=none",
+        "--test-reporter=tap",
+        "test/backoffice-b5.test.js"
+      ],
+      "command": "node --test --test-isolation=none --test-reporter=tap test/backoffice-b5.test.js",
+      "exit": 0,
+      "log": "/tmp/b5-application-final.log",
+      "sha256": "d07f005721178cae0501e525a05a79fe9d6798ba77cedfa87426488b61e55f44",
+      "seconds": 35.214,
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    {
+      "name": "packed",
+      "argv": [
+        "node",
+        "scripts/verify-packed-packages.js"
+      ],
+      "command": "node scripts/verify-packed-packages.js",
+      "exit": 0,
+      "log": "/tmp/b5-packed.log",
+      "sha256": "8d9ffa7f12823e312d6bba1ac56d68807ff2613a1781ed74ae59974c9d53f559",
+      "seconds": 126.222,
+      "installedEvidenceDirectory": "/tmp/wyd-i54-packed-nLH2FJ",
+      "installedSelections": {
+        "engine": {
+          "file": "/tmp/wyd-i54-packed-nLH2FJ/five-library-tests.log",
+          "sha256": "ea5e1fc5d8e6f5ac20b62766c6defa4b2f7bad1a9885350695e950ecb53547fe",
+          "tests": 690,
+          "pass": 690,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "provider": {
+          "file": "/tmp/wyd-i54-packed-nLH2FJ/provider-tests.log",
+          "sha256": "83fbe2cf94f374d50c0b95b2acd4aaff30699a7a4b7966413cecd10424956226",
+          "tests": 35,
+          "pass": 35,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "process": {
+          "file": "/tmp/wyd-i54-packed-nLH2FJ/process-supervision.log",
+          "sha256": "12ff754251c8399645ff6f41e08ec4e115f2487b0fda10acc6ffe4f42546a629",
+          "tests": 20,
+          "pass": 20,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "linux": {
+          "file": "/tmp/wyd-i54-packed-nLH2FJ/linux-boundaries.log",
+          "sha256": "224474efd2f3bfcc058f423acfa33953171fa4a4edecd7104b38db7255119a17",
+          "tests": 25,
+          "pass": 25,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "installedResult": {
+        "ok": true,
+        "node": "v24.21.0",
+        "packages": {
+          "wydgine": "/tmp/wyd-i54-packed-nLH2FJ/tarballs/wydgine-0.3.0-alpha.28.tgz",
+          "wydhosting": "/tmp/wyd-i54-packed-nLH2FJ/tarballs/wydhosting-0.3.0-alpha.28.tgz",
+          "wydstore": "/tmp/wyd-i54-packed-nLH2FJ/tarballs/wydgit-store-0.1.0-alpha.8.tgz",
+          "wydgate": "/tmp/wyd-i54-packed-nLH2FJ/tarballs/wydgit-gate-0.1.0-alpha.7.tgz",
+          "wydsearch": "/tmp/wyd-i54-packed-nLH2FJ/tarballs/wydgit-search-0.1.0-alpha.2.tgz",
+          "wydfiles": "/tmp/wyd-i54-packed-nLH2FJ/tarballs/wydgit-files-0.1.0-alpha.1.tgz",
+          "wydstream": "/tmp/wyd-i54-packed-nLH2FJ/tarballs/wydgit-stream-0.1.0-alpha.2.tgz"
+        },
+        "consumers": [
+          "/tmp/wyd-i54-packed-nLH2FJ/service-free",
+          "/tmp/wyd-i54-packed-nLH2FJ/five-library",
+          "/tmp/wyd-i54-packed-nLH2FJ/provider"
+        ]
+      }
+    },
+    {
+      "name": "firefox-final",
+      "argv": [
+        "env",
+        "WYDCLIENT_BROWSER=firefox",
+        "WYDCLIENT_FIREFOX_POINTER_ONLY=1",
+        "node",
+        "scripts/verify-backoffice-b5-browser.js"
+      ],
+      "command": "env WYDCLIENT_BROWSER=firefox WYDCLIENT_FIREFOX_POINTER_ONLY=1 node scripts/verify-backoffice-b5-browser.js",
+      "exit": 0,
+      "log": "/tmp/b5-firefox-final.log",
+      "sha256": "79974faed81bb888baf63a499eb933ee3a45ea78fee286fa923fa6b1a49ffa13",
+      "seconds": 20.346,
+      "captureLimitation": "DOM responsive measurements valid; mobile-labelled PNG was captured after returning to desktop width. Final verified-captures runs correct placement and assert actual PNG dimensions.",
+      "browserEvidence": {
+        "file": "/tmp/wyd-backoffice-b5-browser-i3qqHT/result.json",
+        "sha256": "2bb8e0f349d6dc82c5ac0828c760a7dabebf6ae9ba23bdb2ccb3e6d47fb55e10",
+        "result": {
+          "ok": true,
+          "firefox": true,
+          "pointerOnly": true,
+          "providers": [
+            {
+              "provider": "json",
+              "checks": [
+                "Real Gate form login, HttpOnly session, canonical installed Page with approved read preparation",
+                "Native semantic form submits exact published binding, real CSRF, explicit confirmation and protected create",
+                "Retained intent after live action/service revocation denied; independent detail binding proves one success and absent denied record",
+                "Missing/unauthorized Page, public alternate ingress, forged query and expired genuine browser Session denied",
+                "Stopped retirement removes Page; fresh replacement/review/restart retains exactly one persisted mutation"
+              ],
+              "audit": {
+                "main": 1,
+                "headings": [
+                  "Records administration",
+                  "New record"
+                ],
+                "unnamed": 0,
+                "errors": true,
+                "dialogs": 0
+              },
+              "focus": [],
+              "layouts": [
+                {
+                  "width": 320,
+                  "documentWidth": 308
+                },
+                {
+                  "width": 360,
+                  "documentWidth": 348
+                },
+                {
+                  "width": 768,
+                  "documentWidth": 756
+                },
+                {
+                  "width": 1280,
+                  "documentWidth": 1268
+                }
+              ],
+              "contrast": {
+                "light": {
+                  "text": 13.320950605055367,
+                  "input": 13.320950605055367,
+                  "button": 6.701618401398807
+                },
+                "dark": {
+                  "text": 16.193006440967938,
+                  "input": 13.399258849587758,
+                  "button": 9.83750053606076
+                }
+              },
+              "mutation": {
+                "createdVersion": 1,
+                "deniedAbsent": true,
+                "restartVersion": 1
+              }
+            },
+            {
+              "provider": "sqlite",
+              "checks": [
+                "Real Gate form login, HttpOnly session, canonical installed Page with approved read preparation",
+                "Native semantic form submits exact published binding, real CSRF, explicit confirmation and protected create",
+                "Retained intent after live action/service revocation denied; independent detail binding proves one success and absent denied record",
+                "Missing/unauthorized Page, public alternate ingress, forged query and expired genuine browser Session denied",
+                "Stopped retirement removes Page; fresh replacement/review/restart retains exactly one persisted mutation"
+              ],
+              "audit": {
+                "main": 1,
+                "headings": [
+                  "Records administration",
+                  "New record"
+                ],
+                "unnamed": 0,
+                "errors": true,
+                "dialogs": 0
+              },
+              "focus": [],
+              "layouts": [
+                {
+                  "width": 320,
+                  "documentWidth": 308
+                },
+                {
+                  "width": 360,
+                  "documentWidth": 348
+                },
+                {
+                  "width": 768,
+                  "documentWidth": 756
+                },
+                {
+                  "width": 1280,
+                  "documentWidth": 1268
+                }
+              ],
+              "contrast": {
+                "light": {
+                  "text": 13.320950605055367,
+                  "input": 13.320950605055367,
+                  "button": 6.701618401398807
+                },
+                "dark": {
+                  "text": 16.193006440967938,
+                  "input": 13.399258849587758,
+                  "button": 9.83750053606076
+                }
+              },
+              "mutation": {
+                "createdVersion": 1,
+                "deniedAbsent": true,
+                "restartVersion": 1
+              }
+            }
+          ],
+          "limitations": [
+            "Human assistive technology, speech, actual zoom/forced-colors/touch remain unverified.",
+            "Bound intent integration uses an explicit trusted test client, not a shipped frozen WydClient feature."
+          ],
+          "browser": "Mozilla Firefox 158.0",
+          "taskboard": {
+            "canonicalRoute": "/backoffice/pages/taskboard",
+            "installed": true,
+            "informational": true,
+            "bindings": 0,
+            "repeatedChildrenRendered": true
+          }
+        },
+        "screenshots": [
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-i3qqHT/json-dark.png",
+            "sha256": "29ec52f7f0d62717b7352326676fff32950e605d5681e1faf9319a3970dec9f3",
+            "pixels": [
+              1268,
+              1579
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-i3qqHT/json-light.png",
+            "sha256": "40b233ec43979548883346f7c936359136a32c76c466653e52b7645e252933e6",
+            "pixels": [
+              1268,
+              1579
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-i3qqHT/json-mobile.png",
+            "sha256": "b7a3060bf6ecf818e0e3a65ae83b231784ca3d177d06f460599b0429372ee93d",
+            "pixels": [
+              1268,
+              1579
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-i3qqHT/sqlite-dark.png",
+            "sha256": "29ec52f7f0d62717b7352326676fff32950e605d5681e1faf9319a3970dec9f3",
+            "pixels": [
+              1268,
+              1579
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-i3qqHT/sqlite-light.png",
+            "sha256": "40b233ec43979548883346f7c936359136a32c76c466653e52b7645e252933e6",
+            "pixels": [
+              1268,
+              1579
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-i3qqHT/sqlite-mobile.png",
+            "sha256": "b7a3060bf6ecf818e0e3a65ae83b231784ca3d177d06f460599b0429372ee93d",
+            "pixels": [
+              1268,
+              1579
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-i3qqHT/taskboard.png",
+            "sha256": "809918e5276a76bd02574db464117b47802390891be9bc1eb5e9312f1ea69b6b",
+            "pixels": [
+              1268,
+              1995
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "chrome-final",
+      "argv": [
+        "node",
+        "scripts/verify-backoffice-b5-browser.js"
+      ],
+      "command": "node scripts/verify-backoffice-b5-browser.js",
+      "exit": 0,
+      "log": "/tmp/b5-chrome-final.log",
+      "sha256": "9ca668838d8cb8f6db5d369d008975ddac50d2c2d480c26c6f077d1a3af698a5",
+      "seconds": 78.827,
+      "captureLimitation": "DOM responsive measurements valid; mobile-labelled PNG was captured after returning to desktop width. Final verified-captures runs correct placement and assert actual PNG dimensions.",
+      "browserEvidence": {
+        "file": "/tmp/wyd-backoffice-b5-browser-0LNxax/result.json",
+        "sha256": "82e90865c92caf6785f2fea67a685191dcb351d8587b8dc59d19ba93101aef99",
+        "result": {
+          "ok": true,
+          "firefox": false,
+          "pointerOnly": false,
+          "providers": [
+            {
+              "provider": "json",
+              "checks": [
+                "Real Gate form login, HttpOnly session, canonical installed Page with approved read preparation",
+                "Keyboard-only login, skip link and native invalid-required submission with linked errors and no HTTP mutation",
+                "Native Tab order text \u2192 confirmation \u2192 submit, Space confirmation, visible focus outline",
+                "Native semantic form submits exact published binding, real CSRF, explicit confirmation and protected create",
+                "Retained intent after live action/service revocation denied; independent detail binding proves one success and absent denied record",
+                "Missing/unauthorized Page, public alternate ingress, forged query and expired genuine browser Session denied",
+                "Stopped retirement removes Page; fresh replacement/review/restart retains exactly one persisted mutation"
+              ],
+              "audit": {
+                "main": 1,
+                "headings": [
+                  "Records administration",
+                  "New record"
+                ],
+                "unnamed": 0,
+                "errors": true,
+                "dialogs": 0
+              },
+              "focus": [
+                "confirmed",
+                "Create record"
+              ],
+              "layouts": [
+                {
+                  "width": 320,
+                  "documentWidth": 305
+                },
+                {
+                  "width": 360,
+                  "documentWidth": 345
+                },
+                {
+                  "width": 768,
+                  "documentWidth": 753
+                },
+                {
+                  "width": 1280,
+                  "documentWidth": 1265
+                }
+              ],
+              "contrast": {
+                "light": {
+                  "text": 13.320950605055367,
+                  "input": 13.320950605055367,
+                  "button": 6.701618401398807
+                },
+                "dark": {
+                  "text": 16.193006440967938,
+                  "input": 13.399258849587758,
+                  "button": 9.83750053606076
+                }
+              },
+              "mutation": {
+                "createdVersion": 1,
+                "deniedAbsent": true,
+                "restartVersion": 1
+              }
+            },
+            {
+              "provider": "sqlite",
+              "checks": [
+                "Real Gate form login, HttpOnly session, canonical installed Page with approved read preparation",
+                "Keyboard-only login, skip link and native invalid-required submission with linked errors and no HTTP mutation",
+                "Native Tab order text \u2192 confirmation \u2192 submit, Space confirmation, visible focus outline",
+                "Native semantic form submits exact published binding, real CSRF, explicit confirmation and protected create",
+                "Retained intent after live action/service revocation denied; independent detail binding proves one success and absent denied record",
+                "Missing/unauthorized Page, public alternate ingress, forged query and expired genuine browser Session denied",
+                "Stopped retirement removes Page; fresh replacement/review/restart retains exactly one persisted mutation"
+              ],
+              "audit": {
+                "main": 1,
+                "headings": [
+                  "Records administration",
+                  "New record"
+                ],
+                "unnamed": 0,
+                "errors": true,
+                "dialogs": 0
+              },
+              "focus": [
+                "confirmed",
+                "Create record"
+              ],
+              "layouts": [
+                {
+                  "width": 320,
+                  "documentWidth": 305
+                },
+                {
+                  "width": 360,
+                  "documentWidth": 345
+                },
+                {
+                  "width": 768,
+                  "documentWidth": 753
+                },
+                {
+                  "width": 1280,
+                  "documentWidth": 1265
+                }
+              ],
+              "contrast": {
+                "light": {
+                  "text": 13.320950605055367,
+                  "input": 13.320950605055367,
+                  "button": 6.701618401398807
+                },
+                "dark": {
+                  "text": 16.193006440967938,
+                  "input": 13.399258849587758,
+                  "button": 9.83750053606076
+                }
+              },
+              "mutation": {
+                "createdVersion": 1,
+                "deniedAbsent": true,
+                "restartVersion": 1
+              }
+            }
+          ],
+          "limitations": [
+            "Human assistive technology, speech, actual zoom/forced-colors/touch remain unverified.",
+            "Bound intent integration uses an explicit trusted test client, not a shipped frozen WydClient feature."
+          ],
+          "browser": "Google Chrome 156.0.8078.47",
+          "taskboard": {
+            "canonicalRoute": "/backoffice/pages/taskboard",
+            "installed": true,
+            "informational": true,
+            "bindings": 0,
+            "repeatedChildrenRendered": true
+          }
+        },
+        "screenshots": [
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-0LNxax/json-dark.png",
+            "sha256": "3c97d88b9ef096f52f4c33eafcf188215e445d2d2127bff190fa1369e4180310",
+            "pixels": [
+              1280,
+              1579
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-0LNxax/json-light.png",
+            "sha256": "1d85d84259359b6ce6ff89445724a2458f1a4badf8e319403bf3d27bc3fd9fbb",
+            "pixels": [
+              1265,
+              1579
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-0LNxax/json-mobile.png",
+            "sha256": "08130d112162061f7813e4120e196f0f1f34f46a2a817f08bdd5f831bb351954",
+            "pixels": [
+              1265,
+              1579
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-0LNxax/sqlite-dark.png",
+            "sha256": "3c97d88b9ef096f52f4c33eafcf188215e445d2d2127bff190fa1369e4180310",
+            "pixels": [
+              1280,
+              1579
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-0LNxax/sqlite-light.png",
+            "sha256": "1d85d84259359b6ce6ff89445724a2458f1a4badf8e319403bf3d27bc3fd9fbb",
+            "pixels": [
+              1265,
+              1579
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-0LNxax/sqlite-mobile.png",
+            "sha256": "08130d112162061f7813e4120e196f0f1f34f46a2a817f08bdd5f831bb351954",
+            "pixels": [
+              1265,
+              1579
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-0LNxax/taskboard.png",
+            "sha256": "759f9cb6d95c067699a8cd65943f093cc69b83ce472873619aaf18c324ad9dbe",
+            "pixels": [
+              1265,
+              1995
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "restage-installed",
+      "argv": [
+        "python3",
+        "/tmp/b5-restage-installed.py"
+      ],
+      "command": "python3 /tmp/b5-restage-installed.py",
+      "exit": 0,
+      "log": "/tmp/b5-restage-installed.log",
+      "sha256": "2f15831a8da86663c9b133ff234e3b8770a54de13fcadbeab575738e362b875a",
+      "seconds": 0.028
+    },
+    {
+      "name": "existing-firefox",
+      "argv": [
+        "env",
+        "WYDCLIENT_BROWSER=firefox",
+        "WYDCLIENT_FIREFOX_POINTER_ONLY=1",
+        "node",
+        "scripts/verify-backoffice-browser.js"
+      ],
+      "command": "env WYDCLIENT_BROWSER=firefox WYDCLIENT_FIREFOX_POINTER_ONLY=1 node scripts/verify-backoffice-browser.js",
+      "exit": 0,
+      "log": "/tmp/b5-existing-firefox.log",
+      "sha256": "cf2133603fdf81229bc92751959188317fe73ee2a72511b6fe32dd6e9cbeb7d3",
+      "seconds": 7.021,
+      "browserEvidence": {
+        "file": "/tmp/wyd-backoffice-browser-taNXjU/result.json",
+        "sha256": "91cdb86bb1c428db96bc703806da34d2e4af4f109004e245100018ae5b518fb3",
+        "result": {
+          "browser": "Mozilla Firefox 158.0",
+          "viewports": [
+            {
+              "width": 360,
+              "documentWidth": 348,
+              "mainWidth": 348,
+              "navWidth": 316,
+              "tableScrolls": true,
+              "tableWidth": 316,
+              "tableContentWidth": 1065,
+              "columns": 6
+            },
+            {
+              "width": 768,
+              "documentWidth": 756,
+              "mainWidth": 436,
+              "navWidth": 271,
+              "tableScrolls": true,
+              "tableWidth": 259,
+              "tableContentWidth": 1065,
+              "columns": 6
+            },
+            {
+              "width": 1280,
+              "documentWidth": 1268,
+              "mainWidth": 948,
+              "navWidth": 271,
+              "tableScrolls": true,
+              "tableWidth": 730,
+              "tableContentWidth": 1065,
+              "columns": 6
+            },
+            {
+              "width": 1920,
+              "documentWidth": 1908,
+              "mainWidth": 1280,
+              "navWidth": 271,
+              "tableScrolls": true,
+              "tableWidth": 1036,
+              "tableContentWidth": 1065,
+              "columns": 6
+            },
+            {
+              "width": 320,
+              "documentWidth": 308,
+              "mainWidth": 308,
+              "navWidth": 276,
+              "tableScrolls": true,
+              "tableWidth": 276,
+              "tableContentWidth": 1065,
+              "columns": 6
+            }
+          ],
+          "checks": [
+            "Gate form login, authenticated shell and installed discovery",
+            "Pointer navigation/invocation, real roster and DOM focus targets/table semantics; native keyboard unqualified",
+            "Firefox DOM landmarks, native table semantics and labelled controls (no accessibility-tree claim)",
+            "360/768/1280/1920 responsive layout and 320 CSS-pixel reflow; wide table scroll remains local",
+            "Explicit light/dark theme switching and actual system preference; no media emulation",
+            "Independent notices module, pointer array add/remove/max and genuine sorted query",
+            "Refresh clears selection; revoked permission rejects real invocation and clears stale display",
+            "Gate logout revokes BackOffice; valid member without administrative permission sees zero actions",
+            "Controlled session expiry rejects refresh, announces an alert and denies discovery"
+          ],
+          "screenshots": [
+            "member-roster.png",
+            "mobile.png",
+            "desktop-light.png",
+            "desktop-dark.png",
+            "access-error.png"
+          ],
+          "accessibility": {
+            "landmarks": {
+              "main": 1,
+              "nav": 1
+            },
+            "headings": 1,
+            "unlabelled": 0,
+            "status": "status"
+          },
+          "contrast": {
+            "light": {
+              "ink/paper": 13.320950605055367,
+              "muted/paper": 4.758842787868666,
+              "muted/surface": 4.758842787868666,
+              "link/paper": 6.701618401398807,
+              "primary-text/primary": 6.701618401398807,
+              "input-text/input-background": 13.320950605055367
+            },
+            "dark": {
+              "ink/paper": 16.193006440967938,
+              "muted/paper": 10.039610154785718,
+              "muted/surface": 8.307495936800388,
+              "link/paper": 9.83750053606076,
+              "primary-text/primary": 9.83750053606076,
+              "input-text/input-background": 13.399258849587758
+            },
+            "system": {
+              "ink/paper": 13.320950605055367,
+              "muted/paper": 4.758842787868666,
+              "muted/surface": 4.758842787868666,
+              "link/paper": 6.701618401398807,
+              "primary-text/primary": 6.701618401398807,
+              "input-text/input-background": 13.320950605055367
+            }
+          },
+          "limitations": [
+            "Firefox headless document focus unavailable: native keyboard and accessibility-tree qualification remain open",
+            "System preference observed only; no Firefox media emulation",
+            "No human assistive-technology or actual zoom/touch qualification"
+          ],
+          "ok": true
+        },
+        "screenshots": [
+          {
+            "file": "/tmp/wyd-backoffice-browser-taNXjU/access-error.png",
+            "sha256": "27ed228e5b019ba76fa93710320f1536bf1d4deb74080fd707a7a4fcd0a5854b",
+            "pixels": [
+              1280,
+              900
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-browser-taNXjU/desktop-dark.png",
+            "sha256": "93471989f21a894471912c3fa542e37f136cb5868e9cce0a3710056bbcda06be",
+            "pixels": [
+              1268,
+              1399
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-browser-taNXjU/desktop-light.png",
+            "sha256": "e75ccf39678ffe715259cffde5124974cf3c5fd7b00ac2fc07d279eea9c9e119",
+            "pixels": [
+              1268,
+              1399
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-browser-taNXjU/member-roster.png",
+            "sha256": "966eabc87ca1129785fe2d945897f6552134f02d7071081822f282699abb913f",
+            "pixels": [
+              1280,
+              900
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-browser-taNXjU/mobile.png",
+            "sha256": "a0e32c513c693b0d248c587791f9d3e5701e672ad3c491bf493b65542a6945f2",
+            "pixels": [
+              348,
+              1906
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "chrome-capture-final",
+      "argv": [
+        "node",
+        "scripts/verify-backoffice-b5-browser.js"
+      ],
+      "command": "node scripts/verify-backoffice-b5-browser.js",
+      "exit": 0,
+      "log": "/tmp/b5-chrome-capture-final.log",
+      "sha256": "892d6787ba00c27acef05fc5a15cb85b910900e984f8cd68e4a7a04d7eb1f17d",
+      "seconds": 17.603,
+      "captureLimitation": "DOM responsive measurements valid; mobile-labelled PNG was captured after returning to desktop width. Final verified-captures runs correct placement and assert actual PNG dimensions.",
+      "browserEvidence": {
+        "file": "/tmp/wyd-backoffice-b5-browser-hR3ubS/result.json",
+        "sha256": "82e90865c92caf6785f2fea67a685191dcb351d8587b8dc59d19ba93101aef99",
+        "result": {
+          "ok": true,
+          "firefox": false,
+          "pointerOnly": false,
+          "providers": [
+            {
+              "provider": "json",
+              "checks": [
+                "Real Gate form login, HttpOnly session, canonical installed Page with approved read preparation",
+                "Keyboard-only login, skip link and native invalid-required submission with linked errors and no HTTP mutation",
+                "Native Tab order text \u2192 confirmation \u2192 submit, Space confirmation, visible focus outline",
+                "Native semantic form submits exact published binding, real CSRF, explicit confirmation and protected create",
+                "Retained intent after live action/service revocation denied; independent detail binding proves one success and absent denied record",
+                "Missing/unauthorized Page, public alternate ingress, forged query and expired genuine browser Session denied",
+                "Stopped retirement removes Page; fresh replacement/review/restart retains exactly one persisted mutation"
+              ],
+              "audit": {
+                "main": 1,
+                "headings": [
+                  "Records administration",
+                  "New record"
+                ],
+                "unnamed": 0,
+                "errors": true,
+                "dialogs": 0
+              },
+              "focus": [
+                "confirmed",
+                "Create record"
+              ],
+              "layouts": [
+                {
+                  "width": 320,
+                  "documentWidth": 305
+                },
+                {
+                  "width": 360,
+                  "documentWidth": 345
+                },
+                {
+                  "width": 768,
+                  "documentWidth": 753
+                },
+                {
+                  "width": 1280,
+                  "documentWidth": 1265
+                }
+              ],
+              "contrast": {
+                "light": {
+                  "text": 13.320950605055367,
+                  "input": 13.320950605055367,
+                  "button": 6.701618401398807
+                },
+                "dark": {
+                  "text": 16.193006440967938,
+                  "input": 13.399258849587758,
+                  "button": 9.83750053606076
+                }
+              },
+              "mutation": {
+                "createdVersion": 1,
+                "deniedAbsent": true,
+                "restartVersion": 1
+              }
+            },
+            {
+              "provider": "sqlite",
+              "checks": [
+                "Real Gate form login, HttpOnly session, canonical installed Page with approved read preparation",
+                "Keyboard-only login, skip link and native invalid-required submission with linked errors and no HTTP mutation",
+                "Native Tab order text \u2192 confirmation \u2192 submit, Space confirmation, visible focus outline",
+                "Native semantic form submits exact published binding, real CSRF, explicit confirmation and protected create",
+                "Retained intent after live action/service revocation denied; independent detail binding proves one success and absent denied record",
+                "Missing/unauthorized Page, public alternate ingress, forged query and expired genuine browser Session denied",
+                "Stopped retirement removes Page; fresh replacement/review/restart retains exactly one persisted mutation"
+              ],
+              "audit": {
+                "main": 1,
+                "headings": [
+                  "Records administration",
+                  "New record"
+                ],
+                "unnamed": 0,
+                "errors": true,
+                "dialogs": 0
+              },
+              "focus": [
+                "confirmed",
+                "Create record"
+              ],
+              "layouts": [
+                {
+                  "width": 320,
+                  "documentWidth": 305
+                },
+                {
+                  "width": 360,
+                  "documentWidth": 345
+                },
+                {
+                  "width": 768,
+                  "documentWidth": 753
+                },
+                {
+                  "width": 1280,
+                  "documentWidth": 1265
+                }
+              ],
+              "contrast": {
+                "light": {
+                  "text": 13.320950605055367,
+                  "input": 13.320950605055367,
+                  "button": 6.701618401398807
+                },
+                "dark": {
+                  "text": 16.193006440967938,
+                  "input": 13.399258849587758,
+                  "button": 9.83750053606076
+                }
+              },
+              "mutation": {
+                "createdVersion": 1,
+                "deniedAbsent": true,
+                "restartVersion": 1
+              }
+            }
+          ],
+          "limitations": [
+            "Human assistive technology, speech, actual zoom/forced-colors/touch remain unverified.",
+            "Bound intent integration uses an explicit trusted test client, not a shipped frozen WydClient feature."
+          ],
+          "browser": "Google Chrome 156.0.8078.47",
+          "taskboard": {
+            "canonicalRoute": "/backoffice/pages/taskboard",
+            "installed": true,
+            "informational": true,
+            "bindings": 0,
+            "repeatedChildrenRendered": true
+          }
+        },
+        "screenshots": [
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-hR3ubS/json-dark.png",
+            "sha256": "3c97d88b9ef096f52f4c33eafcf188215e445d2d2127bff190fa1369e4180310",
+            "pixels": [
+              1280,
+              1579
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-hR3ubS/json-light.png",
+            "sha256": "84618568bd8775a9128eb5a2e08748d813b75a48153c86bdaf1c155fed878f3b",
+            "pixels": [
+              1280,
+              1579
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-hR3ubS/json-mobile.png",
+            "sha256": "3c97d88b9ef096f52f4c33eafcf188215e445d2d2127bff190fa1369e4180310",
+            "pixels": [
+              1280,
+              1579
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-hR3ubS/sqlite-dark.png",
+            "sha256": "3c97d88b9ef096f52f4c33eafcf188215e445d2d2127bff190fa1369e4180310",
+            "pixels": [
+              1280,
+              1579
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-hR3ubS/sqlite-light.png",
+            "sha256": "84618568bd8775a9128eb5a2e08748d813b75a48153c86bdaf1c155fed878f3b",
+            "pixels": [
+              1280,
+              1579
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-hR3ubS/sqlite-mobile.png",
+            "sha256": "3c97d88b9ef096f52f4c33eafcf188215e445d2d2127bff190fa1369e4180310",
+            "pixels": [
+              1280,
+              1579
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-hR3ubS/taskboard.png",
+            "sha256": "6c4532bff9dabab0c13b7765d4ce1ebd51aa2b9608998417fddf75a21b197dc3",
+            "pixels": [
+              1280,
+              1995
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "installed-b5-final",
+      "argv": [
+        "env",
+        "TMPDIR=/tmp/wyd-i54-packed-nLH2FJ/five-library/.fixtures",
+        "NODE_OPTIONS=--import /tmp/wyd-i54-packed-nLH2FJ/five-library/proof-register.mjs",
+        "node",
+        "--import",
+        "/tmp/wyd-i54-packed-nLH2FJ/five-library/proof-register.mjs",
+        "--test",
+        "--test-reporter=tap",
+        "test/backoffice-b5.test.js"
+      ],
+      "command": "env TMPDIR=/tmp/wyd-i54-packed-nLH2FJ/five-library/.fixtures 'NODE_OPTIONS=--import /tmp/wyd-i54-packed-nLH2FJ/five-library/proof-register.mjs' node --import /tmp/wyd-i54-packed-nLH2FJ/five-library/proof-register.mjs --test --test-reporter=tap test/backoffice-b5.test.js",
+      "exit": 0,
+      "log": "/tmp/b5-installed-b5-final.log",
+      "sha256": "7ace649f8c40d7e0f138cc3b652da1e96a2c82302fcbfe11b99d29db6992c704",
+      "seconds": 36.568,
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "cwd": "/tmp/wyd-i54-packed-nLH2FJ/five-library"
+    },
+    {
+      "name": "chrome-verified-captures",
+      "argv": [
+        "node",
+        "scripts/verify-backoffice-b5-browser.js"
+      ],
+      "command": "node scripts/verify-backoffice-b5-browser.js",
+      "exit": 0,
+      "log": "/tmp/b5-chrome-verified-captures.log",
+      "sha256": "9321c9ad95ebc56f9667c8e83a627edc68e01184fb64e75c106498f997c0883c",
+      "seconds": 16.836,
+      "browserEvidence": {
+        "file": "/tmp/wyd-backoffice-b5-browser-dK6fK6/result.json",
+        "sha256": "82e90865c92caf6785f2fea67a685191dcb351d8587b8dc59d19ba93101aef99",
+        "result": {
+          "ok": true,
+          "firefox": false,
+          "pointerOnly": false,
+          "providers": [
+            {
+              "provider": "json",
+              "checks": [
+                "Real Gate form login, HttpOnly session, canonical installed Page with approved read preparation",
+                "Keyboard-only login, skip link and native invalid-required submission with linked errors and no HTTP mutation",
+                "Native Tab order text \u2192 confirmation \u2192 submit, Space confirmation, visible focus outline",
+                "Native semantic form submits exact published binding, real CSRF, explicit confirmation and protected create",
+                "Retained intent after live action/service revocation denied; independent detail binding proves one success and absent denied record",
+                "Missing/unauthorized Page, public alternate ingress, forged query and expired genuine browser Session denied",
+                "Stopped retirement removes Page; fresh replacement/review/restart retains exactly one persisted mutation"
+              ],
+              "audit": {
+                "main": 1,
+                "headings": [
+                  "Records administration",
+                  "New record"
+                ],
+                "unnamed": 0,
+                "errors": true,
+                "dialogs": 0
+              },
+              "focus": [
+                "confirmed",
+                "Create record"
+              ],
+              "layouts": [
+                {
+                  "width": 320,
+                  "documentWidth": 305
+                },
+                {
+                  "width": 360,
+                  "documentWidth": 345
+                },
+                {
+                  "width": 768,
+                  "documentWidth": 753
+                },
+                {
+                  "width": 1280,
+                  "documentWidth": 1265
+                }
+              ],
+              "contrast": {
+                "light": {
+                  "text": 13.320950605055367,
+                  "input": 13.320950605055367,
+                  "button": 6.701618401398807
+                },
+                "dark": {
+                  "text": 16.193006440967938,
+                  "input": 13.399258849587758,
+                  "button": 9.83750053606076
+                }
+              },
+              "mutation": {
+                "createdVersion": 1,
+                "deniedAbsent": true,
+                "restartVersion": 1
+              }
+            },
+            {
+              "provider": "sqlite",
+              "checks": [
+                "Real Gate form login, HttpOnly session, canonical installed Page with approved read preparation",
+                "Keyboard-only login, skip link and native invalid-required submission with linked errors and no HTTP mutation",
+                "Native Tab order text \u2192 confirmation \u2192 submit, Space confirmation, visible focus outline",
+                "Native semantic form submits exact published binding, real CSRF, explicit confirmation and protected create",
+                "Retained intent after live action/service revocation denied; independent detail binding proves one success and absent denied record",
+                "Missing/unauthorized Page, public alternate ingress, forged query and expired genuine browser Session denied",
+                "Stopped retirement removes Page; fresh replacement/review/restart retains exactly one persisted mutation"
+              ],
+              "audit": {
+                "main": 1,
+                "headings": [
+                  "Records administration",
+                  "New record"
+                ],
+                "unnamed": 0,
+                "errors": true,
+                "dialogs": 0
+              },
+              "focus": [
+                "confirmed",
+                "Create record"
+              ],
+              "layouts": [
+                {
+                  "width": 320,
+                  "documentWidth": 305
+                },
+                {
+                  "width": 360,
+                  "documentWidth": 345
+                },
+                {
+                  "width": 768,
+                  "documentWidth": 753
+                },
+                {
+                  "width": 1280,
+                  "documentWidth": 1265
+                }
+              ],
+              "contrast": {
+                "light": {
+                  "text": 13.320950605055367,
+                  "input": 13.320950605055367,
+                  "button": 6.701618401398807
+                },
+                "dark": {
+                  "text": 16.193006440967938,
+                  "input": 13.399258849587758,
+                  "button": 9.83750053606076
+                }
+              },
+              "mutation": {
+                "createdVersion": 1,
+                "deniedAbsent": true,
+                "restartVersion": 1
+              }
+            }
+          ],
+          "limitations": [
+            "Human assistive technology, speech, actual zoom/forced-colors/touch remain unverified.",
+            "Bound intent integration uses an explicit trusted test client, not a shipped frozen WydClient feature."
+          ],
+          "browser": "Google Chrome 156.0.8078.47",
+          "taskboard": {
+            "canonicalRoute": "/backoffice/pages/taskboard",
+            "installed": true,
+            "informational": true,
+            "bindings": 0,
+            "repeatedChildrenRendered": true
+          }
+        },
+        "screenshots": [
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-dK6fK6/json-dark.png",
+            "sha256": "3c97d88b9ef096f52f4c33eafcf188215e445d2d2127bff190fa1369e4180310",
+            "pixels": [
+              1280,
+              1579
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-dK6fK6/json-light.png",
+            "sha256": "84618568bd8775a9128eb5a2e08748d813b75a48153c86bdaf1c155fed878f3b",
+            "pixels": [
+              1280,
+              1579
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-dK6fK6/json-mobile.png",
+            "sha256": "327c284fca0b37fbf67ab04109929317a2f050bf0b33dcbe123a4554aab23b63",
+            "pixels": [
+              360,
+              1671
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-dK6fK6/sqlite-dark.png",
+            "sha256": "3c97d88b9ef096f52f4c33eafcf188215e445d2d2127bff190fa1369e4180310",
+            "pixels": [
+              1280,
+              1579
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-dK6fK6/sqlite-light.png",
+            "sha256": "84618568bd8775a9128eb5a2e08748d813b75a48153c86bdaf1c155fed878f3b",
+            "pixels": [
+              1280,
+              1579
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-dK6fK6/sqlite-mobile.png",
+            "sha256": "327c284fca0b37fbf67ab04109929317a2f050bf0b33dcbe123a4554aab23b63",
+            "pixels": [
+              360,
+              1671
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-dK6fK6/taskboard.png",
+            "sha256": "6c4532bff9dabab0c13b7765d4ce1ebd51aa2b9608998417fddf75a21b197dc3",
+            "pixels": [
+              1280,
+              1995
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "firefox-verified-captures",
+      "argv": [
+        "env",
+        "WYDCLIENT_BROWSER=firefox",
+        "WYDCLIENT_FIREFOX_POINTER_ONLY=1",
+        "node",
+        "scripts/verify-backoffice-b5-browser.js"
+      ],
+      "command": "env WYDCLIENT_BROWSER=firefox WYDCLIENT_FIREFOX_POINTER_ONLY=1 node scripts/verify-backoffice-b5-browser.js",
+      "exit": 0,
+      "log": "/tmp/b5-firefox-verified-captures.log",
+      "sha256": "bf30749e7f44149cd6a93b6eee17be430ca34bb635e17e5d6035135691bc4070",
+      "seconds": 20.902,
+      "browserEvidence": {
+        "file": "/tmp/wyd-backoffice-b5-browser-fQJz4g/result.json",
+        "sha256": "2bb8e0f349d6dc82c5ac0828c760a7dabebf6ae9ba23bdb2ccb3e6d47fb55e10",
+        "result": {
+          "ok": true,
+          "firefox": true,
+          "pointerOnly": true,
+          "providers": [
+            {
+              "provider": "json",
+              "checks": [
+                "Real Gate form login, HttpOnly session, canonical installed Page with approved read preparation",
+                "Native semantic form submits exact published binding, real CSRF, explicit confirmation and protected create",
+                "Retained intent after live action/service revocation denied; independent detail binding proves one success and absent denied record",
+                "Missing/unauthorized Page, public alternate ingress, forged query and expired genuine browser Session denied",
+                "Stopped retirement removes Page; fresh replacement/review/restart retains exactly one persisted mutation"
+              ],
+              "audit": {
+                "main": 1,
+                "headings": [
+                  "Records administration",
+                  "New record"
+                ],
+                "unnamed": 0,
+                "errors": true,
+                "dialogs": 0
+              },
+              "focus": [],
+              "layouts": [
+                {
+                  "width": 320,
+                  "documentWidth": 308
+                },
+                {
+                  "width": 360,
+                  "documentWidth": 348
+                },
+                {
+                  "width": 768,
+                  "documentWidth": 756
+                },
+                {
+                  "width": 1280,
+                  "documentWidth": 1268
+                }
+              ],
+              "contrast": {
+                "light": {
+                  "text": 13.320950605055367,
+                  "input": 13.320950605055367,
+                  "button": 6.701618401398807
+                },
+                "dark": {
+                  "text": 16.193006440967938,
+                  "input": 13.399258849587758,
+                  "button": 9.83750053606076
+                }
+              },
+              "mutation": {
+                "createdVersion": 1,
+                "deniedAbsent": true,
+                "restartVersion": 1
+              }
+            },
+            {
+              "provider": "sqlite",
+              "checks": [
+                "Real Gate form login, HttpOnly session, canonical installed Page with approved read preparation",
+                "Native semantic form submits exact published binding, real CSRF, explicit confirmation and protected create",
+                "Retained intent after live action/service revocation denied; independent detail binding proves one success and absent denied record",
+                "Missing/unauthorized Page, public alternate ingress, forged query and expired genuine browser Session denied",
+                "Stopped retirement removes Page; fresh replacement/review/restart retains exactly one persisted mutation"
+              ],
+              "audit": {
+                "main": 1,
+                "headings": [
+                  "Records administration",
+                  "New record"
+                ],
+                "unnamed": 0,
+                "errors": true,
+                "dialogs": 0
+              },
+              "focus": [],
+              "layouts": [
+                {
+                  "width": 320,
+                  "documentWidth": 308
+                },
+                {
+                  "width": 360,
+                  "documentWidth": 348
+                },
+                {
+                  "width": 768,
+                  "documentWidth": 756
+                },
+                {
+                  "width": 1280,
+                  "documentWidth": 1268
+                }
+              ],
+              "contrast": {
+                "light": {
+                  "text": 13.320950605055367,
+                  "input": 13.320950605055367,
+                  "button": 6.701618401398807
+                },
+                "dark": {
+                  "text": 16.193006440967938,
+                  "input": 13.399258849587758,
+                  "button": 9.83750053606076
+                }
+              },
+              "mutation": {
+                "createdVersion": 1,
+                "deniedAbsent": true,
+                "restartVersion": 1
+              }
+            }
+          ],
+          "limitations": [
+            "Human assistive technology, speech, actual zoom/forced-colors/touch remain unverified.",
+            "Bound intent integration uses an explicit trusted test client, not a shipped frozen WydClient feature."
+          ],
+          "browser": "Mozilla Firefox 158.0",
+          "taskboard": {
+            "canonicalRoute": "/backoffice/pages/taskboard",
+            "installed": true,
+            "informational": true,
+            "bindings": 0,
+            "repeatedChildrenRendered": true
+          }
+        },
+        "screenshots": [
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-fQJz4g/json-dark.png",
+            "sha256": "29ec52f7f0d62717b7352326676fff32950e605d5681e1faf9319a3970dec9f3",
+            "pixels": [
+              1268,
+              1579
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-fQJz4g/json-light.png",
+            "sha256": "40b233ec43979548883346f7c936359136a32c76c466653e52b7645e252933e6",
+            "pixels": [
+              1268,
+              1579
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-fQJz4g/json-mobile.png",
+            "sha256": "e63c9fbfc6d0c4a1366b3facd15aa1e273c019fc208a0d9742d6e3ed0cbb4e78",
+            "pixels": [
+              348,
+              1671
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-fQJz4g/sqlite-dark.png",
+            "sha256": "29ec52f7f0d62717b7352326676fff32950e605d5681e1faf9319a3970dec9f3",
+            "pixels": [
+              1268,
+              1579
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-fQJz4g/sqlite-light.png",
+            "sha256": "40b233ec43979548883346f7c936359136a32c76c466653e52b7645e252933e6",
+            "pixels": [
+              1268,
+              1579
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-fQJz4g/sqlite-mobile.png",
+            "sha256": "e63c9fbfc6d0c4a1366b3facd15aa1e273c019fc208a0d9742d6e3ed0cbb4e78",
+            "pixels": [
+              348,
+              1671
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-fQJz4g/taskboard.png",
+            "sha256": "809918e5276a76bd02574db464117b47802390891be9bc1eb5e9312f1ea69b6b",
+            "pixels": [
+              1268,
+              1995
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "documentation-final",
+      "argv": [
+        "python3",
+        "/tmp/b5-verify-docs.py"
+      ],
+      "command": "python3 /tmp/b5-verify-docs.py",
+      "exit": 0,
+      "log": "/tmp/b5-documentation-final.log",
+      "sha256": "4587ca068c3aabaff05fe181408f9b80f88bcef44a5392d4a342673ce5d9c909",
+      "seconds": 0.048
+    }
+  ],
+  "humanAssistiveTechnologyPerformed": false,
+  "completeFirefoxKeyboardQualified": false,
+  "foundationAssessment": "Incomplete: BO-HTTP-12 and BO-REU-06 remain Partial. Runtime qualification is distinct from production readiness. See B5 report for bounded B6 acceptance tracks and production migration prerequisites."
+}
