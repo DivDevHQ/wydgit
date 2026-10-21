@@ -1,5 +1,11 @@
 ## Unreleased
 
+- Delete the matching BackOffice auth cookie when final HTTP Session authorization
+  detects revocation after action completion. Preserve 401, uncertain committed
+  writes and no replay. Qualify both providers and HTTP/HTTPS; record Page admission
+  and action-scope decisions with installed composition and two-resource evidence.
+  New Page admission and action attenuation still require architectural approval.
+
 - Correct BackOffice HTTP failure classification: distinguish authorization and
   validation failures from sanitized service unavailability, retaining revision
   conflicts and uncertain native outcomes without retries. Qualify installed

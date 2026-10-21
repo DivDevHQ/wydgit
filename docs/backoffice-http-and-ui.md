@@ -390,3 +390,16 @@ provider exception or details. Failure classification neither proves rollback no
 changes `X-Wydgit-Action-Outcome`; an admitted failure remains uncertain. It never
 triggers an action retry or credential deletion. See the
 [foundation conformance report](work-in-progress/backoffice-foundation-implementation.md).
+
+
+### B1 final Session authorization
+
+The existing invalid-session cookie deletion rule also applies when the final
+HTTP Session check observes expiry or revocation after action completion. Return
+401 `HTTP.AUTHENTICATION` with matching auth-cookie deletion (including Secure
+host-cookie attributes for HTTPS). An admitted native mutation may already have
+committed: its outcome remains `uncertain`, never success or a rollback claim,
+and the adapter never retries it. Transient session-service failure still preserves
+the cookie and returns service unavailability. BOB1-01 qualifies real logout at
+this boundary after installed Store writes on JSON/SQLite and both ingress schemes.
+See the [B1 decision record](work-in-progress/backoffice-page-admission-decisions.md).

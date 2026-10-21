@@ -1,0 +1,257 @@
+{
+  "mission": "Wydgine 0.3 BackOffice B1",
+  "date": "2026-10-21",
+  "branch": "develop/0.3",
+  "baseline": "1928baa6ac1f1dd0814e9b581fede2f5cf58c359",
+  "baselineTree": "clean",
+  "baselineDivergence": [
+    0,
+    0
+  ],
+  "node": "v24.21.0",
+  "versionsChanged": false,
+  "pageDeadlineMs": 1000,
+  "httpLimitIssue": "OPEN",
+  "decisions": {
+    "DEC-01": "ARCHITECTURAL APPROVAL REQUIRED",
+    "DEC-02": "ARCHITECTURAL APPROVAL REQUIRED",
+    "lateSessionCookieDeletion": "CLARIFICATION \u2014 SAFE TO IMPLEMENT",
+    "componentAuthorityPreservation": "EXISTING CONTRACT \u2014 IMPLEMENT"
+  },
+  "conformance": {
+    "inScope": 64,
+    "implementedVerified": 59,
+    "partial": 4,
+    "missing": 1,
+    "unverified": 0,
+    "deferredProposedReserved": 12,
+    "blockedDecisions": 2
+  },
+  "classificationChanges": [
+    {
+      "id": "BO-REU-05",
+      "from": "Unverified",
+      "to": "Partial",
+      "evidence": "BOB1-03: installed native composed Page executes/renders in both contexts; HTTP admission and action bridge remain blocked"
+    }
+  ],
+  "scopeObservation": {
+    "id": "BOB1-02",
+    "providers": [
+      "json",
+      "sqlite"
+    ],
+    "requiredScopesPreflighted": true,
+    "dispatchUsesWholeApprovedReceipt": true,
+    "archiveResourceReadableThroughRecordsActionWithoutArchiveActionPermissionIfStorePolicyAllows": true,
+    "actualTargetRevocationDenies": true,
+    "transactionSecondMemberDenialPreservesFirst": true,
+    "architecturalApproval": false
+  },
+  "fixture": {
+    "nativeInstalledComposedPage": true,
+    "canonicalBackOfficeHttpPage": false,
+    "componentActionBridge": false,
+    "readyForWydDataRuntime": false
+  },
+  "failingBefore": {
+    "command": "node --test --test-name-pattern=BOB1-01 test/backoffice-http.test.js",
+    "log": "/tmp/backoffice-b1-failing-before-native.log",
+    "sha256": "0a667e2bd790fe3a120cf1e9e560d4f7e433114aed7d7102cd15dd0c22f8140b",
+    "tests": 2,
+    "pass": 0,
+    "fail": 2,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "initialRestrictedAttempt": {
+    "log": "/tmp/backoffice-b1-failing-before.log",
+    "functionalEvidence": false,
+    "reason": "sandbox lacks required native test access"
+  },
+  "focused": {
+    "command": "node --test test/backoffice-action-scope.test.js test/backoffice-page-foundation.test.js test/backoffice-http.test.js test/backoffice-actions.test.js test/backoffice-placement.test.js test/scoped-store-authorization.test.js test/backoffice-ui.test.js test/backoffice-body.test.js test/wbasic-taskboard.test.js",
+    "log": "/tmp/backoffice-b1-focused.log",
+    "sha256": "deb1f2118f44af8c14f0a85e70e4e65f8f59fdadf621606986923abece2b080f",
+    "tests": 146,
+    "pass": 146,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "installed": {
+    "command": "node scripts/verify-packed-packages.js (installed five-library selection)",
+    "log": "/tmp/wyd-i54-packed-PNDMn7/five-library-tests.log",
+    "sha256": "dbc04bac4a4a6648a09222e8ba79e614ef9469fdcfc7b6052d36f23dc217d664",
+    "tests": 521,
+    "pass": 521,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "provider": {
+    "command": "node scripts/verify-packed-packages.js (installed provider selection)",
+    "log": "/tmp/wyd-i54-packed-PNDMn7/provider-tests.log",
+    "sha256": "ba2abaa68f717818d895e214c521631e99e0d3637402bcf12e2d700f3147a737",
+    "tests": 35,
+    "pass": 35,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "process": {
+    "command": "node scripts/verify-packed-packages.js (real process supervision)",
+    "log": "/tmp/wyd-i54-packed-PNDMn7/process-supervision.log",
+    "sha256": "a871e55010a9149c1c05abdccb8e26be2da32716577d6ed4a9e6d1dd1463ada3",
+    "tests": 20,
+    "pass": 20,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "linux": {
+    "command": "node scripts/verify-packed-packages.js (unprivileged Linux boundaries)",
+    "log": "/tmp/wyd-i54-packed-PNDMn7/linux-boundaries.log",
+    "sha256": "45743d41aa8cbf4d9ccdb06f8141052969342402e9a7da0b6d3597a9a731ee09",
+    "tests": 25,
+    "pass": 25,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "packed": {
+    "command": "node scripts/verify-packed-packages.js",
+    "log": "/tmp/backoffice-b1-packed.log",
+    "sha256": "8ffc425b57ce900915b8d73a06fc8d78d2ed64745246f9f7624d3ed4b7d60783",
+    "status": "passed",
+    "oneEnginePerConsumer": true,
+    "checkoutRuntimeImportsRejected": true,
+    "result": {
+      "ok": true,
+      "node": "v24.21.0",
+      "packages": {
+        "wydgine": "/tmp/wyd-i54-packed-PNDMn7/tarballs/wydgine-0.3.0-alpha.28.tgz",
+        "wydhosting": "/tmp/wyd-i54-packed-PNDMn7/tarballs/wydhosting-0.3.0-alpha.28.tgz",
+        "wydstore": "/tmp/wyd-i54-packed-PNDMn7/tarballs/wydgit-store-0.1.0-alpha.8.tgz",
+        "wydgate": "/tmp/wyd-i54-packed-PNDMn7/tarballs/wydgit-gate-0.1.0-alpha.7.tgz",
+        "wydsearch": "/tmp/wyd-i54-packed-PNDMn7/tarballs/wydgit-search-0.1.0-alpha.2.tgz",
+        "wydfiles": "/tmp/wyd-i54-packed-PNDMn7/tarballs/wydgit-files-0.1.0-alpha.1.tgz",
+        "wydstream": "/tmp/wyd-i54-packed-PNDMn7/tarballs/wydgit-stream-0.1.0-alpha.2.tgz"
+      },
+      "consumers": [
+        "/tmp/wyd-i54-packed-PNDMn7/service-free",
+        "/tmp/wyd-i54-packed-PNDMn7/five-library",
+        "/tmp/wyd-i54-packed-PNDMn7/provider"
+      ]
+    }
+  },
+  "firstFull": {
+    "command": "npm test",
+    "log": "/tmp/backoffice-b1-full.log",
+    "sha256": "ba94fbc8184a91ca40b4ee2b6273a8b6a68d48506551e81e38559278301cdd02",
+    "tests": 1792,
+    "pass": 1792,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "full": {
+    "command": "npm test",
+    "log": "/tmp/backoffice-b1-final-full.log",
+    "sha256": "b3fae1b85f6f69569609b46094e280cb3b0515dd9418818c33469d0db1c859ed",
+    "tests": 1792,
+    "pass": 1792,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "status": "passed"
+  },
+  "check": {
+    "command": "npm run check",
+    "log": "/tmp/backoffice-b1-final-check.log",
+    "sha256": "1dcdec3effdcf658e3ba58a49d0e4da2c29bd4f126ca270ef5bce1e9acddf607",
+    "status": "passed",
+    "pages": 3,
+    "internalLinks": 42
+  },
+  "frozenClient": {
+    "command": "node --input-type=module -e \"import {verifyArtifacts} from './packages/wydclient/artifact-policy.js'; console.log('Verified '+verifyArtifacts({root:process.cwd()})+' immutable artifacts');\"",
+    "log": "/tmp/backoffice-b1-frozen.log",
+    "sha256": "f2da01c74d99203229742995d8b5aa97bca3aaa2f86f99c57e7f137e67b22164",
+    "immutableArtifacts": 31,
+    "status": "passed"
+  },
+  "documentation": {
+    "command": "node /tmp/backoffice-b1-doc-links.mjs",
+    "log": "/tmp/backoffice-b1-doc-links.log",
+    "sha256": "8bff8d0394dd09028b3fbe2ea9f75df1c2a72e50a29bf9c27fcc34bd6ab17f3f",
+    "result": {
+      "files": 5,
+      "links": 62,
+      "anchors": 14,
+      "missing": 0,
+      "stableIds": 76,
+      "inScope": 64,
+      "inventory": {
+        "Implemented": 59,
+        "Partial": 4,
+        "Missing": 1,
+        "Unverified": 0,
+        "Deferred": 12
+      }
+    },
+    "status": "passed"
+  },
+  "limitations": [
+    "No accepted canonical HTTP BackOffice Page admission or component-to-action binding",
+    "Action scope ceiling remains an unapproved authority-model choice",
+    "No human AT or new real-browser qualification",
+    "No privileged Linux/VM/cgroup, power-loss, distributed cutover or production-data qualification",
+    "No HTTP reliability closure, retry, version bump or frozen client changes"
+  ],
+  "adversarialEvidence": {
+    "routeSitePackageCallerContextForgery": [
+      "BOHTTP-01/02/04/05",
+      "ACT-01/04/11",
+      "execution-contexts"
+    ],
+    "crossPackageAndUnapprovedResources": [
+      "BOB1-02",
+      "ACT-10",
+      "BOFOUND-01"
+    ],
+    "revocation": [
+      "BOB1-01/02",
+      "ACT-02/12",
+      "BOREL-07"
+    ],
+    "generationUpgradeRetirement": [
+      "BOB1-03",
+      "ACT-03/09",
+      "BOHTTP-03",
+      "BOFOUND-01"
+    ],
+    "receiptRestoredMtimeSymlinkRecovery": [
+      "BOFOUND-03",
+      "backoffice-placement"
+    ],
+    "parametersConcurrencyCancellationDeadline": [
+      "ACT-01/08/12/13",
+      "BOHTTP-04/07",
+      "BOREL-01\u201307",
+      "wbasic-taskboard"
+    ],
+    "nativeCommitIndeterminateHttp": [
+      "BOB1-01",
+      "BOHTTP-07"
+    ]
+  }
+}

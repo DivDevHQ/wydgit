@@ -57,7 +57,7 @@ export function createBackOfficeHttp({root,model,libraries,sessions,contextPolic
     installationContext:contextPolicy(new ExecutionContext({context:'BackOffice',publisher:'wydgit.core',self:app,app,
       capabilities:['packages.lifecycle.manage','packages.placement.manage']}))}):null;
   return async(req,res)=>{
-    const deadline=Date.now()+requestMs;let outcome='rejected';
+    const deadline=Date.now()+requestMs,policy=credentialCookies(req.transport?.secure??true);let outcome='rejected';
     const checkDeadline=()=>{if(Date.now()>=deadline)throw Object.assign(Error(),{code:'HTTP.DEADLINE'});if(res.destroyed)throw Object.assign(Error(),{code:'HTTP.REQUEST'});alive();};
     const execution={guard:checkDeadline,deadline,onStart:()=>{outcome='uncertain';}};
     const json=(status,data)=>{res.setHeader('X-Wydgit-Action-Outcome',outcome);res.statusCode=status;res.setHeader('Content-Type','application/json; charset=utf-8');res.end(JSON.stringify(data));};
@@ -74,7 +74,7 @@ export function createBackOfficeHttp({root,model,libraries,sessions,contextPolic
       const {origin,secure}=req.transport,h=req.headers;
       if((h.origin!==null&&h.origin!==origin)||(!isShell&&['cross-site','same-site'].includes(h.fetchSite)))return reject(403,'HTTP.ORIGIN');
       if(invoke&&h.origin!==origin)return reject(403,'HTTP.ORIGIN');
-      const policy=credentialCookies(secure),cookies=parseCookies(req.cookie);
+      const cookies=parseCookies(req.cookie);
       // No bearer header, alternate-scheme auth cookie, query or body credentials.
       if(h.authorization!==null||Object.keys(cookies).some(k=>/^(?:__Host-|__Secure-)?wydgit-auth$/i.test(k)&&k!==policy.auth))return reject(400,'HTTP.REQUEST');
       if(!cookies[policy.auth])return reject(401,'HTTP.AUTHENTICATION');
@@ -111,7 +111,7 @@ export function createBackOfficeHttp({root,model,libraries,sessions,contextPolic
       checkDeadline();if(invoke)outcome='completed';json(200,output);
     }catch(error){
       if(res.headersSent||res.destroyed){res.destroy();return;}
-      if(error.code==='GATE.SESSION_INVALID')return reject(401,'HTTP.AUTHENTICATION');
+      if(error.code==='GATE.SESSION_INVALID'){res.setHeader('Set-Cookie',[policy.serialize('auth','',0)]);return reject(401,'HTTP.AUTHENTICATION');}
       const code=Object.hasOwn(messages,error.code)?error.code:'HTTP.REQUEST';
       reject(['HTTP.DEADLINE','SERVICE.FAILED'].includes(code)?503:code==='HTTP.LIMIT'?413:400,code);
     }finally{

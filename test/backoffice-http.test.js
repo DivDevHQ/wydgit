@@ -9,14 +9,21 @@ import {createApp} from '../app.js';
 import {ExecutionContext} from '../wydgine/seam/context.js';
 import {packageOperation,planPackagePolicy,approvePackagePolicy,applyPackagePolicy} from '../wydgine/packages/index.js';
 
-async function listen(t,f,options={}){
-  const app=createApp({root:f.root,libraries:f.libraries,localHostname:'127.0.0.1',logger:{error(){assert.fail('Unexpected HTTP exception');}},...options});
-  const server=app.listen(0,'127.0.0.1');await once(server,'listening');
+async function listen(t,f,{secure=false,...options}={}){
+  const app=createApp({root:f.root,libraries:f.libraries,...(secure?{}:{localHostname:'127.0.0.1'}),logger:{error(){assert.fail('Unexpected HTTP exception');}},...options});
+  let server;
+  if(secure){
+    const {createServer}=await import('node:http'),{validateRouting,resolveRoute,bindRequestRoute}=await import('../wydgine/http/routing.js');
+    const routing=validateRouting({schema:'wydgit.routing/0.1',transport:{mode:'trusted-proxy',peers:['127.0.0.1']},routes:[{hostname:'admin.example.test',app:'boilerplate',state:'active',approval:'operator-domain'}]},['boilerplate']);
+    server=createServer((req,res)=>{try{bindRequestRoute(req,resolveRoute(routing,req));app.handle(req,res);}catch{res.statusCode=400;res.end('Request rejected');}});server.listen(0,'127.0.0.1');
+  }else server=app.listen(0,'127.0.0.1');
+  await once(server,'listening');
   let stopped=false;const stop=async()=>{if(!stopped){stopped=true;await app.shutdown(server);}};t.after(stop);
-  const base='http://127.0.0.1:'+server.address().port,cookie='wydgit-auth='+f.login.token;
-  const get=(route='/backoffice',headers={})=>fetch(base+route,{headers:{Cookie:cookie,...headers}});
+  const base='http://127.0.0.1:'+server.address().port,origin=secure?'https://admin.example.test':base,cookie=(secure?'__Host-wydgit-auth=':'wydgit-auth=')+f.login.token;
+  const ingress=secure?{'X-Forwarded-Host':'admin.example.test','X-Forwarded-Proto':'https'}:{};
+  const get=(route='/backoffice',headers={})=>fetch(base+route,{headers:{...ingress,Cookie:cookie,...headers}});
   const shell=await get(),html=await shell.text(),csrf=load(html)('meta[name="wydgit-backoffice-csrf"]').attr('content');
-  const post=(body,headers={},method='POST')=>fetch(base+'/backoffice/api/actions/invoke',{method,headers:{Cookie:cookie,Origin:base,'Content-Type':'application/json','X-Wydgit-CSRF':csrf,...headers},body:typeof body==='string'?body:JSON.stringify(body)});
+  const post=(body,headers={},method='POST')=>fetch(base+'/backoffice/api/actions/invoke',{method,headers:{...ingress,Cookie:cookie,Origin:origin,'Content-Type':'application/json','X-Wydgit-CSRF':csrf,...headers},body:typeof body==='string'?body:JSON.stringify(body)});
   const discover=async()=>{const response=await get('/backoffice/api/actions');assert.equal(response.status,200,await response.clone().text());return (await response.json()).value.actions;};
   return {app,server,base,cookie,get,post,stop,shell,html,csrf,discover};
 }
@@ -309,4 +316,32 @@ for(const [code,status,publicCode] of [
   assert.doesNotMatch(JSON.stringify(result),/secret|native\/path/);assert.equal(calls,1);
   assert.equal(response.headers.get('x-wydgit-action-outcome'),'uncertain');
   assert.equal(response.headers.get('set-cookie'),null);
+});
+
+for(const provider of ['json','sqlite'])for(const secure of [false,true])test(`BOB1-01 ${provider} ${secure?'HTTPS':'local HTTP'}: revocation after action completion deletes the auth cookie without claiming rollback`,async t=>{
+  const {storeActionFixture}=await import('../test-support/backoffice-store.js');
+  const f=await storeActionFixture(t,provider),real=f.libraries;
+  let armed=false,checks=0,calls=0;
+  const libraries={...real,async authorizeSitePolicy(context,requirement){
+    await real.authorizeSitePolicy(context,requirement);
+    // Deterministic race: the real Store write and the action's final policy
+    // check have finished, but HTTP has not reauthorized its Session yet.
+    if(armed&&requirement.permission==='content.action.write'&&++checks===2)await f.gate.logout(f.login.token);
+  },bind(context,operation){const bound=real.bind(context,operation);return {...bound,async invoke(...args){
+    if(args[0]==='wydstore'&&args[2]==='create')calls++;
+    return bound.invoke(...args);
+  }};}};
+  const h=await listen(t,f,{libraries,secure}),actions=await h.discover();
+  const create=actions.find(a=>a.name==='create');armed=true;
+  const response=await h.post({reference:create.reference,input:{...f.recordInput,data:{text:'committed'}},confirmed:true});
+  assert.equal(response.status,401);assert.equal((await response.json()).code,'HTTP.AUTHENTICATION');
+  assert.equal(response.headers.get('x-wydgit-action-outcome'),'uncertain');
+  assert.equal(response.headers.get('set-cookie'),(secure?'__Host-wydgit-auth=; Path=/; Secure; ':'wydgit-auth=; Path=/; ')+'HttpOnly; SameSite=Lax; Max-Age=0');
+  assert.equal(calls,1);assert.equal(checks,2);
+  // Reconcile using a fresh genuine session, never replay the create.
+  f.login=await f.gate.login('alice',f.password);f.request.session=f.login.token;
+  const api=f.framework(),get=(await f.discover(api)).find(a=>a.name==='get');
+  const record=await f.invoke(api,get.reference,f.recordInput);
+  assert.equal(record.ok,true);assert.equal(record.value.version,1);assert.equal(record.value.data.text,'committed');
+  assert.equal(calls,1);
 });

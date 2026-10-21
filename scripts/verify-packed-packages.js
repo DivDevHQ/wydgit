@@ -61,7 +61,8 @@ selected.push('canonical-page-edit','form-clear');
 // BackOffice foundation: run live policy, reviewed approval and provider checks
 // through shipped modules as well as the real action/HTTP installation fixtures.
 selected.push('execution-contexts','scoped-policy','scoped-store-authorization',
- 'scoped-policy-lifecycle','policy-reconciliation','backoffice-body');
+ 'scoped-policy-lifecycle','policy-reconciliation','backoffice-body',
+ 'backoffice-action-scope','backoffice-page-foundation');
 async function stage(root){
  await fs.copyFile(path.join(repository,'wydgit.config.json'),path.join(root,'wydgit.config.json'));
  await fs.mkdir(path.join(root,'.fixtures'));

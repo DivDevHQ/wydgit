@@ -5,7 +5,7 @@ import {actionFixture} from './backoffice.js';
 import {initializeHost} from '../wydgine/host.js';
 import {createGate} from '@wydgit/gate/client';
 
-export async function storeActionFixture(t,provider='json') {
+export async function storeActionFixture(t,provider='json',{edit=()=>{},configure=async()=>{}}={}) {
   const data={type:'object',fields:{text:{type:'string',maxLength:128}}};
   const target={store:{type:'string',maxLength:64},collection:{type:'string',maxLength:64},id:{type:'string',maxLength:64}};
   const version={type:'integer',min:1,max:100};
@@ -22,6 +22,7 @@ export async function storeActionFixture(t,provider='json') {
       input:{type:'object',fields:{...target,...(['create','update'].includes(operation)?{data}:{}),...(['update','delete'].includes(operation)?{version}:{})}},
       output:{type:'object',fields:operation==='delete'?{id:target.id,version,deleted:{type:'boolean'}}:{id:target.id,version,data}}
     }));
+    edit(m);
   },configure:async f=>{
     await f.libraries.close();const root=path.join(f.root,'records');await fs.mkdir(root);
     f.config.libraries.find(l=>l.id==='wydstore').options.stores.push({
@@ -31,8 +32,9 @@ export async function storeActionFixture(t,provider='json') {
         contexts:['BackOffice'],permission:op==='get'?'content.records.read':'content.records.write'
       }]))}}
     });
-    await fs.writeFile(path.join(f.root,'wydgit.config.json'),JSON.stringify(f.config));
     f.candidate.storageMappings={records:{store:'records',collection:'records'}};
+    await configure(f);
+    await fs.writeFile(path.join(f.root,'wydgit.config.json'),JSON.stringify(f.config));
     f.libraries=await initializeHost({root:f.root});f.gate=createGate(f.libraries.bind(f.gateContext));
   }});
   f.storePermissions=['content.action.read','content.action.write','content.records.read','content.records.write'];

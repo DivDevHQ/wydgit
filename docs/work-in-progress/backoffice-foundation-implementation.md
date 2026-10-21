@@ -1,5 +1,11 @@
 # Operation BackOffice — foundation implementation and qualification
 
+**Latest: B1 (2026-10-21)** — see the [B1 increment](#b1-implementation-and-disposition)
+and [decision record](backoffice-page-admission-decisions.md). Inventory now has
+59 implemented, 4 partial, 1 missing, 0 unverified out of 64; 12 deferred rows and
+both architectural approvals remain. Earlier sections below retain the preceding
+foundation checkpoint and its historical counts/results.
+
 Recorded 2026-10-20. This is a bounded conformance increment, **not foundation
 completion or release qualification**. The [matrix](backoffice-conformance-matrix.md)
 retains stable IDs for the next session. No version, schema, dependency, Page deadline,
@@ -291,4 +297,139 @@ foundation is qualified for the tested installed site/action/Store subset only.
 
 Changes are intended as one ordinary verified commit to `origin/develop/0.3`.
 Commit identity, remote verification and final tree status are reported in the final
+handoff; no commit hash is embedded into its own contents.
+
+
+## B1 implementation and disposition
+
+Baseline: expected `1928baa6ac1f1dd0814e9b581fede2f5cf58c359`, clean
+`develop/0.3`, fetched origin with **0 ahead / 0 behind**. Reviewed the preceding
+commit's runtime correction, tests, matrix and report, then the governing placement,
+SEAM, scoped Store/Gate, action, HTTP, lifecycle and founding contracts. WydData's
+accepted direction and CIR's proposal were reviewed only for compatibility.
+
+This is a bounded B1 increment. Both DEC-01 and DEC-02 retain
+**ARCHITECTURAL APPROVAL REQUIRED**. Existing contracts establish the necessary
+security intersection and caller preservation, but do not define Page-entry policy,
+Page-to-action composition, or a maximum action resource scope. Their alternatives,
+security/compatibility implications and recommended resolutions are in the
+[decision record](backoffice-page-admission-decisions.md). No new route, Page
+permission, manifest syntax, delegation or attenuation mechanism was introduced.
+
+### Retained correction and security proof
+
+BO-HTTP-02/11: `http/backoffice.js` now deletes the matching reserved auth cookie
+when final HTTP Session authorization detects `GATE.SESSION_INVALID`. Previously
+this late path returned 401 without deletion, unlike initial authentication.
+The policy object uses the same trusted transport scheme for initial and final
+checks. HTTPS retains `__Host-`, Secure, HttpOnly, SameSite=Lax, Path=/, no Domain;
+explicit local HTTP retains its existing matching non-Secure cookie attributes.
+No expiry, role, permission, identity, grant or successful response rule changes.
+
+BOB1-01 deterministically revokes a genuine session after a real installed Store
+create and the action's final policy check, before HTTP publication. Both providers
+and both ingress schemes return sanitized 401, matching cookie deletion and
+`uncertain`, with one create call. A fresh genuine session reads exactly revision 1
+and the committed value; no mutation is replayed. Two initial provider regressions
+failed against baseline specifically on absent cookie deletion; four final cases
+qualify local HTTP and trusted HTTPS. Transient session-service failures retain
+503 and the credential, as existing BOREL-06 tests require. The deadline and
+committed-but-indeterminate response behavior are unchanged.
+
+### Direct remaining-gap qualification
+
+BOB1-02 (`test/backoffice-action-scope.test.js`) installs two same-package resources
+with distinct action and protected Store permissions on JSON and SQLite. It proves
+required-resource preflight, separately hidden archive action metadata, current
+full-receipt actual-target dispatch, revoked actual-target denial, and required
+resource revocation even with another resource authorized. Transaction members
+retain independent policy: a denied archive member leaves the first records member
+unwritten; explicitly authorized members both commit. Forged reference identities,
+private Gate and unapproved resources deny. Current dispatch behavior is recorded
+for DEC-02 review, not approved as a future action ceiling contract. BO-ACT-10
+therefore stays Partial.
+
+BOB1-03 (`test/backoffice-page-foundation.test.js`) installs the neutral Taskboard
+family and packaged Page.PreRender behavior. Exact receipt acquisition and an
+explicit native Page-root harness drive the same canonical Page executor, inherited
+and nested components, typed navigation, repeated rows, cleanup and HTML publication
+in FrontEnd and BackOffice. Receipt capabilities/resource scopes and lifetime are
+preserved; trusted Page `self` additionally makes the App-owned root visible, as
+in the public adapter. This is not a managed-instance grant in the receipt.
+Public BackOffice acquisition, copied contexts, stale relocation/update generations
+and retired acquisition deny. This directly advances BO-REU-05 from Unverified to
+Partial. The harness's trusted Page-root adaptation is not production HTTP Page
+admission, caller policy or a component action bridge; BO-HTTP-09 stays Missing.
+
+The reusable **native composition fixture portions are now qualified**. Installed
+HTTP scoped action CRUD/read/write, unauthorized caller/FrontEnd denial and lifecycle
+cases remain separately qualified by BOFOUND-01 and the existing action/placement
+suites. A single end-to-end reusable administrative HTTP Page fixture is still
+blocked by DEC-01/02. Combining these portions through an invented bridge would
+change the authority model.
+
+BO-HTTP-12 remains Partial: human assistive-technology and the complete native
+Firefox keyboard journey are not supplied by a new unit test. BO-REU-06 remains
+Partial: broader property editors/content editors/dashboards and canonical Page
+composition are incomplete, with unspecified feature contracts. No application
+Wydgit, generic DataTable/DetailForm, WydData, CIR or wider domain was implemented.
+
+### B1 conformance and next milestone
+
+| Classification | B1 count | Change |
+| --- | ---: | --- |
+| In scope | 64 | Stable IDs |
+| Implemented and verified | 59 | No promotion based on passing suite counts |
+| Partial | 4 | BO-REU-05 gains direct installed native Page evidence |
+| Missing | 1 | BO-HTTP-09 still needs approved HTTP admission semantics |
+| Unverified | 0 | BO-REU-05 is now partially qualified |
+| Deferred/proposed/reserved | 12 | Unchanged |
+| Blocked decisions | 2 | DEC-01 and DEC-02 require architectural approval |
+
+Shortest safe next increment: approve an exact installed Page/owner binding and
+independent Page-entry permission, approve action required-versus-maximum resource
+semantics, and specify explicit Client/SUB intent binding under the initiating
+caller. Then extend existing trusted admission/execution/dispatch and qualify one
+HTTP Page fixture on both providers. No privileged component base or delegation
+registry is needed. Complete remaining accessibility qualification and broader
+ADM-01 controls separately. Generic data-bound runtime implementation is not ready;
+neutral semantic control design can proceed. HTTP-LIMIT remains OPEN.
+
+### B1 qualification
+
+Retained machine-readable results and log hashes:
+[B1 evidence](../../test-support/backoffice-b1-evidence-2026-10-21.json).
+Run commands, exact counts, skips and temporary evidence paths are recorded there.
+
+- Failing before correction: **0 passed / 2 failed**, specifically cookie deletion;
+  the restricted sandbox's one-file failure is not functional evidence.
+- Focused action/HTTP/body/UI/placement/protected Store/composition and new fixture
+  selection: **146/146 passed**, zero failures/cancellations/skips/todo.
+- New qualification cases: **7 total** — four late-revocation provider/ingress cases,
+  two two-resource/transaction provider cases, one installed native Page lifecycle case.
+- Expanded local-tarball selection: **521/521 installed-engine**, **35/35 provider**,
+  **20/20 real process-supervision**, **25/25 unprivileged Linux boundaries**, all
+  with zero failures/cancellations/skips/todo. Checkout runtime imports reject and
+  exactly one installed engine exists per consumer. Service-free binary/HTTP/assets pass.
+- `npm test` including client/regex build: **1,792/1,792**, zero failures,
+  cancellations/skips/todo. Final required checks follow completed documentation;
+  the machine-readable evidence retains each complete run and its log hash.
+- `npm run check`: **3 complete pages, 42 internal links and unique anchors**.
+  Independent frozen-client history verification: **31 immutable artifacts**.
+  Changed-document Markdown checks: **62 file links, 14 anchors**, zero missing;
+  all **76 stable IDs** retain **64 in-scope / 12 deferred** inventory rows.
+  `git diff --check` passes. No version metadata, manifests, lockfiles or frozen
+  client artifacts change.
+
+The first new-fixture combined run failed on null-prototype comparison, a stale
+fixture request token after login, and attempting to declare the App-owned Page
+wrapper as a managed object grant. Fixtures were corrected to retain closed grant
+ownership and explicit native Page-root setup; no runtime authorization assertion
+was weakened. Existing adversarial suites cover route/site/package/caller/context
+forgery, unauthorized/stale references, scope/policy revocation, retired/replaced
+installations, receipt and restored-mtime drift, symlinks, recovery barriers,
+invalid input, concurrency, cancellation/deadlines and indeterminate native writes.
+No new real-browser/human AT, privileged Linux/VM/cgroup, power-loss, distributed
+cutover or production-data qualification is claimed. No HTTP retry or deadline
+relaxation was introduced. Commit, remote HEAD and cleanliness are in the final
 handoff; no commit hash is embedded into its own contents.
