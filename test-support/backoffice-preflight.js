@@ -21,17 +21,17 @@ export async function twoResourceActionFixture(t,provider,{edit=()=>{},configure
       output:{type:'array',maxItems:2,items:create.output}});
     m.backofficeActions.push({...structuredClone(get),id:'archive-get',permission:'archive.action.read',scopes:{wydstore:['archive']}});
     edit(m);
-  },configure(f){
+  },async configure(f){
     const store=f.config.libraries.find(l=>l.id==='wydstore').options.stores.find(s=>s.id==='records');
     store.authorization.collections.records.transaction={contexts:['BackOffice'],permission:'content.records.write'};
     store.collections.push({id:'archive',fields:{text:{type:'string'}}});
     store.authorization.collections.archive={get:{contexts:['BackOffice'],permission:'archive.records.read'},create:{contexts:['BackOffice'],permission:'archive.records.write'}};
     f.candidate.storageMappings.archive={store:'records',collection:'archive'};
-    configure(f);
+    await configure(f);
   }});
 }
 
-export async function installedTaskboardFixture(t){
+export async function installedTaskboardFixture(t,{configure=async()=>{}}={}){
   const f=await packageFixture(t),core=compileDefinitions(JSON.parse(await fs.readFile('prototypes/objects.json','utf8')));
   const b=await build({definitions:core,verifiedPackages:{'divdev/wbasic-taskboard':'divdev'}}),manifest=structuredClone(b.manifest);
   manifest.resources.sources.select='select.bas';manifest.bindings.push({owner:'taskboard',event:'Page.PreRender',source:'select',kind:'handler'});
@@ -43,6 +43,7 @@ export async function installedTaskboardFixture(t){
     editable:[...f.options.installationContext.editable,...manifest.permissions.visible],capabilities:['object.instances.edit','packages.lifecycle.manage','packages.placement.manage','packages.placement.relocate']});
   const candidate={...f.options,installationContext:operator,approvals:manifest.permissions,storageMappings:{},verifiedPackages,serverPlacement:{app,context:'FrontEnd'}};
   const operation=action=>packageOperation({root:f.root,action,package:manifest.id,candidates:[candidate],installationContext:operator,verifiedPackages});
+  await configure(f);
   await operation('install');
   const libraries=await initializeHost({root:f.root});t.after(()=>libraries.close());
   return {...f,manifest,verifiedPackages,app,operator,operation,libraries};

@@ -256,9 +256,12 @@ for(const competing of ['apply','cancel'])test(`POL-23: cross-process ${competin
  const {spawn}=await import('node:child_process'),{once}=await import('node:events'),file=path.join(f.root,'race-request.json');await fs.writeFile(file,JSON.stringify(f.finish(approval)));
  const child=spawn(process.execPath,['test-support/policy-reconciliation-child.js',file,'POLICY_VALIDATED'],{stdio:['ignore','ignore','pipe','ipc']});let errors='';child.stderr.on('data',b=>errors+=b);t.after(()=>child.kill('SIGKILL'));
  await Promise.race([once(child,'message',{signal:AbortSignal.timeout(15000)}),once(child,'exit').then(()=>{throw Error(errors);})]);
- if(competing==='apply')await f.apply(approval);else await cancelPackagePolicy(f.finish(approval));
- const committed=await fs.readFile(path.join(f.root,STATE),'utf8'),closed=once(child,'close');child.send('continue');const [code]=await closed;assert.notEqual(code,0);assert.match(errors,/PACKAGE.STALE/);
- assert.equal(await fs.readFile(path.join(f.root,STATE),'utf8'),committed);assert.equal(f.state().policyHistory.length,1);assert.equal(f.entry().policyRevision,competing==='apply'?1:undefined);
+ const source=await fs.readFile(path.join(f.root,STATE),'utf8');
+ await assert.rejects(competing==='apply'?f.apply(approval):cancelPackagePolicy(f.finish(approval)),{code:'PACKAGE.BUSY'});
+ assert.equal(await fs.readFile(path.join(f.root,STATE),'utf8'),source);
+ const closed=once(child,'close');child.send('continue');const [code]=await closed;assert.equal(code,0,errors);
+ assert.equal(f.state().policyHistory.length,1);assert.equal(f.entry().policyRevision,1);
+
 });
 test('POL-24: direct edits to mirrored approved subsets or concrete scopes remain PACKAGE.DRIFT',async t=>{
  const f=await policyFixture(t,'json'),grants=clone(f.entry().approved);grants.capabilities=['store.records.read'];await f.reconcile(grants);

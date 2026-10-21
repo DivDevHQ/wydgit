@@ -1,13 +1,13 @@
+import {reviewFixture} from '../test-support/backoffice-enforcement.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {twoResourceActionFixture} from '../test-support/backoffice-preflight.js';
 import {catalog,plain} from '../test-support/backoffice.js';
 import {acquirePackageExecution} from '../wydgine/packages/index.js';
 
-// Historical receipt-wide characterization remains valid after ratification;
-// B3 validators do not activate the approved resource maximum in dispatch.
+// B4b enforces DEC-02; B1 receipt-wide observations remain in archived evidence.
 for(const provider of ['json','sqlite'])test(`BOB1-02 ${provider}: two required-resource scopes retain independent action and actual-target policies`,async t=>{
-  const f=await twoResourceActionFixture(t,provider);
+  const f=await twoResourceActionFixture(t,provider);await reviewFixture(f);
   const permissions=[...f.storePermissions,'archive.records.read','archive.records.write'];
   await f.gate.assignUser({userId:f.user.account.id,roles:[],permissions});
   const entry=catalog(f).packages[0],identity=await f.gate.resolveSession(f.login.token);
@@ -18,10 +18,9 @@ for(const provider of ['json','sqlite'])test(`BOB1-02 ${provider}: two required-
   const api=f.framework(),actions=await f.discover(api),get=actions.find(a=>a.name==='get');
   assert.ok(get);assert.equal(actions.some(a=>a.name==='archive-get'),false,'archive action permission is independent of Store policy');
   assert.deepEqual(plain(get.scopes),{wydstore:['records']});
-  // Current dispatch retains the receipt's two approved resources. Required scope
-  // is preflighted, but is not currently a dispatch ceiling. This is DEC-02 evidence.
+  // The wider receipt cannot widen this action's reviewed records-only maximum.
   const observed=await f.invoke(api,get.reference,archive);
-  assert.equal(observed.ok,true,JSON.stringify(observed));assert.equal(observed.value.data.text,'archive');
+  assert.equal(observed.ok,false,JSON.stringify(observed));assert.equal(observed.code,'STORE.DENIED');
   await f.gate.assignUser({userId:f.user.account.id,roles:[],permissions:f.storePermissions});
   assert.equal((await f.invoke(api,get.reference,archive)).ok,false,'actual target policy must still reject');
   assert.ok((await f.discover(api)).some(a=>a.name==='get'),'records preflight remains authorized');
@@ -45,7 +44,6 @@ for(const provider of ['json','sqlite'])test(`BOB1-02 ${provider}: two required-
   const absent=await f.invoke(api,get.reference,{...f.recordInput,id:'batch'});
   assert.equal(absent.code,'STORE.NOT_FOUND','denied second member leaves first untouched');
   await f.gate.assignUser({userId:f.user.account.id,roles:[],permissions});
-  const batch=await invokeBatch();assert.equal(batch.ok,true,JSON.stringify(batch));
-  assert.deepEqual(batch.value.map(r=>r.version),[1,1]);
-  assert.equal((await f.invoke(api,get.reference,{...archive,id:'batch'})).value.data.text,'archive');
+  const batch=await invokeBatch();assert.equal(batch.ok,false,JSON.stringify(batch));
+  assert.equal((await f.invoke(api,get.reference,{...f.recordInput,id:'batch'})).code,'STORE.NOT_FOUND');
 });

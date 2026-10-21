@@ -1,20 +1,22 @@
+import {reviewFixture,reviewedFramework} from '../test-support/backoffice-enforcement.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {spawn} from 'node:child_process';
 import {once} from 'node:events';
-import {actionFixture,plain,catalog} from '../test-support/backoffice.js';
+import {actionFixture as unreviewedActionFixture,plain,catalog} from '../test-support/backoffice.js';
 import {ExecutionContext} from '../wydgine/seam/context.js';
 import {validatePackageManifest,packageOperation,planPackageOperation,acquirePackageExecution,recoverPackageOperation,planPackagePolicy,approvePackagePolicy,applyPackagePolicy} from '../wydgine/packages/index.js';
 import {createBackOfficeActions} from 'wydgine/trusted/packages';
 import {initializeHost} from '../wydgine/host.js';
 import {createGate} from '@wydgit/gate/client';
 
+const actionFixture=async(...args)=>reviewFixture(await unreviewedActionFixture(...args));
 const denied=result=>assert.equal(result.ok,false,JSON.stringify(result));
 for(const provider of ['json','sqlite']) {
   test(`ACT-01 ADM-01 GAT-02 ${provider}: genuine installed roster, private discovery, input and output`,async t=>{
-    const f=await actionFixture(t,provider),api=f.framework(),actions=await f.discover(api);
+    const f=await actionFixture(t,provider),api=await reviewedFramework(f),actions=await f.discover(api);
     assert.equal(actions.length,1);const [action]=actions;
     assert.equal(action.id,'divdev/backoffice-members#backoffice-members/list-members');
     assert.equal(action.effect,'read');assert.equal(action.service,undefined);
@@ -34,7 +36,7 @@ for(const provider of ['json','sqlite']) {
   });
 
   test(`ACT-02 GAT-02/03 ${provider}: live direct/group/role permissions, downgrade, revocation and expiry`,async t=>{
-    const f=await actionFixture(t,provider),api=f.framework(),[action]=await f.discover(api),userId=f.user.account.id;
+    const f=await actionFixture(t,provider),api=await reviewedFramework(f),[action]=await f.discover(api),userId=f.user.account.id;
     const assign=(roles=[],permissions=[])=>f.gate.assignUser({userId,roles,permissions});
     await assign();assert.deepEqual(await f.discover(api),[]);denied(await f.invoke(api,action.reference));
     const role=await f.gate.createRole({name:'Roster reader',permissions:['gate.members.manage']});await assign([role.id]);
@@ -59,19 +61,19 @@ for(const provider of ['json','sqlite']) {
   });
 
   test(`ACT-03 CTX-05/06 LIF-01 ${provider}: replacement, relocation, retirement, retained reinstall and upgrade`,async t=>{
-    const f=await actionFixture(t,provider),old=f.framework(),[first]=await f.discover(old);
+    const f=await actionFixture(t,provider),old=await reviewedFramework(f),[first]=await f.discover(old);
     await f.place('replace');assert.deepEqual(await f.discover(old),[]);denied(await f.invoke(old,first.reference));
-    let fresh=f.framework(),[next]=await f.discover(fresh);assert.notDeepEqual(next.reference,first.reference);denied(await f.invoke(fresh,first.reference));
-    await f.place('relocate','FrontEnd');assert.deepEqual(await f.discover(f.framework()),[]);denied(await f.invoke(fresh,next.reference));
-    await f.place('relocate');fresh=f.framework();[next]=await f.discover(fresh);
-    await f.place('retire');assert.deepEqual(await f.discover(f.framework()),[]);denied(await f.invoke(fresh,next.reference));
+    let fresh=await reviewedFramework(f),[next]=await f.discover(fresh);assert.notDeepEqual(next.reference,first.reference);denied(await f.invoke(fresh,first.reference));
+    await f.place('relocate','FrontEnd');assert.deepEqual(await f.discover(await reviewedFramework(f)),[]);denied(await f.invoke(fresh,next.reference));
+    await f.place('relocate');fresh=await reviewedFramework(f);[next]=await f.discover(fresh);
+    await f.place('retire');assert.deepEqual(await f.discover(await reviewedFramework(f)),[]);denied(await f.invoke(fresh,next.reference));
     await f.place('replace');
     const file=path.join(f.candidate.packagePath,'manifest.json'),manifest=plain(f.manifest);manifest.version='0.1.1';manifest.backofficeActions[0].title='Current members';
     await fs.writeFile(file,JSON.stringify(manifest));await packageOperation(f.operation('update',[f.candidate]));
-    fresh=f.framework();const [updated]=await f.discover(fresh);denied(await f.invoke(fresh,next.reference));assert.equal(updated.title,'Current members');
-    await packageOperation(f.operation('uninstall'));assert.equal(catalog(f).retained.length,1);assert.deepEqual(await f.discover(f.framework()),[]);
+    fresh=await reviewedFramework(f);const [updated]=await f.discover(fresh);denied(await f.invoke(fresh,next.reference));assert.equal(updated.title,'Current members');
+    await packageOperation(f.operation('uninstall'));assert.equal(catalog(f).retained.length,1);assert.deepEqual(await f.discover(await reviewedFramework(f)),[]);
     denied(await f.invoke(fresh,updated.reference));await packageOperation(f.operation('install',[f.candidate]));
-    fresh=f.framework();const [reinstalled]=await f.discover(fresh);assert.notEqual(reinstalled.reference.installation,updated.reference.installation);
+    fresh=await reviewedFramework(f);const [reinstalled]=await f.discover(fresh);assert.notEqual(reinstalled.reference.installation,updated.reference.installation);
     denied(await f.invoke(fresh,updated.reference));assert.equal((await f.invoke(fresh,reinstalled.reference)).ok,true);
   });
 }
@@ -85,14 +87,15 @@ test('ACT-04: declarations reject collisions, unsupported fields/contracts and u
   for(const context of [{...f.operator},new ExecutionContext({...f.operator,capabilities:[]}),new ExecutionContext({...f.operator,package:'divdev/backoffice-members'})])
     assert.throws(()=>createBackOfficeActions({root:f.root,libraries:f.libraries,installationContext:context}));
   await packageOperation(f.operation('install',[f.candidate]));
+  await reviewFixture(f);
   const original=f.libraries,forbidden={...original,administrativeOperation:()=>null};
-  assert.throws(()=>createBackOfficeActions({root:f.root,libraries:forbidden,installationContext:f.operator}),{code:'ACTION.SERVICE'});
+  assert.throws(()=>createBackOfficeActions({root:f.root,libraries:forbidden,installationContext:f.operator}),{code:'BACKOFFICE.MIGRATION_REQUIRED'});
 });
 
 test('ACT-05 CTX-05: FrontEnd is dormant, inherited context restrictions and unsupported service updates fail closed',async t=>{
   const f=await actionFixture(t,'json',{install:false});f.candidate.serverPlacement.context='FrontEnd';
-  await packageOperation(f.operation('install',[f.candidate]));assert.deepEqual(await f.discover(f.framework()),[]);
-  await f.place('relocate');const api=f.framework(),[action]=await f.discover(api);
+  await packageOperation(f.operation('install',[f.candidate]));assert.deepEqual(await f.discover(await reviewedFramework(f)),[]);
+  await f.place('relocate');const api=await reviewedFramework(f),[action]=await f.discover(api);
   const file=path.join(f.candidate.packagePath,'manifest.json'),manifest=plain(f.manifest);manifest.version='0.1.1';
   for(const operation of ['eval','apply-package-policy','login']) {
     manifest.backofficeActions[0].service.operation=operation;await fs.writeFile(file,JSON.stringify(manifest));
@@ -107,22 +110,22 @@ test('ACT-05 CTX-05: FrontEnd is dormant, inherited context restrictions and uns
 });
 
 for(const missing of ['capability','scope'])test(`ACT-06 SEAM: live Gate permission cannot replace approved ${missing}`,async t=>{
-  const f=await actionFixture(t),old=f.framework(),[action]=await f.discover(old),s=catalog(f),e=s.packages[0];
+  const f=await actionFixture(t),old=await reviewedFramework(f),[action]=await f.discover(old),s=catalog(f),e=s.packages[0];
   const grants=plain(e.approved);if(missing==='capability')grants.capabilities=[];else delete grants.scopes.wydgate;
   const host=new ExecutionContext({...f.operator,capabilities:[...f.operator.capabilities,'packages.policy.manage']});
   const plan=await planPackagePolicy({root:f.root,app:'boilerplate',package:e.manifest.id,installation:e.receipt.id,revision:s.revision,
-    packageRevision:e.receipt.revision,policyRevision:0,policy:{grants,stores:[]},installationContext:host});
+    packageRevision:e.receipt.revision,policyRevision:e.policyRevision??0,policy:{grants,stores:[]},installationContext:host});
   const approval=await approvePackagePolicy(plan,{installationContext:host});
   await applyPackagePolicy({root:f.root,app:'boilerplate',package:e.manifest.id,installation:e.receipt.id,revision:approval.revision,
-    packageRevision:e.receipt.revision,policyRevision:0,approval:approval.id,planHash:plan.sha256,installationContext:host});
-  assert.deepEqual(await f.discover(f.framework()),[]);denied(await f.invoke(old,action.reference));
+    packageRevision:e.receipt.revision,policyRevision:e.policyRevision??0,approval:approval.id,planHash:plan.sha256,installationContext:host});
+  assert.throws(()=>f.framework(),{code:'BACKOFFICE.MIGRATION_REQUIRED'});denied(await f.invoke(old,action.reference));
 });
 
 test('ACT-07: mutation confirmation, explicit service failure and forbidden native authority',async t=>{
   const f=await actionFixture(t,'json',{edit:m=>{
     const a=m.backofficeActions[0];a.id='manage-member';a.service.operation='manage-member';a.effect='write';a.confirmation='Confirm the membership change';
     a.input={type:'object',fields:{id:{type:'string',maxLength:64},status:{type:'string',maxLength:16}}};a.output=m.backofficeActions[0].output.fields.members.items;
-  }}),api=f.framework(),[action]=await f.discover(api);
+  }}),api=await reviewedFramework(f),[action]=await f.discover(api);
   const target=await f.gate.register({username:'bob',password:f.password});
   const request={...f.request,reference:action.reference,input:{id:target.membership.id,status:'suspended'}};
   assert.equal((await api.invoke(request)).code,'ACTION.CONFIRMATION');
@@ -145,14 +148,14 @@ test('ACT-08: closed result contract rejects unexpected secrets, accessors and h
 });
 
 for(const provider of ['json','sqlite'])for(const stage of ['APPLYING','PUBLISHED'])test(`ACT-09 LIF-01 ${provider}: interrupted replacement ${stage} recovery has one registration`,async t=>{
-  const f=await actionFixture(t,provider),old=f.framework(),[action]=await f.discover(old),s=catalog(f),e=s.packages[0];
+  const f=await actionFixture(t,provider),old=await reviewedFramework(f),[action]=await f.discover(old),s=catalog(f),e=s.packages[0];
   const request={root:f.root,app:'boilerplate',package:e.manifest.id,installation:e.receipt.id,revision:s.revision,action:'replace',context:'BackOffice',installationContext:f.operator};
   const file=path.join(f.root,'replace.json');await fs.writeFile(file,JSON.stringify(request));
   const child=spawn(process.execPath,['test-support/placement-child.js',file,stage],{stdio:['ignore','pipe','pipe','ipc']});
   let errors='';child.stderr.on('data',x=>errors+=x);t.after(()=>child.kill('SIGKILL'));
   await Promise.race([once(child,'message',{signal:AbortSignal.timeout(15000)}),once(child,'exit').then(()=>{throw Error(errors||'child exited');})]);
   child.kill('SIGKILL');await once(child,'exit');await recoverPackageOperation({root:f.root,installationContext:f.operator});
-  const api=f.framework(),actions=await f.discover(api);assert.equal(actions.length,1);assert.equal(catalog(f).packages.length,1);
+  const api=await reviewedFramework(f),actions=await f.discover(api);assert.equal(actions.length,1);assert.equal(catalog(f).packages.length,1);
   if(stage==='PUBLISHED'){denied(await f.invoke(old,action.reference));denied(await f.invoke(api,action.reference));}
   assert.equal((await f.invoke(api,actions[0].reference)).ok,true);
 });
@@ -183,7 +186,7 @@ for(const provider of ['json','sqlite'])test(`ACT-10 STO-02 ${provider}: actions
     f.libraries=await initializeHost({root:f.root});f.gate=createGate(f.libraries.bind(f.gateContext));
   }});
   await f.gate.assignUser({userId:f.user.account.id,roles:[],permissions:['content.action.read']});
-  const api=f.framework(),input={store:'records',collection:'records'};
+  const api=await reviewedFramework(f),input={store:'records',collection:'records'};
   assert.deepEqual(await f.discover(api),[]);
   await f.gate.assignUser({userId:f.user.account.id,roles:[],permissions:['content.action.read','content.records.read']});
   const [action]=await f.discover(api);
@@ -199,7 +202,7 @@ for(const provider of ['json','sqlite'])test(`ACT-10 STO-02 ${provider}: actions
 });
 
 test('ACT-11 GAT-03: equal package/action/instance names across canonical sites do not merge sessions or references',async t=>{
-  const a=await actionFixture(t,'json'),b=await actionFixture(t,'sqlite',{app:'second-site'}),apiA=a.framework(),apiB=b.framework();
+  const a=await actionFixture(t,'json'),b=await actionFixture(t,'sqlite',{app:'second-site'}),apiA=await reviewedFramework(a),apiB=await reviewedFramework(b);
   const [actionA]=await a.discover(apiA),[actionB]=await b.discover(apiB);assert.equal(actionA.id,actionB.id);
   assert.notEqual(actionA.reference.app,actionB.reference.app);assert.notEqual(actionA.reference.installation,actionB.reference.installation);
   denied(await apiB.invoke({...b.request,reference:actionA.reference,input:{}}));
@@ -232,7 +235,7 @@ test('ACT-13: host service budget reductions remain effective at the action boun
 });
 
 test('ACT-14: separately installed modules contribute without a central list, and retire independently',async t=>{
-  const f=await actionFixture(t),before=f.framework(),[first]=await f.discover(before),directory=path.join(f.root,'other-admin');
+  const f=await actionFixture(t),before=await reviewedFramework(f),[first]=await f.discover(before),directory=path.join(f.root,'other-admin');
   await fs.cp(f.candidate.packagePath,directory,{recursive:true});const manifest=plain(f.manifest);
   manifest.id='divdev/other-admin';manifest.permissions.visible=['other-admin'];manifest.backofficeActions[0].owner='other-admin';
   const proto=JSON.parse(await fs.readFile(path.join(directory,'prototypes.json')));proto[0].id='divdev/other-admin';
@@ -242,26 +245,26 @@ test('ACT-14: separately installed modules contribute without a central list, an
   const candidate={...f.candidate,packagePath:directory,approvals:manifest.permissions,
     placement:{page:'page-other',parent:'page-other',slot:'sections',index:0},page:{...f.candidate.page,id:'page-other',properties:{title:'Other admin',slug:'other-admin'}}};
   await packageOperation({root:f.root,package:manifest.id,action:'install',candidates:[candidate],installationContext:f.operator});
-  const api=f.framework(),actions=await f.discover(api);assert.equal(actions.length,2);assert.equal(actions[0].name,actions[1].name);
+  const api=await reviewedFramework(f),actions=await f.discover(api);assert.equal(actions.length,2);assert.equal(actions[0].name,actions[1].name);
   for(const a of actions)assert.equal((await f.invoke(api,a.reference)).ok,true);
-  // Unrelated installation did not fence an unchanged original reference.
-  assert.equal((await f.invoke(before,first.reference)).ok,true);
+  // The reviewed accepted Page tree changed; explicit re-review fences its old reference.
+  denied(await f.invoke(before,first.reference));
   const s=catalog(f),e=s.packages.find(p=>p.manifest.id===manifest.id);
   const {executionPlacement}=await import('../wydgine/packages/index.js');
   await executionPlacement({root:f.root,app:'boilerplate',package:manifest.id,installation:e.receipt.id,revision:s.revision,action:'retire',context:'BackOffice',installationContext:f.operator});
-  assert.equal((await f.discover(f.framework())).length,1);denied(await f.invoke(api,actions.find(a=>a.package===manifest.id).reference));
+  assert.equal((await f.discover(await reviewedFramework(f))).length,1);denied(await f.invoke(api,actions.find(a=>a.package===manifest.id).reference));
 });
 
 test('ACT-15: contributor metadata cannot weaken trusted service discovery permission',async t=>{
   const f=await actionFixture(t,'json',{edit:m=>m.backofficeActions[0].permission='content.action.read'});
   await f.gate.assignUser({userId:f.user.account.id,roles:[],permissions:['content.action.read']});
-  const api=f.framework();assert.deepEqual(await f.discover(api),[]);
+  const api=await reviewedFramework(f);assert.deepEqual(await f.discover(api),[]);
   await f.gate.assignUser({userId:f.user.account.id,roles:[],permissions:['content.action.read','gate.members.manage']});
   const [action]=await f.discover(api);assert.equal((await f.invoke(api,action.reference)).ok,true);
 });
 
 for(const provider of ['json','sqlite'])test(`BOFOUND-03 ${provider}: installed actions reject recovery barriers, receipt drift, restored-mtime tampering and catalog symlinks before dispatch`,async t=>{
-  const f=await actionFixture(t,provider),api=f.framework(),[action]=await f.discover(api);
+  const f=await actionFixture(t,provider),api=await reviewedFramework(f),[action]=await f.discover(api);
   const file=path.join(f.root,'content/installed-packages.json'),lock=path.join(f.root,'content/.package-install.lock');
   const seconds=1700000000;await fs.utimes(file,seconds,seconds);
   const bytes=await fs.readFile(file);let calls=0;

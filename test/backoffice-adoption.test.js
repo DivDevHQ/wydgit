@@ -42,7 +42,7 @@ for(const provider of ['json','sqlite'])test(`BOB4A-01 ${provider}: explicit rev
   const framework=f.framework(),get=(await f.discover(framework)).find(a=>a.name==='get');
   await f.gate.assignUser({userId:f.user.account.id,roles:[],permissions:[...f.storePermissions,'archive.records.read']});
   const result=await f.invoke(framework,get.reference,{store:'records',collection:'archive',id:'absent'});
-  assert.equal(result.code,'STORE.NOT_FOUND','B4a must retain receipt-wide actual-target dispatch');
+  assert.equal(result.code,'STORE.DENIED','B4b restricts the reviewed maximum; the B4a receipt-wide result is archived');
   await rejected(f.apply(approval));assert.equal(await bytes(f),persisted);
   // Fresh explicit repetition is permitted but is a new review/generation.
   const again=await f.adopt(f.payload(undefined,[boundPage(f)]));assert.notEqual(again.id,approval.id);assert.equal(status(f).status,'adopted');
@@ -138,10 +138,12 @@ for(const provider of ['json','sqlite'])test(`BOB4A-07 ${provider}: handled part
 for(const competing of ['apply','cancel'])test(`BOB4A-08 ${competing}: another process completing review during validation cannot be overwritten`,async t=>{
   const f=await fixture(t,'json');await f.adopt(f.payload());const approval=await f.review(await f.plan({actions:[],pages:[]}));
   const paused=await childAt(t,f,f.finish(approval),'POLICY_VALIDATED');
-  if(competing==='apply')await f.apply(approval);else await trusted.cancelPackagePolicy(f.finish(approval));
-  const committed=await bytes(f),closed=once(paused.child,'close');paused.child.send('continue');const [code]=await closed;
-  assert.notEqual(code,0);assert.match(paused.errors(),/PACKAGE.STALE/);assert.equal(await bytes(f),committed);
-  assert.equal(status(f).status,competing==='apply'?'revoked':'stale');
+  const source=await bytes(f);
+  await assert.rejects(competing==='apply'?f.apply(approval):trusted.cancelPackagePolicy(f.finish(approval)),{code:'PACKAGE.BUSY'});
+  assert.equal(await bytes(f),source);
+  const closed=once(paused.child,'close');paused.child.send('continue');const [code]=await closed;
+  assert.equal(code,0,paused.errors());assert.equal(status(f).status,'revoked');
+
 });
 test('BOB4A-09: two actual legacy modules are reviewed independently; other installation cannot borrow approval',async t=>{
   const f=adoptionFixture(await modulesFixture(t,'json'));

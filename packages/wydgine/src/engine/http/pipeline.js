@@ -11,6 +11,7 @@ import path from 'node:path';
 import { validateConfig } from '../libraries/contracts.js';
 import { presentationPolicy } from '../presentation-policy.js';
 import { prepareHandlers,prepareAction } from '../events/index.js';
+import {admitBackOffice} from '../packages/backoffice-enforcement.js';
 import { activatePackages } from '../packages/index.js';
 import { stateFingerprint } from '../packages/state.js';
 import { requireThat as check } from '../object-model/validation.js';
@@ -28,6 +29,7 @@ export function createPipeline({root,libraries,execution={},lifecycle,guard=()=>
   if(execution.authenticatedPages!==undefined)check(Array.isArray(execution.authenticatedPages)&&execution.authenticatedPages.every(id=>model.pages.has(id)),'SEAM.CONTEXT','Invalid authenticated Page policy');
   const catalogHead=stateFingerprint(root);
   const packages=model.installed?activatePackages(model,libraries,root):null;
+  if(packages)admitBackOffice({root,model,libraries});
   if(packages){check(!execution.context&&!execution.handlers.length&&!execution.actions.length,'PACKAGE.PRINCIPALS','Package Page authority cannot be combined with independently authorized host execution');execution={...execution,context:packages.context,handlers:packages.handlers,actions:packages.actions};}
   lifecycle??=createLifecycle({app,handlers:execution.lifecycleHandlers,context:execution.lifecycleContext,instances:execution.lifecycleInstances});
   const authentication=libraries?.list().some(item=>item.id==='wydgate')?libraries.bind(execution.gateContext??contextPolicy(new ExecutionContext({context:'FrontEnd',publisher:'wydgit.core',self:app,app,capabilities:['gate.sessions.use'],scopes:{wydgate:[app]}}))):null;
@@ -35,7 +37,7 @@ export function createPipeline({root,libraries,execution={},lifecycle,guard=()=>
   const sessions=createSessionResolver({app,gate,lifecycle,sessionless:parking});let closed=false;
   const alive=()=>{check(!closed,'EVENT.DENIED','Application stopped');guard();};
   let ready;
-  const backoffice=createBackOfficeHttp({root,model,libraries,sessions,contextPolicy,ready:()=>ready,alive,parking,verifiedPackages:execution.verifiedPackages,requestMs:runtimeSettings.http.requestMs,readJson:(body,remainingMs)=>readBackOfficeJson(body,remainingMs)});
+  const backoffice=createBackOfficeHttp({root,model,libraries,sessions,contextPolicy,ready:()=>ready,alive,parking,verifiedPackages:execution.verifiedPackages,runtimeSettings,requestMs:runtimeSettings.http.requestMs,readJson:(body,remainingMs)=>readBackOfficeJson(body,remainingMs)});
   ready=lifecycle.start();
   const ownedLifecycle={...lifecycle,async stop(){closed=true;sessions.close();await lifecycle.stop();}};
   // Plain transport input and kernel output port only; no host request/context.

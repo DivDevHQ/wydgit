@@ -20,7 +20,7 @@ import { webModel } from '../web-model.js';
 import { renderSite,errorDocument } from '../index.js';
 import { prepareComponents,createPresentationLedger } from '../components.js';
 
-export async function executePage({model,pageId,session,input,context,runtimeSettings={},handlers=[],actions=[],events=new EventRegistry(),files,libraries,serviceMappings,csrf,render=renderSite,observe,onAdmission,observeLifecycleLstat,observeSqliteInspection,observeNativeGap,observeFormClear,diagnosticProgress=typeof observe==='function',cancelled=()=>false}) {
+export async function executePage({model,pageId,session,input,context,runtimeSettings={},handlers=[],actions=[],events=new EventRegistry(),files,libraries,serviceMappings,backoffice,csrf,render=renderSite,observe,onAdmission,observeLifecycleLstat,observeSqliteInspection,observeNativeGap,observeFormClear,diagnosticProgress=typeof observe==='function',cancelled=()=>false}) {
   const diagnostics=createPageDiagnostics();
   handlers=prepareHandlers(handlers,events);actions=actions.map(record=>prepareAction(record,events));
   check(context.app===session.view.app&&session.active(),'EVENT.DENIED','Invalid owning Session');
@@ -100,12 +100,25 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
     });
     return mapped;
   };
+  const compositionOnly=context.context==='BackOffice'&&context.installation!==null;
+  // The shared interpreter keeps a workflow's service facade across method
+  // frames. Do not lend a Page-handler receiver to arbitrary nested methods.
+  // Such workflows retain local composition, but require a separate exact
+  // Page handler (or browser intent) for protected preparation.
+  const delegates=value=>value&&typeof value==='object'&&(['methodCall','methodValue'].includes(value.op)||Object.values(value).some(delegates));
+  const serviceFacade=(guard,consumer)=>Object.freeze({
+    async Invoke(library,apiVersion,name,input){
+      guard();check(compositionOnly&&backoffice&&typeof consumer==='string'&&library==='backoffice'&&apiVersion==='1.0.0'&&!unloading,'ACTION.DENIED','Use a reviewed read binding');
+      return backoffice.prepare({name,consumer,input,runtime,guard,ledger:executionBudget(executionLedger,context),completion});
+    },
+    async Call(library,name,input){return this.Invoke(library,'1.0.0',name,input);}
+  });
   const contexts=guard=>({PAGE:handle(pageId,guard),SESSION:freeze(clean(session.view)),REQUEST:requestFacade(requestData,context,guard),...(resolving?{}:{RESPONSE:response.facade(guard)}),SERVER:Object.freeze({App:context.app}),
     ...(resolving?{}:{FILESYS:Object.freeze({Get(id){guard();check(files,'FILE.DENIED','No approved files');return files.get(id,context,guard);}})}),
-    SERVICES:Object.freeze({async Invoke(library,apiVersion,name,input){guard();check(!resolving||library==='wydstore'&&['get','query'].includes(name),'EVENT.DENIED','Resolvers may only read records');await diagnostics.measure('authorization',()=>session.authorize());guard();check(libraries,'SEAM.DENIED','No services');input=storageInput(library,name,input);let native;return diagnostics.measure('service',()=>completion.run(operation=>{native=operation;return libraries.bind(context,operation).invoke(library,apiVersion,name,input);}),()=>native?.pageContinuation?.());},async Call(library,name,input){guard();check(!resolving||library==='wydstore'&&['get','query'].includes(name),'EVENT.DENIED','Resolvers may only read records');await diagnostics.measure('authorization',()=>session.authorize());guard();check(libraries,'SEAM.DENIED','No services');input=storageInput(library,name,input);let native;return diagnostics.measure('service',()=>completion.run(operation=>{native=operation;return libraries.bind(context,operation).call(library,name,input);}),()=>native?.pageContinuation?.());}})
+    SERVICES:compositionOnly?serviceFacade(guard):Object.freeze({async Invoke(library,apiVersion,name,input){guard();check(!resolving||library==='wydstore'&&['get','query'].includes(name),'EVENT.DENIED','Resolvers may only read records');await diagnostics.measure('authorization',()=>session.authorize());guard();check(libraries,'SEAM.DENIED','No services');input=storageInput(library,name,input);let native;return diagnostics.measure('service',()=>completion.run(operation=>{native=operation;return libraries.bind(context,operation).invoke(library,apiVersion,name,input);}),()=>native?.pageContinuation?.());},async Call(library,name,input){guard();check(!resolving||library==='wydstore'&&['get','query'].includes(name),'EVENT.DENIED','Resolvers may only read records');await diagnostics.measure('authorization',()=>session.authorize());guard();check(libraries,'SEAM.DENIED','No services');input=storageInput(library,name,input);let native;return diagnostics.measure('service',()=>completion.run(operation=>{native=operation;return libraries.bind(context,operation).call(library,name,input);}),()=>native?.pageContinuation?.());}})
   });
-  const componentsRuntime=createInstanceController({runtime,registry:model.registry,context,rootId:pageId,budget:executionLedger,events,services:contexts(rootGuard).SERVICES,scope:contexts(rootGuard),canEdit:()=>writable&&!unloading&&response.state==='Open',canEmit:()=>writable&&!unloading,onRuntime:next=>{runtime=next;}});
-  const executeHandler=async(document,options)=>{const id=options.scope.ME.id;if(!exists(id))return executeWorkflow(document,options);const d=model.registry.get(runtime.get(id).prototype);if(!d.component&&!Object.keys(d.events).length)return executeWorkflow(document,options);componentsRuntime.adopt(runtime);if(!componentsRuntime.executable(id))await componentsRuntime.activate();return componentsRuntime.workflow(document,options.scope,id,options);};
+  const componentsRuntime=createInstanceController({runtime,registry:model.registry,context,rootId:pageId,budget:executionLedger,events,services:compositionOnly?undefined:contexts(rootGuard).SERVICES,scope:contexts(rootGuard),canEdit:()=>writable&&!unloading&&response.state==='Open',canEmit:()=>writable&&!unloading,onRuntime:next=>{runtime=next;}});
+  const executeHandler=async(document,options)=>{const receiver=options.scope.ME,id=receiver.id;if(compositionOnly)options={...options,scope:{...options.scope,SERVICES:serviceFacade(()=>{check(receiver.id===id,'ACTION.DENIED','Expired receiver');},delegates(document)?undefined:id)}};if(!exists(id))return executeWorkflow(document,options);const d=model.registry.get(runtime.get(id).prototype);if(!d.component&&!Object.keys(d.events).length)return executeWorkflow(document,options);componentsRuntime.adopt(runtime);if(!componentsRuntime.executable(id))await componentsRuntime.activate();return componentsRuntime.workflow(document,options.scope,id,options);};
   const executor=diagnosticProgress?(document,options)=>diagnostics.measure('handler',()=>executeHandler(document,options)):executeHandler;
   const candidates=actions.filter(a=>a.page===pageId&&a.type===input.action?.type&&(a.delegation?matchesObjectGrant([a.target],input.action?.target):a.target===input.action?.target));
   let action=candidates.length===1?candidates[0]:null;
@@ -194,7 +207,7 @@ export async function executePage({model,pageId,session,input,context,runtimeSet
     if(!response.explicit)await phase('PreRender');
     if(!response.explicit){diagnostics.phase('render');componentsRuntime.adopt(runtime);await componentsRuntime.render();}
     writable=false;
-    if(!response.explicit){const projection=webModel(runtime,model);const components=await prepareComponents(projection,pageId,input,context,libraries,session,presentationLedger);const result=await render(projection,input.path,{csrf,components});response.tree(result.html,result.status);}
+    if(!response.explicit){const projection=webModel(runtime,model);const components=await prepareComponents(projection,pageId,input,context,compositionOnly?undefined:libraries,session,presentationLedger);const result=await render(projection,input.path,{csrf,components});response.tree(result.html,result.status);}
   }catch(error){diagnostics.failure();failure=safeError(error);}
   finally {
     try {

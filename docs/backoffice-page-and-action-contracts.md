@@ -1,6 +1,6 @@
 # BackOffice Page entry and action resource maxima
 
-**Status: approved architecture; enforcement pending.** DEC-01 and DEC-02 were
+**Status: approved architecture; B4b runtime enforcement implemented.** DEC-01 and DEC-02 were
 approved without amendments on **2026-10-21** by the **Project owner**. The exact
 approval wording and preserved alternatives are in the
 [ratified B2 decision package](work-in-progress/backoffice-b2-decision-package.md#owner-ratification).
@@ -55,13 +55,14 @@ or matching review witness is not authenticated host approval.
 [B4a reviewed adoption](work-in-progress/backoffice-b4a-reviewed-adoption.md) now
 persists exact reviewed Page/action evidence through the existing stopped-App package
 policy workflow. It binds source review and resulting installation/policy generation,
-with receipt integrity, explicit revocation and recovery. Evidence remains inert.
-**Current runtime action dispatch remains receipt-wide.** No new Page route or caller
-permission is enabled, and pending migration alone does not reject existing Apps.
+with receipt integrity, explicit revocation and recovery. B4a evidence was inert until runtime integration.
+[B4b live enforcement](work-in-progress/backoffice-b4b-live-enforcement.md) now consumes
+current evidence, rejects incomplete active legacy migration before App startup,
+restricts action dispatch, and admits exact BackOffice Pages through shared canonical
+HTTP/Page execution with independent live permission. Typed local bindings independently
+reauthorize actions and service policy. No receipt-wide bypass or automatic migration.
 
-B4b must consume current evidence, enforce complete migration/startup prerequisites,
-restrict dispatch under the original caller, and implement canonical BackOffice Page
-HTTP entry through the existing shared admission/execution path. Preserve independent
-live policy, lifecycle/integrity/recovery, no-retry and indeterminate-native-outcome
-guarantees. The 1,000 ms Page deadline and **WYDGINE-0.3-HTTP-LIMIT OPEN** status are
-unchanged. WydData, CIR, wider domains and generic data components remain deferred.
+Only disposable fixtures are migrated/qualified. B5 application end-to-end,
+accessibility and actual deployment prerequisites remain. The BackOffice foundation
+is not complete; WYDGINE-0.3-HTTP-LIMIT stays OPEN. No version, deadline, frozen-client,
+release or deployment change is made.

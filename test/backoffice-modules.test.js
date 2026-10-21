@@ -1,3 +1,4 @@
+import {reviewedFramework} from '../test-support/backoffice-enforcement.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {modulesFixture,noticeManifest} from '../test-support/backoffice-modules.js';
@@ -5,7 +6,7 @@ import {installNotices} from '../examples/backoffice-notices/install.js';
 import {actionFixture,catalog} from '../test-support/backoffice.js';
 import {packageOperation,acquirePackageExecution} from '../wydgine/packages/index.js';
 for(const provider of ['json','sqlite'])test(`BOMOD-01 ${provider}: real independent Gate/Store modules, permissions, ownership and removal`,async t=>{
-  const f=await modulesFixture(t,provider),api=f.framework(),actions=await f.discover(api);
+  const f=await modulesFixture(t,provider),api=await reviewedFramework(f),actions=await f.discover(api);
   assert.equal(actions.length,2);assert.deepEqual(actions.map(a=>a.category).sort(),['membership','operations']);
   const members=actions.find(a=>a.category==='membership'),notices=actions.find(a=>a.category==='operations');
   assert.notEqual(members.reference.installation,notices.reference.installation);
@@ -18,15 +19,15 @@ for(const provider of ['json','sqlite'])test(`BOMOD-01 ${provider}: real indepen
   await f.gate.assignUser({userId:f.user.account.id,roles:[],permissions:['gate.members.manage']});
   assert.deepEqual((await f.discover(api)).map(a=>a.category),['membership']);assert.equal((await f.invoke(api,notices.reference,f.noticesInput)).ok,false);
   await f.gate.assignUser({userId:f.user.account.id,roles:[],permissions:['gate.members.manage','operations.notices.read']});
-  await packageOperation(f.operation('uninstall'));let fresh=f.framework(),remaining=await f.discover(fresh);assert.equal(remaining.length,1);assert.equal(remaining[0].category,'operations');assert.equal((await f.invoke(fresh,remaining[0].reference,f.noticesInput)).ok,true);
+  await packageOperation(f.operation('uninstall'));let fresh=await reviewedFramework(f),remaining=await f.discover(fresh);assert.equal(remaining.length,1);assert.equal(remaining[0].category,'operations');assert.equal((await f.invoke(fresh,remaining[0].reference,f.noticesInput)).ok,true);
   await packageOperation(f.operation('install',[f.candidate]));
   await packageOperation({root:f.root,action:'uninstall',package:noticeManifest.id,installationContext:f.noticesOperator});
-  fresh=f.framework();remaining=await f.discover(fresh);assert.equal(remaining.length,1);assert.equal(remaining[0].category,'membership');assert.equal((await f.invoke(fresh,remaining[0].reference)).ok,true);
+  fresh=await reviewedFramework(f);remaining=await f.discover(fresh);assert.equal(remaining.length,1);assert.equal(remaining[0].category,'membership');assert.equal((await f.invoke(fresh,remaining[0].reference)).ok,true);
   assert.equal((await f.invoke(fresh,notices.reference,f.noticesInput)).ok,false);assert.ok(catalog(f).retained.some(e=>e.entry.manifest.id===noticeManifest.id));
-  await installNotices({root:f.root,approvals:noticeManifest.permissions,storageMappings:{notices:{store:'operations',collection:'notices'}}});fresh=f.framework();const restored=(await f.discover(fresh)).find(a=>a.category==='operations');assert.notEqual(restored.reference.installation,notices.reference.installation);assert.equal((await f.invoke(fresh,notices.reference,f.noticesInput)).ok,false);assert.equal((await f.invoke(fresh,restored.reference,f.noticesInput)).value.length,1);
+  await installNotices({root:f.root,approvals:noticeManifest.permissions,storageMappings:{notices:{store:'operations',collection:'notices'}}});fresh=await reviewedFramework(f);const restored=(await f.discover(fresh)).find(a=>a.category==='operations');assert.notEqual(restored.reference.installation,notices.reference.installation);assert.equal((await f.invoke(fresh,notices.reference,f.noticesInput)).ok,false);assert.equal((await f.invoke(fresh,restored.reference,f.noticesInput)).value.length,1);
 });
 test('BOMOD-02: independent exact-App Store resources reject foreign references, sessions and revoked access',async t=>{
- const a=await modulesFixture(t,'json'),b=await modulesFixture(t,'sqlite','second-site'),aa=a.framework(),ab=b.framework();
+ const a=await modulesFixture(t,'json'),b=await modulesFixture(t,'sqlite','second-site'),aa=await reviewedFramework(a),ab=await reviewedFramework(b);
  const [na]= (await a.discover(aa)).filter(v=>v.category==='operations'),[nb]=(await b.discover(ab)).filter(v=>v.category==='operations');
  assert.equal(na.id,nb.id);assert.notEqual(na.reference.app,nb.reference.app);
  assert.equal((await b.invoke(ab,na.reference,b.noticesInput)).ok,false);

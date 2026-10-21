@@ -1,3 +1,4 @@
+import {reviewFixture,reviewedFramework} from '../test-support/backoffice-enforcement.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {once} from 'node:events';
@@ -10,6 +11,7 @@ import {ExecutionContext} from '../wydgine/seam/context.js';
 import {packageOperation,planPackagePolicy,approvePackagePolicy,applyPackagePolicy} from '../wydgine/packages/index.js';
 
 async function listen(t,f,{secure=false,...options}={}){
+  await reviewFixture(f);
   const app=createApp({root:f.root,libraries:f.libraries,...(secure?{}:{localHostname:'127.0.0.1'}),logger:{error(){assert.fail('Unexpected HTTP exception');}},...options});
   let server;
   if(secure){
@@ -101,10 +103,10 @@ test('BOHTTP-06: approved policy narrowing removes discovery; permission cannot 
   const f=await actionFixture(t);let h=await listen(t,f);const [a]=await h.discover();await h.stop();
   const s=catalog(f),e=s.packages[0],grants=plain(e.approved);grants.capabilities=[];
   const host=new ExecutionContext({...f.operator,capabilities:[...f.operator.capabilities,'packages.policy.manage']});
-  const plan=await planPackagePolicy({root:f.root,app:'boilerplate',package:e.manifest.id,installation:e.receipt.id,revision:s.revision,packageRevision:e.receipt.revision,policyRevision:0,policy:{grants,stores:[]},installationContext:host});
+  const plan=await planPackagePolicy({root:f.root,app:'boilerplate',package:e.manifest.id,installation:e.receipt.id,revision:s.revision,packageRevision:e.receipt.revision,policyRevision:e.policyRevision??0,policy:{grants,stores:[]},installationContext:host});
   const approval=await approvePackagePolicy(plan,{installationContext:host});
-  await applyPackagePolicy({root:f.root,app:'boilerplate',package:e.manifest.id,installation:e.receipt.id,revision:approval.revision,packageRevision:e.receipt.revision,policyRevision:0,approval:approval.id,planHash:plan.sha256,installationContext:host});
-  h=await listen(t,f);assert.deepEqual(await h.discover(),[]);const r=await h.post({reference:a.reference,input:{}});assert.equal(r.status,409);await r.text();
+  await applyPackagePolicy({root:f.root,app:'boilerplate',package:e.manifest.id,installation:e.receipt.id,revision:approval.revision,packageRevision:e.receipt.revision,policyRevision:e.policyRevision??0,approval:approval.id,planHash:plan.sha256,installationContext:host});
+  assert.throws(()=>createApp({root:f.root,libraries:f.libraries}),{code:'BACKOFFICE.MIGRATION_REQUIRED'});
 });
 
 test('BOHTTP-07: actual write requires confirmation and timeout may follow committed side effects',async t=>{
@@ -145,6 +147,7 @@ test('BOHTTP-09: browser-form login to real generic UI and member table; hostile
 test('BOHTTP-10: trusted HTTPS ingress retains Secure host cookies and exact public origin',async t=>{
   const f=await actionFixture(t),{createServer}=await import('node:http'),{validateRouting,resolveRoute,bindRequestRoute}=await import('../wydgine/http/routing.js');
   const config=validateRouting({schema:'wydgit.routing/0.1',transport:{mode:'trusted-proxy',peers:['127.0.0.1']},routes:[{hostname:'admin.example.test',app:'boilerplate',state:'active',approval:'operator-domain'}]},['boilerplate']);
+  await reviewFixture(f);
   const app=createApp({root:f.root,libraries:f.libraries}),server=createServer((req,res)=>{try{const route=resolveRoute(config,req);if(!route)throw Error();bindRequestRoute(req,route);app.handle(req,res);}catch{res.statusCode=400;res.end('Request rejected');}});
   server.listen(0,'127.0.0.1');await once(server,'listening');t.after(()=>app.shutdown(server));const base='http://127.0.0.1:'+server.address().port;
   const headers={'X-Forwarded-Host':'admin.example.test','X-Forwarded-Proto':'https',Cookie:'__Host-wydgit-auth='+f.login.token};
@@ -180,7 +183,7 @@ function actionBarrier(f,{before=false,fail=false}={}){
 }
 
 test('BOREL-01: expired native admission and genuine service budget exhaustion dispatch no operation',async t=>{
-  const f=await actionFixture(t),api=f.framework(),[a]=await f.discover(api);let started=0;
+  const f=await actionFixture(t),api=await reviewedFramework(f),[a]=await f.discover(api);let started=0;
   const expired=await api.invoke({...f.request,reference:a.reference,input:{}},{deadline:0,onStart:()=>started++});
   assert.equal(expired.code,'SEWN.LIMIT');assert.equal(started,0);
   const h=await listen(t,f,{contextPolicy:c=>new ExecutionContext({...c,limits:{sewnServiceCalls:0}})}),[fresh]=await h.discover();
@@ -340,7 +343,7 @@ for(const provider of ['json','sqlite'])for(const secure of [false,true])test(`B
   assert.equal(calls,1);assert.equal(checks,2);
   // Reconcile using a fresh genuine session, never replay the create.
   f.login=await f.gate.login('alice',f.password);f.request.session=f.login.token;
-  const api=f.framework(),get=(await f.discover(api)).find(a=>a.name==='get');
+  const api=await reviewedFramework(f),get=(await f.discover(api)).find(a=>a.name==='get');
   const record=await f.invoke(api,get.reference,f.recordInput);
   assert.equal(record.ok,true);assert.equal(record.value.version,1);assert.equal(record.value.data.text,'committed');
   assert.equal(calls,1);

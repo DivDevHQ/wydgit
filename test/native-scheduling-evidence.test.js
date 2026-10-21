@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {gunzipSync} from 'node:zlib';
 import {createHash} from 'node:crypto';
+import {historicalFrontEndPageSource} from '../test-support/historical-page-source.js';
 import {installedGuardSource} from '../test-support/historical-installed-guard.js';
 const stem='test-support/http-native-scheduling-spike-l';
 test('Spike L evidence reconciles every bounded window and preserves optional-observer unknowns',async()=>{
@@ -25,6 +26,7 @@ test('Spike L evidence reconciles every bounded window and preserves optional-ob
  for(const [file,hash]of Object.entries(e.sourceHashes)){
   assert.equal(createHash('sha256').update(source.sources[file]).digest('hex'),hash);
   if(file==='packages/wydgine/src/engine/packages/index.js')assert.equal(installedGuardSource(await fs.readFile(file,'utf8')),installedGuardSource(source.sources[file]),file);
+  else if(file==='packages/wydgine/src/engine/execution/page.js')assert.equal(historicalFrontEndPageSource(await fs.readFile(file,'utf8')),source.sources[file],file);
   else assert.equal(createHash('sha256').update(await fs.readFile(file)).digest('hex'),hash,file);
  }
 });

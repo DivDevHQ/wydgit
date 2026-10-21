@@ -1,0 +1,554 @@
+{
+  "mission": "Wydgine 0.3 BackOffice B4b",
+  "date": "2026-10-21",
+  "branch": "develop/0.3",
+  "baseline": "1f243a7c97d6fb6bc9295118a382cdc344f26c20",
+  "baselineTree": "clean",
+  "fetchedBaselineDivergence": [
+    0,
+    0
+  ],
+  "node": "v24.21.0",
+  "decisions": {
+    "DEC-01": "APPROVED unchanged",
+    "DEC-02": "APPROVED unchanged"
+  },
+  "runtime": {
+    "startupMigrationGate": true,
+    "restrictiveActionDispatch": true,
+    "canonicalPageHttpEntry": true,
+    "livePagePermissionIndependentOfReview": true,
+    "typedSameInstallationBindings": true,
+    "originalInitiatingServerAuthorityPreserved": true,
+    "alternateProtectedPageServiceRoutesDenied": true,
+    "automaticMigration": false,
+    "receiptWideCompatibilityBypass": false,
+    "ordinaryPackagesCanApprove": false,
+    "crossPackageBindings": false,
+    "pageDeadlineMs": 1000,
+    "httpLimitIssue": "OPEN"
+  },
+  "entry": {
+    "route": "GET /backoffice/pages/<entry-key>",
+    "executor": "existing executePage",
+    "pageReference": "wydgit.backoffice-page-reference/1",
+    "pageBinding": "wydgit.backoffice-page-binding/1",
+    "actionEnvelope": "exactly one of {reference,input,confirmed?} or {pageBinding,input,confirmed?}",
+    "prepare": "SERVICES.Call(\"backoffice\", bindingName, input) / Invoke API 1.0.0, exact trusted Page-handler consumer, read only",
+    "methodDelegation": "Workflows containing user methodCall/methodValue receive a denying preparation facade; component methods/hooks and newly constructed IDs cannot borrow an accepted handler consumer. Local composition remains available.",
+    "metadata": "Escaped data-only authorized intent references and existing Session/App CSRF; no new client bundle"
+  },
+  "authorityIntersection": [
+    "exact current reviewed installation/receipt/generation/artifact/policy",
+    "mandatory declared resources as maxima within receipt scope",
+    "branded initiating server scopes/capabilities/identity/lifetime for preparation",
+    "exact App/publisher/package/principal/optional installation owner",
+    "operation and transaction-member capabilities",
+    "live independent Page/action/Gate/service predicates",
+    "actual resource/transaction targets before provider mutation",
+    "live request/context/Session/binding checks before successful publication"
+  ],
+  "coordination": {
+    "protocol": "Existing stopped-App boundary extended with cooperating local process leases and short exclusive mutex",
+    "liveRuntimeBlocksReviewApplyReplacement": true,
+    "maintenanceBlocksStartup": true,
+    "deadProcessLeases": "reclaimed only under exclusive mutex; existing journal/recovery barriers remain",
+    "abandonedMutex": "fail closed; stopped operator inspection/removal, no unsafe stale-unlink race",
+    "limits": "1024 bounded private local process leases; PID reuse conservatively blocks; no distributed/hostile-root/power-loss guarantee"
+  },
+  "persistence": {
+    "mechanism": "B4a entry.backoffice and receipt.backofficeHash inside existing reviewed package policy",
+    "catalogCommitPointUnchanged": true,
+    "journalsCheckpointsRollbackRecoveryUnchanged": true,
+    "obsoleteApprovalsTransferAutomatically": false,
+    "committedOperationFailure": "uncertain publication never implies rollback; no automatic retry"
+  },
+  "fixtures": {
+    "members": "Explicit disposable reviewed list-members, independently invoked in native/HTTP module suites",
+    "notices": "Explicit disposable reviewed list-notices on JSON and SQLite, independently authorized",
+    "recordsArchive": {
+      "providers": [
+        "json",
+        "sqlite"
+      ],
+      "actions": [
+        "get",
+        "create",
+        "update",
+        "delete",
+        "transaction",
+        "archive-get"
+      ],
+      "negative": "unmigrated, partial, revoked, stale generations and undeclared archive access fail; denied mixed transaction leaves both targets absent",
+      "positive": "reviewed ordinary CRUD and explicitly declared/reviewed records+archive transaction"
+    },
+    "taskboard": "Actual installed neutral informational Page, live independent Gate permission and canonical HTTP, runtime-created repeated children; existing FrontEnd/native suite retained",
+    "boundPages": "exact typed preparation; intents; constants; real child-method receiver borrowing regression; multiple entries sharing an action and independently scoped bindings",
+    "productionOrExternalAccessed": false,
+    "repositoryInstalledCatalogPresent": false
+  },
+  "conformance": {
+    "inScope": 64,
+    "implementedVerified": 62,
+    "partial": 2,
+    "missing": 0,
+    "unverified": 0,
+    "deferredProposedReserved": 12,
+    "promoted": [
+      "BO-ACT-10",
+      "BO-HTTP-09",
+      "BO-REU-05"
+    ],
+    "remainingPartial": [
+      "BO-HTTP-12",
+      "BO-REU-06"
+    ],
+    "foundationComplete": false
+  },
+  "full": {
+    "command": "npm test",
+    "log": "/tmp/b4b-full-qualified.log",
+    "sha256": "4186a4962eb8e8c114cdb4cf3643036a8d6f1c17accae03046a8f53fbc8ba043",
+    "tests": 1954,
+    "pass": 1954,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "focused": {
+    "command": "node --test --test-reporter=tap test/backoffice-enforcement.test.js test/backoffice-adoption.test.js test/backoffice-preflight.test.js test/backoffice-action-scope.test.js test/backoffice-page-foundation.test.js test/backoffice-actions.test.js test/backoffice-http.test.js test/backoffice-modules.test.js test/backoffice-placement.test.js test/policy-reconciliation.test.js test/deadline-ledger.test.js test/native-scheduling-evidence.test.js",
+    "log": "/tmp/b4b-focused-qualified.log",
+    "sha256": "194d7e49bf5487e06188427045d954bccc83ed8f8d061dcb7fed00a0a6ef8b76",
+    "tests": 311,
+    "pass": 311,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "methodReceiverRegressionBefore": {
+    "command": "node --test --test-isolation=none --test-reporter=tap --test-name-pattern=BOB4B-05 test/backoffice-enforcement.test.js",
+    "log": "/tmp/b4b-method-before2.log",
+    "sha256": "8af614170a5759f178b681e5df0354975bf309d452c5f3ad1a7a90450b20676c",
+    "tests": 2,
+    "pass": 0,
+    "fail": 2,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "meaning": "New draft B4b facade lent the Page handler receiver to a real child method; both provider cases fail. Not a claim against the B4a baseline."
+  },
+  "methodReceiverRegressionAfter": {
+    "command": "node --test --test-isolation=none --test-reporter=tap --test-name-pattern=BOB4B-05 test/backoffice-enforcement.test.js",
+    "log": "/tmp/b4b-method-after.log",
+    "sha256": "c3439a23c17c7d943763d9ef3f0360210580b458d4ab2aab4c29b9b203a55f03",
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "historicalPins": {
+    "command": "node --test --test-isolation=none --test-reporter=tap test/native-scheduling-evidence.test.js",
+    "log": "/tmp/b4b-pins-final.log",
+    "sha256": "693245c77a297f9b0505c20d3ba31732d8dca0f97eab4830f8c658d9669ef948",
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "immutableArtifacts": {
+    "command": "node --input-type=module -e 'import {verifyArtifacts} from \"./packages/wydclient/artifact-policy.js\"; console.log(JSON.stringify({immutableArtifacts:verifyArtifacts({root:process.cwd()})}));'",
+    "verified": 31,
+    "log": "/tmp/b4b-immutable.log"
+  },
+  "attempts": [
+    {
+      "command": "node --test --test-isolation=none --test-name-pattern=BOB4A-01 test/backoffice-adoption.test.js",
+      "log": "/tmp/b4b-initial.log",
+      "sha256": "e98385d4fa4db45c5c2fd175ebb2a5ade80d0dbbd537197756e77ddf0506d13f",
+      "tests": 2,
+      "pass": 0,
+      "fail": 2,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "note": "Expected changed live dispatch; old receipt-wide assertion denies on both providers."
+    },
+    {
+      "command": "node --test --test-reporter=tap test/backoffice-actions.test.js test/backoffice-http.test.js test/backoffice-modules.test.js test/backoffice-action-scope.test.js test/backoffice-adoption.test.js",
+      "log": "/tmp/b4b-focused1.log",
+      "sha256": "a24cdcaab89a257b6ec827d2f10a933bd30b167025f8f598f55c9246cb3a59c3",
+      "tests": 5,
+      "pass": 2,
+      "fail": 3,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "note": "Restricted sandbox file-level summaries; not functional native qualification."
+    },
+    {
+      "command": "node --test --test-isolation=none --test-reporter=tap test/backoffice-enforcement.test.js",
+      "log": "/tmp/b4b-new1.log",
+      "sha256": "3fbdd669c2d5bcaaa8ce10dbac9280488ecc0be08ba2a17f0e754714f3367363",
+      "tests": 8,
+      "pass": 2,
+      "fail": 6,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "note": "Local listeners denied with EPERM; rerun with native access."
+    },
+    {
+      "command": "node --test --test-isolation=none --test-reporter=tap test/backoffice-enforcement.test.js test/backoffice-actions.test.js test/backoffice-http.test.js test/backoffice-adoption.test.js test/backoffice-modules.test.js test/backoffice-action-scope.test.js",
+      "log": "/tmp/b4b-native1.log",
+      "sha256": "de8cd9371d020872a047a2702e856a45b84b83366eead681d0f73c0a97819eb0",
+      "note": "Caught lease cleanup after fixture removal, earlier maintenance serialization, legacy assertion changes and late Session cookie handling; corrected."
+    },
+    {
+      "command": "node --test --test-isolation=none --test-reporter=tap test/backoffice-enforcement.test.js",
+      "log": "/tmp/b4b-new2.log",
+      "sha256": "6ba5ce70c395aa38cd0ec173999c924ecb16b5af053a7c2923c99ee8406a4e98",
+      "tests": 15,
+      "pass": 13,
+      "fail": 2,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "note": "13/15; preparation fixture requested an unsupported response capability."
+    },
+    {
+      "command": "node --test --test-isolation=none --test-reporter=tap test/backoffice-enforcement.test.js test/backoffice-actions.test.js test/backoffice-http.test.js test/backoffice-adoption.test.js",
+      "log": "/tmp/b4b-native2.log",
+      "sha256": "5c3ba2e901e3d50c0fad723e29f3d44dbd6522cc7949272e93e51862edd5b24b",
+      "tests": 119,
+      "pass": 117,
+      "fail": 2,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "note": "117/119; preparation fixture lacked host edit scope. All other selected regressions passed."
+    },
+    {
+      "command": "node --test --test-isolation=none --test-reporter=tap --test-name-pattern=BOB4B-05 test/backoffice-enforcement.test.js",
+      "log": "/tmp/b4b-read3.log",
+      "sha256": "9999ceedb58d7b7c90d212fe885a61779f6436c78b1ef294d2aec65efa6a859b",
+      "tests": 2,
+      "pass": 0,
+      "fail": 2,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "note": "Fixture missing canonical required content property."
+    },
+    {
+      "command": "node --test --test-isolation=none --test-reporter=tap --test-name-pattern=BOB4B-05 test/backoffice-enforcement.test.js",
+      "log": "/tmp/b4b-read4.log",
+      "sha256": "db1c4fa46406a349563d557e5cc6728e0bf0f4de4717359a2c6e747f73a31b07",
+      "tests": 2,
+      "pass": 0,
+      "fail": 2,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "note": "Fixture used format rather than canonical content.type; corrected."
+    },
+    {
+      "command": "node --test --test-isolation=none --test-reporter=tap --test-name-pattern=BOB4B-05 test/backoffice-enforcement.test.js",
+      "log": "/tmp/b4b-read5.log",
+      "sha256": "8797f616824879c9f2b455dd234e1a2cd08292c4820fe03d3ca89190c3b60cc8",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "note": "Both provider preparation positives/denials pass before expanded nested-method regression."
+    },
+    {
+      "command": "npm test",
+      "log": "/tmp/b4b-full1.log",
+      "sha256": "801d3fe36345cbf89f31bc096ae8bb7ab8ce687307830334296b4086c9ae49d0",
+      "note": "Pretest build rejected shared-source immutable rebuild candidate. No artifact write; server-only adaptation restores exact immutable build. Test suite did not run."
+    },
+    {
+      "command": "npm test",
+      "log": "/tmp/b4b-full2.log",
+      "sha256": "168ae54b85ed86a2763b3cd35c7a00f57e9d9b1ff11bd723bc108b52227b5d0a",
+      "tests": 1943,
+      "pass": 1938,
+      "fail": 5,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "note": "1938/1943; two corrected fixture failures, two earlier cross-process writer refusals, one historical whole-Page pin adapted to verify unchanged FrontEnd source path."
+    },
+    {
+      "command": "node --test --test-isolation=none --test-reporter=tap test/backoffice-enforcement.test.js",
+      "log": "/tmp/b4b-new-final1.log",
+      "sha256": "8bdc6e9486bbfb5fbab7ef07619336ac45d658b6157dd3dfa9474a81390fe2d7",
+      "tests": 15,
+      "pass": 14,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "note": "14/15; Taskboard Gate configured with wrong App. Corrected before installation to preserve accepted base."
+    },
+    {
+      "command": "node --test --test-isolation=none --test-reporter=tap test/backoffice-enforcement.test.js test/policy-reconciliation.test.js",
+      "log": "/tmp/b4b-focused3.log",
+      "sha256": "fa2225e51c18a074b3d607051018f56e0fc47ace7ebb01b8569101e79fa442c5",
+      "tests": 69,
+      "pass": 68,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "note": "68/69; caught Taskboard config change after install. Moved fixture Gate configuration before installation."
+    },
+    {
+      "command": "node --test --test-isolation=none --test-reporter=tap --test-name-pattern=BOB4B-08 test/backoffice-enforcement.test.js",
+      "log": "/tmp/b4b-taskboard2.log",
+      "sha256": "67d6055e5b344ea9c61bcaa8a5991f1e8590666d28b071214857fc4b8f5a2511",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "note": "Corrected installed Taskboard Page passes."
+    },
+    {
+      "command": "npm test",
+      "log": "/tmp/b4b-full-final.log",
+      "sha256": "2929fcd2a762e5534ec286905a98d86ae446ae6548002fa28e62eba30be60e59",
+      "tests": 1954,
+      "pass": 1953,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "note": "1953/1954 while full/packed overlapped; existing real-worker Taskboard response did not render expected content. No deadline/assertion changes; independent full rerun passes."
+    },
+    {
+      "command": "node --test --test-isolation=none --test-reporter=tap --test-name-pattern=BOB4B-05 test/backoffice-enforcement.test.js",
+      "log": "/tmp/b4b-method-before.log",
+      "sha256": "f772a4268350355afebb58bd7292cb38919caf6f761b25f69bc21b770c27bb32",
+      "tests": 2,
+      "pass": 0,
+      "fail": 2,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "note": "Nested-method fixture initially missing independent build publisher verification. Corrected."
+    },
+    {
+      "command": "node scripts/verify-packed-packages.js",
+      "log": "/tmp/b4b-packed-qualified.log",
+      "sha256": "9119e65cd6d56e0325532022ad03015b4e4d306d8e1cac3382cba2df81e2f3ac",
+      "directory": "/tmp/wyd-i54-packed-5R9WCr",
+      "note": "Independently passing prior tarballs: 683 engine, 35 provider, 20 process, 25 Linux; final tarballs additionally retain independent prototype/event scopes.",
+      "installedEngine": {
+        "command": "installed engine selected suite",
+        "log": "/tmp/wyd-i54-packed-5R9WCr/five-library-tests.log",
+        "sha256": "2d6589f6b0228f0581ec75e6b4fe197029dfe585096f8627bb6bb6e1e74a1a0c",
+        "tests": 683,
+        "pass": 683,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "command": "node scripts/verify-packed-packages.js",
+      "log": "/tmp/b4b-packed1.log",
+      "sha256": "3a4cd308736330173e742fc25ac375b4522a978bff2ce0b5ab8342eeecae99a8",
+      "directory": "/tmp/wyd-i54-packed-zervir",
+      "note": "Earlier pre-final tarballs: 680 engine, 35 provider, 20 process, 25 Linux passed.",
+      "installedEngine": {
+        "command": "installed engine selected suite",
+        "log": "/tmp/wyd-i54-packed-zervir/five-library-tests.log",
+        "sha256": "135b683617d30a0c644e344d32ef18dd0e544eb40b9d08309ca025114df98e04",
+        "tests": 680,
+        "pass": 680,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "command": "node scripts/verify-packed-packages.js",
+      "log": "/tmp/b4b-packed-final.log",
+      "sha256": "f8259a1cd1ee0a5b2290f5d0062b948abd5787ecc8b094237b232cb1172e08d0",
+      "directory": "/tmp/wyd-i54-packed-I04avT",
+      "note": "Overlapped broad run: engine 678/683; five existing timing-sensitive failures. Provider/process/Linux selections not reached by this attempt.",
+      "installedEngine": {
+        "command": "installed engine selected suite",
+        "log": "/tmp/wyd-i54-packed-I04avT/five-library-tests.log",
+        "sha256": "b63baf26a4fe1c92304eca9040c096cf11e914936cfbadae520e3aec38061edf",
+        "tests": 683,
+        "pass": 678,
+        "fail": 5,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    }
+  ],
+  "finalRequiredRecheck": {
+    "command": "npm test && npm run check",
+    "fullLog": "/tmp/b4b-postdocs-full.log",
+    "contentLog": "/tmp/b4b-postdocs-check.log",
+    "outcomeLocation": "Final commit message and owner handoff record the after-documentation results; no unexecuted run is represented as passing here."
+  },
+  "priorFocused": {
+    "command": "node --test --test-isolation=none --test-reporter=tap test/backoffice-enforcement.test.js test/backoffice-adoption.test.js test/backoffice-preflight.test.js test/backoffice-action-scope.test.js test/backoffice-page-foundation.test.js test/backoffice-actions.test.js test/backoffice-http.test.js test/backoffice-modules.test.js test/backoffice-placement.test.js test/policy-reconciliation.test.js test/deadline-ledger.test.js test/native-scheduling-evidence.test.js",
+    "log": "/tmp/b4b-focused-final.log",
+    "sha256": "d98be04c72cfd4f973f62ab82a28e8a3e57197aa685a7132328daf9317b28019",
+    "tests": 308,
+    "pass": 308,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "boundaries": {
+    "versionsChanged": false,
+    "manifestsOrLockfilesChanged": false,
+    "providerSemanticsChanged": false,
+    "frozenClientsChanged": false,
+    "historicalEvidenceOrArchivesChanged": false,
+    "publishedTaggedReleasedDeployed": false
+  },
+  "remaining": [
+    "B5 independent end-to-end application/BackOffice and deployment-specific qualification",
+    "broader ADM-01 reusable controls and browser intent integration",
+    "human accessibility and complete browser keyboard journeys",
+    "explicit stopped-App production migration; no external/production installation qualified",
+    "local writable coordination files and cooperating same-engine processes required",
+    "generic WydData/CIR/data components/cross-package bindings/wider administrative domains deferred",
+    "WYDGINE-0.3-HTTP-LIMIT OPEN; unchanged 1000 ms Page deadline, committed HTTP failures remain possible"
+  ],
+  "notes": [
+    "Read-only B3/B4a inspection remains observational: enforcementActive/enforcementReady false is not caller admission. Runtime independently consumes/revalidates evidence.",
+    "Historical receipt-wide observations and hashes are preserved; live regressions now assert restrictive denial.",
+    "Cross-process competing policy writers now fail earlier with PACKAGE.BUSY, then the first writer has one checked terminal outcome.",
+    "Historical Page source comparison reconstructs the entire FrontEnd path by removing only new explicit BackOffice branches; original archive hashes and complete installed guard stay pinned.",
+    "Shared receiver edits initially failed immutable rebuild comparison and were removed. Final receiver adaptation is server-only. No client guard or artifact was weakened.",
+    "Concurrent broad suite attempts had existing timing-sensitive failures. Final broad runs are executed independently with unchanged deadlines/assertions; no uncertain native mutation is retried."
+  ],
+  "packed": {
+    "command": "node scripts/verify-packed-packages.js",
+    "log": "/tmp/b4b-packed-shipped.log",
+    "sha256": "96954e70ae04892622601751357f4f885f33fd28cf99affd4e308374ea34460f",
+    "directory": "/tmp/wyd-i54-packed-QZckoR",
+    "complete": true,
+    "selections": {
+      "installedEngine": {
+        "command": "/home/brian/.nvm/versions/node/v24.21.0/bin/node --import /tmp/wyd-i54-packed-QZckoR/five-library/proof-register.mjs --test test/lifecycle-lstat-timing.test.js test/http-client-process.test.js test/http-concurrency.test.js test/native-stage-timing.test.js test/http-scheduling.test.js test/execution-progress.test.js test/sewn-shared-budget.test.js test/gate-session-contention.test.js test/http-diagnostics.test.js test/backoffice-actions.test.js test/backoffice-http.test.js test/backoffice-ui.test.js test/backoffice-modules.test.js test/multi-app.test.js test/hostname-host.test.js test/hosting-operations.test.js test/hardening.test.js test/guestbook-package.test.js test/packages.test.js test/package-infrastructure.test.js test/wydgate-http.test.js test/wydstream-http.test.js test/wydstream-search.test.js test/wydstream-security.test.js test/wydsearch-package.test.js test/wydfiles.test.js test/wydstore-sqlite.test.js test/operation-completion.test.js test/installation-stamp.test.js test/backoffice-placement.test.js test/canonical-page-edit.test.js test/form-clear.test.js test/execution-contexts.test.js test/scoped-policy.test.js test/scoped-store-authorization.test.js test/scoped-policy-lifecycle.test.js test/policy-reconciliation.test.js test/backoffice-body.test.js test/backoffice-action-scope.test.js test/backoffice-page-foundation.test.js test/backoffice-preflight.test.js test/backoffice-adoption.test.js test/backoffice-enforcement.test.js",
+        "log": "/tmp/wyd-i54-packed-QZckoR/five-library-tests.log",
+        "sha256": "2e83faecf00c5bc60640c24b5f43b03888a82a1aedc44eb11d85483b4e68705e",
+        "tests": 683,
+        "pass": 683,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0,
+        "cwd": "/tmp/wyd-i54-packed-QZckoR/five-library",
+        "env": {
+          "TMPDIR": "/tmp/wyd-i54-packed-QZckoR/five-library/.fixtures",
+          "NODE_OPTIONS": "--import /tmp/wyd-i54-packed-QZckoR/five-library/proof-register.mjs"
+        }
+      },
+      "provider": {
+        "command": "/home/brian/.nvm/versions/node/v24.21.0/bin/node --import /tmp/wyd-i54-packed-QZckoR/provider/proof-register.mjs --test packages/wydhosting/test/provider.test.js",
+        "log": "/tmp/wyd-i54-packed-QZckoR/provider-tests.log",
+        "sha256": "c68d73aef6938485012cb5ef76c4540592ab0e7537c2a8050ad524f68fa6a3cb",
+        "tests": 35,
+        "pass": 35,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0,
+        "cwd": "/tmp/wyd-i54-packed-QZckoR/provider",
+        "env": {
+          "TMPDIR": "/tmp/wyd-i54-packed-QZckoR/provider/.fixtures",
+          "NODE_OPTIONS": "--import /tmp/wyd-i54-packed-QZckoR/provider/proof-register.mjs"
+        }
+      },
+      "processSupervision": {
+        "command": "/home/brian/.nvm/versions/node/v24.21.0/bin/node --import /tmp/wyd-i54-packed-QZckoR/provider/proof-register.mjs --test test/process-supervision.test.js",
+        "log": "/tmp/wyd-i54-packed-QZckoR/process-supervision.log",
+        "sha256": "df48df6989e3a46407d7c9aa4b85acea9f7d53cd687b009426be3c48bd951b60",
+        "tests": 20,
+        "pass": 20,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0,
+        "cwd": "/tmp/wyd-i54-packed-QZckoR/provider",
+        "env": {
+          "TMPDIR": "/tmp/wyd-i54-packed-QZckoR/provider/.fixtures",
+          "NODE_OPTIONS": "--import /tmp/wyd-i54-packed-QZckoR/provider/proof-register.mjs"
+        }
+      },
+      "linuxBoundaries": {
+        "command": "/home/brian/.nvm/versions/node/v24.21.0/bin/node --import /tmp/wyd-i54-packed-QZckoR/provider/proof-register.mjs --test test/linux-isolation.test.js",
+        "log": "/tmp/wyd-i54-packed-QZckoR/linux-boundaries.log",
+        "sha256": "b8fcff938a7b8a878360c0864c0ef93a778cbc0bb5b849d8f614e2f6629acdef",
+        "tests": 25,
+        "pass": 25,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0,
+        "cwd": "/tmp/wyd-i54-packed-QZckoR/provider",
+        "env": {
+          "TMPDIR": "/tmp/wyd-i54-packed-QZckoR/provider/.fixtures",
+          "NODE_OPTIONS": "--import /tmp/wyd-i54-packed-QZckoR/provider/proof-register.mjs"
+        }
+      }
+    }
+  },
+  "documentation": {
+    "command": "python3 /tmp/b4b-verify-docs.py",
+    "markdownFiles": 9,
+    "fileLinks": 89,
+    "anchors": 5,
+    "stableIds": 76,
+    "classifications": {
+      "Implemented": 62,
+      "Partial": 2,
+      "Deferred": 12
+    },
+    "promotions": {
+      "BO-ACT-10": [
+        "Partial",
+        "Implemented"
+      ],
+      "BO-HTTP-09": [
+        "Missing",
+        "Implemented"
+      ],
+      "BO-REU-05": [
+        "Partial",
+        "Implemented"
+      ]
+    },
+    "errors": []
+  },
+  "contentCheck": {
+    "command": "npm run check",
+    "log": "/tmp/b4b-check1.log",
+    "pages": 3,
+    "internalLinks": 42,
+    "uniqueAnchors": true
+  }
+}

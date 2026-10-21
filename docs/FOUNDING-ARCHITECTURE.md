@@ -1,10 +1,17 @@
 # Wydgit Founding Architecture & Philosophy
 
+**B4b runtime update (2026-10-21):** [live enforcement](work-in-progress/backoffice-b4b-live-enforcement.md)
+now requires complete current reviewed adoption before App admission, restricts action
+resources, and joins independent Page permission/approval to canonical HTTP execution.
+Same-installation bindings reauthorize at invocation. Local cooperating processes now
+share stopped-App admission leases. Earlier increment descriptions below are historical;
+there is no receipt-wide compatibility bypass. B5 remains; HTTP-LIMIT is OPEN.
+
 **B3 architecture ratification (2026-10-21):** the Project owner approved
 [DEC-01 Page entry/bindings and DEC-02 action resource maxima](backoffice-page-and-action-contracts.md).
 B3 adds read-only preflight/contract validation only. Historical implementation
-checkpoints below retain their dates; production action dispatch remains receipt-wide
-until reviewed migration and the later enforcing increment. No new Page HTTP entry
+checkpoints below retain their dates; B3 action dispatch remained receipt-wide
+until the B4b enforcing increment described above. No new Page HTTP entry
 or caller/resource authority is activated by this ratification.
 
 The [modular BackOffice action framework](backoffice-action-framework.md) supplies

@@ -1,5 +1,11 @@
 ## Unreleased
 
+- B4b: enforce complete reviewed BackOffice migration before App admission, live
+  per-action resource maxima, canonical independently authorized Page HTTP entry,
+  and typed same-installation action bindings. Coordinate stopped-App review with
+  local runtime processes; qualify disposable JSON/SQLite installations. Preserve
+  the open HTTP limitation, deadlines, versions and immutable client artifacts.
+
 - B4a: extend trusted stopped-App package-policy review with durable, generation-bound
   BackOffice Page-entry/action-scope adoption, explicit revocation and read-only
   migration evidence. Validate accepted component chains against reviewed local
