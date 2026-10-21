@@ -9,6 +9,7 @@
     "node": ">=24.21.0"
   },
   "scripts": {
+    "backoffice:human-test": "node scripts/backoffice-human.js",
     "wydgine": "node packages/wydgine/bin/wydgine.js",
     "wydhosting": "node packages/wydhosting/bin/wydhosting.js",
     "start": "node server.js",

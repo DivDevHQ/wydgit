@@ -16,3 +16,6 @@ AGENTS.md
 
 # Disposable persistent local hosting example
 .hosting-local/
+
+# Private disposable BackOffice human sessions, browser profiles and evidence
+.backoffice-human/

@@ -1,5 +1,10 @@
 ## Unreleased
 
+- B6H: add a one-command disposable human BackOffice acceptance environment with
+  isolated Firefox, installed reviewed sample Pages, sequential keyboard/Orca
+  guidance, persistent honest outcomes and sanitized evidence exports. Keep human
+  acceptance, Firefox automation qualification and HTTP-LIMIT unresolved.
+
 - B6: ship reusable canonical BackOffice Page controls, typed record property/layout
   and Markdown editing with explicit load/save, and refreshable dashboards through
   reviewed same-installation bindings. Qualify installed applications and both

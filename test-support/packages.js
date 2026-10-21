@@ -4,7 +4,11 @@ import path from 'node:path';
 import { loadRepository } from '../wydgine/repository.js';
 import { ExecutionContext } from '../wydgine/seam/context.js';
 export async function packageFixture(t) {
-  const root=await fs.mkdtemp(path.join(os.tmpdir(),'wydpackage-'));t.after(()=>fs.rm(root,{recursive:true,force:true}));
+  // A caller-owned disposable root lets the human harness retain installed state
+  // across stops. Exclusive creation prevents accidentally adopting a real App.
+  const root=t.disposableRoot?path.resolve(t.disposableRoot):await fs.mkdtemp(path.join(os.tmpdir(),'wydpackage-'));
+  if(t.disposableRoot)await fs.mkdir(root,{mode:0o700});
+  else t.after(()=>fs.rm(root,{recursive:true,force:true}));
   for(const name of ['content','prototypes','public'])await fs.cp(name,path.join(root,name),{recursive:true});
   const packagePath=path.join(root,'guestbook');await fs.cp('examples/guestbook',packagePath,{recursive:true});
   const manifest=JSON.parse(await fs.readFile(path.join(packagePath,'manifest.json'),'utf8'));

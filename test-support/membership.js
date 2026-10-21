@@ -29,7 +29,7 @@ export async function membershipFixture(t,provider='json',registration='open',in
   f.libraries=await initializeHost({root:f.root,adapters:hostOptions.adapter?{wydgate:hostOptions.adapter}: {}});
   f.gateContext=new ExecutionContext({context:'FrontEnd',publisher:'host',package:'host:gate',self:'home',app,capabilities:manifest.capabilities,scopes:{wydgate:[app],wydgateBootstrap:[app]}});
   f.gate=createGate(f.libraries.bind(f.gateContext));
-  f.password=randomBytes(24).toString('base64url');
+  f.password=t.disposablePassword??randomBytes(24).toString('base64url');
   f.memberGate=identity=>createGate(f.libraries.bind(new ExecutionContext({context:'FrontEnd',publisher:'divdev',package:'divdev/membership',installation:f.receipt?.id??'test-install',self:'membership',app,identity,capabilities:['gate.accounts.use','gate.members.use'],scopes:{wydgate:[app]}})));
   return f;
 }

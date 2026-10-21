@@ -1,0 +1,116 @@
+{
+  "schema": "wydgit.backoffice-b6h-qualification/1",
+  "purpose": "developer-verification-only",
+  "baseline": "2fe11c815dfba909ca2e6d9d20a60a6879589775",
+  "branch": "develop/0.3",
+  "baselineRemoteIndependentlyVerified": true,
+  "baselineWorkingTreeClean": true,
+  "humanEvaluationPerformed": false,
+  "orcaSpeechConfirmed": false,
+  "firefoxNativeKeyboardQualified": false,
+  "boHttp12": "Partial",
+  "httpLimit": "WYDGINE-0.3-HTTP-LIMIT OPEN; 1000 ms unchanged",
+  "versionsChanged": false,
+  "frozenArtifactsChanged": false,
+  "completedChecks": [
+    {
+      "command": "node --test --test-reporter=tap test/backoffice-human.test.js",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "log": "b6h-focused-isolation-final.log",
+      "note": "Includes refusal of altered provider configuration before foreign storage opens; successful restart after restoring the accepted configuration."
+    },
+    {
+      "command": "node --test --test-reporter=tap test/backoffice-human.test.js test/backoffice-enforcement.test.js test/backoffice-adoption.test.js test/backoffice-preflight.test.js test/backoffice-action-scope.test.js test/backoffice-http.test.js test/backoffice-body.test.js test/backoffice-b6.test.js test/deadline-ledger.test.js",
+      "tests": 220,
+      "pass": 220,
+      "fail": 0,
+      "log": "b6h-security-final.log",
+      "note": "Before the final cleanup-lock and interrupt refinements; final npm test reruns all regressions."
+    },
+    {
+      "command": "node scripts/verify-backoffice-human-browser.js",
+      "result": "Passed real membership login and production Page controls on JSON and SQLite; guide rendering and deliberate developer failure recording/export",
+      "log": "b6h-chrome-developer-final.log",
+      "mode": "Chrome developer pointer/DOM; no human acceptance"
+    },
+    {
+      "command": "node scripts/verify-backoffice-human-browser.js --firefox",
+      "result": "Passed same installed workflows and guide checks on Firefox",
+      "log": "b6h-firefox-developer-final.log",
+      "mode": "Firefox developer pointer/DOM; no native keyboard qualification"
+    },
+    {
+      "command": "npm run check",
+      "result": "Verified 3 complete pages, 42 internal links and unique anchors."
+    },
+    {
+      "command": "npm test",
+      "tests": 1971,
+      "pass": 1971,
+      "fail": 0,
+      "log": "b6h-full-final.log",
+      "note": "Observed after the launcher filename fix and interruption support, before the last resume-confinement refinement. Final required checks repeat after all edits."
+    }
+  ],
+  "failedOrSupersededAttempts": [
+    {
+      "attempt": "Initial sandbox launcher",
+      "result": "EPERM opening loopback listener; rerun with local-listener tool approval. Evidence and partial runtime preserved until safe cleanup."
+    },
+    {
+      "log": "b6h-focused-01.log",
+      "result": "Host-header test failed because fetch did not send its supplied Host override. Corrected test uses a real raw HTTP request; Host denial verified."
+    },
+    {
+      "log": "b6h-browser-01.log",
+      "result": "Second provider login failed because host-only cookies were shared across ports. Fixed by separate localhost hostnames with unchanged loopback binding and cookie protections."
+    },
+    {
+      "log": "b6h-full-pre-final.log",
+      "result": "Superseded: Node default test discovery included the old launcher filename and started a disposable environment. Renamed executable to scripts/backoffice-human.js, stopped it using the normal command, and cleaned runtime while retaining evidence. This run is not the final required check."
+    }
+  ],
+  "manualDeveloperInspection": {
+    "guideDesktopAndMobile": "Rendered screenshots inspected; readable native controls and no document overflow at 360 CSS pixels. No human AT inference.",
+    "launcher": "Observed one-command startup, isolated Firefox process, export, stop/resume and evidence-preserving cleanup. No human answers recorded in the owner session."
+  },
+  "localEvidenceDirectory": ".backoffice-human/developer-verification/",
+  "logHashes": {
+    "b6h-focused-01.log": "d1c208d48a99c19090fa9d0a6b08d8973ffbb9b1fdd386413d5933c503dac7f0",
+    "b6h-focused-02.log": "ac97b0aae0181cafd749449eb637cdf854bb3c82d439dc3f284fd0c7fcfd8826",
+    "b6h-focused-03.log": "3c08148e0e5aa7ce14464b7a1d5bce0ef6449f991bee61ffd531164999159e83",
+    "b6h-focused-final-02.log": "48c116889fb7a7787e461373d4d3308bcecb93653860c7e8580560028ac741dc",
+    "b6h-browser-01.log": "70b1722726f26c705c44ed18f2e9fb265449a9da3931091e1c068b6ca59e167c",
+    "b6h-browser-02.log": "7ed6f65569c7c315dd554a93cbe28dba0e6c8d7a06717c9d9d53bedadaa72c89",
+    "b6h-chrome-developer-final.log": "08b088e067c611ef950b8df92651d6954eeabbe09faac67cf1bf1db1a11f4f37",
+    "b6h-firefox-developer-final.log": "67450796f263af47d31b636c1b2ef1773601a8cdb4422f466cc97fffad651c1b",
+    "b6h-security-final.log": "56c1c5383a91996e0a0b012e4317212a6b6cd9bcd8e763d7fbe3351baf1a863b",
+    "b6h-full-pre-final.log": "78c9ff1e80d38da1821752ee42ef51ecc96626e3961e9d2ab3730472102caeba",
+    "b6h-focused-isolation-final.log": "354d7ac5ebdead1efe1e91dcff362b0d3f3a7167c77d0fc3289ce7bc54aa9765",
+    "b6h-full-final.log": "0ac6e57282d33dcb46847a6c34103e90d06dad460cd844e45a931ae930cfe381",
+    "b6h-launcher-final.log": "31c667e73921477a40139f61ee6946c4bffd8ddc826d5562ea4b549e6473cf86",
+    "b6h-check-final.log": "1dcdec3effdcf658e3ba58a49d0e4da2c29bd4f126ca270ef5bce1e9acddf607"
+  },
+  "requiredFinalChecks": "npm test and npm run check run after final edits to this record. Actual results are recorded in the commit message, final handoff and ignored developer-verification/final-checks.json; this committed snapshot does not predict them.",
+  "acceptanceMapping": "docs/work-in-progress/backoffice-human-acceptance-guide.md",
+  "authorization": "Owner explicitly authorized commit and normal push to origin/develop/0.3. No force push, tag, publication or deployment.",
+  "sourceHashes": {
+    "scripts/backoffice-human.js": "c00ff96de7407a2608fe98115e74d1576ea2f2d03e13eba025ad0876067c3ad6",
+    "scripts/backoffice-human/launcher.js": "8f0094ec1c24a150afcbf7a07d9abe9797fc12984b144d47b783843e91ba4b17",
+    "scripts/backoffice-human/guide.js": "78bbd01029091c72d5d03a78d6b79a3f08fc0c0e9d5a0bb3a725aecd3f8861ed",
+    "scripts/backoffice-human/cases.js": "f8ffba6da9226694a2e54b8607bde0c879e3c4af9ecd26eabec746e95cdd4cbe",
+    "scripts/backoffice-human/evidence.js": "8c4e17e48158150ba481266abb2404f4d2983cbb260e5d0afca852a77ffc544c",
+    "scripts/backoffice-human/probe.js": "18976b1d09cb6714c04f3a13321e3c2344be66fa431ad9b7774c30ee1f0db82b",
+    "scripts/verify-backoffice-human-browser.js": "6ad60ba085d5b260a4892cfe9ddcc177e0d7d6ded73a04ff26ca949c73c38e40",
+    "test/backoffice-human.test.js": "afde4bf601c576bac64b660fd319efb9325f97015b860b73bbaa53ca6d17e703",
+    "test-support/packages.js": "9b733ba2f88b6e59b4c9c5ec4e0c8cadaf89348d325b7b99e30b57b29a14c9d0",
+    "test-support/membership.js": "77eac7f20cac31050797fc1f11544bd54d67336799c2d787e84a617a45b0d580",
+    "docs/work-in-progress/backoffice-human-acceptance-guide.md": "94c58d68dbd4594c3feaead653fd4aa32c995244e584db5f3b8e96337652daf7",
+    "package.json": "8dd015ad137f0c9e76f5d27136f964b80850ad43a0759ea39941e09fc8bbfbe8",
+    "CHANGELOG.md": "a78c03240e556ca461e06ea455bd238f09b14fd9cdfaaa7d33ff7f68fbc7b7f2",
+    ".gitignore": "4214eb339f7fb3e037590605fe76cec227498956163057d308680d8714ac0452"
+  },
+  "orcaCommandQualification": "Installed orca --help checked without starting speech: no --quit option. Guide uses foreground orca in a spare terminal, Ctrl+C there or a confirmed Cinnamon desktop toggle to exit."
+}
