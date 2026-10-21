@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Prepare the BackOffice B2 owner decision package for explicit installed Page
+  admission, declarative action binding and reviewed action resource maxima.
+  Specify compatibility migration and security tests; both decisions remain
+  unapproved. Documentation only; no runtime, schema or version changes.
+
 - Delete the matching BackOffice auth cookie when final HTTP Session authorization
   detects revocation after action completion. Preserve 401, uncertain committed
   writes and no replay. Qualify both providers and HTTP/HTTPS; record Page admission

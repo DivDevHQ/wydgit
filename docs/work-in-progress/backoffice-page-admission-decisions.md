@@ -1,5 +1,12 @@
 # BackOffice B1 — Page admission and action scope decisions
 
+**B2 decision preparation (2026-10-21):** the
+[owner decision package](backoffice-b2-decision-package.md#owner-approval-required)
+now specifies both recommendations, lifecycle/binding contracts, typed scope rules,
+reviewed migration and security proof obligations. **DEC-01 and DEC-02 remain
+ARCHITECTURAL APPROVAL REQUIRED.** B2 changes documentation only; the B1 evidence,
+requirement classifications and implemented receipt-wide dispatch below are retained.
+
 Recorded 2026-10-21 against `1928baa6ac1f1dd0814e9b581fede2f5cf58c359`,
 clean `develop/0.3`, fetched origin, zero divergence. This record preserves the
 [matrix IDs](backoffice-conformance-matrix.md). Recommendations below are not
