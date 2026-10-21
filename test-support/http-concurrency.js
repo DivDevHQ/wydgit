@@ -69,6 +69,7 @@ export async function runContactWindow(configuration,{signal}={}) {
   // Spike G workers install strict diagnostic-only source hooks before importing
   // this harness. Ordinary fixture/production execution installs no such hooks.
   const attribution=configuration.synchronousAttribution?await import('./prerender-integrity-attribution.js'):null;
+  const schedulingModule=configuration.nativeScheduling?await import('./native-scheduling.js'):null,schedulingCaptures=new Map();
   const synchronousCaptures=new Map();
   const deadlineModule=configuration.deadlineLedger?await import('./deadline-ledger.js'):null,deadlineCaptures=new Map();
   const {provider,concurrency,diagnosticsEnabled,admissionSpacingMs=0,clientPlacement='shared'}=configuration;
@@ -91,7 +92,7 @@ export async function runContactWindow(configuration,{signal}={}) {
     server=http.createServer({maxHeaderSize:8192},(req,res)=>{
       const index=Number(req.headers['x-fixture-sequence']),span={start:performance.now(),end:null};serverRequests.set(index,span);
       const end=()=>{span.end??=performance.now();};res.once('finish',end);res.once('close',end);
-      local.run(index,()=>{
+      const run=()=>local.run(index,()=>{
         const invoke=()=>{
         if(!attribution)return app.handle(req,res);
         const capture=attribution.createSynchronousAttribution({generation:configuration.generation??1,request:index});
@@ -101,6 +102,7 @@ export async function runContactWindow(configuration,{signal}={}) {
         const capture=deadlineModule.createDeadlineLedger({request:index,generation:configuration.generation??1});
         deadlineCaptures.set(index,capture);return capture.run(invoke);
       });
+      if(schedulingModule){const capture=schedulingModule.createNativeScheduling({request:index,costs:configuration.nativeCosts===true});schedulingCaptures.set(index,capture);capture.run(run);}else run();
     });
     server.requestTimeout=120000;server.headersTimeout=15000;server.maxHeadersCount=64;
     server.listen(0,'127.0.0.1');await once(server,'listening');
@@ -161,6 +163,7 @@ export async function runContactWindow(configuration,{signal}={}) {
     if(configuration.resourceCorrelation===true||configuration.scheduling===true)result.resourceCorrelation=resourceProbe.snapshot();
     if(configuration.formClear)result.formClear={rows:clearRows,dropped:droppedClears};
     if(attribution)result.synchronousAttribution=[...synchronousCaptures.values()].map(capture=>capture.finish());
+    if(schedulingModule)result.nativeSchedulingCaptures=[...schedulingCaptures.values()].map(capture=>capture.finish());
     if(deadlineModule)result.deadlineLedgers=[...deadlineCaptures.values()].map(capture=>capture.finish());
     result.cleanupComplete=failed===0;if(failed)result.fixtureFailure??='cleanup';
   }

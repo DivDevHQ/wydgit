@@ -1,0 +1,256 @@
+{
+  "schema": "wydgine.native-scheduling-spike-l-verification/1",
+  "date": "2026-10-20",
+  "node": "v24.21.0",
+  "branch": "develop/0.3",
+  "baseline": "9ddea3bc12cb1f3da0fdd3a27f0b8460d6fc5ea1",
+  "runs": {
+    "focused": {
+      "command": "node --test: 14 scheduling/security/lifecycle/canonical/frozen-client files",
+      "exitCode": 0,
+      "log": "/tmp/wyd-spike-l-focused-final.log",
+      "logSha256": "66e01e40496d6bb76cf93061736f8b53842ac10cb75c0f4b7fa2ec078f6d10e7",
+      "tests": 214,
+      "suites": 0,
+      "pass": 214,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 12840.549425
+    },
+    "full": {
+      "command": "npm test (includes build:client pretest)",
+      "exitCode": 0,
+      "log": "/tmp/wyd-spike-l-full-final.log",
+      "logSha256": "e8965256b767c3b53295b44c707be5f8575ffb5cd294c5b769ce2a75001a5055",
+      "tests": 1769,
+      "suites": 0,
+      "pass": 1769,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 98389.211766
+    },
+    "installedIntegration": {
+      "command": "node scripts/verify-packed-packages.js: installed five-library regression fixtures",
+      "exitCode": 0,
+      "log": "/tmp/wyd-i54-packed-towmRU/five-library-tests.log",
+      "logSha256": "c9584473a5b64afa5391df2731bc9171e9993d63b1d7a6b93abfa1b7407f61c1",
+      "tests": 413,
+      "suites": 0,
+      "pass": 413,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 24115.741062
+    },
+    "provider": {
+      "command": "node scripts/verify-packed-packages.js: installed provider qualification",
+      "exitCode": 0,
+      "log": "/tmp/wyd-i54-packed-towmRU/provider-tests.log",
+      "logSha256": "2d83bad042bb2700e7cbfd0aadf135e6f86d175fdff3fd6b8f3ddaac4089bd0a",
+      "tests": 35,
+      "suites": 0,
+      "pass": 35,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 2309.267218
+    },
+    "processSupervision": {
+      "command": "node scripts/verify-packed-packages.js: actual installed worker supervision",
+      "exitCode": 0,
+      "log": "/tmp/wyd-i54-packed-towmRU/process-supervision.log",
+      "logSha256": "98629fd4f12af5ea15c94d765ffb1eeaac060093d63ca3a2d474347fc4614649",
+      "tests": 20,
+      "suites": 0,
+      "pass": 20,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 47861.663922
+    },
+    "linuxBoundaries": {
+      "command": "node scripts/verify-packed-packages.js: Linux/Unix boundaries",
+      "exitCode": 0,
+      "log": "/tmp/wyd-i54-packed-towmRU/linux-boundaries.log",
+      "logSha256": "8df13b8adee9b6e621b6be601b08dc793016db162f33d03cf848cd534a9f6ce3",
+      "tests": 25,
+      "suites": 0,
+      "pass": 25,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 5408.366926
+    }
+  },
+  "contentCheck": {
+    "command": "npm run check",
+    "exitCode": 0,
+    "pages": 3,
+    "internalLinksAndUniqueAnchors": 42,
+    "logSha256": "1dcdec3effdcf658e3ba58a49d0e4da2c29bd4f126ca270ef5bce1e9acddf607"
+  },
+  "installedProof": {
+    "command": "node scripts/verify-packed-packages.js",
+    "exitCode": 0,
+    "evidenceDirectory": "/tmp/wyd-i54-packed-towmRU",
+    "logSha256": "9fbabb2aba08f37ad6bc83d0a016ef1dea18f817a67d0e6a4204419e59a8a336",
+    "serviceFreeBinaryHttpAssetsRestart": true,
+    "checkoutImportsRejected": true,
+    "oneEnginePerConsumer": true,
+    "skipCount": 0
+  },
+  "frozenClient": {
+    "version": "0.1.0-alpha.11",
+    "focusedTests": 8,
+    "pass": 8,
+    "fail": 0,
+    "skipped": 0,
+    "pretestBuildPassed": true,
+    "artifactChanges": false,
+    "sharedImportClosureChanged": false
+  },
+  "earlierRuns": {
+    "focusedBeforeCooperativeSetterAssertionCorrection": {
+      "command": "same focused selection before correcting the new late-setter assumption",
+      "exitCode": 1,
+      "log": "/tmp/wyd-spike-l-focused.log",
+      "logSha256": "4d66262beb77db7f3f1f314995c22ed09b479427d369b222a092d9836a2815dd",
+      "tests": 214,
+      "suites": 0,
+      "pass": 213,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 13286.167051
+    },
+    "fullBeforeEvidenceFieldReview": {
+      "command": "npm test before final offline failure-field and provider-subtotal correction",
+      "exitCode": 0,
+      "log": "/tmp/wyd-spike-l-full-pre-evidence-review.log",
+      "logSha256": "bc3d03922936e5c7caf9f5569b85634d04716ee13268a0e7a78ac23a7398fc8f",
+      "tests": 1769,
+      "suites": 0,
+      "pass": 1769,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 94894.335536
+    },
+    "finalSchedulingFocused": {
+      "command": "node --test: three new scheduling test files after final evidence correction",
+      "exitCode": 0,
+      "log": "/tmp/wyd-spike-l-scheduling-final.log",
+      "logSha256": "3f0ab34c1b5b578ec921071193a11432ee8a9d72b3a20c4e765c9d85cdeff36d",
+      "tests": 10,
+      "suites": 0,
+      "pass": 10,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 4238.43265
+    },
+    "fullBeforeFinalReview": {
+      "command": "npm test before whitespace removal and documentation clarification",
+      "exitCode": 0,
+      "log": "/tmp/wyd-spike-l-full.log",
+      "logSha256": "cce81d717601e0e209a319ff39af3577ba42acc71e14c7e6d80a0d25b46a37ff",
+      "tests": 1769,
+      "suites": 0,
+      "pass": 1769,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 97761.939669
+    }
+  },
+  "runtimeProof": {
+    "packages/wydstore/src/sqlite-adapter.js": {
+      "baselineSha256": "9717f759ccfe902cab124daf378d7a7e5240bc1090a4a7629c92799f6942b3b5",
+      "currentSha256": "9717f759ccfe902cab124daf378d7a7e5240bc1090a4a7629c92799f6942b3b5",
+      "unchanged": true
+    },
+    "packages/wydstore/src/json-adapter.js": {
+      "baselineSha256": "0e9811341754b68ac0c3bd126e33ecce181fbf31dec32dc366c6875851ebb5e6",
+      "currentSha256": "0e9811341754b68ac0c3bd126e33ecce181fbf31dec32dc366c6875851ebb5e6",
+      "unchanged": true
+    },
+    "packages/wydstore/src/core.js": {
+      "baselineSha256": "fce94e93f200547f0c984317c96c1fb6327c1dfcbdb7b688fbcce4d70e7ed2c4",
+      "currentSha256": "fce94e93f200547f0c984317c96c1fb6327c1dfcbdb7b688fbcce4d70e7ed2c4",
+      "unchanged": true
+    },
+    "packages/wydgine/src/engine/execution/completion.js": {
+      "baselineSha256": "6bfc007c794dbf1d7e2a539bdd1311a4fe9353836d0d5ac15bb4251fc1c889be",
+      "currentSha256": "6bfc007c794dbf1d7e2a539bdd1311a4fe9353836d0d5ac15bb4251fc1c889be",
+      "unchanged": true
+    },
+    "packages/wydgine/src/engine/execution/page.js": {
+      "baselineSha256": "8e9729a42ccac696d43bfce33131c7b42263ad90c61fb13eeb1db05c9b89dba2",
+      "currentSha256": "8e9729a42ccac696d43bfce33131c7b42263ad90c61fb13eeb1db05c9b89dba2",
+      "unchanged": true
+    },
+    "packages/wydgine/src/engine/packages/index.js": {
+      "baselineSha256": "98b5b2841627c9f8a64bda36ae1403b45dcc901976846056ef1a8e11eb8a75b1",
+      "currentSha256": "98b5b2841627c9f8a64bda36ae1403b45dcc901976846056ef1a8e11eb8a75b1",
+      "unchanged": true
+    },
+    "packages/wydgine/src/engine/sewn/execute.js": {
+      "baselineSha256": "162a7bdd337e84a8ecac8d318a17971bfab6ab5984e987dbfeac96164aa6029b",
+      "currentSha256": "162a7bdd337e84a8ecac8d318a17971bfab6ab5984e987dbfeac96164aa6029b",
+      "unchanged": true
+    }
+  },
+  "checks": {
+    "shippedRuntimeChanged": false,
+    "versionsChanged": false,
+    "clientArtifactsChanged": false,
+    "priorEvidenceChanged": false,
+    "wyddataArchitecturePreserved": true,
+    "cirOrBackofficeImplemented": false,
+    "diffReviewed": true
+  },
+  "http": {
+    "windows": 61,
+    "requests": 528,
+    "http200": 528,
+    "http500": 0,
+    "reconciledRecords": 528,
+    "observedReportedCommits": 297,
+    "observedCompletedNative": 594,
+    "offModeCommitsAndNativeCounts": null,
+    "correction": null,
+    "improvementClaim": false
+  },
+  "issue": {
+    "id": "WYDGINE-0.3-HTTP-LIMIT",
+    "status": "OPEN"
+  },
+  "deliveryPreflight": {
+    "fetch": "git fetch origin",
+    "head": "9ddea3bc12cb1f3da0fdd3a27f0b8460d6fc5ea1",
+    "remoteHead": "9ddea3bc12cb1f3da0fdd3a27f0b8460d6fc5ea1",
+    "ahead": 0,
+    "behind": 0,
+    "initialWorkingTree": "clean"
+  },
+  "notes": [
+    "Final required checks follow all source, test, evidence and documentation edits; this generated record only records their completed results.",
+    "Three full runs are preserved. The second followed trailing-whitespace removal and documentation clarification; final evidence review then corrected an offline failure projection to use the existing failure object and corrected prose provider subtotals. Final required checks follow those edits.",
+    "The first new fairness assertion incorrectly expected no late setter publication under cooperative enforcement; it was corrected to assert delayed continuations and authoritative deadline failures. No existing test or runtime contract was weakened.",
+    "Initial setup-only hook-anchor failures and exploratory fairness limitations are retained in the evidence, not included as HTTP samples.",
+    "No deployed/published package, release tag, version bump, runtime optimization or production reliability improvement is claimed.",
+    "Commit and remote HEAD/clean-tree proof are reported in the final delivery handoff; an artifact cannot include its own future commit hash."
+  ]
+}

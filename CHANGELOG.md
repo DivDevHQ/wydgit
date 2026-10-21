@@ -1,5 +1,11 @@
 ## Unreleased
 
+- Add bounded test-only native/provider/Promise scheduling attribution and fairness
+  controls in Spike L. Distinguish SQLite asynchronous preflight contention from
+  short synchronous transactions and JSON provider queueing. Reconcile 528/528
+  Contact writes; retain no runtime correction. WYDGINE-0.3-HTTP-LIMIT remains
+  OPEN; no versions, deadlines, security boundaries or frozen clients change.
+
 - Resolve fixed installed-artifact paths once per execution binding, retaining
   every fresh metadata, integrity and lifecycle check. Add a bounded opt-in
   post-commit deadline ledger and qualify SQLite/JSON Contact critical paths in
