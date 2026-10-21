@@ -29,6 +29,17 @@ const messages=Object.freeze({
   'SEWN.LIMIT':'The action exceeded its execution budget.'
 });
 const statusFor=code=>['ACTION.STALE','STORE.CONFLICT'].includes(code)?409:code==='ACTION.DENIED'?403:['SEWN.LIMIT','SERVICE.FAILED'].includes(code)?503:400;
+// Normalize once before choosing both the status and public error. Service
+// failures are not malformed requests or evidence that a caller lost authority.
+// Keep provider details private and preserve the independent admission outcome.
+function publicActionFailure(code){
+  if(Object.hasOwn(messages,code))return code;
+  if(['SEAM.DENIED','STORE.DENIED','GATE.DENIED','GATE.SESSION_INVALID'].includes(code))return 'ACTION.DENIED';
+  if(code==='SERVICE.INVALID_REQUEST')return 'ACTION.INVALID_REQUEST';
+  if(['STORE.INVALID_RECORD','STORE.INVALID_FIELD','STORE.INVALID_QUERY','STORE.UNSUPPORTED',
+    'STORE.NOT_FOUND','STORE.DUPLICATE_ID','STORE.UNIQUE'].includes(code))return 'ACTION.INVALID_INPUT';
+  return 'SERVICE.FAILED';
+}
 const failure=(code)=>({ok:false,code,message:messages[code]??'BackOffice action failed.',details:{}});
 const equal=(a,b)=>typeof a==='string'&&/^[a-f0-9]{64}$/.test(a)&&typeof b==='string'&&timingSafeEqual(Buffer.from(a),Buffer.from(b));
 
@@ -93,7 +104,7 @@ export function createBackOfficeHttp({root,model,libraries,sessions,contextPolic
         result=await actions.invoke({...body,app,session:cookies[policy.auth]},execution);
       }
       checkDeadline();
-      if(!result.ok)return reject(statusFor(result.code),Object.hasOwn(messages,result.code)?result.code:'ACTION.DENIED');
+      if(!result.ok){const code=publicActionFailure(result.code);return reject(statusFor(code),code);}
       await session.authorize();checkDeadline();
       const output=discovery?{...result,csrf}:result;
       checkJsonBudget(output,{maxBytes:66560,maxDepth:24,maxNodes:10000},'ACTION.INVALID_RESULT');

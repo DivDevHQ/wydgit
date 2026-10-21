@@ -58,6 +58,10 @@ selected.push('installation-stamp','backoffice-placement');
 // This selection also runs Spike I validation-reuse, generated differential and
 // commit-time installed tamper/lifetime cases against the shipped adapter.
 selected.push('canonical-page-edit','form-clear');
+// BackOffice foundation: run live policy, reviewed approval and provider checks
+// through shipped modules as well as the real action/HTTP installation fixtures.
+selected.push('execution-contexts','scoped-policy','scoped-store-authorization',
+ 'scoped-policy-lifecycle','policy-reconciliation','backoffice-body');
 async function stage(root){
  await fs.copyFile(path.join(repository,'wydgit.config.json'),path.join(root,'wydgit.config.json'));
  await fs.mkdir(path.join(root,'.fixtures'));

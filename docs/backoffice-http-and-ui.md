@@ -373,3 +373,20 @@ exact Origin on their own JSON POSTs. API/error responses retain `no-referrer`;
 foreign/null Origin, CSRF and Fetch Metadata checks remain unchanged. Discovery
 failures now use the same alert/assertive announcement semantics as invocation
 failures. See the [Firefox subset and manual checklist](backoffice-browser-qualification.md#alpha23-firefox-and-accessibility-continuation).
+
+### Foundation conformance: service error classification
+
+The adapter normalizes an action failure before selecting both its public code and
+HTTP status. Independent SEAM/Store/Gate denials become 403 `ACTION.DENIED`;
+canonical request validation becomes 400 `ACTION.INVALID_REQUEST`, and Store input
+or constraint failures become 400 `ACTION.INVALID_INPUT`. `STORE.CONFLICT` retains
+409. Unrecognized service failures, including Store I/O/busy/corruption and service
+unavailability or invalid output, become sanitized 503 `SERVICE.FAILED`. This
+clarifies the earlier generic-denial wording using the status table's distinction
+between authorization, malformed requests and service failure.
+
+The underlying native action facade retains safe service codes. HTTP exposes no
+provider exception or details. Failure classification neither proves rollback nor
+changes `X-Wydgit-Action-Outcome`; an admitted failure remains uncertain. It never
+triggers an action retry or credential deletion. See the
+[foundation conformance report](work-in-progress/backoffice-foundation-implementation.md).

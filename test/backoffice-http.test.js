@@ -249,3 +249,64 @@ for(const provider of ['json','sqlite'])test(`GATECONT HTTP ${provider}: concurr
  }
  await f.gate.logout(f.login.token);const revoked=await h.get('/backoffice/api/actions');assert.equal(revoked.status,401);await revoked.text();
 });
+
+for(const provider of ['json','sqlite'])test(`BOFOUND-01 ${provider}: installed Store CRUD through HTTP preserves policy, revision and foreign-resource denial`,async t=>{
+  const {storeActionFixture}=await import('../test-support/backoffice-store.js');
+  const f=await storeActionFixture(t,provider),h=await listen(t,f),actions=await h.discover();
+  assert.equal(actions.length,4);
+  const run=async(name,input,expected,confirmed=true)=>{
+    const action=actions.find(a=>a.name===name),response=await h.post({reference:action.reference,input:{...f.recordInput,...input},confirmed});
+    const result=await response.json();assert.equal(response.status,expected,JSON.stringify(result));return {result,response};
+  };
+  await run('create',{data:{text:'first'}},400,false);
+  assert.equal((await run('create',{data:{text:'first'}},200)).result.value.version,1);
+  assert.equal((await run('get',{},200)).result.value.data.text,'first');
+  assert.equal((await run('update',{version:1,data:{text:'second'}},200)).result.value.version,2);
+  assert.equal((await run('update',{version:1,data:{text:'stale'}},409)).result.code,'STORE.CONFLICT');
+  // Both the private Gate directory and an unapproved collection reject under
+  // the original package caller, even with all current action permissions.
+  for(const input of [{store:'identity',collection:'directory'},{collection:'foreign'}]){
+    const denied=await run('get',input,403);assert.equal(denied.result.code,'ACTION.DENIED');
+  }
+  // Keep the descriptor permission; revoke only the independent Store policy.
+  await f.gate.assignUser({userId:f.user.account.id,roles:[],permissions:['content.action.read','content.action.write','content.records.read']});
+  await run('update',{version:2,data:{text:'denied'}},403);
+  await run('delete',{version:2},403);
+  assert.equal((await run('get',{},200)).result.value.data.text,'second');
+  assert.deepEqual((await h.discover()).map(a=>a.name),['get']);
+  await f.gate.assignUser({userId:f.user.account.id,roles:[],permissions:f.storePermissions});
+  assert.equal((await run('delete',{version:2},200)).result.value.version,3);
+  assert.equal((await run('delete',{version:2},409)).result.code,'STORE.CONFLICT');
+  const publicPage=await h.get('/administration');assert.equal(publicPage.status,400);await publicPage.text();
+  await h.stop();
+  // A stopped-App upgrade fences both the old adapter and exact browser ref.
+  const manifest=plain(f.manifest);manifest.version='0.1.1';
+  await fs.writeFile(path.join(f.candidate.packagePath,'manifest.json'),JSON.stringify(manifest));
+  await packageOperation(f.operation('update',[f.candidate]));
+  const fresh=await listen(t,f);const stale=await fresh.post({reference:actions[0].reference,input:f.recordInput});
+  assert.equal(stale.status,409);assert.equal((await stale.json()).code,'ACTION.STALE');
+  await fresh.stop();await f.place('retire');const retired=await listen(t,f);
+  assert.deepEqual(await retired.discover(),[]);
+  const denied=await retired.post({reference:actions[0].reference,input:f.recordInput});
+  assert.equal(denied.status,409);await denied.text();
+});
+
+for(const [code,status,publicCode] of [
+  ['STORE.IO',503,'SERVICE.FAILED'],['STORE.BUSY',503,'SERVICE.FAILED'],['STORE.CORRUPT',503,'SERVICE.FAILED'],
+  ['SERVICE.UNAVAILABLE',503,'SERVICE.FAILED'],['SERVICE.INVALID_RESULT',503,'SERVICE.FAILED'],
+  ['GATE.CONFLICT',503,'SERVICE.FAILED'],['CUSTOM.FAILED',503,'SERVICE.FAILED'],
+  ['STORE.DENIED',403,'ACTION.DENIED'],['SEAM.DENIED',403,'ACTION.DENIED'],
+  ['STORE.INVALID_QUERY',400,'ACTION.INVALID_INPUT'],['SERVICE.INVALID_REQUEST',400,'ACTION.INVALID_REQUEST']
+])test(`BOFOUND-02: ${code} retains HTTP failure class without host details or replay`,async t=>{
+  const f=await actionFixture(t),real=f.libraries;let calls=0;
+  const libraries={...real,bind(c,op){const bound=real.bind(c,op);return {...bound,async invoke(...args){
+    calls++;const result=await bound.invoke(...args);assert.equal(result.ok,true);
+    return {ok:false,code,message:'secret /native/path',details:{secret:true}};
+  }};}};
+  const h=await listen(t,f,{libraries}),[action]=await h.discover();
+  const response=await h.post({reference:action.reference,input:{}}),result=await response.json();
+  assert.equal(response.status,status);assert.equal(result.code,publicCode);assert.deepEqual(result.details,{});
+  assert.doesNotMatch(JSON.stringify(result),/secret|native\/path/);assert.equal(calls,1);
+  assert.equal(response.headers.get('x-wydgit-action-outcome'),'uncertain');
+  assert.equal(response.headers.get('set-cookie'),null);
+});

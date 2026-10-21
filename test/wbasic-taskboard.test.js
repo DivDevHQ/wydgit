@@ -26,8 +26,8 @@ function host(b,overrides={}) {
 const list=c=>c.snapshot().slots.pages[0].slots.sections[0].slots.blocks.find(n=>n.prototype==='divdev/task-list');
 const cardHTML=(b,c)=>{const registry=new PrototypeRegistry([...core,...b.definitions]);return list(c).slots.blocks.map(card=>renderComponent({id:card.id,...card.properties,presentation:registry.get(card.prototype).presentation},null,{},'/',s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'))).join('');};
 
-test('Taskboard: full source family builds, validates, executes typed navigation, bindings and keyed child lifecycle',async()=>{
- const b=await prepare(),{controller:c}=host(b);await c.activate();
+for(const context of ['FrontEnd','BackOffice'])test(`Taskboard ${context}: full source family builds, validates, executes typed navigation, bindings and keyed child lifecycle`,async()=>{
+ const b=await prepare(),{controller:c}=host(b,{context});await c.activate();
  assert.equal(b.definitions.length,6);assert.equal(list(c).slots.blocks.length,2);assert.deepEqual(list(c).slots.blocks.map(n=>n.properties.Key),['alpha','beta']);
  const original=list(c).slots.blocks.map(n=>n.id);assert.ok(original.every(id=>c.inspect(id).properties.InitCount===1));
  assert.match(cardHTML(b,c),/Write WBasic/);await c.render();assert.ok(original.every(id=>c.inspect(id).properties.Stage==='Rendered'));

@@ -1,0 +1,176 @@
+{
+  "mission": "Operation BackOffice foundation conformance",
+  "date": "2026-10-20",
+  "node": "v24.21.0",
+  "branch": "develop/0.3",
+  "baseline": {
+    "command": "node --test test/backoffice-actions.test.js test/backoffice-http.test.js test/backoffice-placement.test.js test/backoffice-modules.test.js test/scoped-policy.test.js test/scoped-store-authorization.test.js test/scoped-policy-lifecycle.test.js test/execution-contexts.test.js",
+    "log": "/tmp/backoffice-foundation-baseline-native.log",
+    "sha256": "ad8b09814b484a555e2095144c0676eac8a499e1342012ed2f90bbbcbdd72538",
+    "tests": 112,
+    "pass": 112,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "baselineTree": "clean",
+  "baselineDivergence": [
+    0,
+    0
+  ],
+  "versionsChanged": false,
+  "pageDeadlineMs": 1000,
+  "httpLimitIssue": "OPEN",
+  "conformance": {
+    "inScope": 64,
+    "implementedVerified": 59,
+    "partial": 3,
+    "missing": 1,
+    "unverified": 1,
+    "deferredProposedReserved": 12,
+    "blockedDecisions": [
+      "DEC-01",
+      "DEC-02"
+    ]
+  },
+  "failingBefore": {
+    "command": "node --test --test-name-pattern=BOFOUND test/backoffice-http.test.js",
+    "log": "/tmp/backoffice-foundation-failing-before.log",
+    "sha256": "d5440664d1ff283c069ebf6051a9ddd054e6769924b524fb336932f873083465",
+    "tests": 13,
+    "pass": 0,
+    "fail": 13,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "focused": [
+    {
+      "command": "node --test test/backoffice-actions.test.js test/backoffice-http.test.js test/backoffice-body.test.js test/backoffice-modules.test.js test/scoped-store-authorization.test.js",
+      "log": "/tmp/backoffice-foundation-focused.log",
+      "sha256": "67e856ce44b9fa1c3e0b79a2162e7c41cbfdec99ef527a29f18c26ee7a61b6c0",
+      "tests": 87,
+      "pass": 87,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    {
+      "command": "node --test --test-name-pattern=BOFOUND test/backoffice-actions.test.js",
+      "log": "/tmp/backoffice-foundation-integrity.log",
+      "sha256": "5b725807d55597b3ab8232caa70f85f1a6fdd9c1eebb224d8199cde25e6a7b57",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    {
+      "command": "node --test test/wbasic-taskboard.test.js",
+      "log": "/tmp/backoffice-foundation-composition.log",
+      "sha256": "2904878318bbb9b58ff3237751892e10068815190f4e6ff1376d41cd3604ecbd",
+      "tests": 18,
+      "pass": 18,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    }
+  ],
+  "full": {
+    "command": "npm test",
+    "log": "/tmp/backoffice-foundation-full.log",
+    "sha256": "067745a8d6316cdc941eae9fecd250e66f5c1d69656da72cac54e63ff6fe5bc7",
+    "tests": 1785,
+    "pass": 1785,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "packed": {
+    "command": "node scripts/verify-packed-packages.js",
+    "directory": "/tmp/wyd-i54-packed-AAoktZ",
+    "oneEnginePerConsumer": true,
+    "checkoutRuntimeImportsRejected": true,
+    "engine": {
+      "command": "installed selected real-App tests",
+      "log": "/tmp/wyd-i54-packed-AAoktZ/five-library-tests.log",
+      "sha256": "48f7a6f709a56453f4ca39f085c6842c465bdf55a2bd1668d07b3e33f4d34130",
+      "tests": 514,
+      "pass": 514,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "provider": {
+      "command": "installed packages/wydhosting/test/provider.test.js",
+      "log": "/tmp/wyd-i54-packed-AAoktZ/provider-tests.log",
+      "sha256": "2de3debd2107014488abfaaec434039895604c8ea5d32a0c93c7c63998f7817c",
+      "tests": 35,
+      "pass": 35,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "supervision": {
+      "command": "installed test/process-supervision.test.js",
+      "log": "/tmp/wyd-i54-packed-AAoktZ/process-supervision.log",
+      "sha256": "fdf320406660d77169ade423b5fce6ad3ef81495679ac8519b52949f01c675f0",
+      "tests": 20,
+      "pass": 20,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "linux": {
+      "command": "installed test/linux-isolation.test.js",
+      "log": "/tmp/wyd-i54-packed-AAoktZ/linux-boundaries.log",
+      "sha256": "38875b8a3c1c6c8ba60c2f0d9662567918662df2d0b8e36ca55d5a0742543112",
+      "tests": 25,
+      "pass": 25,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    }
+  },
+  "checks": {
+    "content": {
+      "passed": true,
+      "pages": 3,
+      "links": 42,
+      "uniqueAnchors": true
+    },
+    "frozenArtifacts": {
+      "passed": true,
+      "count": 31
+    },
+    "whitespace": {
+      "passed": true
+    },
+    "documentation": {
+      "passed": true,
+      "relativeFileLinks": 43,
+      "anchors": 4,
+      "missing": 0
+    }
+  },
+  "limitations": [
+    "Foundation incomplete; canonical BackOffice Page delivery and action scope semantics require review.",
+    "No HTTP-LIMIT correction, deadline change or release waiver.",
+    "Linux evidence is unprivileged; no managed-hosting or privileged OS qualification.",
+    "No new browser or human assistive-technology qualification.",
+    "Initial sandbox baseline was 6 pass / 2 fail at test-file level; not functional qualification.",
+    "First action integrity fixture attempt selected absent text; corrected before passing run.",
+    "Temporary raw log paths are not durable retention; this record retains counts and SHA-256.",
+    "Final required check repetition after documentation/evidence edits is reported in the final handoff."
+  ],
+  "baselineHead": "95e5f3ba23522518dd40e0f209953c722581d0e9"
+}

@@ -1,5 +1,12 @@
 ## Unreleased
 
+- Correct BackOffice HTTP failure classification: distinguish authorization and
+  validation failures from sanitized service unavailability, retaining revision
+  conflicts and uncertain native outcomes without retries. Qualify installed
+  JSON/SQLite Store CRUD, revocation, upgrade/retirement, integrity barriers and
+  context-neutral composition; record the foundation conformance matrix and
+  remaining Page/scope decisions. No version or frozen-client changes.
+
 - Add bounded test-only native/provider/Promise scheduling attribution and fairness
   controls in Spike L. Distinguish SQLite asynchronous preflight contention from
   short synchronous transactions and JSON provider queueing. Reconcile 528/528

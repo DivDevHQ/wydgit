@@ -259,3 +259,33 @@ test('ACT-15: contributor metadata cannot weaken trusted service discovery permi
   await f.gate.assignUser({userId:f.user.account.id,roles:[],permissions:['content.action.read','gate.members.manage']});
   const [action]=await f.discover(api);assert.equal((await f.invoke(api,action.reference)).ok,true);
 });
+
+for(const provider of ['json','sqlite'])test(`BOFOUND-03 ${provider}: installed actions reject recovery barriers, receipt drift, restored-mtime tampering and catalog symlinks before dispatch`,async t=>{
+  const f=await actionFixture(t,provider),api=f.framework(),[action]=await f.discover(api);
+  const file=path.join(f.root,'content/installed-packages.json'),lock=path.join(f.root,'content/.package-install.lock');
+  const seconds=1700000000;await fs.utimes(file,seconds,seconds);
+  const bytes=await fs.readFile(file);let calls=0;
+  const invoke=()=>api.invoke({...f.request,reference:action.reference,input:{}},{onStart:()=>calls++});
+  assert.equal((await invoke()).ok,true);assert.equal(calls,1);
+  await fs.writeFile(lock,'{}');
+  try{denied(await invoke());assert.equal(calls,1);}finally{await fs.unlink(lock);}
+  // A corrupt mirrored receipt cannot supply approval or a runnable contribution.
+  const state=JSON.parse(bytes);state.packages[0].receipt.approved.capabilities=[];
+  await fs.writeFile(file,JSON.stringify(state));
+  try{denied(await invoke());assert.equal(calls,1);}finally{await fs.writeFile(file,bytes);}
+  await fs.utimes(file,seconds,seconds);
+  const before=await fs.stat(file,{bigint:true}),entry=JSON.parse(bytes).packages[0];
+  const source=entry.manifest.resources.prototypes,original=JSON.stringify(entry.resources[source]);
+  const tampered=JSON.stringify(entry.resources[source].replace('wydgit.core/section','wydgit.core/Section'));
+  assert.notEqual(tampered,original);assert.equal(tampered.length,original.length);
+  await fs.writeFile(file,bytes.toString().replace(original,tampered));await fs.utimes(file,seconds,seconds);
+  try{
+    const after=await fs.stat(file,{bigint:true});assert.equal(after.mtimeNs,before.mtimeNs);assert.equal(after.size,before.size);
+    assert.notEqual(after.ctimeNs,before.ctimeNs);denied(await invoke());assert.equal(calls,1);
+  }finally{await fs.writeFile(file,bytes);}
+  await fs.rename(file,file+'.held');await fs.symlink(file+'.held',file);
+  try{denied(await invoke());assert.equal(calls,1);}finally{await fs.unlink(file);await fs.rename(file+'.held',file);}
+  // Fresh acquisition from restored accepted state is allowed; an old reference
+  // never selects a different generation or bypasses the admission checks.
+  assert.equal((await invoke()).ok,true);assert.equal(calls,2);
+});
