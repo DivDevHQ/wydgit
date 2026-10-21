@@ -1,30 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {storeActionFixture} from '../test-support/backoffice-store.js';
+import {twoResourceActionFixture} from '../test-support/backoffice-preflight.js';
 import {catalog,plain} from '../test-support/backoffice.js';
 import {acquirePackageExecution} from '../wydgine/packages/index.js';
 
-// DEC-02 characterization, not approval of action scope as a maximum or minimum.
-// Keep the observed distinction visible until the authority contract is reviewed.
+// Historical receipt-wide characterization remains valid after ratification;
+// B3 validators do not activate the approved resource maximum in dispatch.
 for(const provider of ['json','sqlite'])test(`BOB1-02 ${provider}: two required-resource scopes retain independent action and actual-target policies`,async t=>{
-  const f=await storeActionFixture(t,provider,{edit(m){
-    m.storage.push({name:'archive',fields:{text:{type:'string'}}});
-    m.permissions.scopes.wydstore.push('archive');
-    const get=m.backofficeActions.find(a=>a.id==='get'),create=m.backofficeActions.find(a=>a.id==='create');
-    m.backofficeActions.push({...structuredClone(create),id:'transaction',capability:'store.records.write',
-      service:{library:'wydstore',apiVersion:'1.0.0',operation:'transaction'},
-      input:{type:'object',fields:{store:create.input.fields.store,collection:create.input.fields.collection,
-        operations:{type:'array',maxItems:2,items:{type:'object',fields:{operation:{type:'string',maxLength:16},
-          input:{type:'object',fields:{id:create.input.fields.id,data:create.input.fields.data,collection:create.input.fields.collection},optional:['collection']}}}}}},
-      output:{type:'array',maxItems:2,items:create.output}});
-    m.backofficeActions.push({...structuredClone(get),id:'archive-get',permission:'archive.action.read',scopes:{wydstore:['archive']}});
-  },configure(f){
-    const store=f.config.libraries.find(l=>l.id==='wydstore').options.stores.find(s=>s.id==='records');
-    store.authorization.collections.records.transaction={contexts:['BackOffice'],permission:'content.records.write'};
-    store.collections.push({id:'archive',fields:{text:{type:'string'}}});
-    store.authorization.collections.archive={get:{contexts:['BackOffice'],permission:'archive.records.read'},create:{contexts:['BackOffice'],permission:'archive.records.write'}};
-    f.candidate.storageMappings.archive={store:'records',collection:'archive'};
-  }});
+  const f=await twoResourceActionFixture(t,provider);
   const permissions=[...f.storePermissions,'archive.records.read','archive.records.write'];
   await f.gate.assignUser({userId:f.user.account.id,roles:[],permissions});
   const entry=catalog(f).packages[0],identity=await f.gate.resolveSession(f.login.token);

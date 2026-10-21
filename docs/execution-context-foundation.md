@@ -1,5 +1,12 @@
 # Execution context foundation — implemented contract
 
+**B3 architecture ratification (2026-10-21):** the Project owner approved
+[DEC-01 Page entry/bindings and DEC-02 action resource maxima](backoffice-page-and-action-contracts.md).
+B3 adds read-only preflight/contract validation only. Historical implementation
+checkpoints below retain their dates; production action dispatch remains receipt-wide
+until reviewed migration and the later enforcing increment. No new Page HTTP entry
+or caller/resource authority is activated by this ratification.
+
 The [alpha.21 BackOffice HTTP/UI increment](backoffice-http-and-ui.md) adds a
 site-scoped action shell; wider-domain and lifecycle limits below still apply.
 

@@ -1,5 +1,12 @@
 # Modular BackOffice actions — 0.3-J increment 5
 
+**B3 architecture ratification (2026-10-21):** the Project owner approved
+[DEC-01 Page entry/bindings and DEC-02 action resource maxima](backoffice-page-and-action-contracts.md).
+B3 adds read-only preflight/contract validation only. Historical implementation
+checkpoints below retain their dates; production action dispatch remains receipt-wide
+until reviewed migration and the later enforcing increment. No new Page HTTP entry
+or caller/resource authority is activated by this ratification.
+
 Platform/Wydgine/WydHosting **0.3.0-alpha.20**, Gate **0.1.0-alpha.6**,
 Store **0.1.0-alpha.5**. WydClient remains alpha.11; canonical service API versions,
 SEWN and persisted store/catalog schemas are unchanged. This records the site-level backend

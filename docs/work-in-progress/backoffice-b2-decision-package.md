@@ -1,17 +1,23 @@
 # BackOffice B2 — Page admission and action resource scope
 
-## OWNER APPROVAL REQUIRED
+## OWNER RATIFICATION
 
-**Status: PROPOSED — neither DEC-01 nor DEC-02 is APPROVED.** Recorded 2026-10-21
-against B1 `6edb1c36e88ed691e3b873f428ca8fddca1acc1b` on `develop/0.3`.
-This is a decision package, not a runtime, schema or normative-contract change.
-Approval of these decisions authorizes their contracts; implementation and
-qualification must still satisfy the sequence and proof obligations below.
+**DEC-01: APPROVED. DEC-02: APPROVED.** Approval date: **2026-10-21**.
+Approval authority: **Project owner**. Approval scope: **the exact approval wording
+reproduced under each decision below, without amendments**. B3 records the owner's
+authoritative ratification; the alternatives and B1/B2 evidence are preserved.
+
+This package now supplies approved architecture. It does not assert runtime
+activation: B3 adds read-only candidate validation and migration inventory only.
+Existing action dispatch remains receipt-wide. Canonical BackOffice Page HTTP entry,
+durable reviewed adoption and restrictive dispatch require later implementation
+and qualification. See the [normative contract](../backoffice-page-and-action-contracts.md)
+and [B3 implementation boundary](backoffice-b3-migration-preflight.md).
 
 ### DEC-01: explicit Page entry, shared admission, declarative action bindings
 
-**Recommended option: C, with B's independent Page permission and A's shared
-machinery.** The host approves an exact installed Page entry, independently of
+**Ratified option (original recommendation): C, with B's independent Page permission
+and A's shared machinery.** The host approves an exact installed Page entry, independently of
 BackOffice placement and package resource grants. A caller needs a genuine site
 session and the entry's live Gate permission. Wydgine reuses routing, installed
 acquisition, guarded contexts, the canonical Page executor and response controls.
@@ -42,8 +48,8 @@ package objects. New Page entries require DEC-02's strict action semantics.
 
 ### DEC-02: declared maxima, reviewed through existing package policy
 
-**Recommended option: B plus a bounded form of C.** An action's existing declared
-resources remain required preflight resources and become its maximum resource
+**Ratified option (original recommendation): B plus a bounded form of C.**
+An action's existing declared resources remain required preflight resources and become its maximum resource
 scope. Resolve them with trusted mappings, intersect them with the receipt's
 approved concrete resources and any genuine initiating server context, then apply
 operation capabilities, ownership and current action/service policy independently.
@@ -73,7 +79,7 @@ receipts, silent clipping or legacy execution bypass is proposed.
 > active legacy BackOffice actions before the enforcing runtime admits the App;
 > provide no receipt-wide compatibility bypass.
 
-**Owner choices:** approve each wording independently, or request a named change.
+**Owner disposition:** both exact wordings above were approved without amendments.
 The deliberate choices include same-installation Page bindings, no Page-lifecycle
 writes, conservative all-declared-resource preflight, and migration as an App startup
 prerequisite. There is no hidden request to approve a new context, WydData, CIR,
@@ -183,7 +189,7 @@ separation), implemented by extending A's trusted adapter. Reject a parallel
 security framework and any/all-derived entry. Revocation of an action need not
 revoke an informational Page; Page permission revocation always denies that Page.
 
-### Proposed exact entry and grant contract
+### Approved exact entry and grant contract
 
 These are **semantic records, not implemented JSON fields or schema versions**.
 The implementation must encode them in a versioned closed contract with unknown-field
@@ -828,10 +834,9 @@ symlink, package lifecycle, SEAM and browser credential regressions.
    then reconsider BO-HTTP-09, BO-ACT-10 and BO-REU-05 classifications from evidence.
    Address human accessibility and broader reusable ADM-01 controls separately.
 
-Both decisions are sufficiently specified for owner approval **as proposals**.
-Remaining owner questions are the explicit choices in the approval section, not
-unresolved authority defaults. Exact closed schema names and internal function
-signatures are implementation details; they must encode the specified semantics,
+Both decisions are **APPROVED** as recorded above. The previously explicit owner
+choices are ratified; implementation and qualification remain outstanding. Exact
+closed schema names and internal function signatures are implementation details; they must encode the specified semantics,
 not reopen grant inheritance, caller/Store distinction or resource maxima. A request
 to support cross-package Page aggregation, server Page writes, independently mutable
 per-action approvals or a legacy exception would require a revised owner decision.
@@ -868,4 +873,5 @@ version metadata or frozen WydClient artifact changes.
   in the commit message and owner handoff, rather than predicting a passing run.
 
 The final handoff reports commit/remote HEAD and tree status; a commit cannot embed
-its own hash. Approval remains pending regardless of commit/push completion.
+its own hash. The historical B2 handoff left approval pending. B3 supersedes that
+disposition with the exact owner ratification above; it does not retroactively change B2 tests.

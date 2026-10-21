@@ -1,10 +1,12 @@
 # Operation BackOffice — foundation implementation and qualification
 
-**Latest: B1 (2026-10-21)** — see the [B1 increment](#b1-implementation-and-disposition)
-and [decision record](backoffice-page-admission-decisions.md). Inventory now has
-59 implemented, 4 partial, 1 missing, 0 unverified out of 64; 12 deferred rows and
-both architectural approvals remain. Earlier sections below retain the preceding
-foundation checkpoint and its historical counts/results.
+**Latest: B3 (2026-10-21)** — see the [ratification, preflight and validation report](backoffice-b3-migration-preflight.md).
+DEC-01/DEC-02 are approved exactly as authorized by the Project owner; their
+runtime enforcement and qualification remain pending. Read-only installed inventory
+and pure candidate validators do not change the **59 implemented / 4 partial /
+1 missing / 0 unverified** inventory or the **12 deferred** rows. Existing dispatch
+remains receipt-wide and canonical BackOffice Page HTTP entry remains missing.
+B1 and earlier implementation/test evidence below retains its historical status.
 
 Recorded 2026-10-20. This is a bounded conformance increment, **not foundation
 completion or release qualification**. The [matrix](backoffice-conformance-matrix.md)

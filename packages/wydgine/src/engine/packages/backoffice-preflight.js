@@ -1,0 +1,128 @@
+// Native, observational inspection only. Does not call services, resolve sessions,
+// publish policy, edit receipts, take an execution lease or enable admission.
+import path from 'node:path';
+import {clean,freeze,record} from '../object-model/validation.js';
+import {loadRepository} from '../repository.js';
+import {activatePackages,acquirePackageExecution} from './index.js';
+import {authorizeLifecycle} from './budget.js';
+import {readInstalledState,safeRead,stateFingerprint,baseFingerprint} from './state.js';
+import {validateConfig} from '../libraries/contracts.js';
+import {checkContext} from '../seam/context.js';
+import {checkJsonBudget} from '../libraries/limits.js';
+import {PREFLIGHT_LIMITS,validateBackOfficeActionScope,validateBackOfficePageEntry} from './backoffice-preflight-contract.js';
+
+const statusFor=result=>{
+  const codes=result.findings.filter(f=>f.severity==='error').map(f=>f.code);
+  const declaration=['BO.SCOPE_MISSING','BO.SCOPE_INVALID','BO.RESOURCE_UNKNOWN','BO.ACTION_DECLARATION'];
+  const reconciliation=['BO.SCOPE_UNAPPROVED','BO.CAPABILITY_APPROVAL'];
+  if(codes.some(c=>![...declaration,...reconciliation].includes(c)))return 'blocked';
+  if(codes.some(c=>declaration.includes(c)))return 'requires-declaration';
+  return codes.length?'requires-receipt-reconciliation':'requires-review';
+};
+const inventoryStatus=items=>items.some(v=>v.status==='blocked')?'blocked':items.some(v=>v.status!=='not-applicable')?'requires-review':'not-applicable';
+// Plain facts intentionally contain no credentials, provider roots, record data,
+// native contexts or executable references. They can be passed to pure validators.
+export function inspectBackOfficeMigration({root,libraries,installationContext,verifiedPackages={},pageProposals=[],actionCandidates=[],reviews=[]}){
+  let app=null;
+  try{
+    root=path.resolve(root);
+    // Authorize before disclosing any installed facts. This is native inspection
+    // authority, not a package/action caller and never an output grant.
+    authorizeLifecycle(installationContext,installationContext.app);installationContext.require('packages.placement.manage');
+    checkJsonBudget({pageProposals,actionCandidates,reviews},PREFLIGHT_LIMITS,'BACKOFFICE.INVALID_CANDIDATE');
+    const proposals=clean(pageProposals),candidates=clean(actionCandidates),reviewCandidates=clean(reviews);
+    if(!Array.isArray(proposals)||proposals.length>256||!Array.isArray(candidates)||candidates.length>256||!Array.isArray(reviewCandidates)||reviewCandidates.length>512)throw Error();
+    const selector=x=>`${x.package}\0${x.installation}\0${x.subject}`;
+    const reviewMap=new Map(),candidateMap=new Map(),proposalKeys=new Set(),usedReviews=new Set(),usedCandidates=new Set(),usedProposals=new Set();
+    for(const review of reviewCandidates){
+      if(!record(review)||reviewMap.has(selector(review)))throw Error();reviewMap.set(selector(review),review);
+    }
+    for(const candidate of candidates){
+      if(!record(candidate)||Object.keys(candidate).sort().join(',')!=='action,installation,package'||!record(candidate.action))throw Error();
+      const key=selector({...candidate,subject:candidate.action.id});if(candidateMap.has(key))throw Error();candidateMap.set(key,candidate);
+    }
+    for(const proposal of proposals){
+      if(!record(proposal)||proposalKeys.has(proposal.key))throw Error();proposalKeys.add(proposal.key);
+    }
+    const reviewFor=(entry,subject)=>{
+      const key=selector({package:entry.manifest.id,installation:entry.receipt.id,subject});
+      if(!reviewMap.has(key))return {};usedReviews.add(key);return {review:reviewMap.get(key)};
+    };
+    const state=readInstalledState(root),head=stateFingerprint(root),base=baseFingerprint(root);
+    const model=loadRepository(root,{verifiedPackages});app=model.runtime.rootId;
+    authorizeLifecycle(installationContext,app);
+    activatePackages(model,libraries,root);
+    const config=validateConfig(safeRead(root,'wydgit.config.json'));
+    const stores=config.libraries.find(l=>l.id==='wydstore'&&l.enabled)?.options?.stores??[];
+    const actions=[],pages=[],installations=[];
+    const entries=state?.packages??[];
+    for(const entry of [...entries,...(state?.retained??[]).map(r=>r.entry)].slice().sort((a,b)=>a.manifest.id<b.manifest.id?-1:a.manifest.id>b.manifest.id?1:0)){
+      if(proposals.filter(p=>p.package===entry.manifest.id&&p.installation===entry.receipt.id).length>32)throw Error();
+      const active=entries.includes(entry)&&entry.executionPlacement?.context==='BackOffice'&&entry.executionPlacement.status==='active';
+      installations.push({app,package:entry.manifest.id,installation:entry.receipt.id,
+        placement:entry.executionPlacement??null,status:active&&(entry.manifest.backofficeActions?.length??0)>0?'requires-review':'not-applicable',
+        reason:active?'No durable strict-action adoption exists in the current receipt contract.':'Dormant, retired, retained or non-BackOffice; review required before activation.',
+        actionCount:entry.manifest.backofficeActions?.length??0});
+      if(!active){
+        for(const action of entry.manifest.backofficeActions??[])actions.push({app,package:entry.manifest.id,installation:entry.receipt.id,
+          action:action.id,status:'not-applicable',authority:false,enforcementReady:false,source:'installed',
+          existingDeclaredResources:action.scopes,existingApprovedResources:{wydstore:entry.storageScopes??[],...entry.libraryScopes},
+          legacyExposure:{wydstore:entry.storageScopes??[],...entry.libraryScopes},
+          requiredReviewerAction:'Review strict adoption before BackOffice activation/reactivation.',findings:[]});
+        continue;
+      }
+      // Reuse full canonical accepted-tree/placement/generation validation. The
+      // acquired binding stays local, executes nothing and is never returned.
+      const guard=acquirePackageExecution({root,app,package:entry.manifest.id,installation:entry.receipt.id,
+        generation:entry.executionPlacement.generation,self:entry.instance,installationContext,verifiedPackages});
+      for(const action of (entry.manifest.backofficeActions??[]).slice().sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0)){
+        const key=selector({package:entry.manifest.id,installation:entry.receipt.id,subject:action.id});
+        const candidate=candidateMap.get(key)?.action??action;if(candidateMap.has(key))usedCandidates.add(key);
+        const operation=libraries.administrativeOperation(candidate.service?.library,candidate.service?.operation);
+        const resolvedScopes={};
+        for(const [id,names] of Object.entries(candidate.scopes??{}))if(id!=='wydstore'&&id===candidate.service?.library){
+          try{resolvedScopes[id]=libraries.resolvePackageScopes(id,names,app);}catch{/* Validator reports unavailable resolution; no fallback. */}
+        }
+        const result=validateBackOfficeActionScope({entry,app,action:candidate,operation,stores,resolvedScopes,
+          ...reviewFor(entry,`action:${candidate.owner}/${candidate.id}`)});
+        actions.push({app,package:entry.manifest.id,installation:entry.receipt.id,action:action.id,
+          source:candidateMap.has(key)?'candidate-over-installed':'installed',status:statusFor(result),
+          existingDeclaredResources:action.scopes,existingApprovedResources:{wydstore:entry.storageScopes??[],...entry.libraryScopes},
+          legacyExposure:{wydstore:entry.storageScopes??[],...entry.libraryScopes},
+          compatibilityRisk:'Legacy dispatch is receipt-wide; dynamic extra-resource dependency cannot be disproved statically.',
+          requiredReviewerAction:'Review the exact maximum, required-resource preflight and live policy; B4 must publish strict adoption.',...result});
+      }
+      const acceptedPages=[...new Set([entry.placement.page,...(entry.additions??[]).map(a=>a.placement.page)])];
+      for(const page of acceptedPages){
+        const nodes=[];const walk=id=>{const n=model.runtime.get(id),d=model.registry.get(n.prototype);nodes.push({id,page,type:n.prototype,
+          ancestors:[n.prototype,...d.ancestors],isPage:model.registry.isA(n.prototype,'wydgit.core/page')});Object.values(n.slots).flat().forEach(walk);};walk(page);
+        const matches=proposals.filter(p=>p?.package===entry.manifest.id&&p?.installation===entry.receipt.id&&p?.page===page);
+        if(!matches.length){pages.push({app,package:entry.manifest.id,installation:entry.receipt.id,page,status:'not-applicable',
+          pageEntryApproved:false,authority:false,reason:'Placement alone creates no HTTP Page entry.'});continue;}
+        for(const proposal of matches){
+          usedProposals.add(proposal.key);
+          const result=validateBackOfficePageEntry({proposal,entry,app,pages:acceptedPages,nodes,...reviewFor(entry,`page:${proposal.key}`)});
+          pages.push({app,package:entry.manifest.id,installation:entry.receipt.id,page,status:statusFor(result),...result});
+        }
+      }
+      checkContext(guard);
+    }
+    // Unknown or duplicated selectors are errors, never silently omitted.
+    if(usedProposals.size!==proposals.length||usedCandidates.size!==candidates.length||usedReviews.size!==reviewCandidates.length)throw Error();
+    checkContext(installationContext);
+    if(head!==stateFingerprint(root)||base!==baseFingerprint(root))throw Error();
+    const report={schema:'wydgit.backoffice-migration-preflight/1',authority:false,liveAuthorization:'not-checked',
+      source:'local-installed-catalog',app,catalogRevision:state?.revision??null,sourceFingerprint:head,
+      status:inventoryStatus([...actions,...pages]),enforcementActive:false,
+      installations,actions,pages,findings:[]};
+    checkJsonBudget(report,PREFLIGHT_LIMITS,'BACKOFFICE.PREFLIGHT_LIMIT');return freeze(report);
+  }catch(error){
+    // Paths, provider exceptions, configuration and submitted payloads never leak.
+    const code=['PACKAGE.DRIFT','PACKAGE.CATALOG','PACKAGE.PATH','PACKAGE.RECOVERY','PACKAGE.PENDING','SEAM.CONTEXT','SEAM.DENIED','PACKAGE.DENIED'].includes(error?.code)?error.code:'BACKOFFICE.PREFLIGHT_BLOCKED';
+    return freeze({schema:'wydgit.backoffice-migration-preflight/1',authority:false,liveAuthorization:'not-checked',
+      source:'local-installed-catalog',status:'blocked',enforcementActive:false,installations:[],actions:[],pages:[],findings:[{
+        code,severity:'error',requirement:'BO-ACT-10',contract:'Inspection requires exact valid accepted state and unambiguous bounded candidates.',
+        evidenceSource:'local-installed-catalog',remediation:'Restore accepted state or correct candidates, then rerun read-only inspection.',
+        reviewRequired:true,enforcementWouldReject:true}]});
+  }
+}

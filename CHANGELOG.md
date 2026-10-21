@@ -1,5 +1,11 @@
 ## Unreleased
 
+- Ratify owner-approved DEC-01/DEC-02 (2026-10-21). Add trusted read-only installed
+  BackOffice migration inventory and non-authoritative Page/binding/action-scope
+  candidate validators, with deterministic diagnostics and installed fixture tests.
+  Runtime admission and receipt-wide action dispatch remain unchanged; no receipt,
+  version or frozen-client changes.
+
 - Prepare the BackOffice B2 owner decision package for explicit installed Page
   admission, declarative action binding and reviewed action resource maxima.
   Specify compatibility migration and security tests; both decisions remain

@@ -1,5 +1,12 @@
 # Scoped site policy and WydStore authorization — 0.3-J increment 3
 
+**B3 architecture ratification (2026-10-21):** the Project owner approved
+[DEC-01 Page entry/bindings and DEC-02 action resource maxima](backoffice-page-and-action-contracts.md).
+B3 adds read-only preflight/contract validation only. Historical implementation
+checkpoints below retain their dates; production action dispatch remains receipt-wide
+until reviewed migration and the later enforcing increment. No new Page HTTP entry
+or caller/resource authority is activated by this ratification.
+
 The [modular BackOffice action framework](backoffice-action-framework.md) supplies
 installed site-scoped actions. The [alpha.21 HTTP adapter and generic shell](backoffice-http-and-ui.md)
 make those actions available in a browser while preserving independent Gate/SEAM

@@ -1,0 +1,236 @@
+{
+  "mission": "Wydgine 0.3 BackOffice B3",
+  "date": "2026-10-21",
+  "baseline": "f9845d7f986883bb2192e0da06ad1e663ec64ffd",
+  "branch": "develop/0.3",
+  "baselineTree": "clean",
+  "baselineDivergence": [
+    0,
+    0
+  ],
+  "node": "v24.21.0",
+  "decisions": {
+    "DEC-01": {
+      "status": "APPROVED",
+      "date": "2026-10-21",
+      "authority": "Project owner",
+      "scope": "Exact B2 approval wording without amendments"
+    },
+    "DEC-02": {
+      "status": "APPROVED",
+      "date": "2026-10-21",
+      "authority": "Project owner",
+      "scope": "Exact B2 approval wording without amendments"
+    }
+  },
+  "boundaries": {
+    "readOnly": true,
+    "pureCandidatesGrantAuthority": false,
+    "matchingReviewCandidateIsDurableApproval": false,
+    "durableAdoptionImplemented": false,
+    "pageHttpAdmissionActivated": false,
+    "restrictiveDispatchActivated": false,
+    "productionDispatch": "receipt-wide",
+    "versionsChanged": false,
+    "frozenClientsChanged": false,
+    "pageDeadlineMs": 1000,
+    "httpLimitIssue": "OPEN"
+  },
+  "conformance": {
+    "inScope": 64,
+    "implementedVerified": 59,
+    "partial": 4,
+    "missing": 1,
+    "unverified": 0,
+    "deferredProposedReserved": 12,
+    "blockedDecisions": 0,
+    "classificationChanges": []
+  },
+  "inventory": {
+    "repository": {
+      "schema": "wydgit.backoffice-migration-preflight/1",
+      "authority": false,
+      "liveAuthorization": "not-checked",
+      "source": "local-installed-catalog",
+      "app": "boilerplate",
+      "catalogRevision": null,
+      "sourceFingerprint": null,
+      "status": "not-applicable",
+      "enforcementActive": false,
+      "installations": [],
+      "actions": [],
+      "pages": [],
+      "findings": []
+    },
+    "deployedInstallationsInspected": false,
+    "actualExampleInstallations": [
+      {
+        "package": "divdev/backoffice-members",
+        "action": "list-members",
+        "status": "requires-review"
+      },
+      {
+        "package": "divdev/backoffice-notices",
+        "action": "list-notices",
+        "status": "requires-review"
+      }
+    ],
+    "disposableTwoResourceInstallations": {
+      "providers": [
+        "json",
+        "sqlite"
+      ],
+      "actions": [
+        "get",
+        "create",
+        "update",
+        "delete",
+        "transaction",
+        "archive-get"
+      ],
+      "allStatuses": "requires-review",
+      "receiptResources": [
+        "records",
+        "archive"
+      ],
+      "recordsActionMaximum": [
+        "records"
+      ],
+      "nativeTaskboardPage": {
+        "actions": 0,
+        "candidateValid": true,
+        "pageEntryApproved": false
+      }
+    }
+  },
+  "failingBefore": {
+    "command": "node --test test/backoffice-preflight.test.js",
+    "log": "/tmp/backoffice-b3-red.log",
+    "sha256": "0328192e26b2d627bdfa6ec81a2eeb688f44ba321e448c03090e9aca0e76f972",
+    "tests": 1,
+    "pass": 0,
+    "fail": 1,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "correctedAttempts": [
+    {
+      "command": "B3/B1 focused initial fixture setup",
+      "log": "/tmp/backoffice-b3-first.log",
+      "sha256": "82aa59334e8cf545bfd832ba3eed16293f7908d3977ddd1b0a80d3cd9d67f51f",
+      "tests": 4,
+      "pass": 2,
+      "fail": 2,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    {
+      "command": "B3/B1 candidate cloning and JSON representation",
+      "log": "/tmp/backoffice-b3-second.log",
+      "sha256": "fe6ef6797b4edf72ca2f08c1a72630f6cd40d9c8030673420c177c77f1f8e22e",
+      "tests": 61,
+      "pass": 44,
+      "fail": 17,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    {
+      "command": "B3/B1 focused after corrections",
+      "log": "/tmp/backoffice-b3-third.log",
+      "sha256": "6a2e5d6664d2f840659a8b0be43185fe49b6fbf3f99cef8e5df9fe17d0a0c0c0",
+      "tests": 97,
+      "pass": 97,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    }
+  ],
+  "focused": {
+    "command": "node --test test/backoffice-preflight.test.js test/backoffice-action-scope.test.js test/backoffice-page-foundation.test.js test/backoffice-actions.test.js test/backoffice-http.test.js test/backoffice-placement.test.js test/policy-reconciliation.test.js test/scoped-store-authorization.test.js test/backoffice-modules.test.js",
+    "log": "/tmp/backoffice-b3-focused.log",
+    "sha256": "c112730a88470f0ff1c9004c23aebce0e2ae063345e599231e6945c57cb3289e",
+    "tests": 261,
+    "pass": 261,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "qualification": {
+    "packedDirectory": "/tmp/wyd-i54-packed-lkw4cA",
+    "installedEngine": {
+      "command": "node scripts/verify-packed-packages.js: installedEngine",
+      "log": "/tmp/wyd-i54-packed-lkw4cA/five-library-tests.log",
+      "sha256": "b6922964aba114aa109ab643dbfea0b7b12f46ab060be0dcf96d6508a8577ad6",
+      "tests": 621,
+      "pass": 621,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "provider": {
+      "command": "node scripts/verify-packed-packages.js: provider",
+      "log": "/tmp/wyd-i54-packed-lkw4cA/provider-tests.log",
+      "sha256": "62fc461a5277697fdb8a89be52f5d0c351faa43b5556b57e62cf2ae1f126f970",
+      "tests": 35,
+      "pass": 35,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "processSupervision": {
+      "command": "node scripts/verify-packed-packages.js: processSupervision",
+      "log": "/tmp/wyd-i54-packed-lkw4cA/process-supervision.log",
+      "sha256": "adba4e4cf219dde6148f187e6400ac053317811585add1f5a256755a39651532",
+      "tests": 20,
+      "pass": 20,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "unprivilegedLinux": {
+      "command": "node scripts/verify-packed-packages.js: unprivilegedLinux",
+      "log": "/tmp/wyd-i54-packed-lkw4cA/linux-boundaries.log",
+      "sha256": "5753b0458f6e8769a2726b43d7cdd082c8dbdbae56f55ab48a15c86e45001ad1",
+      "tests": 25,
+      "pass": 25,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "packedComplete": true
+  },
+  "frozenClientArtifactsVerified": 31,
+  "full": {
+    "command": "npm test",
+    "log": "/tmp/backoffice-b3-full.log",
+    "sha256": "9a57115d380a73349641bc9a35397e2c5ead529af2a7c085c4ad34432454e789",
+    "tests": 1892,
+    "pass": 1892,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "documentation": {
+    "files": 18,
+    "relativeLinks": 236,
+    "anchors": 21,
+    "stableIds": 76,
+    "inScope": 64,
+    "classifications": {
+      "Implemented": 59,
+      "Partial": 4,
+      "Missing": 1
+    },
+    "exactOwnerWordingPreserved": true
+  }
+}

@@ -1,11 +1,16 @@
 # BackOffice B1 — Page admission and action scope decisions
 
-**B2 decision preparation (2026-10-21):** the
-[owner decision package](backoffice-b2-decision-package.md#owner-approval-required)
-now specifies both recommendations, lifecycle/binding contracts, typed scope rules,
-reviewed migration and security proof obligations. **DEC-01 and DEC-02 remain
-ARCHITECTURAL APPROVAL REQUIRED.** B2 changes documentation only; the B1 evidence,
-requirement classifications and implemented receipt-wide dispatch below are retained.
+**B3 ratification (2026-10-21): DEC-01 APPROVED; DEC-02 APPROVED.**
+Authority: **Project owner**. Scope: **the exact two approval wordings reproduced
+in the [ratified B2 package](backoffice-b2-decision-package.md#owner-ratification),
+without amendments**. Those wordings are normative, alongside the
+[Page/action contract](../backoffice-page-and-action-contracts.md). B3 implements
+[read-only preflight and candidate validators](backoffice-b3-migration-preflight.md),
+not new HTTP admission or scope enforcement. Existing dispatch remains receipt-wide.
+
+The following B1 analysis/approval-required statements preserve the historical
+checkpoint. They are superseded on decision status only; its runtime observations,
+tests and conformance classifications remain accurate. Alternatives are retained.
 
 Recorded 2026-10-21 against `1928baa6ac1f1dd0814e9b581fede2f5cf58c359`,
 clean `develop/0.3`, fetched origin, zero divergence. This record preserves the
@@ -16,8 +21,8 @@ accepted security contracts. B1 changes no schema, authority grant or Page deadl
 
 | Decision / requirement IDs | Status | Result |
 | --- | --- | --- |
-| DEC-01: BO-HTTP-09; BO-REU-05; dependent BO-REU-06 | **ARCHITECTURAL APPROVAL REQUIRED** | Existing trusted acquisition and Page execution are reusable; the HTTP Page selection, permission and action-binding contract is missing. |
-| DEC-02: BO-ACT-10 | **ARCHITECTURAL APPROVAL REQUIRED** | Required-resource preflight exists; making those resources a maximum dispatch scope changes current behavior. |
+| DEC-01: BO-HTTP-09; BO-REU-05; dependent BO-REU-06 | **APPROVED 2026-10-21 (B3); enforcement pending** | B1 found reusable acquisition/execution with a missing Page-entry/binding contract. B3 ratifies the contract; the runtime join remains unimplemented. |
+| DEC-02: BO-ACT-10 | **APPROVED 2026-10-21 (B3); enforcement pending** | Required-resource preflight exists; making those resources a maximum dispatch scope changes current behavior. |
 | Both: caller preservation, no authority from inheritance/nesting/configuration | **EXISTING CONTRACT — IMPLEMENT** | Already enforced through SEAM, package activation and protected services. Preserve it; do not add delegation. |
 | BO-HTTP-02/11: late invalid-session cookie deletion | **CLARIFICATION — SAFE TO IMPLEMENT** | Apply the existing matching-cookie deletion contract at final HTTP Session authorization too, preserving uncertain native outcomes. Implemented by BOB1-01. |
 | AccountAdmin, HostAdmin, System/Headless, WydData/CIR runtime | **DEFERRED / OUT OF SCOPE** | No activation or implementation. |

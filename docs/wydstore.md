@@ -1,5 +1,12 @@
 # WydStore — 0.2-E
 
+**B3 architecture ratification (2026-10-21):** the Project owner approved
+[DEC-01 Page entry/bindings and DEC-02 action resource maxima](backoffice-page-and-action-contracts.md).
+B3 adds read-only preflight/contract validation only. Historical implementation
+checkpoints below retain their dates; production action dispatch remains receipt-wide
+until reviewed migration and the later enforcing increment. No new Page HTTP entry
+or caller/resource authority is activated by this ratification.
+
 The [modular BackOffice action framework](backoffice-action-framework.md) adds
 installed site-scoped action declarations, private discovery and trusted service
 invocation in alpha.20. It preserves the independent authority and lifecycle checks;
