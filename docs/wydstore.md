@@ -33,6 +33,19 @@ It lives in `packages/wydstore` and has independent version `0.1.0-alpha.2`; the
 platform is `0.2.0-alpha.5`. It uses the existing explicit library loader. The demo
 installs but disables WydStore and remains file-content rendered.
 
+## Persistence and WydData design direction
+
+WydStore owns persistence models and engines, including the implemented JSON and
+SQLite providers and planned SQL engines such as MySQL and PostgreSQL. A networked
+SQL engine remains a WydStore concern; locality does not define the boundary.
+
+The [WydData architecture](architecture/wyddata.md) records the accepted separation
+of persistence, a generic provider/resource model and reusable Wydgit presentation.
+A proposed Store-backed WydData provider delegates to this contract; REST and
+SEAM/computed providers need not invent Store persistence. WydData operation and
+control contracts, remote interoperability and additional engines remain deferred;
+this direction changes neither the existing Store API nor 0.3 release scope.
+
 ## Host configuration
 
 A trusted operator creates a private, existing data directory, then enables this

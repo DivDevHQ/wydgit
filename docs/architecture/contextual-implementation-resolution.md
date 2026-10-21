@@ -100,6 +100,17 @@ CIR v1 MUST introduce a negotiated metadata contract before accepting `System`, 
 
 Portable package data may request a target or restrict eligibility. Only trusted host/runtime code establishes the actual environment and authority. An ordinary containment parent, JSON copy of an execution object, user-agent string or package property cannot establish trusted placement.
 
+### 4.1 Relationship to WydData
+
+The [WydData architecture](wyddata.md) separates WydStore persistence from generic
+Store-backed, REST and SEAM/computed resource providers and reusable Wydgit
+presentation. CIR could later select a compatible provider or presentation adapter;
+explicit approved bindings do not require CIR. This relationship does not accept
+CIR's proposed resolver, enable System execution or add implementation to 0.3.
+Selection cannot grant resource authority, rewrite canonical prototype identity or
+switch providers to replay an indeterminate mutation. WydData's remote revision
+and idempotency proposals require their own contract and qualification.
+
 ## 5. Contracts, interfaces and inheritance
 
 ### 5.1 Common contract

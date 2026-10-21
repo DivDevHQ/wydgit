@@ -529,7 +529,8 @@ Optional first-party capability families are delivered through canonical Wyd lib
 
 Likely examples include:
 
-- **WydStore** — storage abstraction
+- **WydStore** — persistence models and storage engines
+- **WydData** — generic provider/resource access across Store-backed, REST and SEAM/computed sources (design direction; implementation deferred)
 - **WydGate** — identity, membership, roles, permissions
 - **WydStream** — audio/video/media services
 - **WydGaming** — WebSockets, realtime rooms, game/client surfaces
@@ -713,18 +714,16 @@ Error codes should be:
 
 ## 21. WydStore
 
-WydStore will provide an adapter-neutral storage model.
-
-Initial adapters should prove the abstraction across meaningfully different storage styles, beginning with:
-
-- JSON
-- SQLite
+WydStore owns an adapter-neutral persistence model. The
+[implemented contract](wydstore.md) includes JSON and SQLite providers. Planned
+SQL engines such as MySQL and PostgreSQL belong to WydStore, including when they
+use remote database servers; they are not assigned to WydData merely by locality.
 
 The object model owns persistence semantics.
 
 Persistence does not own the object model.
 
-WydStore should eventually provide:
+The WydStore persistence model covers:
 
 - stores,
 - collections,
@@ -739,6 +738,21 @@ WydStore should eventually provide:
 - publisher isolation.
 
 Wydgits and SEWN should never need raw SQL or backend-specific paths.
+
+### 21.1 WydData and reusable data presentation
+
+The accepted [WydData design direction](architecture/wyddata.md) separates generic
+provider/resource access from persistence and presentation. Store-backed providers
+delegate to WydStore; REST and SEAM/computed sources need not be persistent or
+writable. Supported CRUD, query, count and schema operations are capability-based;
+operation support never grants SEAM authority.
+
+Proposed ordinary Wydgit prototypes would provide reusable DataTable, DataPager,
+DetailForm and repeated record templates through existing inheritance, composition
+and renderer boundaries. Their detailed contracts, WydData providers and an optional versioned
+HTTP/JSON protocol remain proposed and unimplemented. CIR remains a separate
+proposal, not a required resolver or a source of authority. This architecture adds
+no implementation requirement to the accepted 0.3 release scope.
 
 ---
 

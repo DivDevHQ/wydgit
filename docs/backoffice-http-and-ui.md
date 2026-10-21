@@ -171,6 +171,24 @@ instruct the user to inspect current state before another submission. Required
 Store revisions remain ordinary required inputs; confirmation supplies no native
 host approval or idempotency guarantee.
 
+## Relationship to the WydData design direction
+
+The [WydData architecture](architecture/wyddata.md) proposes reusable DataTable,
+DataPager and DetailForm Wydgits over capability-based provider/resource contracts.
+The shell's existing bounded forms, tables and pagination metadata are foundations,
+not an implementation of those WydData contracts or a generic record editor.
+Reusable presentation can serve FrontEnd and BackOffice with independent server
+admission; a browser displaying either still executes Client/SUB.
+
+WydStore continues to own persistence, including JSON/SQLite and planned SQL
+engines. WydData would adapt Store-backed, REST or SEAM/computed resources without
+moving credentials or authority into presentation. Its proposed revision,
+idempotency and indeterminate-outcome rules do not add replay safety to these
+action endpoints: confirmation and outcome headers are not durable deduplication
+or provider commit receipts. Preserve the current no-automatic-replay behavior.
+WydData controls, remote protocol and CIR integration remain deferred, with no
+expansion of 0.3-J or the current release scope.
+
 ## Site isolation and lifecycle
 
 App identity comes only from the hydrated server repository and trusted routing.
