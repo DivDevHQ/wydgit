@@ -12,6 +12,7 @@ import { storeLifecycle } from './store-lifecycle.js';
 import { reserveStoppedApp } from '../execution/maintenance.js';
 import { objectGrantCovers } from '../seam/context.js';
 import { policyHash, policyPlanHash, approvedPolicyHash, authorizePolicy } from './policy-contract.js';
+import {reviewBackOffice,backOfficeChanges,adoptBackOffice,inspectBackOfficeEvidence} from './backoffice-adoption.js';
 const same=(a,b)=>policyHash(a)===policyHash(b);
 const serialized=value=>JSON.stringify(clean(value),null,2)+'\n';
 const snapshot=root=>({baseFingerprint:baseFingerprint(root),catalogFingerprint:stateFingerprint(root)});
@@ -40,7 +41,8 @@ function outcome(state,accepted,approval,context,cancel) {
   delete state.policyReconciliation;
   const p=approval.plan,entry=state.packages.find(e=>e.manifest.id===p.package);
   entry.lifetimeGeneration=randomUUID();entry.receipt.lifetimeGeneration=entry.lifetimeGeneration;
-  if(!cancel&&entry.executionPlacement){entry.executionPlacement.generation=randomUUID();entry.receipt.executionPlacement=clean(entry.executionPlacement);}
+  if(!cancel&&entry.executionPlacement){entry.executionPlacement.generation=p.backoffice===undefined?randomUUID():approval.id;entry.receipt.executionPlacement=clean(entry.executionPlacement);}
+  if(!cancel)adoptBackOffice(state,entry,approval);
   state.schema='wydgit-installed/0.4';state.revision=accepted.revision+1;
   check(Number.isSafeInteger(state.revision),'PACKAGE.LIMIT','Catalog revision exhausted');
   state.policyHistory=[...(accepted.policyHistory??[]),{schema:'wydgit.policy-outcome/1',approval:approval.id,status:cancel?'CANCELLED':'APPLIED',plan:p,reviewer:approval.reviewer,approvedAt:approval.approvedAt,caller:actor(context)}].slice(-32);
@@ -58,7 +60,7 @@ export function createPolicyLifecycle({validateCandidateState,resolveLibraries,a
     check(app===installationContext.app,'PACKAGE.DENIED','Exact canonical App required');
     check(entry&&entry.receipt.id===installation,'PACKAGE.OWNERSHIP','Exact package installation required');
     check(revision===accepted.revision&&packageRevision===entry.receipt.revision&&policyRevision===(entry.policyRevision??0),'PACKAGE.STALE','Exact catalog, package and policy revisions required');
-    fields(policy,['grants','stores'],'PACKAGE.POLICY');
+    fields(policy,['grants','stores',...(Object.hasOwn(policy,'backoffice')?['backoffice']:[])],'PACKAGE.POLICY');
     check(Array.isArray(policy.stores)&&policy.stores.length<=LIMITS.storage,'PACKAGE.LIMIT','Bounded store policy inventory required');
     const config=clean(validateConfig(safeRead(root,'wydgit.config.json')));
     const model=validateCandidateState(root,state,{});
@@ -88,6 +90,13 @@ export function createPolicyLifecycle({validateCandidateState,resolveLibraries,a
       const provider=await storeLifecycle(root);provider.validateStoreConfig({stores:[store]});
       stores.push({store:store.id,before:clean(before),after,expanded:storeExpansion(before,after),owner:{app,publisher:store.publisher,package:id,principal:store.principal??id,installation:store.installation??null},collections:mapped.sort()});
     }
+    let backoffice;
+    if(Object.hasOwn(policy,'backoffice')){
+      installationContext.require('packages.placement.manage');
+      check(same(grants,entry.approved)&&stores.every(s=>same(s.before,s.after)),'PACKAGE.BACKOFFICE','Reconcile grant/store changes separately, then review current BackOffice contracts');
+      backoffice=reviewBackOffice({input:policy.backoffice,entry,app,model,config,resolved});
+    }
+    const adoptionChanges=backoffice===undefined?{expanded:false,reduced:false}:backOfficeChanges(entry.backoffice,backoffice);
     const libraryExpanded=Object.entries(libraries).some(([id,scopes])=>scopes.some(scope=>!(entry.libraryScopes?.[id]??[]).some(old=>same(old,scope))));
     const libraryReduced=Object.entries(entry.libraryScopes??{}).some(([id,scopes])=>scopes.some(scope=>!(libraries[id]??[]).some(next=>same(next,scope))));
     entry.approved=grants;entry.receipt.approved=clean(grants);
@@ -99,13 +108,14 @@ export function createPolicyLifecycle({validateCandidateState,resolveLibraries,a
     const configChanged=!same(config,validateConfig(safeRead(root,'wydgit.config.json')));
     const configAfter=configChanged?serialized(config):undefined;
     if(configChanged)state.baseFingerprint=baseFingerprint(root,configAfter);
-    const expanded=libraryExpanded||[...Object.values(changes).filter(x=>x.added),...Object.values(changes.scopes)].some(c=>c.added.length)||stores.some(s=>s.expanded);
-    const reduced=libraryReduced||[...Object.values(changes).filter(x=>x.removed),...Object.values(changes.scopes)].some(c=>c.removed.length)||stores.some(s=>!same(s.before,s.after));
+    const expanded=adoptionChanges.expanded||libraryExpanded||[...Object.values(changes).filter(x=>x.added),...Object.values(changes.scopes)].some(c=>c.added.length)||stores.some(s=>s.expanded);
+    const reduced=adoptionChanges.reduced||libraryReduced||[...Object.values(changes).filter(x=>x.removed),...Object.values(changes.scopes)].some(c=>c.removed.length)||stores.some(s=>!same(s.before,s.after));
     const plan={schema:'wydgit.package-policy-plan/1',action:'policy-apply',app,package:id,installation,revision,packageRevision,policyRevision,proposedPolicyRevision:policyRevision+1,
       packageVersion:entry.manifest.version,packageFingerprint:policyHash({manifest:entry.manifest,resources:entry.resources}),sourceSchema:accepted.schema,sourceStateHash:policyHash(accepted),
-      ...snapshot(root),requested:entry.manifest.permissions,before:accepted.packages.find(e=>e.manifest.id===id).approved,policy:{grants,stores:stores.map(s=>({store:s.store,authorization:s.after}))},changes,stores,
+      ...snapshot(root),requested:entry.manifest.permissions,before:accepted.packages.find(e=>e.manifest.id===id).approved,policy:{grants,stores:stores.map(s=>({store:s.store,authorization:s.after})),...(backoffice===undefined?{}:{backoffice:policy.backoffice})},changes,stores,
       authority:expanded?'expanded':reduced?'reduced':'equivalent',expanded,context:{before:entry.executionPlacement?.context??'FrontEnd',after:entry.executionPlacement?.context??'FrontEnd',relocation:false},
       effectiveScopes:{before:{storage:accepted.packages.find(e=>e.manifest.id===id).storageScopes,libraries:accepted.packages.find(e=>e.manifest.id===id).libraryScopes??{}},after:{storage:entry.storageScopes,libraries}},
+      ...(backoffice===undefined?{}:{backoffice,backofficeChanges:adoptionChanges}),
       dependencies:{before:entry.manifest.dependencies??{},after:entry.manifest.dependencies??{},changed:false},migrationRequired:false,dataRetention:'preserve-records-history-ownership-bindings',changesSummary:[{package:id,action:'policy-apply'}]};
     plan.sha256=policyPlanHash(plan);
     check(Buffer.byteLength(serialized(plan))<=LIMITS.resource,'PACKAGE.LIMIT','Policy review exceeds 64 KiB');
@@ -118,7 +128,7 @@ export function createPolicyLifecycle({validateCandidateState,resolveLibraries,a
     const entry=state.packages.find(e=>e.manifest.id===request.package);
     check(request.app===installationContext.app&&entry?.receipt.id===request.installation,'PACKAGE.OWNERSHIP','Exact canonical App and installation required');
     return freeze(clean({schema:'wydgit.package-policy-inspection/1',app:request.app,package:request.package,installation:request.installation,
-      revision:state.revision,packageRevision:entry.receipt.revision,policyRevision:entry.policyRevision??0,requested:entry.manifest.permissions,approved:entry.approved,
+      revision:state.revision,packageRevision:entry.receipt.revision,policyRevision:entry.policyRevision??0,backoffice:inspectBackOfficeEvidence(entry,request.app,state),requested:entry.manifest.permissions,approved:entry.approved,
       approval:state.policyReconciliation?.plan.package===request.package?{...state.policyReconciliation,revision:state.revision}:null}));
   }
   async function planPackagePolicy(input) {
@@ -137,6 +147,7 @@ export function createPolicyLifecycle({validateCandidateState,resolveLibraries,a
     const release=reserveStoppedApp(root);
     try {
       const state=readInstalledState(root);check(state,'PACKAGE.NOT_INSTALLED','Installed package required');authority(installationContext,state);
+      if(plan.backoffice!==undefined)installationContext.require('packages.placement.manage');
       check(same(snapshot(root),{baseFingerprint:plan.baseFingerprint,catalogFingerprint:plan.catalogFingerprint}),'PACKAGE.STALE','Reviewed revisions changed');
       check(typeof allowExpansion==='boolean'&&(!plan.expanded||allowExpansion===true),'PACKAGE.APPROVAL','Explicit native host approval of expansion required');
       check(!state.policyReconciliation&&!state.manualReplacement,'PACKAGE.PENDING','Another lifecycle reserves this App');
@@ -161,6 +172,7 @@ export function createPolicyLifecycle({validateCandidateState,resolveLibraries,a
     try {
       const expected=snapshot(root),accepted=readInstalledState(root);check(accepted,'PACKAGE.NOT_INSTALLED','Installed package required');authority(installationContext,accepted);
       const approval=accepted.policyReconciliation,p=approval?.plan;
+      if(p?.backoffice!==undefined)installationContext.require('packages.placement.manage');
       check(p&&approval.id===request.approval&&p.sha256===request.planHash,'PACKAGE.APPROVAL','Exact pending approval required');
       check(request.app===p.app&&request.package===p.package&&request.installation===p.installation,'PACKAGE.OWNERSHIP','Approval identity differs');
       check(request.revision===accepted.revision&&request.packageRevision===p.packageRevision&&request.policyRevision===p.policyRevision,'PACKAGE.STALE','Approval revisions differ');

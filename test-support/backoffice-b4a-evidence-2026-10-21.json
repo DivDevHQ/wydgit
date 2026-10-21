@@ -1,0 +1,1631 @@
+{
+  "mission": "Wydgine 0.3 BackOffice B4a",
+  "date": "2026-10-21",
+  "baseline": "859049ec8ac790831037ac8bfb20fd169bd24a3a",
+  "branch": "develop/0.3",
+  "baselineTree": "clean",
+  "baselineDivergence": [
+    0,
+    0
+  ],
+  "node": "v24.21.0",
+  "decisions": {
+    "DEC-01": "APPROVED unchanged",
+    "DEC-02": "APPROVED unchanged"
+  },
+  "boundaries": {
+    "durableReviewedAdoptionImplemented": true,
+    "ordinaryPackagesMayAdopt": false,
+    "pageHttpAdmissionActivated": false,
+    "restrictiveDispatchActivated": false,
+    "migrationStartupGateActivated": false,
+    "productionDispatch": "receipt-wide",
+    "automaticMigration": false,
+    "productionInstallationsAccessed": false,
+    "versionsChanged": false,
+    "providerSemanticsChanged": false,
+    "frozenClientsChanged": false,
+    "pageDeadlineMs": 1000,
+    "httpLimitIssue": "OPEN"
+  },
+  "authority": {
+    "surface": "wydgine/trusted/packages: existing plan/approve/apply/cancelPackagePolicy; optional policy.backoffice",
+    "context": "independently issued branded live native Server context, exact App, package:null, installation:null",
+    "capabilities": [
+      "packages.lifecycle.manage",
+      "packages.policy.manage",
+      "packages.placement.manage"
+    ],
+    "operatorAuthentication": "trusted native host authenticates/authorizes its operator before issuing context; audit labels, Gate roles and supplied flags are not proof",
+    "recovery": "existing lifecycle+policy authority; exact durable target only"
+  },
+  "persistence": {
+    "catalog": "wydgit-installed/0.4",
+    "receipt": "wydgit-install-receipt/0.1",
+    "evidence": "entry.backoffice / wydgit.backoffice-adoption/1",
+    "integrity": "receipt.backofficeHash included in existing approved policy hash",
+    "review": "existing catalog journal, original frozen plan, stopped-App reservation",
+    "apply": "existing checksummed private checkpoint/effects journal and catalog commit point",
+    "sourceContractHashes": "kept distinct from explicitly rebased target references and target binding",
+    "indeterminate": "PACKAGE.RECOVERY; retain barriers, inspect/recover after writer exit; never blind retry",
+    "revocation": "explicit complete replacement inventory; omitted subjects become tombstones; empty inventory revokes all",
+    "transfer": "no automatic transfer; stale after policy/receipt/artifact/generation/tree/config drift"
+  },
+  "conformance": {
+    "inScope": 64,
+    "implementedVerified": 59,
+    "partial": 4,
+    "missing": 1,
+    "unverified": 0,
+    "deferredProposedReserved": 12,
+    "blockedDecisions": 0,
+    "classificationChanges": [],
+    "foundationComplete": false
+  },
+  "failingBefore": {
+    "command": "Temporarily substitute exact HEAD policy.js; node --test --test-isolation=none --test-reporter=tap --test-name-pattern=BOB4A-01 test/backoffice-adoption.test.js; restore B4a policy.js in finally",
+    "log": "/tmp/b4a-failing-before.log",
+    "sha256": "3142ac9733e7730d4b682015f14632303beef437613d55da88ff0b12e2cb40ba",
+    "tests": 2,
+    "pass": 0,
+    "fail": 2,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "focused": {
+    "command": "node --test --test-reporter=tap test/backoffice-adoption.test.js test/backoffice-preflight.test.js test/policy-reconciliation.test.js test/backoffice-action-scope.test.js test/backoffice-page-foundation.test.js test/backoffice-http.test.js test/backoffice-actions.test.js test/backoffice-placement.test.js test/deadline-ledger.test.js test/native-scheduling-evidence.test.js",
+    "log": "/tmp/b4a-focused-final.log",
+    "sha256": "bd14a21ed944a88240022613a33fcc14eed03cc6bdce770755421866cad985cc",
+    "tests": 281,
+    "pass": 281,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "finalArtifactDriftCheck": {
+    "command": "node --test --test-reporter=tap --test-name-pattern='BOB4A-03|BOB4A-12' test/backoffice-adoption.test.js",
+    "log": "/tmp/b4a-drift-focused.log",
+    "sha256": "041b7829e90c56629e359b0182e60a6a6dd491898647b445f3e5cf884c7647ef",
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "initialFull": {
+    "command": "npm test",
+    "log": "/tmp/b4a-full.log",
+    "sha256": "453dc70a8ea5edff359a9f12044eeffdfddf01ae07588e787de13486bfeabd52",
+    "tests": 1928,
+    "pass": 1926,
+    "fail": 2,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "full": {
+    "command": "npm test",
+    "log": "/tmp/b4a-full-final.log",
+    "sha256": "f308042ae099ebebb9c1f633974aad6626418cb3df10d74f80f6b06c11d084ff",
+    "tests": 1928,
+    "pass": 1928,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "packed": {
+    "command": "node scripts/verify-packed-packages.js",
+    "directory": "/tmp/wyd-i54-packed-vGwnH5/",
+    "log": "/tmp/b4a-packed.log",
+    "sha256": "d0649792d5881ffb94b251bc71f4443514e1c477f262af1a08779d12dfceb6c2",
+    "complete": true,
+    "installedEngine": {
+      "command": "installed consumer node --import proof-register.mjs --test <selected tests>",
+      "log": "/tmp/wyd-i54-packed-vGwnH5/five-library-tests.log",
+      "sha256": "0e42d67fb9022be7218dcc0a919bed840d1eb0f5ba1e0baaea7f1120d0357b79",
+      "tests": 657,
+      "pass": 657,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "provider": {
+      "command": "installed provider qualification",
+      "log": "/tmp/wyd-i54-packed-vGwnH5/provider-tests.log",
+      "sha256": "5f617101c7aaf3553a2dafe24c7be7f34120eb85a7134ffa0bb2e7068107763d",
+      "tests": 35,
+      "pass": 35,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "processSupervision": {
+      "command": "installed real process-supervision suite",
+      "log": "/tmp/wyd-i54-packed-vGwnH5/process-supervision.log",
+      "sha256": "f957c7ee99fd64fd1d141f1450deb86098cbd4175a02ffd0c916d3dfd34a9f23",
+      "tests": 20,
+      "pass": 20,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "linuxBoundaries": {
+      "command": "installed unprivileged Linux boundary suite",
+      "log": "/tmp/wyd-i54-packed-vGwnH5/linux-boundaries.log",
+      "sha256": "49bce4072a8fa8949db64fccddecf8a1338e93ad1b0716770197780f9c4384e7",
+      "tests": 25,
+      "pass": 25,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "checkoutRuntimeImports": "rejected by synchronous ESM/CommonJS hooks",
+    "singleInstalledEnginePerConsumer": true,
+    "serviceFreeBinaryHttpAssets": "passed"
+  },
+  "documentation": {
+    "files": 7,
+    "fileLinks": 59,
+    "anchors": 4,
+    "stableRequirements": 76,
+    "classificationsUnchanged": true,
+    "errors": []
+  },
+  "contentCheck": {
+    "command": "npm run check",
+    "pages": 3,
+    "internalLinks": 42,
+    "uniqueAnchors": true,
+    "log": "/tmp/b4a-check.log"
+  },
+  "frozenClientArtifactsVerified": 31,
+  "fixtureInventory": {
+    "json": {
+      "source": {
+        "app": "boilerplate",
+        "status": "requires-review",
+        "catalogRevision": 1,
+        "sourceFingerprint": "6eaaefcc8693ca45ca3e6d34d608383bcb90242991f508ad74f33dc4ef739bfb",
+        "enforcementActive": false,
+        "actions": [
+          {
+            "action": "archive-get",
+            "status": "requires-review",
+            "identity": {
+              "app": "boilerplate",
+              "package": "divdev/backoffice-members",
+              "installation": "8df89c2c-b085-49a7-9e61-f3887ec1fc4a",
+              "action": "archive-get"
+            },
+            "contractHash": "271be915d4c77fa96a5b6e611cbcf47cc8d5ec4d1159ab144b8140b7aa80d20c",
+            "declaredResources": {
+              "wydstore": [
+                "archive"
+              ]
+            },
+            "legacyExposure": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                },
+                {
+                  "collection": "archive",
+                  "store": "records"
+                }
+              ]
+            },
+            "restrictiveScope": {
+              "wydstore": [
+                {
+                  "collection": "archive",
+                  "store": "records"
+                }
+              ]
+            },
+            "enforcementReady": false
+          },
+          {
+            "action": "create",
+            "status": "requires-review",
+            "identity": {
+              "app": "boilerplate",
+              "package": "divdev/backoffice-members",
+              "installation": "8df89c2c-b085-49a7-9e61-f3887ec1fc4a",
+              "action": "create"
+            },
+            "contractHash": "649c371580145d2c39456be9851deded0dae5925d93649ba48cfbdb8607d31fe",
+            "declaredResources": {
+              "wydstore": [
+                "records"
+              ]
+            },
+            "legacyExposure": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                },
+                {
+                  "collection": "archive",
+                  "store": "records"
+                }
+              ]
+            },
+            "restrictiveScope": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                }
+              ]
+            },
+            "enforcementReady": false
+          },
+          {
+            "action": "delete",
+            "status": "requires-review",
+            "identity": {
+              "app": "boilerplate",
+              "package": "divdev/backoffice-members",
+              "installation": "8df89c2c-b085-49a7-9e61-f3887ec1fc4a",
+              "action": "delete"
+            },
+            "contractHash": "109b94f2e1aa6a2b151cf5904b156823d8c18a5bd500b843491630769355c0a5",
+            "declaredResources": {
+              "wydstore": [
+                "records"
+              ]
+            },
+            "legacyExposure": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                },
+                {
+                  "collection": "archive",
+                  "store": "records"
+                }
+              ]
+            },
+            "restrictiveScope": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                }
+              ]
+            },
+            "enforcementReady": false
+          },
+          {
+            "action": "get",
+            "status": "requires-review",
+            "identity": {
+              "app": "boilerplate",
+              "package": "divdev/backoffice-members",
+              "installation": "8df89c2c-b085-49a7-9e61-f3887ec1fc4a",
+              "action": "get"
+            },
+            "contractHash": "eb65740509ac2bfbfbdea4b9a001e8c6614716fd8cc370866a3102fb82e876e2",
+            "declaredResources": {
+              "wydstore": [
+                "records"
+              ]
+            },
+            "legacyExposure": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                },
+                {
+                  "collection": "archive",
+                  "store": "records"
+                }
+              ]
+            },
+            "restrictiveScope": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                }
+              ]
+            },
+            "enforcementReady": false
+          },
+          {
+            "action": "transaction",
+            "status": "requires-review",
+            "identity": {
+              "app": "boilerplate",
+              "package": "divdev/backoffice-members",
+              "installation": "8df89c2c-b085-49a7-9e61-f3887ec1fc4a",
+              "action": "transaction"
+            },
+            "contractHash": "202cd643dd49663a7440fb4be3f57748e042c35a22f362d8617fe70e04f3b7cd",
+            "declaredResources": {
+              "wydstore": [
+                "records"
+              ]
+            },
+            "legacyExposure": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                },
+                {
+                  "collection": "archive",
+                  "store": "records"
+                }
+              ]
+            },
+            "restrictiveScope": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                }
+              ]
+            },
+            "enforcementReady": false
+          },
+          {
+            "action": "update",
+            "status": "requires-review",
+            "identity": {
+              "app": "boilerplate",
+              "package": "divdev/backoffice-members",
+              "installation": "8df89c2c-b085-49a7-9e61-f3887ec1fc4a",
+              "action": "update"
+            },
+            "contractHash": "0a278bac134edeeb54f3e37e68336f743cf4f7854fccb8721ae6db687cae644e",
+            "declaredResources": {
+              "wydstore": [
+                "records"
+              ]
+            },
+            "legacyExposure": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                },
+                {
+                  "collection": "archive",
+                  "store": "records"
+                }
+              ]
+            },
+            "restrictiveScope": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                }
+              ]
+            },
+            "enforcementReady": false
+          }
+        ]
+      },
+      "adopted": {
+        "app": "boilerplate",
+        "status": "eligible-for-enforcement",
+        "catalogRevision": 3,
+        "sourceFingerprint": "d9947f2c071838c3c9bc927b4198a1e82b51d7d29f1b8f2830eb0de701ac3e5a",
+        "enforcementActive": false,
+        "evidence": {
+          "status": "adopted",
+          "approval": "16651c4e-9247-4adc-af8b-65cce00ba328",
+          "planHash": "63bbe38728a4efcee4b4830e1f4f0e94d081a28cd613ab96995d88df9dd84d09",
+          "reviewer": {
+            "principal": null,
+            "publisher": "operator",
+            "self": "home"
+          },
+          "approvedAt": "2026-10-21T13:40:52.376Z",
+          "binding": {
+            "app": "boilerplate",
+            "artifact": "88ce5e49d0dc1b0eb6b1ae07d338f0b715da4b184a84b89f3e26dade0c85003d",
+            "configuration": "737c4b8c74a0de66f03ebd0785f2c24f80098f2f3dbc1bbad436db40f42c1c8b",
+            "context": "BackOffice",
+            "generation": "16651c4e-9247-4adc-af8b-65cce00ba328",
+            "installation": "8df89c2c-b085-49a7-9e61-f3887ec1fc4a",
+            "lifetimeGeneration": "288ca0e2-2ee8-486d-b8be-a91bd3a2c28b",
+            "package": "divdev/backoffice-members",
+            "packageRevision": 1,
+            "policyRevision": 1,
+            "publisher": "divdev",
+            "receipt": "f300fd71f0d68072570692874f93bbe7c17cd79e8eb212f5c654fc2ba5af7f7a",
+            "tree": "1f26e22d7037f63ccf39fbf70849b1a9bdd28dda088d12d8d94250eb9e6e1432"
+          },
+          "eligibleForEnforcement": true,
+          "enforcementReady": false,
+          "missingActions": []
+        },
+        "actions": [
+          {
+            "subject": "action:backoffice-members/archive-get",
+            "reference": {
+              "action": "archive-get",
+              "app": "boilerplate",
+              "generation": "16651c4e-9247-4adc-af8b-65cce00ba328",
+              "installation": "8df89c2c-b085-49a7-9e61-f3887ec1fc4a",
+              "instance": "backoffice-members",
+              "package": "divdev/backoffice-members",
+              "revision": "84d01f3695646fc7cc41e411711846d1ce9f230a8e1226ae4897e1a4a062cac9",
+              "schema": "wydgit.backoffice-reference/1"
+            },
+            "sourceContractHash": "271be915d4c77fa96a5b6e611cbcf47cc8d5ec4d1159ab144b8140b7aa80d20c",
+            "requiredResources": {
+              "wydstore": [
+                "archive"
+              ]
+            },
+            "scope": {
+              "wydstore": [
+                {
+                  "collection": "archive",
+                  "store": "records"
+                }
+              ]
+            },
+            "operation": {
+              "apiVersion": "1.0.0",
+              "capability": "store.records.read",
+              "effect": "read",
+              "library": "wydstore",
+              "operation": "get"
+            },
+            "policyRequirements": [
+              {
+                "contexts": [
+                  "BackOffice"
+                ],
+                "liveCheckRequired": true,
+                "operation": "get",
+                "permission": "archive.records.read",
+                "policy": "protected",
+                "resource": {
+                  "collection": "archive",
+                  "store": "records"
+                }
+              }
+            ]
+          },
+          {
+            "subject": "action:backoffice-members/create",
+            "reference": {
+              "action": "create",
+              "app": "boilerplate",
+              "generation": "16651c4e-9247-4adc-af8b-65cce00ba328",
+              "installation": "8df89c2c-b085-49a7-9e61-f3887ec1fc4a",
+              "instance": "backoffice-members",
+              "package": "divdev/backoffice-members",
+              "revision": "0c017e4f593eb6b8dfc3375b8b5b3757efd577e560060fe97799441d59373081",
+              "schema": "wydgit.backoffice-reference/1"
+            },
+            "sourceContractHash": "649c371580145d2c39456be9851deded0dae5925d93649ba48cfbdb8607d31fe",
+            "requiredResources": {
+              "wydstore": [
+                "records"
+              ]
+            },
+            "scope": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                }
+              ]
+            },
+            "operation": {
+              "apiVersion": "1.0.0",
+              "capability": "store.records.create",
+              "effect": "write",
+              "library": "wydstore",
+              "operation": "create"
+            },
+            "policyRequirements": [
+              {
+                "contexts": [
+                  "BackOffice"
+                ],
+                "liveCheckRequired": true,
+                "operation": "create",
+                "permission": "content.records.write",
+                "policy": "protected",
+                "resource": {
+                  "collection": "records",
+                  "store": "records"
+                }
+              }
+            ]
+          },
+          {
+            "subject": "action:backoffice-members/delete",
+            "reference": {
+              "action": "delete",
+              "app": "boilerplate",
+              "generation": "16651c4e-9247-4adc-af8b-65cce00ba328",
+              "installation": "8df89c2c-b085-49a7-9e61-f3887ec1fc4a",
+              "instance": "backoffice-members",
+              "package": "divdev/backoffice-members",
+              "revision": "a9c04cb7173c3f4d859a29b4a0578c6659e11661d50f8663d252f4fc51f57c1c",
+              "schema": "wydgit.backoffice-reference/1"
+            },
+            "sourceContractHash": "109b94f2e1aa6a2b151cf5904b156823d8c18a5bd500b843491630769355c0a5",
+            "requiredResources": {
+              "wydstore": [
+                "records"
+              ]
+            },
+            "scope": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                }
+              ]
+            },
+            "operation": {
+              "apiVersion": "1.0.0",
+              "capability": "store.records.delete",
+              "effect": "write",
+              "library": "wydstore",
+              "operation": "delete"
+            },
+            "policyRequirements": [
+              {
+                "contexts": [
+                  "BackOffice"
+                ],
+                "liveCheckRequired": true,
+                "operation": "delete",
+                "permission": "content.records.write",
+                "policy": "protected",
+                "resource": {
+                  "collection": "records",
+                  "store": "records"
+                }
+              }
+            ]
+          },
+          {
+            "subject": "action:backoffice-members/get",
+            "reference": {
+              "action": "get",
+              "app": "boilerplate",
+              "generation": "16651c4e-9247-4adc-af8b-65cce00ba328",
+              "installation": "8df89c2c-b085-49a7-9e61-f3887ec1fc4a",
+              "instance": "backoffice-members",
+              "package": "divdev/backoffice-members",
+              "revision": "09cff8dc6e59611a074f7e7b29e80d8b769ae41af0b11cf7c12c6163bad3a2ed",
+              "schema": "wydgit.backoffice-reference/1"
+            },
+            "sourceContractHash": "eb65740509ac2bfbfbdea4b9a001e8c6614716fd8cc370866a3102fb82e876e2",
+            "requiredResources": {
+              "wydstore": [
+                "records"
+              ]
+            },
+            "scope": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                }
+              ]
+            },
+            "operation": {
+              "apiVersion": "1.0.0",
+              "capability": "store.records.read",
+              "effect": "read",
+              "library": "wydstore",
+              "operation": "get"
+            },
+            "policyRequirements": [
+              {
+                "contexts": [
+                  "BackOffice"
+                ],
+                "liveCheckRequired": true,
+                "operation": "get",
+                "permission": "content.records.read",
+                "policy": "protected",
+                "resource": {
+                  "collection": "records",
+                  "store": "records"
+                }
+              }
+            ]
+          },
+          {
+            "subject": "action:backoffice-members/transaction",
+            "reference": {
+              "action": "transaction",
+              "app": "boilerplate",
+              "generation": "16651c4e-9247-4adc-af8b-65cce00ba328",
+              "installation": "8df89c2c-b085-49a7-9e61-f3887ec1fc4a",
+              "instance": "backoffice-members",
+              "package": "divdev/backoffice-members",
+              "revision": "2e3509d9ad2470731c133ee48afbac6ae3dcc61450fedf25c5df3f19d0a12947",
+              "schema": "wydgit.backoffice-reference/1"
+            },
+            "sourceContractHash": "202cd643dd49663a7440fb4be3f57748e042c35a22f362d8617fe70e04f3b7cd",
+            "requiredResources": {
+              "wydstore": [
+                "records"
+              ]
+            },
+            "scope": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                }
+              ]
+            },
+            "operation": {
+              "apiVersion": "1.0.0",
+              "capability": "store.records.write",
+              "effect": "write",
+              "library": "wydstore",
+              "operation": "transaction"
+            },
+            "policyRequirements": [
+              {
+                "contexts": [
+                  "BackOffice"
+                ],
+                "liveCheckRequired": true,
+                "operation": "transaction",
+                "permission": "content.records.write",
+                "policy": "protected",
+                "resource": {
+                  "collection": "records",
+                  "store": "records"
+                }
+              }
+            ]
+          },
+          {
+            "subject": "action:backoffice-members/update",
+            "reference": {
+              "action": "update",
+              "app": "boilerplate",
+              "generation": "16651c4e-9247-4adc-af8b-65cce00ba328",
+              "installation": "8df89c2c-b085-49a7-9e61-f3887ec1fc4a",
+              "instance": "backoffice-members",
+              "package": "divdev/backoffice-members",
+              "revision": "25cea31131004c22bcdf4880d5e593c85c8c556cee263ae3d1a017581a044263",
+              "schema": "wydgit.backoffice-reference/1"
+            },
+            "sourceContractHash": "0a278bac134edeeb54f3e37e68336f743cf4f7854fccb8721ae6db687cae644e",
+            "requiredResources": {
+              "wydstore": [
+                "records"
+              ]
+            },
+            "scope": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                }
+              ]
+            },
+            "operation": {
+              "apiVersion": "1.0.0",
+              "capability": "store.records.write",
+              "effect": "write",
+              "library": "wydstore",
+              "operation": "update"
+            },
+            "policyRequirements": [
+              {
+                "contexts": [
+                  "BackOffice"
+                ],
+                "liveCheckRequired": true,
+                "operation": "update",
+                "permission": "content.records.write",
+                "policy": "protected",
+                "resource": {
+                  "collection": "records",
+                  "store": "records"
+                }
+              }
+            ]
+          }
+        ],
+        "pageEvidence": [
+          {
+            "proposal": {
+              "app": "boilerplate",
+              "bindings": [
+                {
+                  "constraints": [
+                    {
+                      "effect": "read",
+                      "input": {
+                        "fields": {
+                          "collection": {
+                            "maxLength": 64,
+                            "type": "string"
+                          },
+                          "id": {
+                            "maxLength": 64,
+                            "type": "string"
+                          },
+                          "store": {
+                            "maxLength": 64,
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "output": {
+                        "fields": {
+                          "data": {
+                            "fields": {
+                              "text": {
+                                "maxLength": 128,
+                                "type": "string"
+                              }
+                            },
+                            "type": "object"
+                          },
+                          "id": {
+                            "maxLength": 64,
+                            "type": "string"
+                          },
+                          "version": {
+                            "max": 100,
+                            "min": 1,
+                            "type": "integer"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "targets": [
+                        "backoffice-members/get"
+                      ],
+                      "type": "wydgit.core/object"
+                    }
+                  ],
+                  "consumer": "backoffice-members",
+                  "fixedInput": {},
+                  "name": "load",
+                  "reference": {
+                    "action": "get",
+                    "app": "boilerplate",
+                    "generation": "16651c4e-9247-4adc-af8b-65cce00ba328",
+                    "installation": "8df89c2c-b085-49a7-9e61-f3887ec1fc4a",
+                    "instance": "backoffice-members",
+                    "package": "divdev/backoffice-members",
+                    "revision": "09cff8dc6e59611a074f7e7b29e80d8b769ae41af0b11cf7c12c6163bad3a2ed",
+                    "schema": "wydgit.backoffice-reference/1"
+                  },
+                  "usage": "prepare"
+                }
+              ],
+              "generation": "16651c4e-9247-4adc-af8b-65cce00ba328",
+              "installation": "8df89c2c-b085-49a7-9e61-f3887ec1fc4a",
+              "key": "administration",
+              "owner": "backoffice-members",
+              "package": "divdev/backoffice-members",
+              "page": "page-admin",
+              "permission": "content.pages.view",
+              "policyRevision": 1,
+              "schema": "wydgit.backoffice-page-entry-proposal/1"
+            },
+            "sourceContractHash": "e93f5219252bc09af5a20e758108cf2cf76bd40804e17697d1e167bbd643f920",
+            "subject": "page:administration"
+          }
+        ],
+        "pageValidation": [
+          {
+            "identity": {
+              "app": "boilerplate",
+              "package": "divdev/backoffice-members",
+              "installation": "8df89c2c-b085-49a7-9e61-f3887ec1fc4a",
+              "page": "page-admin"
+            },
+            "valid": true,
+            "status": "durably-adopted",
+            "pageEntryApproved": true,
+            "eligibleForEnforcement": true,
+            "enforcementReady": false,
+            "liveChecksRequired": [
+              "session",
+              "page-permission",
+              "action-permission",
+              "actual-target-policy",
+              "entry-approval",
+              "lifetime"
+            ]
+          }
+        ]
+      },
+      "revoked": {
+        "status": "revoked",
+        "approval": "01351fee-34a8-4fa4-8a9b-0e16f5d50c2a",
+        "binding": {
+          "app": "boilerplate",
+          "artifact": "88ce5e49d0dc1b0eb6b1ae07d338f0b715da4b184a84b89f3e26dade0c85003d",
+          "configuration": "737c4b8c74a0de66f03ebd0785f2c24f80098f2f3dbc1bbad436db40f42c1c8b",
+          "context": "BackOffice",
+          "generation": "01351fee-34a8-4fa4-8a9b-0e16f5d50c2a",
+          "installation": "8df89c2c-b085-49a7-9e61-f3887ec1fc4a",
+          "lifetimeGeneration": "829392f4-b2ff-4957-87e8-a101f99198ac",
+          "package": "divdev/backoffice-members",
+          "packageRevision": 1,
+          "policyRevision": 2,
+          "publisher": "divdev",
+          "receipt": "b12692f0535670f46f10e5b0f43e3749afa6e457b5f0c43430d6a55d630a7736",
+          "tree": "1f26e22d7037f63ccf39fbf70849b1a9bdd28dda088d12d8d94250eb9e6e1432"
+        },
+        "eligibleForEnforcement": false,
+        "enforcementReady": false,
+        "revokedSubjects": [
+          "action:backoffice-members/archive-get",
+          "action:backoffice-members/create",
+          "action:backoffice-members/delete",
+          "action:backoffice-members/get",
+          "action:backoffice-members/transaction",
+          "action:backoffice-members/update",
+          "page:administration"
+        ]
+      }
+    },
+    "sqlite": {
+      "source": {
+        "app": "boilerplate",
+        "status": "requires-review",
+        "catalogRevision": 1,
+        "sourceFingerprint": "0cfb72ba9b20e9d90db54b7f2eddc37b37c5f3f774d39a94debe1d3f1cc49bcf",
+        "enforcementActive": false,
+        "actions": [
+          {
+            "action": "archive-get",
+            "status": "requires-review",
+            "identity": {
+              "app": "boilerplate",
+              "package": "divdev/backoffice-members",
+              "installation": "03a68e9b-e0d7-42bc-90d8-d252a7f9e5d1",
+              "action": "archive-get"
+            },
+            "contractHash": "60cfadbe45f325f3961ed403a0f8317313a7f7efc8f3af4f1e537b7bfb083e76",
+            "declaredResources": {
+              "wydstore": [
+                "archive"
+              ]
+            },
+            "legacyExposure": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                },
+                {
+                  "collection": "archive",
+                  "store": "records"
+                }
+              ]
+            },
+            "restrictiveScope": {
+              "wydstore": [
+                {
+                  "collection": "archive",
+                  "store": "records"
+                }
+              ]
+            },
+            "enforcementReady": false
+          },
+          {
+            "action": "create",
+            "status": "requires-review",
+            "identity": {
+              "app": "boilerplate",
+              "package": "divdev/backoffice-members",
+              "installation": "03a68e9b-e0d7-42bc-90d8-d252a7f9e5d1",
+              "action": "create"
+            },
+            "contractHash": "39939e11e60f684f9d8a3407f01661df0e72cf6bd0e2a9e4749d8d3747881a02",
+            "declaredResources": {
+              "wydstore": [
+                "records"
+              ]
+            },
+            "legacyExposure": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                },
+                {
+                  "collection": "archive",
+                  "store": "records"
+                }
+              ]
+            },
+            "restrictiveScope": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                }
+              ]
+            },
+            "enforcementReady": false
+          },
+          {
+            "action": "delete",
+            "status": "requires-review",
+            "identity": {
+              "app": "boilerplate",
+              "package": "divdev/backoffice-members",
+              "installation": "03a68e9b-e0d7-42bc-90d8-d252a7f9e5d1",
+              "action": "delete"
+            },
+            "contractHash": "89be39499bf1396f50347f834722ec3df6950383cf49cfe4bfd478a80c56f8da",
+            "declaredResources": {
+              "wydstore": [
+                "records"
+              ]
+            },
+            "legacyExposure": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                },
+                {
+                  "collection": "archive",
+                  "store": "records"
+                }
+              ]
+            },
+            "restrictiveScope": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                }
+              ]
+            },
+            "enforcementReady": false
+          },
+          {
+            "action": "get",
+            "status": "requires-review",
+            "identity": {
+              "app": "boilerplate",
+              "package": "divdev/backoffice-members",
+              "installation": "03a68e9b-e0d7-42bc-90d8-d252a7f9e5d1",
+              "action": "get"
+            },
+            "contractHash": "ce920870fabbfba7f0209fe98758f5bc14ba0af97e46f664c79c15ae64102f06",
+            "declaredResources": {
+              "wydstore": [
+                "records"
+              ]
+            },
+            "legacyExposure": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                },
+                {
+                  "collection": "archive",
+                  "store": "records"
+                }
+              ]
+            },
+            "restrictiveScope": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                }
+              ]
+            },
+            "enforcementReady": false
+          },
+          {
+            "action": "transaction",
+            "status": "requires-review",
+            "identity": {
+              "app": "boilerplate",
+              "package": "divdev/backoffice-members",
+              "installation": "03a68e9b-e0d7-42bc-90d8-d252a7f9e5d1",
+              "action": "transaction"
+            },
+            "contractHash": "e497ba7e4b2260512a843e036ea3b7c06a2fa1be9ac1ecd5ca936cd64ef74a6d",
+            "declaredResources": {
+              "wydstore": [
+                "records"
+              ]
+            },
+            "legacyExposure": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                },
+                {
+                  "collection": "archive",
+                  "store": "records"
+                }
+              ]
+            },
+            "restrictiveScope": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                }
+              ]
+            },
+            "enforcementReady": false
+          },
+          {
+            "action": "update",
+            "status": "requires-review",
+            "identity": {
+              "app": "boilerplate",
+              "package": "divdev/backoffice-members",
+              "installation": "03a68e9b-e0d7-42bc-90d8-d252a7f9e5d1",
+              "action": "update"
+            },
+            "contractHash": "22bcc3810b6ea2ae590a4e195cc605d2b7dd6ded7c6c92aff68d4d356d2c8854",
+            "declaredResources": {
+              "wydstore": [
+                "records"
+              ]
+            },
+            "legacyExposure": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                },
+                {
+                  "collection": "archive",
+                  "store": "records"
+                }
+              ]
+            },
+            "restrictiveScope": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                }
+              ]
+            },
+            "enforcementReady": false
+          }
+        ]
+      },
+      "adopted": {
+        "app": "boilerplate",
+        "status": "eligible-for-enforcement",
+        "catalogRevision": 3,
+        "sourceFingerprint": "2ac73cf3db9b3bf21dd869530e7d90c05538e1ef5629a49c38dda6086f38c964",
+        "enforcementActive": false,
+        "evidence": {
+          "status": "adopted",
+          "approval": "289d38a0-dd29-4ed3-a606-da99e8578cb7",
+          "planHash": "7b53f0cb70abd1994e4a7752043c9ec00fd4f47fb0f590483fff11804d0de442",
+          "reviewer": {
+            "principal": null,
+            "publisher": "operator",
+            "self": "home"
+          },
+          "approvedAt": "2026-10-21T13:40:53.116Z",
+          "binding": {
+            "app": "boilerplate",
+            "artifact": "88ce5e49d0dc1b0eb6b1ae07d338f0b715da4b184a84b89f3e26dade0c85003d",
+            "configuration": "05a7ff341be712612e874d3e897473bf631871f47881e770149f946d44b85a30",
+            "context": "BackOffice",
+            "generation": "289d38a0-dd29-4ed3-a606-da99e8578cb7",
+            "installation": "03a68e9b-e0d7-42bc-90d8-d252a7f9e5d1",
+            "lifetimeGeneration": "1edab44a-703f-422f-b920-4669d59242ba",
+            "package": "divdev/backoffice-members",
+            "packageRevision": 1,
+            "policyRevision": 1,
+            "publisher": "divdev",
+            "receipt": "06f5d47c424be768c8c0c388bfb71e7979226351371899f21e5a30e232f0e686",
+            "tree": "1f26e22d7037f63ccf39fbf70849b1a9bdd28dda088d12d8d94250eb9e6e1432"
+          },
+          "eligibleForEnforcement": true,
+          "enforcementReady": false,
+          "missingActions": []
+        },
+        "actions": [
+          {
+            "subject": "action:backoffice-members/archive-get",
+            "reference": {
+              "action": "archive-get",
+              "app": "boilerplate",
+              "generation": "289d38a0-dd29-4ed3-a606-da99e8578cb7",
+              "installation": "03a68e9b-e0d7-42bc-90d8-d252a7f9e5d1",
+              "instance": "backoffice-members",
+              "package": "divdev/backoffice-members",
+              "revision": "30d9d952dbea83674c6bef18618a8cb9e644f2c1e6fffacec8d407744b7b3c54",
+              "schema": "wydgit.backoffice-reference/1"
+            },
+            "sourceContractHash": "60cfadbe45f325f3961ed403a0f8317313a7f7efc8f3af4f1e537b7bfb083e76",
+            "requiredResources": {
+              "wydstore": [
+                "archive"
+              ]
+            },
+            "scope": {
+              "wydstore": [
+                {
+                  "collection": "archive",
+                  "store": "records"
+                }
+              ]
+            },
+            "operation": {
+              "apiVersion": "1.0.0",
+              "capability": "store.records.read",
+              "effect": "read",
+              "library": "wydstore",
+              "operation": "get"
+            },
+            "policyRequirements": [
+              {
+                "contexts": [
+                  "BackOffice"
+                ],
+                "liveCheckRequired": true,
+                "operation": "get",
+                "permission": "archive.records.read",
+                "policy": "protected",
+                "resource": {
+                  "collection": "archive",
+                  "store": "records"
+                }
+              }
+            ]
+          },
+          {
+            "subject": "action:backoffice-members/create",
+            "reference": {
+              "action": "create",
+              "app": "boilerplate",
+              "generation": "289d38a0-dd29-4ed3-a606-da99e8578cb7",
+              "installation": "03a68e9b-e0d7-42bc-90d8-d252a7f9e5d1",
+              "instance": "backoffice-members",
+              "package": "divdev/backoffice-members",
+              "revision": "12110c3fc2b2492ce4a2914fb662cbd54178602bf588a9485224cbf6e4f58019",
+              "schema": "wydgit.backoffice-reference/1"
+            },
+            "sourceContractHash": "39939e11e60f684f9d8a3407f01661df0e72cf6bd0e2a9e4749d8d3747881a02",
+            "requiredResources": {
+              "wydstore": [
+                "records"
+              ]
+            },
+            "scope": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                }
+              ]
+            },
+            "operation": {
+              "apiVersion": "1.0.0",
+              "capability": "store.records.create",
+              "effect": "write",
+              "library": "wydstore",
+              "operation": "create"
+            },
+            "policyRequirements": [
+              {
+                "contexts": [
+                  "BackOffice"
+                ],
+                "liveCheckRequired": true,
+                "operation": "create",
+                "permission": "content.records.write",
+                "policy": "protected",
+                "resource": {
+                  "collection": "records",
+                  "store": "records"
+                }
+              }
+            ]
+          },
+          {
+            "subject": "action:backoffice-members/delete",
+            "reference": {
+              "action": "delete",
+              "app": "boilerplate",
+              "generation": "289d38a0-dd29-4ed3-a606-da99e8578cb7",
+              "installation": "03a68e9b-e0d7-42bc-90d8-d252a7f9e5d1",
+              "instance": "backoffice-members",
+              "package": "divdev/backoffice-members",
+              "revision": "3511411dc38e3c680399f940683d780fa936180a56867948a73eca5e53ecabbb",
+              "schema": "wydgit.backoffice-reference/1"
+            },
+            "sourceContractHash": "89be39499bf1396f50347f834722ec3df6950383cf49cfe4bfd478a80c56f8da",
+            "requiredResources": {
+              "wydstore": [
+                "records"
+              ]
+            },
+            "scope": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                }
+              ]
+            },
+            "operation": {
+              "apiVersion": "1.0.0",
+              "capability": "store.records.delete",
+              "effect": "write",
+              "library": "wydstore",
+              "operation": "delete"
+            },
+            "policyRequirements": [
+              {
+                "contexts": [
+                  "BackOffice"
+                ],
+                "liveCheckRequired": true,
+                "operation": "delete",
+                "permission": "content.records.write",
+                "policy": "protected",
+                "resource": {
+                  "collection": "records",
+                  "store": "records"
+                }
+              }
+            ]
+          },
+          {
+            "subject": "action:backoffice-members/get",
+            "reference": {
+              "action": "get",
+              "app": "boilerplate",
+              "generation": "289d38a0-dd29-4ed3-a606-da99e8578cb7",
+              "installation": "03a68e9b-e0d7-42bc-90d8-d252a7f9e5d1",
+              "instance": "backoffice-members",
+              "package": "divdev/backoffice-members",
+              "revision": "8141176936fd156f87e28d03b4d7f89785fea323ba79bf4ea295befa44ff5db6",
+              "schema": "wydgit.backoffice-reference/1"
+            },
+            "sourceContractHash": "ce920870fabbfba7f0209fe98758f5bc14ba0af97e46f664c79c15ae64102f06",
+            "requiredResources": {
+              "wydstore": [
+                "records"
+              ]
+            },
+            "scope": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                }
+              ]
+            },
+            "operation": {
+              "apiVersion": "1.0.0",
+              "capability": "store.records.read",
+              "effect": "read",
+              "library": "wydstore",
+              "operation": "get"
+            },
+            "policyRequirements": [
+              {
+                "contexts": [
+                  "BackOffice"
+                ],
+                "liveCheckRequired": true,
+                "operation": "get",
+                "permission": "content.records.read",
+                "policy": "protected",
+                "resource": {
+                  "collection": "records",
+                  "store": "records"
+                }
+              }
+            ]
+          },
+          {
+            "subject": "action:backoffice-members/transaction",
+            "reference": {
+              "action": "transaction",
+              "app": "boilerplate",
+              "generation": "289d38a0-dd29-4ed3-a606-da99e8578cb7",
+              "installation": "03a68e9b-e0d7-42bc-90d8-d252a7f9e5d1",
+              "instance": "backoffice-members",
+              "package": "divdev/backoffice-members",
+              "revision": "a5dadb2d1db221a1b5e8400d026db6f48a4ae490935a3927fde23a3399f1bdb8",
+              "schema": "wydgit.backoffice-reference/1"
+            },
+            "sourceContractHash": "e497ba7e4b2260512a843e036ea3b7c06a2fa1be9ac1ecd5ca936cd64ef74a6d",
+            "requiredResources": {
+              "wydstore": [
+                "records"
+              ]
+            },
+            "scope": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                }
+              ]
+            },
+            "operation": {
+              "apiVersion": "1.0.0",
+              "capability": "store.records.write",
+              "effect": "write",
+              "library": "wydstore",
+              "operation": "transaction"
+            },
+            "policyRequirements": [
+              {
+                "contexts": [
+                  "BackOffice"
+                ],
+                "liveCheckRequired": true,
+                "operation": "transaction",
+                "permission": "content.records.write",
+                "policy": "protected",
+                "resource": {
+                  "collection": "records",
+                  "store": "records"
+                }
+              }
+            ]
+          },
+          {
+            "subject": "action:backoffice-members/update",
+            "reference": {
+              "action": "update",
+              "app": "boilerplate",
+              "generation": "289d38a0-dd29-4ed3-a606-da99e8578cb7",
+              "installation": "03a68e9b-e0d7-42bc-90d8-d252a7f9e5d1",
+              "instance": "backoffice-members",
+              "package": "divdev/backoffice-members",
+              "revision": "bd40528064f7a4b471afc4626051319cabc5ead5b539fc00c497d4d56273a546",
+              "schema": "wydgit.backoffice-reference/1"
+            },
+            "sourceContractHash": "22bcc3810b6ea2ae590a4e195cc605d2b7dd6ded7c6c92aff68d4d356d2c8854",
+            "requiredResources": {
+              "wydstore": [
+                "records"
+              ]
+            },
+            "scope": {
+              "wydstore": [
+                {
+                  "collection": "records",
+                  "store": "records"
+                }
+              ]
+            },
+            "operation": {
+              "apiVersion": "1.0.0",
+              "capability": "store.records.write",
+              "effect": "write",
+              "library": "wydstore",
+              "operation": "update"
+            },
+            "policyRequirements": [
+              {
+                "contexts": [
+                  "BackOffice"
+                ],
+                "liveCheckRequired": true,
+                "operation": "update",
+                "permission": "content.records.write",
+                "policy": "protected",
+                "resource": {
+                  "collection": "records",
+                  "store": "records"
+                }
+              }
+            ]
+          }
+        ],
+        "pageEvidence": [
+          {
+            "proposal": {
+              "app": "boilerplate",
+              "bindings": [
+                {
+                  "constraints": [
+                    {
+                      "effect": "read",
+                      "input": {
+                        "fields": {
+                          "collection": {
+                            "maxLength": 64,
+                            "type": "string"
+                          },
+                          "id": {
+                            "maxLength": 64,
+                            "type": "string"
+                          },
+                          "store": {
+                            "maxLength": 64,
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "output": {
+                        "fields": {
+                          "data": {
+                            "fields": {
+                              "text": {
+                                "maxLength": 128,
+                                "type": "string"
+                              }
+                            },
+                            "type": "object"
+                          },
+                          "id": {
+                            "maxLength": 64,
+                            "type": "string"
+                          },
+                          "version": {
+                            "max": 100,
+                            "min": 1,
+                            "type": "integer"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "targets": [
+                        "backoffice-members/get"
+                      ],
+                      "type": "wydgit.core/object"
+                    }
+                  ],
+                  "consumer": "backoffice-members",
+                  "fixedInput": {},
+                  "name": "load",
+                  "reference": {
+                    "action": "get",
+                    "app": "boilerplate",
+                    "generation": "289d38a0-dd29-4ed3-a606-da99e8578cb7",
+                    "installation": "03a68e9b-e0d7-42bc-90d8-d252a7f9e5d1",
+                    "instance": "backoffice-members",
+                    "package": "divdev/backoffice-members",
+                    "revision": "8141176936fd156f87e28d03b4d7f89785fea323ba79bf4ea295befa44ff5db6",
+                    "schema": "wydgit.backoffice-reference/1"
+                  },
+                  "usage": "prepare"
+                }
+              ],
+              "generation": "289d38a0-dd29-4ed3-a606-da99e8578cb7",
+              "installation": "03a68e9b-e0d7-42bc-90d8-d252a7f9e5d1",
+              "key": "administration",
+              "owner": "backoffice-members",
+              "package": "divdev/backoffice-members",
+              "page": "page-admin",
+              "permission": "content.pages.view",
+              "policyRevision": 1,
+              "schema": "wydgit.backoffice-page-entry-proposal/1"
+            },
+            "sourceContractHash": "40edd92ced5c966c1e8b75d0ffa268aaf8836d3bb9e38d453cbd02dfb2084927",
+            "subject": "page:administration"
+          }
+        ],
+        "pageValidation": [
+          {
+            "identity": {
+              "app": "boilerplate",
+              "package": "divdev/backoffice-members",
+              "installation": "03a68e9b-e0d7-42bc-90d8-d252a7f9e5d1",
+              "page": "page-admin"
+            },
+            "valid": true,
+            "status": "durably-adopted",
+            "pageEntryApproved": true,
+            "eligibleForEnforcement": true,
+            "enforcementReady": false,
+            "liveChecksRequired": [
+              "session",
+              "page-permission",
+              "action-permission",
+              "actual-target-policy",
+              "entry-approval",
+              "lifetime"
+            ]
+          }
+        ]
+      },
+      "revoked": {
+        "status": "revoked",
+        "approval": "0136c060-008d-4332-af9c-392ed7c0f7e6",
+        "binding": {
+          "app": "boilerplate",
+          "artifact": "88ce5e49d0dc1b0eb6b1ae07d338f0b715da4b184a84b89f3e26dade0c85003d",
+          "configuration": "05a7ff341be712612e874d3e897473bf631871f47881e770149f946d44b85a30",
+          "context": "BackOffice",
+          "generation": "0136c060-008d-4332-af9c-392ed7c0f7e6",
+          "installation": "03a68e9b-e0d7-42bc-90d8-d252a7f9e5d1",
+          "lifetimeGeneration": "66bce109-dfcc-4e54-a4d4-bc0d65589729",
+          "package": "divdev/backoffice-members",
+          "packageRevision": 1,
+          "policyRevision": 2,
+          "publisher": "divdev",
+          "receipt": "adb33c1a5e614d90fb3fc5abf01810f680c27e2ba9af1437a13727a8937499b3",
+          "tree": "1f26e22d7037f63ccf39fbf70849b1a9bdd28dda088d12d8d94250eb9e6e1432"
+        },
+        "eligibleForEnforcement": false,
+        "enforcementReady": false,
+        "revokedSubjects": [
+          "action:backoffice-members/archive-get",
+          "action:backoffice-members/create",
+          "action:backoffice-members/delete",
+          "action:backoffice-members/get",
+          "action:backoffice-members/transaction",
+          "action:backoffice-members/update",
+          "page:administration"
+        ]
+      }
+    }
+  },
+  "repositoryHasInstalledCatalog": false,
+  "otherFixtureAdoptions": {
+    "membersNotices": "BOB4A-09: independently reviewed list-members and list-notices in disposable JSON module installations",
+    "taskboard": "BOB4A-10: informational installed Taskboard Page with no actions; no Page permission assignment",
+    "multiResource": "BOB4A-11: explicit records+archive get and transaction declarations, both JSON and SQLite; required-resource clipping refuses"
+  },
+  "qualificationNotes": [
+    "Final full and installed suites include all 36 B4a tests with zero failures/cancellations/skips/todo.",
+    "Initial full suite had two whole-module historical source-pin failures. Archived evidence/hash checks remain; tests now additionally compare the complete installed execution guard byte-for-byte against verified historical source. No HTTP experiment/runtime/limit or historical evidence was changed.",
+    "Early fixture-only failures: wrong live discovery name, attempted recovery before writer exit, synchronous rejection handling, and recursive snapshots following workspace dependency symlinks during a source edit. Corrected without weakening authorization assertions.",
+    "Restricted default-isolation file-level summaries were excluded from functional qualification; final runs used required native listener/subprocess access.",
+    "Artifact drift under an already reviewed unchanged installation revision cannot be blessed by re-review; genuine lifecycle upgrades require fresh review.",
+    "Required npm test and npm run check are repeated after this evidence/documentation recording; final command outcome is in the commit and owner handoff."
+  ],
+  "finalRequiredCheck": {
+    "command": "npm test",
+    "log": "/tmp/b4a-postdocs-full.log"
+  },
+  "remainingB4b": [
+    "enforcing startup prerequisite for every active legacy action",
+    "caller-preserving restrictive action maxima and actual transaction-member checks",
+    "shared canonical BackOffice Page HTTP admission with exact entry and independent live Page permission",
+    "runtime-created component identity/input/session/action/service/final publication/lifetime checks",
+    "explicit real-deployment migrations"
+  ],
+  "limits": [
+    "local cooperating trusted host/filesystem and stopped-App model",
+    "native host authenticates operators independently",
+    "no distributed execution lease or forced native cancellation",
+    "no power-loss/network-filesystem/hostile privileged-writer qualification",
+    "no production migration or real-browser/human accessibility qualification",
+    "WydData/CIR/generic components/wider domains remain deferred"
+  ]
+}

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {gunzipSync} from 'node:zlib';
 import {createHash} from 'node:crypto';
+import {installedGuardSource} from '../test-support/historical-installed-guard.js';
 const stem='test-support/http-native-scheduling-spike-l';
 test('Spike L evidence reconciles every bounded window and preserves optional-observer unknowns',async()=>{
  const e=JSON.parse(await fs.readFile(stem+'-evidence-2026-10-20.json'));
@@ -23,7 +24,8 @@ test('Spike L evidence reconciles every bounded window and preserves optional-ob
  assert.equal(requests,528);
  for(const [file,hash]of Object.entries(e.sourceHashes)){
   assert.equal(createHash('sha256').update(source.sources[file]).digest('hex'),hash);
-  assert.equal(createHash('sha256').update(await fs.readFile(file)).digest('hex'),hash,file);
+  if(file==='packages/wydgine/src/engine/packages/index.js')assert.equal(installedGuardSource(await fs.readFile(file,'utf8')),installedGuardSource(source.sources[file]),file);
+  else assert.equal(createHash('sha256').update(await fs.readFile(file)).digest('hex'),hash,file);
  }
 });
 test('Spike L independent controls prove distinct syscall, scheduling and fairness observations',async()=>{

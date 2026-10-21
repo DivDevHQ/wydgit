@@ -8,6 +8,7 @@ export {
   inspectPackageOperation, recoverPackageOperation,
   inspectPackageEffects, recoverPackageEffects, rollbackPackageEffects
 } from '../engine/packages/index.js';
-// B3 candidate inspection only; no publication, approval or runtime activation.
+// Native inspection remains non-authoritative. Adoption uses the reviewed policy
+// exports above; these validators never publish approval or activate runtime entry.
 export {inspectBackOfficeMigration} from '../engine/packages/backoffice-preflight.js';
 export {validateBackOfficePageEntry,validateBackOfficeActionScope} from '../engine/packages/backoffice-preflight-contract.js';

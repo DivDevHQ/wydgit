@@ -435,3 +435,20 @@ No new real-browser/human AT, privileged Linux/VM/cgroup, power-loss, distribute
 cutover or production-data qualification is claimed. No HTTP retry or deadline
 relaxation was introduced. Commit, remote HEAD and cleanliness are in the final
 handoff; no commit hash is embedded into its own contents.
+
+## B4a reviewed adoption (2026-10-21)
+
+[B4a implementation and qualification](backoffice-b4a-reviewed-adoption.md) extends
+the existing authenticated native package-policy workflow to persist inert Page
+entry/action scope approval and explicit migration evidence. Exact accepted component
+trees and same-installation reviewed action chains are validated before adoption.
+Normal restart preserves evidence; lifecycle/policy/receipt drift makes it stale;
+revocation and recovery preserve the reviewed committed outcome. Real JSON/SQLite
+installations, process death, conflicting writers and tamper cases are qualified.
+
+No runtime admission, Page route, dispatch scope, Gate permission, HTTP reliability,
+provider or frozen-client behavior changes. All 64 in-scope classifications remain
+59 Implemented / 4 Partial / 1 Missing / 0 Unverified; 12 deferred. The BackOffice
+foundation remains incomplete. The adoption layer supports B4b integration; enforcing
+migration at startup, restrictive dispatch and shared Page HTTP admission remain B4b
+work. No production installation was migrated and no version bump is made.

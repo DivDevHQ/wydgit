@@ -98,14 +98,15 @@ export function packageBindings(entry,registry,runtime) {
   return {handlers,actions};
 }
 async function resolveLibraries(root,manifest,hostConfig) {
-  const config=validateConfig(hostConfig??safeRead(root,'wydgit.config.json')),resolved=[],scopeResolvers=new Map(),available=new Set(['object.instances.edit','object.instances.construct','app.forms.submit','event.custom.raise']);
+  const config=validateConfig(hostConfig??safeRead(root,'wydgit.config.json')),resolved=[],scopeResolvers=new Map(),operations=new Map(),available=new Set(['object.instances.edit','object.instances.construct','app.forms.submit','event.custom.raise']);
   for(const required of manifest.requires.libraries){const entry=config.libraries.find(x=>x.id===required.library);check(entry?.enabled,'PACKAGE.LIBRARY','Required library must already be enabled');
     const {module,packageVersion}=await importNodePackage(entry,root);const m=libraryManifest(module.manifest);
     check(m.id===entry.id&&m.publisher===entry.publisher&&m.trust===entry.trust&&m.version===packageVersion&&satisfies(m.version,required.version)&&satisfies(platform.version,m.platform)&&m.targets.includes('server'),'PACKAGE.LIBRARY','Incompatible library');
     for(const a of manifest.backofficeActions??[])if(a.service.library===m.id)check(m.apiVersion===a.service.apiVersion&&m.services.some(s=>s.name===a.service.operation&&s.capability===a.capability)&&Object.hasOwn(module.administrativeOperations??{},a.service.operation)&&module.administrativeOperations[a.service.operation]===a.effect,'ACTION.SERVICE','Unapproved administrative service binding');
+    for(const service of m.services)if(Object.hasOwn(module.administrativeOperations??{},service.name))operations.set(`${m.id}/${service.name}`,{apiVersion:m.apiVersion,capability:service.capability,effect:module.administrativeOperations[service.name]});
     scopeResolvers.set(m.id,input=>module.resolvePackageScopes?.({...input,options:entry.options??{}}));resolved.push({id:m.id,version:m.version,package:entry.package});m.capabilities.forEach(cap=>available.add(cap));
   }
-  return {config,resolved,available,scopeResolvers};
+  return {config,resolved,available,scopeResolvers,operations};
 }
 function approve(manifest,input,instanceIds,existingIds,subset=false) {
   const grants=permissions(input);const requested=manifest.permissions;
@@ -450,6 +451,7 @@ async function planOperation({root,action,package:id,candidates=[],installationC
       }
       const receiptPlan={...subplan,...Object.fromEntries(['page','navigation'].filter(key=>Object.hasOwn(data.entry,key)).map(key=>[key,data.entry[key]]))};
       data.entry.receipt=sameVersion?{...old.receipt,reason:data.entry.reason,protected:data.entry.protected,dependencies:data.entry.manifest.dependencies??{}}:installationReceipt(receiptPlan,data,state.revision+1);
+      if(prior?.backoffice){data.entry.backoffice=clean(prior.backoffice);data.entry.receipt.backofficeHash=prior.receipt.backofficeHash;}
       if(sameVersion&&old.lifetimeGeneration)data.entry.lifetimeGeneration=old.lifetimeGeneration;
       if(data.entry.executionPlacement)data.entry.receipt.executionPlacement=data.entry.executionPlacement;
       if(data.entry.migrationLineage)data.entry.receipt.migrationLineage=data.entry.migrationLineage;

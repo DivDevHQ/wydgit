@@ -1,5 +1,10 @@
 ## Unreleased
 
+- B4a: extend trusted stopped-App package-policy review with durable, generation-bound
+  BackOffice Page-entry/action-scope adoption, explicit revocation and read-only
+  migration evidence. Validate accepted component chains against reviewed local
+  actions; retain receipt-wide runtime dispatch and existing HTTP admission.
+
 - Ratify owner-approved DEC-01/DEC-02 (2026-10-21). Add trusted read-only installed
   BackOffice migration inventory and non-authoritative Page/binding/action-scope
   candidate validators, with deterministic diagnostics and installed fixture tests.

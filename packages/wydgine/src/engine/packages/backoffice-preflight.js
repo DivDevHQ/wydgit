@@ -9,8 +9,9 @@ import {readInstalledState,safeRead,stateFingerprint,baseFingerprint} from './st
 import {validateConfig} from '../libraries/contracts.js';
 import {checkContext} from '../seam/context.js';
 import {checkJsonBudget} from '../libraries/limits.js';
-import {PREFLIGHT_LIMITS,validateBackOfficeActionScope,validateBackOfficePageEntry} from './backoffice-preflight-contract.js';
+import {PREFLIGHT_LIMITS,actionReference,validateBackOfficeActionScope,validateBackOfficePageEntry} from './backoffice-preflight-contract.js';
 
+import {backOfficePageFacts,inspectBackOfficeEvidence} from './backoffice-adoption.js';
 const statusFor=result=>{
   const codes=result.findings.filter(f=>f.severity==='error').map(f=>f.code);
   const declaration=['BO.SCOPE_MISSING','BO.SCOPE_INVALID','BO.RESOURCE_UNKNOWN','BO.ACTION_DECLARATION'];
@@ -19,7 +20,12 @@ const statusFor=result=>{
   if(codes.some(c=>declaration.includes(c)))return 'requires-declaration';
   return codes.length?'requires-receipt-reconciliation':'requires-review';
 };
-const inventoryStatus=items=>items.some(v=>v.status==='blocked')?'blocked':items.some(v=>v.status!=='not-applicable')?'requires-review':'not-applicable';
+const inventoryStatus=items=>{
+  if(items.some(v=>v.status==='blocked'))return 'blocked';
+  const relevant=items.filter(v=>v.status!=='not-applicable');
+  if(!relevant.length)return 'not-applicable';
+  return relevant.every(v=>v.status==='durably-adopted'&&v.eligibleForEnforcement)?'eligible-for-enforcement':'requires-review';
+};
 // Plain facts intentionally contain no credentials, provider roots, record data,
 // native contexts or executable references. They can be passed to pure validators.
 export function inspectBackOfficeMigration({root,libraries,installationContext,verifiedPackages={},pageProposals=[],actionCandidates=[],reviews=[]}){
@@ -58,10 +64,11 @@ export function inspectBackOfficeMigration({root,libraries,installationContext,v
     const entries=state?.packages??[];
     for(const entry of [...entries,...(state?.retained??[]).map(r=>r.entry)].slice().sort((a,b)=>a.manifest.id<b.manifest.id?-1:a.manifest.id>b.manifest.id?1:0)){
       if(proposals.filter(p=>p.package===entry.manifest.id&&p.installation===entry.receipt.id).length>32)throw Error();
+      const adoption=inspectBackOfficeEvidence(entry,app,state);
       const active=entries.includes(entry)&&entry.executionPlacement?.context==='BackOffice'&&entry.executionPlacement.status==='active';
       installations.push({app,package:entry.manifest.id,installation:entry.receipt.id,
-        placement:entry.executionPlacement??null,status:active&&(entry.manifest.backofficeActions?.length??0)>0?'requires-review':'not-applicable',
-        reason:active?'No durable strict-action adoption exists in the current receipt contract.':'Dormant, retired, retained or non-BackOffice; review required before activation.',
+        adoption,placement:entry.executionPlacement??null,status:active&&adoption.eligibleForEnforcement?'eligible-for-enforcement':active&&(entry.manifest.backofficeActions?.length??0)>0?'requires-review':'not-applicable',
+        reason:active?adoption.remediation:'Dormant, retired, retained or non-BackOffice; review required before activation.',
         actionCount:entry.manifest.backofficeActions?.length??0});
       if(!active){
         for(const action of entry.manifest.backofficeActions??[])actions.push({app,package:entry.manifest.id,installation:entry.receipt.id,
@@ -85,24 +92,32 @@ export function inspectBackOfficeMigration({root,libraries,installationContext,v
         }
         const result=validateBackOfficeActionScope({entry,app,action:candidate,operation,stores,resolvedScopes,
           ...reviewFor(entry,`action:${candidate.owner}/${candidate.id}`)});
+        const adopted=!candidateMap.has(key)&&adoption.status==='adopted'&&adoption.actions.some(a=>a.subject===`action:${action.owner}/${action.id}`&&JSON.stringify(clean(a.scope))===JSON.stringify(clean(result.restrictiveScope)));
+        const approvalStatus=adopted?'durably-adopted':adoption.status==='stale'?'stale':adoption.revokedSubjects?.includes(`action:${action.owner}/${action.id}`)?'revoked':null;
         actions.push({app,package:entry.manifest.id,installation:entry.receipt.id,action:action.id,
-          source:candidateMap.has(key)?'candidate-over-installed':'installed',status:statusFor(result),
+          adoptionStatus:approvalStatus??'proposed',reviewed:adopted,durablyAdopted:adopted,eligibleForEnforcement:adopted&&result.valid&&adoption.eligibleForEnforcement,
+          reference:actionReference(entry,action,app),source:candidateMap.has(key)?'candidate-over-installed':'installed',status:result.valid&&approvalStatus?approvalStatus:statusFor(result),
           existingDeclaredResources:action.scopes,existingApprovedResources:{wydstore:entry.storageScopes??[],...entry.libraryScopes},
           legacyExposure:{wydstore:entry.storageScopes??[],...entry.libraryScopes},
           compatibilityRisk:'Legacy dispatch is receipt-wide; dynamic extra-resource dependency cannot be disproved statically.',
-          requiredReviewerAction:'Review the exact maximum, required-resource preflight and live policy; B4 must publish strict adoption.',...result});
+          requiredReviewerAction:'Review the exact maximum through package policy; B4b must independently enforce live authorization.',...result,
+          ...(adopted?{reviewState:'durably-adopted',findings:result.findings.filter(f=>f.code!=='BO.REVIEW_REQUIRED')}:{})});
       }
-      const acceptedPages=[...new Set([entry.placement.page,...(entry.additions??[]).map(a=>a.placement.page)])];
+      const {pages:acceptedPages,nodes}=backOfficePageFacts(model,entry);
+      const adoptedProposals=adoption.status==='adopted'?adoption.pages.map(p=>p.proposal):[];
       for(const page of acceptedPages){
-        const nodes=[];const walk=id=>{const n=model.runtime.get(id),d=model.registry.get(n.prototype);nodes.push({id,page,type:n.prototype,
-          ancestors:[n.prototype,...d.ancestors],isPage:model.registry.isA(n.prototype,'wydgit.core/page')});Object.values(n.slots).flat().forEach(walk);};walk(page);
-        const matches=proposals.filter(p=>p?.package===entry.manifest.id&&p?.installation===entry.receipt.id&&p?.page===page);
+        const matches=[...proposals,...adoptedProposals.filter(a=>!proposals.some(p=>p.key===a.key))].filter(p=>p?.package===entry.manifest.id&&p?.installation===entry.receipt.id&&p?.page===page);
         if(!matches.length){pages.push({app,package:entry.manifest.id,installation:entry.receipt.id,page,status:'not-applicable',
           pageEntryApproved:false,authority:false,reason:'Placement alone creates no HTTP Page entry.'});continue;}
         for(const proposal of matches){
-          usedProposals.add(proposal.key);
+          if(proposals.includes(proposal))usedProposals.add(proposal.key);
           const result=validateBackOfficePageEntry({proposal,entry,app,pages:acceptedPages,nodes,...reviewFor(entry,`page:${proposal.key}`)});
-          pages.push({app,package:entry.manifest.id,installation:entry.receipt.id,page,status:statusFor(result),...result});
+          const adopted=adoptedProposals.some(p=>JSON.stringify(clean(p))===JSON.stringify(clean(proposal)));
+          const chain=proposal.bindings.every(b=>actions.some(a=>a.package===entry.manifest.id&&a.installation===entry.receipt.id&&a.action===b.reference.action&&a.durablyAdopted&&a.valid));
+          pages.push({app,package:entry.manifest.id,installation:entry.receipt.id,page,status:adopted&&result.valid&&chain?'durably-adopted':statusFor(result),...result,
+            ...(adopted&&chain?{reviewState:'durably-adopted',findings:result.findings.filter(f=>f.code!=='BO.REVIEW_REQUIRED')}:{}),
+            pageEntryApproved:adopted&&result.valid&&chain,reviewed:adopted,durablyAdopted:adopted&&result.valid&&chain,
+            eligibleForEnforcement:adopted&&result.valid&&chain&&adoption.eligibleForEnforcement});
         }
       }
       checkContext(guard);

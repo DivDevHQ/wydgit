@@ -8,7 +8,7 @@ import {compileDefinitions,loadRepository} from '../wydgine/repository.js';
 import {ExecutionContext} from '../wydgine/seam/context.js';
 import {packageOperation} from '../wydgine/packages/index.js';
 import {initializeHost} from '../wydgine/host.js';
-export async function twoResourceActionFixture(t,provider){
+export async function twoResourceActionFixture(t,provider,{edit=()=>{},configure=()=>{}}={}){
   return storeActionFixture(t,provider,{edit(m){
     m.storage.push({name:'archive',fields:{text:{type:'string'}}});
     m.permissions.scopes.wydstore.push('archive');
@@ -20,12 +20,14 @@ export async function twoResourceActionFixture(t,provider){
           input:{type:'object',fields:{id:create.input.fields.id,data:create.input.fields.data,collection:create.input.fields.collection},optional:['collection']}}}}}},
       output:{type:'array',maxItems:2,items:create.output}});
     m.backofficeActions.push({...structuredClone(get),id:'archive-get',permission:'archive.action.read',scopes:{wydstore:['archive']}});
+    edit(m);
   },configure(f){
     const store=f.config.libraries.find(l=>l.id==='wydstore').options.stores.find(s=>s.id==='records');
     store.authorization.collections.records.transaction={contexts:['BackOffice'],permission:'content.records.write'};
     store.collections.push({id:'archive',fields:{text:{type:'string'}}});
     store.authorization.collections.archive={get:{contexts:['BackOffice'],permission:'archive.records.read'},create:{contexts:['BackOffice'],permission:'archive.records.write'}};
     f.candidate.storageMappings.archive={store:'records',collection:'archive'};
+    configure(f);
   }});
 }
 

@@ -15,6 +15,7 @@ import {modulesFixture} from '../test-support/backoffice-modules.js';
 import {catalog,plain} from '../test-support/backoffice.js';
 import {loadRepository} from '../wydgine/repository.js';
 import {ExecutionContext} from '../wydgine/seam/context.js';
+import {backOfficePageFacts} from '../packages/wydgine/src/engine/packages/backoffice-adoption.js';
 import {actionReference} from '../packages/wydgine/src/engine/packages/backoffice-preflight-contract.js';
 const {inspectBackOfficeMigration:inspect,validateBackOfficePageEntry:page,validateBackOfficeActionScope:scope}=trusted;
 const codes=r=>r.findings.map(f=>f.code);
@@ -28,8 +29,7 @@ function facts(f,id='get'){
 function pageFacts(f){
   const entry=plain(catalog(f).packages.find(e=>e.manifest.id===f.manifest.id)),model=loadRepository(f.root,{verifiedPackages:f.verifiedPackages??{}}),nodes=[];
   const pages=[entry.placement.page];
-  for(const page of pages){const walk=id=>{const n=model.runtime.get(id),d=model.registry.get(n.prototype);nodes.push({id,page,type:n.prototype,
-    ancestors:[n.prototype,...d.ancestors],isPage:model.registry.isA(n.prototype,'wydgit.core/page')});Object.values(n.slots).flat().forEach(walk);};walk(page);}
+  nodes.push(...backOfficePageFacts(model,entry).nodes);
   const proposal={schema:'wydgit.backoffice-page-entry-proposal/1',key:'administration',app:model.runtime.rootId,package:entry.manifest.id,
     installation:entry.receipt.id,owner:entry.instance,page:entry.placement.page,generation:entry.executionPlacement.generation,
     policyRevision:entry.policyRevision??0,permission:'content.pages.view',bindings:[]};

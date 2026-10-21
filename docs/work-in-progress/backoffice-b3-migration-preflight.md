@@ -5,6 +5,15 @@ clean `develop/0.3`, origin fetched, zero divergence. Read repository instructio
 the ratified B2 contract, B1 implementation/evidence and the governing documents
 linked by those records. No intervening commits or unrelated changes were present.
 
+## B4a successor
+
+[B4a reviewed adoption](backoffice-b4a-reviewed-adoption.md) now implements the
+previously deferred native publication layer through existing reviewed package policy.
+The B3 report below remains historical. Inspection now adds adopted/stale/revoked
+state and complete migration prerequisites; its installed references and Page facts
+can be submitted to that workflow. Caller-supplied review candidates remain
+non-authoritative. No runtime admission or dispatch enforcement is activated.
+
 ## Ratification and implemented boundary
 
 **DEC-01 APPROVED; DEC-02 APPROVED.** Approval date **2026-10-21**; authority

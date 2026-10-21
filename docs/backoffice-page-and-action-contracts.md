@@ -51,15 +51,17 @@ accepted artifacts are never silently reinterpreted or edited.
 
 [B3](work-in-progress/backoffice-b3-migration-preflight.md) implements observational
 installed inventory and pure/non-authoritative candidate validators. A valid candidate
-or matching review witness is not authenticated host approval and never authorizes
-execution. No existing receipt encodes durable strict-action adoption. B3 does not
-reject existing Apps, publish Page entries, attenuate production dispatch or perform
-migration. **Current runtime action dispatch remains receipt-wide.** B1's qualified
-required-resource/actual-target protections and HTTP behavior remain unchanged.
+or matching review witness is not authenticated host approval.
+[B4a reviewed adoption](work-in-progress/backoffice-b4a-reviewed-adoption.md) now
+persists exact reviewed Page/action evidence through the existing stopped-App package
+policy workflow. It binds source review and resulting installation/policy generation,
+with receipt integrity, explicit revocation and recovery. Evidence remains inert.
+**Current runtime action dispatch remains receipt-wide.** No new Page route or caller
+permission is enabled, and pending migration alone does not reject existing Apps.
 
-B4 must version and authenticate durable review/publication evidence, implement
-migration/startup prerequisites and strict dispatch before exposing canonical
-BackOffice Page HTTP entry. Preserve all lifecycle/integrity/recovery, live-policy,
-no-retry and indeterminate-native-outcome guarantees. The 1,000 ms Page deadline
-and **WYDGINE-0.3-HTTP-LIMIT OPEN** status are unchanged. WydData, CIR, wider domains
-and generic data components remain deferred; ratification implements none of them.
+B4b must consume current evidence, enforce complete migration/startup prerequisites,
+restrict dispatch under the original caller, and implement canonical BackOffice Page
+HTTP entry through the existing shared admission/execution path. Preserve independent
+live policy, lifecycle/integrity/recovery, no-retry and indeterminate-native-outcome
+guarantees. The 1,000 ms Page deadline and **WYDGINE-0.3-HTTP-LIMIT OPEN** status are
+unchanged. WydData, CIR, wider domains and generic data components remain deferred.

@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
+import {gunzipSync} from 'node:zlib';
+import {installedGuardSource} from '../test-support/historical-installed-guard.js';
 import {createDeadlineLedger,deadlineArm,deadlineStart,deadlineCheck,deadlineMark,deadlinePhase,deadlineSync} from '../test-support/deadline-ledger.js';
 import {classifyPostCommit} from '../test-support/post-commit-analysis.js';
 
@@ -48,7 +50,11 @@ test('baseline source substitution exactly restores the Spike J installed guard'
     .replace('lstatSync(file,{bigint:true,throwIfNoEntry:false})','lstatSync(path.join(root,file),{bigint:true,throwIfNoEntry:false})');
   // Hash pinned to 1277d456, not a rewritten reference implementation.
   const {createHash}=await import('node:crypto');
-  assert.equal(createHash('sha256').update(reference).digest('hex'),'edd9577cb51a2a7c561e82c3742e0027845269bc3507bf3d564da4a227c7a3a5');
+  const evidence=JSON.parse(await fs.readFile('test-support/http-post-commit-critical-path-spike-k-evidence-2026-10-20.json'));
+  const bytes=await fs.readFile('test-support/'+evidence.archive.file);assert.equal(createHash('sha256').update(bytes).digest('hex'),evidence.archive.sha256);
+  const before=JSON.parse(gunzipSync(bytes)).artifacts['packages-before.js'];
+  assert.equal(createHash('sha256').update(before).digest('hex'),'edd9577cb51a2a7c561e82c3742e0027845269bc3507bf3d564da4a227c7a3a5');
+  assert.equal(installedGuardSource(reference),installedGuardSource(before));
   assert.notEqual(reference,candidate);
 });
 test('failure classes require direct evidence; aggregate persistence never proves a request deadline',()=>{

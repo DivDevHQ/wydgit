@@ -6,7 +6,7 @@ Initial inventory precedes runtime changes. Baseline focused native tests: **112
 zero failures/cancellations/skips. Final qualification and status amendments are in the
 [implementation report](backoffice-foundation-implementation.md).
 
-## Current B3 disposition (2026-10-21)
+## Current B4a disposition (2026-10-21)
 
 **64 in scope: 59 Implemented, 4 Partial, 1 Missing, 0 Unverified; 12 deferred.**
 **DEC-01 and DEC-02 APPROVED by the Project owner on 2026-10-21; zero blocked
@@ -15,6 +15,15 @@ architectural choices.** Enforcement/qualification obligations remain outstandin
 non-authoritative Page/binding/action-scope validation, without changing any row's
 classification. Production dispatch is still receipt-wide; canonical Page HTTP
 admission is still missing. B1 summaries below preserve their historical status.
+
+[B4a](backoffice-b4a-reviewed-adoption.md) adds authenticated durable reviewed
+adoption, generation/receipt/policy fencing, explicit revocation and full accepted
+Page-tree-to-reviewed-action validation. `backoffice-adoption` BOB4A-01–18 qualifies
+these through actual installed packages and both providers. BO-ACT-10 remains
+Partial: restrictive runtime dispatch/startup enforcement is B4b. BO-HTTP-09 remains
+Missing; BO-REU-05/06 and BO-HTTP-12 remain Partial. No row or stable ID is promoted
+by dormant approval evidence. The 64-row table and 12 deferred rows below retain
+all classifications; HTTP-LIMIT remains OPEN.
 
 ## Reading and counting this inventory
 

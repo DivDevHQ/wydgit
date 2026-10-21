@@ -295,3 +295,41 @@ Additional completed verification:
 The final commit's validation record reports the final complete suite after the
 cross-process race and receipt-integrity corrections. No test budget, HTTP reliability implementation or
 security assertion was weakened.
+
+## B4a BackOffice reviewed adoption
+
+The optional native `policy.backoffice` field extends this same plan/approve/apply
+workflow; see the [complete API and evidence contract](work-in-progress/backoffice-b4a-reviewed-adoption.md).
+It is a complete replacement inventory `{actions, pages}`, with exact fresh
+preflight hashes, installed action references and reviewed required-resource scopes.
+Every Page binding requires an action reviewed in that same inventory. Omit the
+field to leave historical evidence untouched (and stale after this policy revision);
+use empty arrays to revoke all current Page/action approvals. Removal from an
+inventory records revocation; reapproval is always explicit.
+
+Adoption plan, review, apply and cancel require the existing independent lifecycle
+and policy capabilities plus `packages.placement.manage`. Authentication is the
+branded, live, exact-App native host binding, with package and installation null.
+The host authenticates/authorizes its operator before issuing it; a submitted
+reviewer label, Gate role, JSON context or trusted flag cannot replace that boundary.
+Recovery retains the existing lifecycle+policy authority and exact durable target;
+it cannot review a new target. Inspection requires the existing policy authority.
+
+Reconcile grant or Store-policy changes separately before proposing adoption.
+Evidence additions/widening conservatively set `plan.expanded`; the same explicit
+native `allowExpansion:true` review is required. Full receipt grants and runtime
+scopes remain unchanged by adoption. The apply outcome advances policy/lifetime
+and placement generation, explicitly rebinding the reviewed references to its
+approval UUID. The source review hashes remain distinct from the target binding.
+
+`entry.backoffice` uses `wydgit.backoffice-adoption/1`, checksum-bound through
+`receipt.backofficeHash` and the existing approved policy hash. Catalog 0.4 and
+receipt 0.1 remain; older code which omits this checksum from policy hashing refuses
+the revised policy integrity rather than silently dropping evidence. This is no
+permission to run an old enforcing runtime against newer evidence. No package or
+platform version bump is made in this development increment.
+
+`inspectPackagePolicy().backoffice` returns historical/current evidence, revocation,
+staleness and remaining action prerequisites; `.approval` independently reports
+reviewed-but-not-applied pending evidence. Pending review and unresolved recovery
+keep the existing App maintenance barrier. No new service or HTTP endpoint exists.

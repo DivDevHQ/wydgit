@@ -19,9 +19,12 @@ const sha=x=>typeof x==='string'&&/^[a-f0-9]{64}$/.test(x);
 const storeName=x=>typeof x==='string'&&/^[A-Za-z][A-Za-z0-9_-]{0,127}$/.test(x)&&!['constructor','prototype','__proto__'].includes(x);
 const uuid=x=>typeof x==='string'&&/^[a-f0-9-]{36}$/.test(x);
 export const candidateHash=policyHash;
+// Approval checksums are excluded from their own contract input. All ordinary
+// receipt identities, grants and revisions remain pinned.
+export const contractReceipt=entry=>{const receipt=clean(entry.receipt);delete receipt.backofficeHash;delete receipt.policyHash;return receipt;};
 export const actionReference=(entry,action,app)=>({schema:'wydgit.backoffice-reference/1',app,package:entry.manifest.id,
   installation:entry.receipt.id,instance:action.owner,action:action.id,generation:entry.executionPlacement?.generation??null,
-  revision:policyHash({action,receipt:entry.receipt,policyRevision:entry.policyRevision??0})});
+  revision:policyHash({action,receipt:contractReceipt(entry),policyRevision:entry.policyRevision??0})});
 function input(value,keys){checkJsonBudget(value,PREFLIGHT_LIMITS,'BACKOFFICE.INVALID_CANDIDATE');if(!record(value)||Object.keys(value).some(k=>!keys.includes(k)))throw Error();return clean(value);}
 function reporter(identity,requirement,source){
   const findings=[];
@@ -129,7 +132,7 @@ export function validateBackOfficeActionScope(raw){
     if(Object.values(declared).some(values=>values.length>1))detail.add('BO.MULTI_RESOURCE_REVIEW','A multi-resource maximum needs explicit review of every required resource.',
       'Review required preflight and actual transaction envelope/member permissions.',{severity:'info',reject:false});
     const hash=policyHash({app,package:m.id,installation:entry.receipt.id,generation:entry.executionPlacement?.generation??null,
-      policyRevision:entry.policyRevision??0,action:a,receipt:entry.receipt,artifact:policyHash({manifest:m,resources:entry.resources}),
+      policyRevision:entry.policyRevision??0,action:a,receipt:contractReceipt(entry),artifact:policyHash({manifest:m,resources:entry.resources}),
       operation:operation??null,policyRequirements,approved:entry.approved,storageMappings:entry.storageMappings,
       approvedResources:approved,declaredMaximum:declared});
     const reviewState=reviewCandidate(review,`action:${a.owner}/${a.id}`,hash,entry,app,detail);
@@ -191,7 +194,7 @@ export function validateBackOfficePageEntry(raw){
         parent=c;
       }
     }
-    const hash=policyHash({proposal:p,artifact:policyHash({manifest:m,resources:entry.resources}),receipt:entry.receipt,nodes});
+    const hash=policyHash({proposal:p,artifact:policyHash({manifest:m,resources:entry.resources}),receipt:contractReceipt(entry),nodes});
     const reviewState=reviewCandidate(review,`page:${p.key}`,hash,entry,app,r);
     return r.result({identity,contractHash:hash,reviewState,pageEntryApproved:false,enforcementReady:false,
       liveChecksRequired:['session','page-permission','action-permission','actual-target-policy','entry-approval','lifetime']});
