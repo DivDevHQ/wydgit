@@ -1,5 +1,11 @@
 ## Unreleased
 
+- B6: ship reusable canonical BackOffice Page controls, typed record property/layout
+  and Markdown editing with explicit load/save, and refreshable dashboards through
+  reviewed same-installation bindings. Qualify installed applications and both
+  providers; preserve native Firefox focus failures and outstanding human AT.
+  Foundation remains incomplete; versions, frozen bundles and HTTP-LIMIT unchanged.
+
 - B5: qualify disposable installed BackOffice applications, canonical browser Page
   intents and JSON/SQLite authorization/lifecycle parity. Sanitize ambiguous local
   admission-mutex diagnostics without reclaiming locks. Retain partial human

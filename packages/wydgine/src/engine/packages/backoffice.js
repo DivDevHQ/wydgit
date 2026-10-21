@@ -193,14 +193,27 @@ export function createBackOfficeActions({root,libraries,installationContext,veri
           const result=await run(registered,identity,bindingInput(binding,input),undefined,{checkRequest:()=>{invocation();checkRequest();},deadline,initiating:context,ledger,completion});
           await reauthorize();if(result.ok)check(binding.constraints.every(c=>matchesContract(result.value,c.output)),'ACTION.INVALID_RESULT','Consumer output constraint');return result;
         };
-        const intents=[];
+        const intents=[],consumers=new Map();
         for(const binding of page.proposal.bindings.filter(b=>b.usage==='intent')){
-          try{await authorize(lookup(binding.reference),identity);intents.push({schema:'wydgit.backoffice-page-binding/1',page:page.reference,name:binding.name,reference:binding.reference});}catch{/* Page admission grants no action visibility. */}
+          if(!consumers.has(binding.consumer))consumers.set(binding.consumer,{id:binding.consumer,actions:[]});
+          try{
+            const registered=lookup(binding.reference);await authorize(registered,identity);
+            const intent={schema:'wydgit.backoffice-page-binding/1',page:page.reference,name:binding.name,reference:binding.reference};intents.push(intent);
+            const {a}=registered;
+            // Presentation uses the most-derived reviewed input constraint. Fixed
+            // top-level keys are supplied only by the server binding, never fields.
+            const input=clean(binding.constraints.at(-1)?.input??a.input);
+            for(const key of Object.keys(binding.fixedInput)){delete input.fields[key];if(input.optional)input.optional=input.optional.filter(k=>k!==key);}
+            consumers.get(binding.consumer).actions.push({title:a.title,effect:a.effect,confirmation:a.confirmation??'',operation:a.service.operation,
+              input,output:a.output,fixedInput:binding.fixedInput,binding:intent});
+          }catch{/* Page admission grants no action visibility. */}
         }
         result=await executePage({model,pageId:page.proposal.page,session,input,context,runtimeSettings,handlers:activatePackages(model,libraries,root).handlers,
           libraries,csrf,backoffice:{prepare},render:async(projection,route,options)=>{
+            const controls={schema:'wydgit.backoffice-controls/1',consumers:[...consumers.values()]};
+            checkJsonBudget(controls,{maxBytes:262144,maxDepth:24,maxNodes:32768},'ACTION.INVALID_RESULT');
             const output=await renderSite(projection,pagePath(model.pages.get(page.proposal.page),model.site),options);
-            output.html=output.html.replace('</head>',`<meta name="wydgit-backoffice-csrf" content="${escapeHtml(csrf)}"><meta name="wydgit-backoffice-bindings" content="${escapeHtml(JSON.stringify(intents))}"></head>`);return output;
+            output.html=output.html.replace('</head>',`<meta name="wydgit-backoffice-csrf" content="${escapeHtml(csrf)}"><meta name="wydgit-backoffice-bindings" content="${escapeHtml(JSON.stringify(intents))}"><meta name="wydgit-backoffice-controls" content="${escapeHtml(JSON.stringify(controls))}"><link rel="stylesheet" href="/backoffice/assets/shell.css"><script type="module" src="/runtime/wydclient/backoffice-controls.js"></script></head>`);return output;
           },cancelled:()=>{try{checkRequest();return false;}catch{return true;}}});
         await reauthorize();
         // Publication rechecks happen immediately before any success bytes.

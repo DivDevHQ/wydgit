@@ -66,3 +66,11 @@ Only disposable fixtures are migrated/qualified. B5 application end-to-end,
 accessibility and actual deployment prerequisites remain. The BackOffice foundation
 is not complete; WYDGINE-0.3-HTTP-LIMIT stays OPEN. No version, deadline, frozen-client,
 release or deployment change is made.
+
+## B6 presentation and qualification
+
+[B6](work-in-progress/backoffice-b6-foundation-completion.md) adds production binding
+presentation in the trusted unbundled web adapter with reusable typed record editing
+and dashboards. Server binding/resource/admission rules above remain unchanged.
+The frozen standalone client artifact process is untouched. Human AT and native
+Firefox focus qualification still prevent foundation completion.

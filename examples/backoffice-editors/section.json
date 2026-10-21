@@ -1,0 +1,81 @@
+{
+  "schema": "wydgit/0.2",
+  "id": "backoffice-editors",
+  "prototype": "divdev/backoffice-editors",
+  "properties": {},
+  "slots": {
+    "blocks": [
+      {
+        "schema": "wydgit/0.2",
+        "id": "workspace-help",
+        "prototype": "wydgit.core/block",
+        "properties": {
+          "content": {
+            "type": "markdown",
+            "value": "# Workspace administration\n\n[Editor](#workspace-editor) \u00b7 [Dashboard](#workspace-dashboard)\n\nLoad the current revision before editing. Confirm each save. Reload the Page to preview persisted Markdown and layout."
+          }
+        },
+        "slots": {},
+        "provenance": {}
+      },
+      {
+        "schema": "wydgit/0.2",
+        "id": "workspace-editor",
+        "prototype": "wydgit.core/section",
+        "properties": {},
+        "slots": {
+          "blocks": []
+        },
+        "provenance": {}
+      },
+      {
+        "schema": "wydgit/0.2",
+        "id": "workspace-dashboard",
+        "prototype": "wydgit.core/section",
+        "properties": {},
+        "slots": {
+          "blocks": []
+        },
+        "provenance": {}
+      },
+      {
+        "schema": "wydgit/0.2",
+        "id": "workspace-preview",
+        "prototype": "wydgit.core/section",
+        "properties": {},
+        "slots": {
+          "blocks": [
+            {
+              "schema": "wydgit/0.2",
+              "id": "workspace-title",
+              "prototype": "wydgit.core/block",
+              "properties": {
+                "content": {
+                  "type": "markdown",
+                  "value": "## Preview"
+                }
+              },
+              "slots": {},
+              "provenance": {}
+            },
+            {
+              "schema": "wydgit/0.2",
+              "id": "workspace-body",
+              "prototype": "wydgit.core/block",
+              "properties": {
+                "content": {
+                  "type": "markdown",
+                  "value": "Load current content."
+                }
+              },
+              "slots": {},
+              "provenance": {}
+            }
+          ]
+        },
+        "provenance": {}
+      }
+    ]
+  },
+  "provenance": {}
+}

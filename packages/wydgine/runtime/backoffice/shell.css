@@ -57,3 +57,11 @@ button:disabled { opacity:.6; cursor:wait; }
 .bo-field [aria-invalid="true"] { outline:2px solid var(--focus); outline-offset:2px; }
 .bo-value { white-space:pre-wrap; overflow-wrap:anywhere; max-width:24rem; }
 .bo-table details { width:20rem; max-width:100%; }
+.bo-controls { min-width:0; max-width:100%; }
+.bo-controls > form { margin:1rem 0; max-width:45rem; }
+.bo-controls > form > fieldset { min-width:0; border:1px solid var(--line); padding:1rem; }
+.bo-controls dl { display:grid; grid-template-columns:minmax(4rem,auto) minmax(0,1fr); gap:.5rem 1rem; }
+.bo-controls dd { margin:0; min-width:0; overflow-wrap:anywhere; }
+.bo-controls textarea { min-height:10rem; resize:vertical; }
+.bo-controls [role="alert"] { border-left:3px solid var(--focus); padding-left:.75rem; }
+@media(max-width:700px) { .bo-controls dl { grid-template-columns:minmax(0,1fr); } }

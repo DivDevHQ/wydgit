@@ -1,0 +1,2792 @@
+{
+  "schema": "wydgit.backoffice-b6-evidence/1",
+  "date": "2026-10-21",
+  "baseline": {
+    "branch": "develop/0.3",
+    "head": "4f94474b1844c48385da777fd734ca64831a46c2",
+    "remote": "origin/develop/0.3",
+    "remoteHead": "4f94474b1844c48385da777fd734ca64831a46c2",
+    "clean": true
+  },
+  "humanAssistiveTechnologyPerformed": false,
+  "runs": [
+    {
+      "name": "firefox-baseline",
+      "argv": [
+        "env",
+        "WYDCLIENT_BROWSER=firefox",
+        "node",
+        "scripts/verify-backoffice-b5-browser.js"
+      ],
+      "started": "2026-10-21T19:04:05.964Z",
+      "finished": "2026-10-21T19:04:07.385Z",
+      "exit": 1,
+      "signal": null,
+      "log": "test-support/b6-logs/01-firefox-baseline.log",
+      "sha256": "5ed327aefebc76a517f3652c50e230d4652c2e9933e749fce74bf4b9f0bbaf08",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "finding": "Sandbox EPERM prevented a disposable loopback listener; no browser qualification.",
+      "qualification": "failed; preserved"
+    },
+    {
+      "name": "initial-direct-renderer",
+      "argv": [
+        "node",
+        "--test",
+        "test/backoffice-ui.test.js"
+      ],
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "exit": 1,
+      "log": "/tmp/b6-ui-first.log",
+      "sha256": "f62b8b91b053ee059c6cc70c4df7dd16f8859af0f75797d03ac0b49bd3dea164",
+      "qualification": "failed; preserved",
+      "reportedFileTests": 1,
+      "reportedFileFailures": 1
+    },
+    {
+      "name": "ui-refactor",
+      "argv": [
+        "node",
+        "--test",
+        "test/backoffice-ui.test.js"
+      ],
+      "started": "2026-10-21T19:05:11.567Z",
+      "finished": "2026-10-21T19:05:12.061Z",
+      "exit": 0,
+      "signal": null,
+      "log": "test-support/b6-logs/02-ui-refactor.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "qualification": "unqualified: zero captured output; no passing tests/checks inferred from exit code"
+    },
+    {
+      "name": "ui-tap",
+      "argv": [
+        "node",
+        "--test",
+        "--test-reporter=tap",
+        "test/backoffice-ui.test.js"
+      ],
+      "started": "2026-10-21T19:05:31.174Z",
+      "finished": "2026-10-21T19:05:31.673Z",
+      "exit": 0,
+      "signal": null,
+      "log": "test-support/b6-logs/03-ui-tap.log",
+      "sha256": "a00de0b13c81856d9d3dcc1e5f23ebcae66fca7f91b91910980ad0a045c19813",
+      "tests": 15,
+      "pass": 15,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "qualification": "observed completed command; test counts only where emitted"
+    },
+    {
+      "name": "firefox-native-headless",
+      "argv": [
+        "env",
+        "WYDCLIENT_BROWSER=firefox",
+        "node",
+        "scripts/verify-backoffice-b5-browser.js"
+      ],
+      "started": "2026-10-21T19:05:57.142Z",
+      "finished": "2026-10-21T19:06:01.437Z",
+      "exit": 1,
+      "signal": null,
+      "log": "test-support/b6-logs/04-firefox-native-headless.log",
+      "sha256": "90b9d2a46d21209828091808496b0183e2db0f29c78706dd6651836370fb64d0",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "finding": "Firefox 158 headless failed actual document.hasFocus prerequisite.",
+      "qualification": "failed; preserved",
+      "browserEvidence": {
+        "file": "/tmp/wyd-backoffice-b5-browser-BnpDge/result.json",
+        "sha256": "960d7f6b8ed2fe3e832e6bb38e34d4001e44054711083abab0655cdbf4a18ab0",
+        "result": {
+          "ok": false,
+          "firefox": true,
+          "pointerOnly": false,
+          "providers": [],
+          "limitations": [
+            "Human assistive technology, speech, actual zoom/forced-colors/touch remain unverified.",
+            "Bound intent integration uses an explicit trusted test client, not a shipped frozen WydClient feature."
+          ],
+          "browser": "Mozilla Firefox 158.0"
+        },
+        "screenshots": []
+      }
+    },
+    {
+      "name": "firefox-graphical",
+      "argv": [
+        "env",
+        "WYDCLIENT_HEADFUL=1",
+        "WYDCLIENT_BROWSER=firefox",
+        "node",
+        "scripts/verify-backoffice-b5-browser.js"
+      ],
+      "started": "2026-10-21T19:07:03.505Z",
+      "finished": "2026-10-21T19:07:08.032Z",
+      "exit": 1,
+      "signal": null,
+      "log": "test-support/b6-logs/05-firefox-graphical.log",
+      "sha256": "a4ccc2f8a8934fc4ec75f44b1719f175214602c1f6912faa5e8a65f3ec8e8dc8",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "finding": "Graphical Firefox still failed actual document.hasFocus prerequisite.",
+      "qualification": "failed; preserved",
+      "browserEvidence": {
+        "file": "/tmp/wyd-backoffice-b5-browser-257B3U/result.json",
+        "sha256": "960d7f6b8ed2fe3e832e6bb38e34d4001e44054711083abab0655cdbf4a18ab0",
+        "result": {
+          "ok": false,
+          "firefox": true,
+          "pointerOnly": false,
+          "providers": [],
+          "limitations": [
+            "Human assistive technology, speech, actual zoom/forced-colors/touch remain unverified.",
+            "Bound intent integration uses an explicit trusted test client, not a shipped frozen WydClient feature."
+          ],
+          "browser": "Mozilla Firefox 158.0"
+        },
+        "screenshots": []
+      }
+    },
+    {
+      "name": "b5-regression",
+      "argv": [
+        "node",
+        "--test",
+        "--test-reporter=tap",
+        "test/backoffice-b5.test.js"
+      ],
+      "started": "2026-10-21T19:06:55.489Z",
+      "finished": "2026-10-21T19:07:30.523Z",
+      "exit": 0,
+      "signal": null,
+      "log": "test-support/b6-logs/06-b5-regression.log",
+      "sha256": "6f9a2b6bedad9b5335a5cadac3e094b10a89309242782631f16b22224fa34ece",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "qualification": "observed completed command; test counts only where emitted"
+    },
+    {
+      "name": "editor-installed-first",
+      "argv": [
+        "node",
+        "--test",
+        "--test-reporter=tap",
+        "test/backoffice-b6.test.js"
+      ],
+      "started": "2026-10-21T19:07:42.215Z",
+      "finished": "2026-10-21T19:07:42.696Z",
+      "exit": 1,
+      "signal": null,
+      "log": "test-support/b6-logs/07-editor-installed-first.log",
+      "sha256": "8b5d0bed93e15edefa3b03a8df2cb813aefbf434ed35f481152ddc1888e0e47f",
+      "tests": 3,
+      "pass": 1,
+      "fail": 2,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "finding": "Fixture permissions used two components; Store requires exact three-component permission identifiers. Corrected fixture, unchanged validators.",
+      "qualification": "failed; preserved"
+    },
+    {
+      "name": "editor-installed-corrected",
+      "argv": [
+        "node",
+        "--test",
+        "--test-reporter=tap",
+        "test/backoffice-b6.test.js"
+      ],
+      "started": "2026-10-21T19:08:18.494Z",
+      "finished": "2026-10-21T19:08:22.356Z",
+      "exit": 1,
+      "signal": null,
+      "log": "test-support/b6-logs/08-editor-installed-corrected.log",
+      "sha256": "828069fe080a7378c5dade0d8be6b67d1d07fb68b8a8235339c096e77486afa8",
+      "tests": 3,
+      "pass": 1,
+      "fail": 2,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "finding": "New production module was missing from explicit trusted browser asset whitelist (404); added exact module only.",
+      "qualification": "failed; preserved"
+    },
+    {
+      "name": "firefox-graphical-os-focus",
+      "argv": [
+        "env",
+        "WYDCLIENT_HEADFUL=1",
+        "WYDCLIENT_BROWSER=firefox",
+        "node",
+        "scripts/verify-backoffice-b5-browser.js"
+      ],
+      "started": "2026-10-21T19:08:20.943Z",
+      "finished": "2026-10-21T19:08:25.393Z",
+      "exit": 1,
+      "signal": null,
+      "log": "test-support/b6-logs/09-firefox-graphical-os-focus.log",
+      "sha256": "bc8bbca4221831176d5f6701ab1112a95c58288efaf3cb82fb4a486f24e53567",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "finding": "BiDi activation and exact-process X window focus did not restore document.hasFocus.",
+      "qualification": "failed; preserved",
+      "browserEvidence": {
+        "file": "/tmp/wyd-backoffice-b5-browser-cZVdBZ/result.json",
+        "sha256": "960d7f6b8ed2fe3e832e6bb38e34d4001e44054711083abab0655cdbf4a18ab0",
+        "result": {
+          "ok": false,
+          "firefox": true,
+          "pointerOnly": false,
+          "providers": [],
+          "limitations": [
+            "Human assistive technology, speech, actual zoom/forced-colors/touch remain unverified.",
+            "Bound intent integration uses an explicit trusted test client, not a shipped frozen WydClient feature."
+          ],
+          "browser": "Mozilla Firefox 158.0"
+        },
+        "screenshots": []
+      }
+    },
+    {
+      "name": "firefox-plain-document",
+      "argv": [
+        "env",
+        "WYDCLIENT_HEADFUL=1",
+        "node",
+        "/tmp/b6-focus.mjs"
+      ],
+      "started": "2026-10-21T19:09:10.370Z",
+      "finished": "2026-10-21T19:09:12.488Z",
+      "exit": 0,
+      "signal": null,
+      "log": "test-support/b6-logs/10-firefox-plain-document.log",
+      "sha256": "1e2a569aee8dac5f1da748ef97cc5a60a752aa51735a69ff760595a19c975c65",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "finding": "Diagnostic only: plain document hasFocus false before and after native Tab despite active INPUT and X focus on exact disposable process.",
+      "qualification": "diagnostic execution only, not keyboard acceptance"
+    },
+    {
+      "name": "editor-installed-assets",
+      "argv": [
+        "node",
+        "--test",
+        "--test-reporter=tap",
+        "test/backoffice-b6.test.js"
+      ],
+      "started": "2026-10-21T19:09:07.691Z",
+      "finished": "2026-10-21T19:09:23.137Z",
+      "exit": 0,
+      "signal": null,
+      "log": "test-support/b6-logs/11-editor-installed-assets.log",
+      "sha256": "4b6355758a605c23e8b86f082fc44dc7148e6da46d98983e9315338f7e1d9414",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "qualification": "observed completed command; test counts only where emitted"
+    },
+    {
+      "name": "editor-ui",
+      "argv": [
+        "node",
+        "--test",
+        "--test-reporter=tap",
+        "test/backoffice-controls.test.js",
+        "test/backoffice-ui.test.js"
+      ],
+      "started": "2026-10-21T19:09:52.041Z",
+      "finished": "2026-10-21T19:09:52.500Z",
+      "exit": 0,
+      "signal": null,
+      "log": "test-support/b6-logs/12-editor-ui.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "qualification": "unqualified: zero captured output; no passing tests/checks inferred from exit code"
+    },
+    {
+      "name": "editor-ui-native",
+      "argv": [
+        "node",
+        "--test",
+        "--test-reporter=tap",
+        "test/backoffice-controls.test.js",
+        "test/backoffice-ui.test.js"
+      ],
+      "started": "2026-10-21T19:10:03.423Z",
+      "finished": "2026-10-21T19:10:03.928Z",
+      "exit": 0,
+      "signal": null,
+      "log": "test-support/b6-logs/13-editor-ui-native.log",
+      "sha256": "4523a025d050de1e6497240dbc0da4bcb03668b096068f69a1dcea646460d0a8",
+      "tests": 18,
+      "pass": 18,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "qualification": "observed completed command; test counts only where emitted"
+    },
+    {
+      "name": "chrome-production-first",
+      "argv": [
+        "node",
+        "scripts/verify-backoffice-b6-browser.js"
+      ],
+      "started": "2026-10-21T19:11:08.460Z",
+      "finished": "2026-10-21T19:11:13.216Z",
+      "exit": 1,
+      "signal": null,
+      "log": "test-support/b6-logs/14-chrome-production-first.log",
+      "sha256": "93c95e8f05057eb110f5ce663f564600557c57a6458ff8985c8927f475b84479",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "finding": "Independent writer incorrectly reused the browser Session CSRF. Server correctly returned 403; writer now obtains its own Session token.",
+      "qualification": "failed; preserved",
+      "browserEvidence": {
+        "file": "/tmp/wyd-backoffice-b6-browser-aDvtWV/result.json",
+        "sha256": "65dd5f413f432d6ab402caf576073b6aa55053af7c0dd46b65a670d88765a7ad",
+        "result": {
+          "ok": false,
+          "firefox": false,
+          "pointerOnly": false,
+          "headful": false,
+          "providers": [],
+          "humanAT": false,
+          "limitations": [
+            "Human AT, actual zoom, forced colors and touch remain unqualified. No dialog/modal is introduced."
+          ],
+          "browser": "Google Chrome 156.0.8078.47",
+          "initialFocus": {
+            "hasFocus": true,
+            "hidden": false,
+            "active": "BODY"
+          }
+        },
+        "screenshots": []
+      }
+    },
+    {
+      "name": "firefox-focus-without-testmode",
+      "argv": [
+        "env",
+        "WYDCLIENT_HEADFUL=1",
+        "WYDCLIENT_FIREFOX_FOCUS_TESTMODE=0",
+        "node",
+        "scripts/verify-firefox-focus.js"
+      ],
+      "started": "2026-10-21T19:12:04.368Z",
+      "finished": "2026-10-21T19:12:07.417Z",
+      "exit": 0,
+      "signal": null,
+      "log": "test-support/b6-logs/15-firefox-focus-without-testmode.log",
+      "sha256": "1e2a569aee8dac5f1da748ef97cc5a60a752aa51735a69ff760595a19c975c65",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "finding": "Diagnostic only: disabling focusmanager.testmode produces identical false hasFocus on plain document.",
+      "qualification": "diagnostic execution only, not keyboard acceptance"
+    },
+    {
+      "name": "chrome-production-csrf",
+      "argv": [
+        "node",
+        "scripts/verify-backoffice-b6-browser.js"
+      ],
+      "started": "2026-10-21T19:12:01.445Z",
+      "finished": "2026-10-21T19:12:18.006Z",
+      "exit": 0,
+      "signal": null,
+      "log": "test-support/b6-logs/16-chrome-production-csrf.log",
+      "sha256": "b63edef7e7d9ccc8a960a4ab70b33905b4490ff9b09173d2fcbbbe172622901f",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "qualification": "observed completed command; test counts only where emitted",
+      "browserEvidence": {
+        "file": "/tmp/wyd-backoffice-b6-browser-fvCTGu/result.json",
+        "sha256": "0349d7b332af413b4d1d408b8ab34ead05527fa32d92c88cb87a531d19bc717f",
+        "result": {
+          "ok": true,
+          "firefox": false,
+          "pointerOnly": false,
+          "headful": false,
+          "providers": [
+            {
+              "provider": "json",
+              "productionClient": true,
+              "keyboardOnly": true,
+              "disabledUntilLoad": true,
+              "revision": 3,
+              "deniedMutationAbsent": true,
+              "conflictRequiresReload": true,
+              "audit": {
+                "main": 1,
+                "unnamed": 0,
+                "dialogs": 0
+              },
+              "layouts": [
+                {
+                  "width": 320,
+                  "scroll": 305
+                },
+                {
+                  "width": 360,
+                  "scroll": 345
+                },
+                {
+                  "width": 768,
+                  "scroll": 753
+                },
+                {
+                  "width": 1280,
+                  "scroll": 1265
+                }
+              ],
+              "contrast": {
+                "light": 13.320950605055367,
+                "dark": 13.399258849587758
+              },
+              "focus": {
+                "active": "Result",
+                "outline": "solid"
+              },
+              "checks": [
+                "native login and skip link",
+                "typed load/edit/save with Markdown and layout persistence",
+                "linked validation and focus recovery",
+                "confirmation consumption and Shift-Tab",
+                "explicit dashboard refresh/table",
+                "concurrent revision conflict, reload and retained values",
+                "live revocation and expiry disable with focused recovery"
+              ]
+            },
+            {
+              "provider": "sqlite",
+              "productionClient": true,
+              "keyboardOnly": true,
+              "disabledUntilLoad": true,
+              "revision": 3,
+              "deniedMutationAbsent": true,
+              "conflictRequiresReload": true,
+              "audit": {
+                "main": 1,
+                "unnamed": 0,
+                "dialogs": 0
+              },
+              "layouts": [
+                {
+                  "width": 320,
+                  "scroll": 305
+                },
+                {
+                  "width": 360,
+                  "scroll": 345
+                },
+                {
+                  "width": 768,
+                  "scroll": 753
+                },
+                {
+                  "width": 1280,
+                  "scroll": 1265
+                }
+              ],
+              "contrast": {
+                "light": 13.320950605055367,
+                "dark": 13.399258849587758
+              },
+              "focus": {
+                "active": "Result",
+                "outline": "solid"
+              },
+              "checks": [
+                "native login and skip link",
+                "typed load/edit/save with Markdown and layout persistence",
+                "linked validation and focus recovery",
+                "confirmation consumption and Shift-Tab",
+                "explicit dashboard refresh/table",
+                "concurrent revision conflict, reload and retained values",
+                "live revocation and expiry disable with focused recovery"
+              ]
+            }
+          ],
+          "humanAT": false,
+          "limitations": [
+            "Human AT, actual zoom, forced colors and touch remain unqualified. No dialog/modal is introduced."
+          ],
+          "browser": "Google Chrome 156.0.8078.47",
+          "initialFocus": {
+            "hasFocus": true,
+            "hidden": false,
+            "active": "BODY"
+          }
+        },
+        "screenshots": [
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-fvCTGu/json-dark.png",
+            "sha256": "77d3649b04caf2f374c95e01c3c2da33547b2784894c88ba41f04a4a4e2f64fa",
+            "pixels": [
+              1280,
+              3083
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-fvCTGu/json-light.png",
+            "sha256": "70c4d67ff6b8b0b5822e0d2fcf70d323bfc9c8dc60cb164fcf68ad8a5fc4df0f",
+            "pixels": [
+              1280,
+              3083
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-fvCTGu/json-mobile.png",
+            "sha256": "c8d69aac0814ca9362396f5a268606ce519dbb92a7f324564eae179bbe461b77",
+            "pixels": [
+              360,
+              3664
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-fvCTGu/sqlite-dark.png",
+            "sha256": "77d3649b04caf2f374c95e01c3c2da33547b2784894c88ba41f04a4a4e2f64fa",
+            "pixels": [
+              1280,
+              3083
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-fvCTGu/sqlite-light.png",
+            "sha256": "70c4d67ff6b8b0b5822e0d2fcf70d323bfc9c8dc60cb164fcf68ad8a5fc4df0f",
+            "pixels": [
+              1280,
+              3083
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-fvCTGu/sqlite-mobile.png",
+            "sha256": "c8d69aac0814ca9362396f5a268606ce519dbb92a7f324564eae179bbe461b77",
+            "pixels": [
+              360,
+              3664
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "focused-security",
+      "argv": [
+        "node",
+        "--test",
+        "--test-reporter=tap",
+        "test/backoffice-b6.test.js",
+        "test/backoffice-controls.test.js",
+        "test/backoffice-enforcement.test.js",
+        "test/backoffice-adoption.test.js",
+        "test/backoffice-preflight.test.js",
+        "test/backoffice-action-scope.test.js",
+        "test/backoffice-page-foundation.test.js",
+        "test/backoffice-actions.test.js",
+        "test/backoffice-http.test.js",
+        "test/backoffice-modules.test.js",
+        "test/backoffice-placement.test.js",
+        "test/policy-reconciliation.test.js",
+        "test/deadline-ledger.test.js",
+        "test/native-scheduling-evidence.test.js"
+      ],
+      "started": "2026-10-21T19:11:41.762Z",
+      "finished": "2026-10-21T19:12:36.910Z",
+      "exit": 0,
+      "signal": null,
+      "log": "test-support/b6-logs/17-focused-security.log",
+      "sha256": "cc583d79853dcde7f1248623c3b30bec474a7b0fd68a365081d251e55db7e006",
+      "tests": 317,
+      "pass": 317,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "qualification": "observed completed command; test counts only where emitted"
+    },
+    {
+      "name": "firefox-production-native",
+      "argv": [
+        "env",
+        "WYDCLIENT_HEADFUL=1",
+        "WYDCLIENT_BROWSER=firefox",
+        "node",
+        "scripts/verify-backoffice-b6-browser.js"
+      ],
+      "started": "2026-10-21T19:13:29.013Z",
+      "finished": "2026-10-21T19:13:32.958Z",
+      "exit": 1,
+      "signal": null,
+      "log": "test-support/b6-logs/18-firefox-production-native.log",
+      "sha256": "1d33aa4874bd80898907a3e1b1de97bafa088938db970d7a344969bf60bbc1bd",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "finding": "New production Firefox journey failed genuine document focus before native login; no fallback or fabricated keyboard pass.",
+      "qualification": "failed; preserved",
+      "browserEvidence": {
+        "file": "/tmp/wyd-backoffice-b6-browser-YTg6no/result.json",
+        "sha256": "23ea2c077920e4df0866ff14e4131e2b5ab6bf2133df78817486015273cac29b",
+        "result": {
+          "ok": false,
+          "firefox": true,
+          "pointerOnly": false,
+          "headful": true,
+          "providers": [],
+          "humanAT": false,
+          "limitations": [
+            "Human AT, actual zoom, forced colors and touch remain unqualified. No dialog/modal is introduced."
+          ],
+          "browser": "Mozilla Firefox 158.0",
+          "initialFocus": {
+            "hasFocus": false,
+            "hidden": false,
+            "active": "BODY"
+          }
+        },
+        "screenshots": []
+      }
+    },
+    {
+      "name": "chrome-production-modules",
+      "argv": [
+        "node",
+        "scripts/verify-backoffice-b6-browser.js"
+      ],
+      "started": "2026-10-21T19:14:07.929Z",
+      "finished": "2026-10-21T19:14:31.123Z",
+      "exit": 1,
+      "signal": null,
+      "log": "test-support/b6-logs/19-chrome-production-modules.log",
+      "sha256": "58ede62fe42fa77a3810c4aea3869b8c14d60543833527d5707b62f576addc1f",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "finding": "Roster does not disclose username. Corrected test to inspect actual public membership output.",
+      "qualification": "failed; preserved",
+      "browserEvidence": {
+        "file": "/tmp/wyd-backoffice-b6-browser-K76lW6/result.json",
+        "sha256": "91fa336a57ff34d720b17cfa5fef55aa14f7bac62b4e80cfc8548e138269f34b",
+        "result": {
+          "ok": false,
+          "firefox": false,
+          "pointerOnly": false,
+          "headful": false,
+          "providers": [
+            {
+              "provider": "json",
+              "reviewPlanBytes": 22460,
+              "productionClient": true,
+              "keyboardOnly": true,
+              "disabledUntilLoad": true,
+              "revision": 3,
+              "deniedMutationAbsent": true,
+              "conflictRequiresReload": true,
+              "audit": {
+                "main": 1,
+                "unnamed": 0,
+                "dialogs": 0
+              },
+              "layouts": [
+                {
+                  "width": 320,
+                  "scroll": 305
+                },
+                {
+                  "width": 360,
+                  "scroll": 345
+                },
+                {
+                  "width": 768,
+                  "scroll": 753
+                },
+                {
+                  "width": 1280,
+                  "scroll": 1265
+                }
+              ],
+              "contrast": {
+                "light": 13.320950605055367,
+                "dark": 13.399258849587758
+              },
+              "focus": {
+                "active": "Result",
+                "outline": "solid"
+              },
+              "checks": [
+                "native login and skip link",
+                "typed load/edit/save with Markdown and layout persistence",
+                "linked validation and focus recovery",
+                "confirmation consumption and Shift-Tab",
+                "explicit dashboard refresh/table",
+                "concurrent revision conflict, reload and retained values",
+                "live revocation and expiry disable with focused recovery"
+              ]
+            },
+            {
+              "provider": "sqlite",
+              "reviewPlanBytes": 22460,
+              "productionClient": true,
+              "keyboardOnly": true,
+              "disabledUntilLoad": true,
+              "revision": 3,
+              "deniedMutationAbsent": true,
+              "conflictRequiresReload": true,
+              "audit": {
+                "main": 1,
+                "unnamed": 0,
+                "dialogs": 0
+              },
+              "layouts": [
+                {
+                  "width": 320,
+                  "scroll": 305
+                },
+                {
+                  "width": 360,
+                  "scroll": 345
+                },
+                {
+                  "width": 768,
+                  "scroll": 753
+                },
+                {
+                  "width": 1280,
+                  "scroll": 1265
+                }
+              ],
+              "contrast": {
+                "light": 13.320950605055367,
+                "dark": 13.399258849587758
+              },
+              "focus": {
+                "active": "Result",
+                "outline": "solid"
+              },
+              "checks": [
+                "native login and skip link",
+                "typed load/edit/save with Markdown and layout persistence",
+                "linked validation and focus recovery",
+                "confirmation consumption and Shift-Tab",
+                "explicit dashboard refresh/table",
+                "concurrent revision conflict, reload and retained values",
+                "live revocation and expiry disable with focused recovery"
+              ]
+            }
+          ],
+          "humanAT": false,
+          "limitations": [
+            "Human AT, actual zoom, forced colors and touch remain unqualified. No dialog/modal is introduced."
+          ],
+          "browser": "Google Chrome 156.0.8078.47",
+          "initialFocus": {
+            "hasFocus": true,
+            "hidden": false,
+            "active": "BODY"
+          },
+          "modules": []
+        },
+        "screenshots": [
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-K76lW6/json-dark.png",
+            "sha256": "77d3649b04caf2f374c95e01c3c2da33547b2784894c88ba41f04a4a4e2f64fa",
+            "pixels": [
+              1280,
+              3083
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-K76lW6/json-light.png",
+            "sha256": "70c4d67ff6b8b0b5822e0d2fcf70d323bfc9c8dc60cb164fcf68ad8a5fc4df0f",
+            "pixels": [
+              1280,
+              3083
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-K76lW6/json-mobile.png",
+            "sha256": "c8d69aac0814ca9362396f5a268606ce519dbb92a7f324564eae179bbe461b77",
+            "pixels": [
+              360,
+              3664
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-K76lW6/sqlite-dark.png",
+            "sha256": "77d3649b04caf2f374c95e01c3c2da33547b2784894c88ba41f04a4a4e2f64fa",
+            "pixels": [
+              1280,
+              3083
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-K76lW6/sqlite-light.png",
+            "sha256": "70c4d67ff6b8b0b5822e0d2fcf70d323bfc9c8dc60cb164fcf68ad8a5fc4df0f",
+            "pixels": [
+              1280,
+              3083
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-K76lW6/sqlite-mobile.png",
+            "sha256": "c8d69aac0814ca9362396f5a268606ce519dbb92a7f324564eae179bbe461b77",
+            "pixels": [
+              360,
+              3664
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "firefox-production-pointer",
+      "argv": [
+        "env",
+        "WYDCLIENT_BROWSER=firefox",
+        "WYDCLIENT_FIREFOX_POINTER_ONLY=1",
+        "node",
+        "scripts/verify-backoffice-b6-browser.js"
+      ],
+      "started": "2026-10-21T19:14:04.121Z",
+      "finished": "2026-10-21T19:14:34.576Z",
+      "exit": 1,
+      "signal": null,
+      "log": "test-support/b6-logs/20-firefox-production-pointer.log",
+      "sha256": "2714f9a745b4d6add7753fa17cbdc323f31f5ddf07ea80eeaf1f802414ab581b",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "finding": "Both-provider editor subset ran; module assertion incorrectly expected private username. Corrected. Historical native-step labels in this failed pointer run are not keyboard evidence.",
+      "qualification": "failed; preserved",
+      "browserEvidence": {
+        "file": "/tmp/wyd-backoffice-b6-browser-aIe9tz/result.json",
+        "sha256": "88d2f6226260ba382b952ca79c340e49d065f4e1de63694a0a8dc21cd08b4e22",
+        "result": {
+          "ok": false,
+          "firefox": true,
+          "pointerOnly": true,
+          "headful": false,
+          "providers": [
+            {
+              "provider": "json",
+              "reviewPlanBytes": 22460,
+              "productionClient": true,
+              "keyboardOnly": false,
+              "disabledUntilLoad": true,
+              "revision": 3,
+              "deniedMutationAbsent": true,
+              "conflictRequiresReload": true,
+              "audit": {
+                "main": 1,
+                "unnamed": 0,
+                "dialogs": 0
+              },
+              "layouts": [
+                {
+                  "width": 320,
+                  "scroll": 308
+                },
+                {
+                  "width": 360,
+                  "scroll": 348
+                },
+                {
+                  "width": 768,
+                  "scroll": 756
+                },
+                {
+                  "width": 1280,
+                  "scroll": 1268
+                }
+              ],
+              "contrast": {
+                "light": 13.320950605055367,
+                "dark": 13.399258849587758
+              },
+              "focus": {
+                "active": "Result",
+                "outline": "none"
+              },
+              "checks": [
+                "native login and skip link",
+                "typed load/edit/save with Markdown and layout persistence",
+                "linked validation and focus recovery",
+                "confirmation consumption and Shift-Tab",
+                "explicit dashboard refresh/table",
+                "concurrent revision conflict, reload and retained values",
+                "live revocation and expiry disable with focused recovery"
+              ]
+            },
+            {
+              "provider": "sqlite",
+              "reviewPlanBytes": 22460,
+              "productionClient": true,
+              "keyboardOnly": false,
+              "disabledUntilLoad": true,
+              "revision": 3,
+              "deniedMutationAbsent": true,
+              "conflictRequiresReload": true,
+              "audit": {
+                "main": 1,
+                "unnamed": 0,
+                "dialogs": 0
+              },
+              "layouts": [
+                {
+                  "width": 320,
+                  "scroll": 308
+                },
+                {
+                  "width": 360,
+                  "scroll": 348
+                },
+                {
+                  "width": 768,
+                  "scroll": 756
+                },
+                {
+                  "width": 1280,
+                  "scroll": 1268
+                }
+              ],
+              "contrast": {
+                "light": 13.320950605055367,
+                "dark": 13.399258849587758
+              },
+              "focus": {
+                "active": "Result",
+                "outline": "none"
+              },
+              "checks": [
+                "native login and skip link",
+                "typed load/edit/save with Markdown and layout persistence",
+                "linked validation and focus recovery",
+                "confirmation consumption and Shift-Tab",
+                "explicit dashboard refresh/table",
+                "concurrent revision conflict, reload and retained values",
+                "live revocation and expiry disable with focused recovery"
+              ]
+            }
+          ],
+          "humanAT": false,
+          "limitations": [
+            "Human AT, actual zoom, forced colors and touch remain unqualified. No dialog/modal is introduced."
+          ],
+          "browser": "Mozilla Firefox 158.0",
+          "initialFocus": {
+            "hasFocus": false,
+            "hidden": false,
+            "active": "BODY"
+          },
+          "modules": []
+        },
+        "screenshots": [
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-aIe9tz/json-dark.png",
+            "sha256": "1248b95a511e7bbc499bd5391ed67486959d9441c9849244717c5313861b0696",
+            "pixels": [
+              1268,
+              3084
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-aIe9tz/json-light.png",
+            "sha256": "2c19be0157c535bef2468a29a2d98539d9843ee7954c20f34a67c85dd0b77d6f",
+            "pixels": [
+              1268,
+              3084
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-aIe9tz/json-mobile.png",
+            "sha256": "cac69094567b0f483da7e7ce095b400539dd9e98c9a420cf2c530443770d33e7",
+            "pixels": [
+              348,
+              3665
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-aIe9tz/sqlite-dark.png",
+            "sha256": "1248b95a511e7bbc499bd5391ed67486959d9441c9849244717c5313861b0696",
+            "pixels": [
+              1268,
+              3084
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-aIe9tz/sqlite-light.png",
+            "sha256": "2c19be0157c535bef2468a29a2d98539d9843ee7954c20f34a67c85dd0b77d6f",
+            "pixels": [
+              1268,
+              3084
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-aIe9tz/sqlite-mobile.png",
+            "sha256": "cac69094567b0f483da7e7ce095b400539dd9e98c9a420cf2c530443770d33e7",
+            "pixels": [
+              348,
+              3665
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "chrome-production-complete",
+      "argv": [
+        "node",
+        "scripts/verify-backoffice-b6-browser.js"
+      ],
+      "started": "2026-10-21T19:15:11.448Z",
+      "finished": "2026-10-21T19:15:56.861Z",
+      "exit": 0,
+      "signal": null,
+      "log": "test-support/b6-logs/21-chrome-production-complete.log",
+      "sha256": "c096d8216a0ab260e3c055a7302173925cb809196205c11ff2cf90d95ec879d7",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "qualification": "observed completed command; test counts only where emitted",
+      "browserEvidence": {
+        "file": "/tmp/wyd-backoffice-b6-browser-f2nDuP/result.json",
+        "sha256": "a84a62319881e566fed21b7f7d6cf83ac164cb29e55a84700dbc26e1efd55c92",
+        "result": {
+          "ok": true,
+          "firefox": false,
+          "pointerOnly": false,
+          "headful": false,
+          "providers": [
+            {
+              "provider": "json",
+              "reviewPlanBytes": 22460,
+              "productionClient": true,
+              "keyboardOnly": true,
+              "disabledUntilLoad": true,
+              "revision": 3,
+              "deniedMutationAbsent": true,
+              "conflictRequiresReload": true,
+              "audit": {
+                "main": 1,
+                "unnamed": 0,
+                "dialogs": 0
+              },
+              "layouts": [
+                {
+                  "width": 320,
+                  "scroll": 305
+                },
+                {
+                  "width": 360,
+                  "scroll": 345
+                },
+                {
+                  "width": 768,
+                  "scroll": 753
+                },
+                {
+                  "width": 1280,
+                  "scroll": 1265
+                }
+              ],
+              "contrast": {
+                "light": 13.320950605055367,
+                "dark": 13.399258849587758
+              },
+              "focus": {
+                "active": "Result",
+                "outline": "solid",
+                "width": "3px"
+              },
+              "checks": [
+                "native login and skip link",
+                "typed load/edit/save with Markdown and layout persistence",
+                "linked validation and focus recovery",
+                "confirmation consumption and Shift-Tab",
+                "explicit dashboard refresh/table",
+                "concurrent revision conflict, reload and retained values",
+                "live revocation and expiry disable with focused recovery"
+              ]
+            },
+            {
+              "provider": "sqlite",
+              "reviewPlanBytes": 22460,
+              "productionClient": true,
+              "keyboardOnly": true,
+              "disabledUntilLoad": true,
+              "revision": 3,
+              "deniedMutationAbsent": true,
+              "conflictRequiresReload": true,
+              "audit": {
+                "main": 1,
+                "unnamed": 0,
+                "dialogs": 0
+              },
+              "layouts": [
+                {
+                  "width": 320,
+                  "scroll": 305
+                },
+                {
+                  "width": 360,
+                  "scroll": 345
+                },
+                {
+                  "width": 768,
+                  "scroll": 753
+                },
+                {
+                  "width": 1280,
+                  "scroll": 1265
+                }
+              ],
+              "contrast": {
+                "light": 13.320950605055367,
+                "dark": 13.399258849587758
+              },
+              "focus": {
+                "active": "Result",
+                "outline": "solid",
+                "width": "3px"
+              },
+              "checks": [
+                "native login and skip link",
+                "typed load/edit/save with Markdown and layout persistence",
+                "linked validation and focus recovery",
+                "confirmation consumption and Shift-Tab",
+                "explicit dashboard refresh/table",
+                "concurrent revision conflict, reload and retained values",
+                "live revocation and expiry disable with focused recovery"
+              ]
+            }
+          ],
+          "humanAT": false,
+          "limitations": [
+            "Human AT, actual zoom, forced colors and touch remain unqualified. No dialog/modal is introduced."
+          ],
+          "browser": "Google Chrome 156.0.8078.47",
+          "initialFocus": {
+            "hasFocus": true,
+            "hidden": false,
+            "active": "BODY"
+          },
+          "modules": [
+            {
+              "page": "members",
+              "productionClient": true,
+              "keyboardOnly": true,
+              "actualServiceResult": true
+            },
+            {
+              "page": "notices",
+              "productionClient": true,
+              "keyboardOnly": true,
+              "actualServiceResult": true
+            }
+          ]
+        },
+        "screenshots": [
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-f2nDuP/json-dark.png",
+            "sha256": "77d3649b04caf2f374c95e01c3c2da33547b2784894c88ba41f04a4a4e2f64fa",
+            "pixels": [
+              1280,
+              3083
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-f2nDuP/json-light.png",
+            "sha256": "70c4d67ff6b8b0b5822e0d2fcf70d323bfc9c8dc60cb164fcf68ad8a5fc4df0f",
+            "pixels": [
+              1280,
+              3083
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-f2nDuP/json-mobile.png",
+            "sha256": "c8d69aac0814ca9362396f5a268606ce519dbb92a7f324564eae179bbe461b77",
+            "pixels": [
+              360,
+              3664
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-f2nDuP/sqlite-dark.png",
+            "sha256": "77d3649b04caf2f374c95e01c3c2da33547b2784894c88ba41f04a4a4e2f64fa",
+            "pixels": [
+              1280,
+              3083
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-f2nDuP/sqlite-light.png",
+            "sha256": "70c4d67ff6b8b0b5822e0d2fcf70d323bfc9c8dc60cb164fcf68ad8a5fc4df0f",
+            "pixels": [
+              1280,
+              3083
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-f2nDuP/sqlite-mobile.png",
+            "sha256": "c8d69aac0814ca9362396f5a268606ce519dbb92a7f324564eae179bbe461b77",
+            "pixels": [
+              360,
+              3664
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "firefox-production-pointer-complete",
+      "argv": [
+        "env",
+        "WYDCLIENT_BROWSER=firefox",
+        "WYDCLIENT_FIREFOX_POINTER_ONLY=1",
+        "node",
+        "scripts/verify-backoffice-b6-browser.js"
+      ],
+      "started": "2026-10-21T19:15:17.306Z",
+      "finished": "2026-10-21T19:16:08.279Z",
+      "exit": 0,
+      "signal": null,
+      "log": "test-support/b6-logs/22-firefox-production-pointer-complete.log",
+      "sha256": "2d5fb9707b344a0872e9fac8f938cbb3f2ff8ca062e8afbbc62c3002c9f8d335",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "qualification": "observed completed command; test counts only where emitted",
+      "browserEvidence": {
+        "file": "/tmp/wyd-backoffice-b6-browser-yL024N/result.json",
+        "sha256": "0fcb6d6e45a4856e3a8ebe032221bebab5c8dd22abb82261a99d2dd95955013b",
+        "result": {
+          "ok": true,
+          "firefox": true,
+          "pointerOnly": true,
+          "headful": false,
+          "providers": [
+            {
+              "provider": "json",
+              "reviewPlanBytes": 22460,
+              "productionClient": true,
+              "keyboardOnly": false,
+              "disabledUntilLoad": true,
+              "revision": 3,
+              "deniedMutationAbsent": true,
+              "conflictRequiresReload": true,
+              "audit": {
+                "main": 1,
+                "unnamed": 0,
+                "dialogs": 0
+              },
+              "layouts": [
+                {
+                  "width": 320,
+                  "scroll": 308
+                },
+                {
+                  "width": 360,
+                  "scroll": 348
+                },
+                {
+                  "width": 768,
+                  "scroll": 756
+                },
+                {
+                  "width": 1280,
+                  "scroll": 1268
+                }
+              ],
+              "contrast": {
+                "light": 13.320950605055367,
+                "dark": 13.399258849587758
+              },
+              "focus": {
+                "active": "Result",
+                "outline": "none",
+                "width": "3px"
+              },
+              "checks": [
+                "pointer login (skip link not keyboard-qualified)",
+                "typed load/edit/save with Markdown and layout persistence",
+                "linked validation and focus recovery",
+                "confirmation consumption (no keyboard qualification)",
+                "explicit dashboard refresh/table",
+                "concurrent revision conflict, reload and retained values",
+                "live revocation and expiry disable with focused recovery"
+              ]
+            },
+            {
+              "provider": "sqlite",
+              "reviewPlanBytes": 22460,
+              "productionClient": true,
+              "keyboardOnly": false,
+              "disabledUntilLoad": true,
+              "revision": 3,
+              "deniedMutationAbsent": true,
+              "conflictRequiresReload": true,
+              "audit": {
+                "main": 1,
+                "unnamed": 0,
+                "dialogs": 0
+              },
+              "layouts": [
+                {
+                  "width": 320,
+                  "scroll": 308
+                },
+                {
+                  "width": 360,
+                  "scroll": 348
+                },
+                {
+                  "width": 768,
+                  "scroll": 756
+                },
+                {
+                  "width": 1280,
+                  "scroll": 1268
+                }
+              ],
+              "contrast": {
+                "light": 13.320950605055367,
+                "dark": 13.399258849587758
+              },
+              "focus": {
+                "active": "Result",
+                "outline": "none",
+                "width": "3px"
+              },
+              "checks": [
+                "pointer login (skip link not keyboard-qualified)",
+                "typed load/edit/save with Markdown and layout persistence",
+                "linked validation and focus recovery",
+                "confirmation consumption (no keyboard qualification)",
+                "explicit dashboard refresh/table",
+                "concurrent revision conflict, reload and retained values",
+                "live revocation and expiry disable with focused recovery"
+              ]
+            }
+          ],
+          "humanAT": false,
+          "limitations": [
+            "Human AT, actual zoom, forced colors and touch remain unqualified. No dialog/modal is introduced."
+          ],
+          "browser": "Mozilla Firefox 158.0",
+          "initialFocus": {
+            "hasFocus": false,
+            "hidden": false,
+            "active": "BODY"
+          },
+          "modules": [
+            {
+              "page": "members",
+              "productionClient": true,
+              "keyboardOnly": false,
+              "actualServiceResult": true
+            },
+            {
+              "page": "notices",
+              "productionClient": true,
+              "keyboardOnly": false,
+              "actualServiceResult": true
+            }
+          ]
+        },
+        "screenshots": [
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-yL024N/json-dark.png",
+            "sha256": "1248b95a511e7bbc499bd5391ed67486959d9441c9849244717c5313861b0696",
+            "pixels": [
+              1268,
+              3084
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-yL024N/json-light.png",
+            "sha256": "2c19be0157c535bef2468a29a2d98539d9843ee7954c20f34a67c85dd0b77d6f",
+            "pixels": [
+              1268,
+              3084
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-yL024N/json-mobile.png",
+            "sha256": "cac69094567b0f483da7e7ce095b400539dd9e98c9a420cf2c530443770d33e7",
+            "pixels": [
+              348,
+              3665
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-yL024N/sqlite-dark.png",
+            "sha256": "1248b95a511e7bbc499bd5391ed67486959d9441c9849244717c5313861b0696",
+            "pixels": [
+              1268,
+              3084
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-yL024N/sqlite-light.png",
+            "sha256": "2c19be0157c535bef2468a29a2d98539d9843ee7954c20f34a67c85dd0b77d6f",
+            "pixels": [
+              1268,
+              3084
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-yL024N/sqlite-mobile.png",
+            "sha256": "cac69094567b0f483da7e7ce095b400539dd9e98c9a420cf2c530443770d33e7",
+            "pixels": [
+              348,
+              3665
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "full-first",
+      "argv": [
+        "npm",
+        "test",
+        "--",
+        "--test-reporter=tap"
+      ],
+      "started": "2026-10-21T19:14:38.877Z",
+      "finished": "2026-10-21T19:16:41.845Z",
+      "exit": 0,
+      "signal": null,
+      "log": "test-support/b6-logs/23-full-first.log",
+      "sha256": "f32d304d3d50a18ffca54e938fee6261c26a4640382b3279a9dc2fab2bb450b5",
+      "tests": 1967,
+      "pass": 1967,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "qualification": "observed completed command; test counts only where emitted"
+    },
+    {
+      "name": "packed-first",
+      "argv": [
+        "node",
+        "scripts/verify-packed-packages.js"
+      ],
+      "started": "2026-10-21T19:13:31.657Z",
+      "finished": "2026-10-21T19:16:55.279Z",
+      "exit": 0,
+      "signal": null,
+      "log": "test-support/b6-logs/24-packed-first.log",
+      "sha256": "3e277c1f0724f3e935446b4214bc2f32569f8e296fa7c96fde8ff4ec44a30cc3",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "qualification": "observed completed command; test counts only where emitted",
+      "installedEvidence": {
+        "directory": "/tmp/wyd-i54-packed-wgCMa9",
+        "suites": [
+          {
+            "log": "/tmp/wyd-i54-packed-wgCMa9/five-library-tests.log",
+            "sha256": "a1dbc303fa18444af823152590f381780c69de17805b8205410bdb95f87a72fd",
+            "tests": 696,
+            "pass": 696,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          {
+            "log": "/tmp/wyd-i54-packed-wgCMa9/provider-tests.log",
+            "sha256": "29d9b1781d42e82607774b30cd2b3aa0386cc96ef88f0728086439ba67ca1421",
+            "tests": 35,
+            "pass": 35,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          {
+            "log": "/tmp/wyd-i54-packed-wgCMa9/process-supervision.log",
+            "sha256": "6e7a91bc9c3ddff38fad84f06dc2900a88ac923b4fd4ccd5b123a513d6faccc7",
+            "tests": 20,
+            "pass": 20,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          {
+            "log": "/tmp/wyd-i54-packed-wgCMa9/linux-boundaries.log",
+            "sha256": "a671bc44ade37ecae369ce281bdb10ed111e89c76cb911c507942679013ee402",
+            "tests": 25,
+            "pass": 25,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        ],
+        "tarballs": [
+          {
+            "file": "/tmp/wyd-i54-packed-wgCMa9/tarballs/wydgine-0.3.0-alpha.28.tgz",
+            "sha256": "2319927de824dac55db081b77e2b90fb29811a8013dddc03feae6f08b6f8c425"
+          },
+          {
+            "file": "/tmp/wyd-i54-packed-wgCMa9/tarballs/wydgit-files-0.1.0-alpha.1.tgz",
+            "sha256": "6118d928568d27f43b42070a628c528602122f437b4bea569b6ac31126095c54"
+          },
+          {
+            "file": "/tmp/wyd-i54-packed-wgCMa9/tarballs/wydgit-gate-0.1.0-alpha.7.tgz",
+            "sha256": "ecd4db56a1782a4b5e5707c08bd2f7b1211ad269d836c6ea21bc2d5dd7a8917f"
+          },
+          {
+            "file": "/tmp/wyd-i54-packed-wgCMa9/tarballs/wydgit-search-0.1.0-alpha.2.tgz",
+            "sha256": "ebedea8fdeb3fc8c6ceb25019e8386417807d1b0ea8d0809b8172ce16c5ffa5e"
+          },
+          {
+            "file": "/tmp/wyd-i54-packed-wgCMa9/tarballs/wydgit-store-0.1.0-alpha.8.tgz",
+            "sha256": "2fa7fc47a30366b81ad8df76e12ec337739f13fa79ae6ffc02f92500762e29b5"
+          },
+          {
+            "file": "/tmp/wyd-i54-packed-wgCMa9/tarballs/wydgit-stream-0.1.0-alpha.2.tgz",
+            "sha256": "89348a66a7af24c27d26acecc6844afb60e4bb6e11fcc3d69afb49d565d86409"
+          },
+          {
+            "file": "/tmp/wyd-i54-packed-wgCMa9/tarballs/wydhosting-0.3.0-alpha.28.tgz",
+            "sha256": "b36775389d2cf79203bb71a441cd27bf7fd534d9e33389415743e6343bb3b6b1"
+          }
+        ],
+        "checkoutRuntimeImportsRejected": true
+      }
+    },
+    {
+      "name": "environment",
+      "argv": [
+        "node",
+        "--input-type=module",
+        "-e",
+        "import os from \"node:os\";import fs from \"node:fs\";import {execFileSync} from \"node:child_process\";import {verifyArtifacts} from \"./packages/wydclient/artifact-policy.js\";console.log(JSON.stringify({node:process.version,platform:process.platform,arch:process.arch,kernel:os.release(),os:fs.readFileSync(\"/etc/os-release\",\"utf8\"),chrome:execFileSync(\"google-chrome\",[\"--version\"],{encoding:\"utf8\"}).trim(),firefox:execFileSync(\"firefox\",[\"--version\"],{encoding:\"utf8\"}).trim(),display:process.env.DISPLAY,immutableArtifacts:verifyArtifacts({root:process.cwd()}),versions:Object.fromEntries([\"package.json\",\"packages/wydgine/package.json\",\"packages/wydclient/package.json\"].map(p=>[p,JSON.parse(fs.readFileSync(p)).version]))},null,2))"
+      ],
+      "started": "2026-10-21T19:18:53.605Z",
+      "finished": "2026-10-21T19:18:54.120Z",
+      "exit": 0,
+      "signal": null,
+      "log": "test-support/b6-logs/25-environment.log",
+      "sha256": "17ac406a65a2e5410b9140c9b14e53ca89976d4f4952e3410c786cd4dee1cb9d",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "qualification": "observed completed command; test counts only where emitted"
+    },
+    {
+      "name": "chrome-production-final",
+      "argv": [
+        "node",
+        "scripts/verify-backoffice-b6-browser.js"
+      ],
+      "started": "2026-10-21T19:19:21.422Z",
+      "finished": "2026-10-21T19:19:55.459Z",
+      "exit": 0,
+      "signal": null,
+      "log": "test-support/b6-logs/26-chrome-production-final.log",
+      "sha256": "ae45c40788548bf33a83c3aeb4b3d8f3073bba033bf437bb8b81181aa8f0fceb",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "qualification": "observed completed command; test counts only where emitted",
+      "browserEvidence": {
+        "file": "/tmp/wyd-backoffice-b6-browser-NKpXzy/result.json",
+        "sha256": "a84a62319881e566fed21b7f7d6cf83ac164cb29e55a84700dbc26e1efd55c92",
+        "result": {
+          "ok": true,
+          "firefox": false,
+          "pointerOnly": false,
+          "headful": false,
+          "providers": [
+            {
+              "provider": "json",
+              "reviewPlanBytes": 22460,
+              "productionClient": true,
+              "keyboardOnly": true,
+              "disabledUntilLoad": true,
+              "revision": 3,
+              "deniedMutationAbsent": true,
+              "conflictRequiresReload": true,
+              "audit": {
+                "main": 1,
+                "unnamed": 0,
+                "dialogs": 0
+              },
+              "layouts": [
+                {
+                  "width": 320,
+                  "scroll": 305
+                },
+                {
+                  "width": 360,
+                  "scroll": 345
+                },
+                {
+                  "width": 768,
+                  "scroll": 753
+                },
+                {
+                  "width": 1280,
+                  "scroll": 1265
+                }
+              ],
+              "contrast": {
+                "light": 13.320950605055367,
+                "dark": 13.399258849587758
+              },
+              "focus": {
+                "active": "Result",
+                "outline": "solid",
+                "width": "3px"
+              },
+              "checks": [
+                "native login and skip link",
+                "typed load/edit/save with Markdown and layout persistence",
+                "linked validation and focus recovery",
+                "confirmation consumption and Shift-Tab",
+                "explicit dashboard refresh/table",
+                "concurrent revision conflict, reload and retained values",
+                "live revocation and expiry disable with focused recovery"
+              ]
+            },
+            {
+              "provider": "sqlite",
+              "reviewPlanBytes": 22460,
+              "productionClient": true,
+              "keyboardOnly": true,
+              "disabledUntilLoad": true,
+              "revision": 3,
+              "deniedMutationAbsent": true,
+              "conflictRequiresReload": true,
+              "audit": {
+                "main": 1,
+                "unnamed": 0,
+                "dialogs": 0
+              },
+              "layouts": [
+                {
+                  "width": 320,
+                  "scroll": 305
+                },
+                {
+                  "width": 360,
+                  "scroll": 345
+                },
+                {
+                  "width": 768,
+                  "scroll": 753
+                },
+                {
+                  "width": 1280,
+                  "scroll": 1265
+                }
+              ],
+              "contrast": {
+                "light": 13.320950605055367,
+                "dark": 13.399258849587758
+              },
+              "focus": {
+                "active": "Result",
+                "outline": "solid",
+                "width": "3px"
+              },
+              "checks": [
+                "native login and skip link",
+                "typed load/edit/save with Markdown and layout persistence",
+                "linked validation and focus recovery",
+                "confirmation consumption and Shift-Tab",
+                "explicit dashboard refresh/table",
+                "concurrent revision conflict, reload and retained values",
+                "live revocation and expiry disable with focused recovery"
+              ]
+            }
+          ],
+          "humanAT": false,
+          "limitations": [
+            "Human AT, actual zoom, forced colors and touch remain unqualified. No dialog/modal is introduced."
+          ],
+          "browser": "Google Chrome 156.0.8078.47",
+          "initialFocus": {
+            "hasFocus": true,
+            "hidden": false,
+            "active": "BODY"
+          },
+          "modules": [
+            {
+              "page": "members",
+              "productionClient": true,
+              "keyboardOnly": true,
+              "actualServiceResult": true
+            },
+            {
+              "page": "notices",
+              "productionClient": true,
+              "keyboardOnly": true,
+              "actualServiceResult": true
+            }
+          ]
+        },
+        "screenshots": [
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-NKpXzy/json-dark.png",
+            "sha256": "38f4aef68be44e366b52eb3519cbdf16543365c94407f8ad3a4eabce1af6962d",
+            "pixels": [
+              1280,
+              3287
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-NKpXzy/json-light.png",
+            "sha256": "b0770b57826edce3e707a8f63f6098b24d00283ce4d790e2260cbcd450a12d25",
+            "pixels": [
+              1280,
+              3287
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-NKpXzy/json-mobile.png",
+            "sha256": "a03e0d8b219a2cfda5012c6a5f3e8819733ddf1f180ca0ddc579e4a720436e1e",
+            "pixels": [
+              360,
+              3951
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-NKpXzy/sqlite-dark.png",
+            "sha256": "38f4aef68be44e366b52eb3519cbdf16543365c94407f8ad3a4eabce1af6962d",
+            "pixels": [
+              1280,
+              3287
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-NKpXzy/sqlite-light.png",
+            "sha256": "b0770b57826edce3e707a8f63f6098b24d00283ce4d790e2260cbcd450a12d25",
+            "pixels": [
+              1280,
+              3287
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-NKpXzy/sqlite-mobile.png",
+            "sha256": "a03e0d8b219a2cfda5012c6a5f3e8819733ddf1f180ca0ddc579e4a720436e1e",
+            "pixels": [
+              360,
+              3951
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "legacy-browser-final",
+      "argv": [
+        "node",
+        "scripts/verify-backoffice-b5-browser.js"
+      ],
+      "started": "2026-10-21T19:19:24.120Z",
+      "finished": "2026-10-21T19:20:02.419Z",
+      "exit": 0,
+      "signal": null,
+      "log": "test-support/b6-logs/27-legacy-browser-final.log",
+      "sha256": "30cf4116ce16d5475e87de8b9af7f22886702b7cb6f9aa1daa5a8fff4444264f",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "qualification": "observed completed command; test counts only where emitted",
+      "browserEvidence": {
+        "file": "/tmp/wyd-backoffice-b5-browser-xGqec4/result.json",
+        "sha256": "01a8ef74f8ae47b5f154b8a605ed5975a269b8f22d1187079174d2086bbce8a0",
+        "result": {
+          "ok": true,
+          "firefox": false,
+          "pointerOnly": false,
+          "providers": [
+            {
+              "provider": "json",
+              "checks": [
+                "Real Gate form login, HttpOnly session, canonical installed Page with approved read preparation",
+                "Keyboard-only login, skip link and native invalid-required submission with linked errors and no HTTP mutation",
+                "Native Tab order text \u2192 confirmation \u2192 submit, Space confirmation, visible focus outline",
+                "Native semantic form submits exact published binding, real CSRF, explicit confirmation and protected create",
+                "Retained intent after live action/service revocation denied; independent detail binding proves one success and absent denied record",
+                "Missing/unauthorized Page, public alternate ingress, forged query and expired genuine browser Session denied",
+                "Stopped retirement removes Page; fresh replacement/review/restart retains exactly one persisted mutation"
+              ],
+              "audit": {
+                "main": 1,
+                "headings": [
+                  "Records administration",
+                  "New record",
+                  "create record",
+                  "get record",
+                  "get record"
+                ],
+                "unnamed": 0,
+                "errors": true,
+                "dialogs": 0
+              },
+              "focus": [
+                "confirmed",
+                "Create record"
+              ],
+              "layouts": [
+                {
+                  "width": 320,
+                  "documentWidth": 305
+                },
+                {
+                  "width": 360,
+                  "documentWidth": 345
+                },
+                {
+                  "width": 768,
+                  "documentWidth": 753
+                },
+                {
+                  "width": 1280,
+                  "documentWidth": 1265
+                }
+              ],
+              "contrast": {
+                "light": {
+                  "text": 13.320950605055367,
+                  "input": 13.320950605055367,
+                  "button": 6.701618401398807
+                },
+                "dark": {
+                  "text": 16.193006440967938,
+                  "input": 13.399258849587758,
+                  "button": 9.83750053606076
+                }
+              },
+              "mutation": {
+                "createdVersion": 1,
+                "deniedAbsent": true,
+                "restartVersion": 1
+              }
+            },
+            {
+              "provider": "sqlite",
+              "checks": [
+                "Real Gate form login, HttpOnly session, canonical installed Page with approved read preparation",
+                "Keyboard-only login, skip link and native invalid-required submission with linked errors and no HTTP mutation",
+                "Native Tab order text \u2192 confirmation \u2192 submit, Space confirmation, visible focus outline",
+                "Native semantic form submits exact published binding, real CSRF, explicit confirmation and protected create",
+                "Retained intent after live action/service revocation denied; independent detail binding proves one success and absent denied record",
+                "Missing/unauthorized Page, public alternate ingress, forged query and expired genuine browser Session denied",
+                "Stopped retirement removes Page; fresh replacement/review/restart retains exactly one persisted mutation"
+              ],
+              "audit": {
+                "main": 1,
+                "headings": [
+                  "Records administration",
+                  "New record",
+                  "create record",
+                  "get record",
+                  "get record"
+                ],
+                "unnamed": 0,
+                "errors": true,
+                "dialogs": 0
+              },
+              "focus": [
+                "confirmed",
+                "Create record"
+              ],
+              "layouts": [
+                {
+                  "width": 320,
+                  "documentWidth": 305
+                },
+                {
+                  "width": 360,
+                  "documentWidth": 345
+                },
+                {
+                  "width": 768,
+                  "documentWidth": 753
+                },
+                {
+                  "width": 1280,
+                  "documentWidth": 1265
+                }
+              ],
+              "contrast": {
+                "light": {
+                  "text": 13.320950605055367,
+                  "input": 13.320950605055367,
+                  "button": 6.701618401398807
+                },
+                "dark": {
+                  "text": 16.193006440967938,
+                  "input": 13.399258849587758,
+                  "button": 9.83750053606076
+                }
+              },
+              "mutation": {
+                "createdVersion": 1,
+                "deniedAbsent": true,
+                "restartVersion": 1
+              }
+            }
+          ],
+          "limitations": [
+            "Human assistive technology, speech, actual zoom/forced-colors/touch remain unverified.",
+            "Bound intent integration uses an explicit trusted test client, not a shipped frozen WydClient feature."
+          ],
+          "browser": "Google Chrome 156.0.8078.47",
+          "taskboard": {
+            "canonicalRoute": "/backoffice/pages/taskboard",
+            "installed": true,
+            "informational": true,
+            "bindings": 0,
+            "repeatedChildrenRendered": true
+          }
+        },
+        "screenshots": [
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-xGqec4/json-dark.png",
+            "sha256": "fd7361b8120ac27ba8c552424afef93f0f15dc5a866fa91d51945f8eb621e3a8",
+            "pixels": [
+              1280,
+              3491
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-xGqec4/json-light.png",
+            "sha256": "401fa9f2934a5e0a82f4a659720c9120836e916a66ad0a6342266a650ff50522",
+            "pixels": [
+              1280,
+              3491
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-xGqec4/json-mobile.png",
+            "sha256": "6e94982cc76ec812e6c2848f931ee2e4ad60a50c65d73baaef8c6f1db63c25f3",
+            "pixels": [
+              360,
+              3648
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-xGqec4/sqlite-dark.png",
+            "sha256": "fd7361b8120ac27ba8c552424afef93f0f15dc5a866fa91d51945f8eb621e3a8",
+            "pixels": [
+              1280,
+              3491
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-xGqec4/sqlite-light.png",
+            "sha256": "401fa9f2934a5e0a82f4a659720c9120836e916a66ad0a6342266a650ff50522",
+            "pixels": [
+              1280,
+              3491
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-xGqec4/sqlite-mobile.png",
+            "sha256": "6e94982cc76ec812e6c2848f931ee2e4ad60a50c65d73baaef8c6f1db63c25f3",
+            "pixels": [
+              360,
+              3648
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b5-browser-xGqec4/taskboard.png",
+            "sha256": "6c4532bff9dabab0c13b7765d4ce1ebd51aa2b9608998417fddf75a21b197dc3",
+            "pixels": [
+              1280,
+              1995
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "human-protocol-server",
+      "argv": [
+        "node",
+        "/tmp/b6-smoke.mjs"
+      ],
+      "started": "2026-10-21T19:18:50.462Z",
+      "finished": "2026-10-21T19:20:15.020Z",
+      "exit": 1,
+      "signal": null,
+      "log": "test-support/b6-logs/28-human-protocol-server.log",
+      "sha256": "3dfe30a6f3c94b44ea54b285369d2ad5a691333fed676a7c9f0407c455ed3ce0",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "finding": "Disposable server retained operator stdin during quit. Stopped only exact child PID; corrected cleanup and closed smoke stdin, rerun on both providers passed.",
+      "qualification": "failed; preserved"
+    },
+    {
+      "name": "human-protocol-server-corrected",
+      "argv": [
+        "node",
+        "/tmp/b6-smoke.mjs"
+      ],
+      "started": "2026-10-21T19:20:17.216Z",
+      "finished": "2026-10-21T19:20:21.033Z",
+      "exit": 0,
+      "signal": null,
+      "log": "test-support/b6-logs/29-human-protocol-server-corrected.log",
+      "sha256": "cb3b549505f211bbadfa8d55cc6b31ff584e0c6bb5240d9e1f1d2d30ffe52e42",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "qualification": "observed completed command; test counts only where emitted"
+    },
+    {
+      "name": "firefox-production-final",
+      "argv": [
+        "env",
+        "WYDCLIENT_BROWSER=firefox",
+        "WYDCLIENT_FIREFOX_POINTER_ONLY=1",
+        "node",
+        "scripts/verify-backoffice-b6-browser.js"
+      ],
+      "started": "2026-10-21T19:20:33.183Z",
+      "finished": "2026-10-21T19:20:54.655Z",
+      "exit": 0,
+      "signal": null,
+      "log": "test-support/b6-logs/30-firefox-production-final.log",
+      "sha256": "7e05cb823cf5cb4d9de7a8e4ec22f3b412a1aacb8930df106266d3ae866102e9",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "qualification": "observed completed command; test counts only where emitted",
+      "browserEvidence": {
+        "file": "/tmp/wyd-backoffice-b6-browser-mvlHYv/result.json",
+        "sha256": "0fcb6d6e45a4856e3a8ebe032221bebab5c8dd22abb82261a99d2dd95955013b",
+        "result": {
+          "ok": true,
+          "firefox": true,
+          "pointerOnly": true,
+          "headful": false,
+          "providers": [
+            {
+              "provider": "json",
+              "reviewPlanBytes": 22460,
+              "productionClient": true,
+              "keyboardOnly": false,
+              "disabledUntilLoad": true,
+              "revision": 3,
+              "deniedMutationAbsent": true,
+              "conflictRequiresReload": true,
+              "audit": {
+                "main": 1,
+                "unnamed": 0,
+                "dialogs": 0
+              },
+              "layouts": [
+                {
+                  "width": 320,
+                  "scroll": 308
+                },
+                {
+                  "width": 360,
+                  "scroll": 348
+                },
+                {
+                  "width": 768,
+                  "scroll": 756
+                },
+                {
+                  "width": 1280,
+                  "scroll": 1268
+                }
+              ],
+              "contrast": {
+                "light": 13.320950605055367,
+                "dark": 13.399258849587758
+              },
+              "focus": {
+                "active": "Result",
+                "outline": "none",
+                "width": "3px"
+              },
+              "checks": [
+                "pointer login (skip link not keyboard-qualified)",
+                "typed load/edit/save with Markdown and layout persistence",
+                "linked validation and focus recovery",
+                "confirmation consumption (no keyboard qualification)",
+                "explicit dashboard refresh/table",
+                "concurrent revision conflict, reload and retained values",
+                "live revocation and expiry disable with focused recovery"
+              ]
+            },
+            {
+              "provider": "sqlite",
+              "reviewPlanBytes": 22460,
+              "productionClient": true,
+              "keyboardOnly": false,
+              "disabledUntilLoad": true,
+              "revision": 3,
+              "deniedMutationAbsent": true,
+              "conflictRequiresReload": true,
+              "audit": {
+                "main": 1,
+                "unnamed": 0,
+                "dialogs": 0
+              },
+              "layouts": [
+                {
+                  "width": 320,
+                  "scroll": 308
+                },
+                {
+                  "width": 360,
+                  "scroll": 348
+                },
+                {
+                  "width": 768,
+                  "scroll": 756
+                },
+                {
+                  "width": 1280,
+                  "scroll": 1268
+                }
+              ],
+              "contrast": {
+                "light": 13.320950605055367,
+                "dark": 13.399258849587758
+              },
+              "focus": {
+                "active": "Result",
+                "outline": "none",
+                "width": "3px"
+              },
+              "checks": [
+                "pointer login (skip link not keyboard-qualified)",
+                "typed load/edit/save with Markdown and layout persistence",
+                "linked validation and focus recovery",
+                "confirmation consumption (no keyboard qualification)",
+                "explicit dashboard refresh/table",
+                "concurrent revision conflict, reload and retained values",
+                "live revocation and expiry disable with focused recovery"
+              ]
+            }
+          ],
+          "humanAT": false,
+          "limitations": [
+            "Human AT, actual zoom, forced colors and touch remain unqualified. No dialog/modal is introduced."
+          ],
+          "browser": "Mozilla Firefox 158.0",
+          "initialFocus": {
+            "hasFocus": false,
+            "hidden": false,
+            "active": "BODY"
+          },
+          "modules": [
+            {
+              "page": "members",
+              "productionClient": true,
+              "keyboardOnly": false,
+              "actualServiceResult": true
+            },
+            {
+              "page": "notices",
+              "productionClient": true,
+              "keyboardOnly": false,
+              "actualServiceResult": true
+            }
+          ]
+        },
+        "screenshots": [
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-mvlHYv/json-dark.png",
+            "sha256": "d1569afeb1d9b042df9affe807bc472c4967dc8eb7215d0387d7848019ee3e1e",
+            "pixels": [
+              1268,
+              3288
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-mvlHYv/json-light.png",
+            "sha256": "ea1a9ec81e681fac3022e20bfecb037c8ea2922d3337314d940707d44ce32047",
+            "pixels": [
+              1268,
+              3288
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-mvlHYv/json-mobile.png",
+            "sha256": "3b237d30aeb732fd96641a372edb8681a6382851118a7c4d89404d41b53b57f5",
+            "pixels": [
+              348,
+              3953
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-mvlHYv/sqlite-dark.png",
+            "sha256": "d1569afeb1d9b042df9affe807bc472c4967dc8eb7215d0387d7848019ee3e1e",
+            "pixels": [
+              1268,
+              3288
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-mvlHYv/sqlite-light.png",
+            "sha256": "ea1a9ec81e681fac3022e20bfecb037c8ea2922d3337314d940707d44ce32047",
+            "pixels": [
+              1268,
+              3288
+            ]
+          },
+          {
+            "file": "/tmp/wyd-backoffice-b6-browser-mvlHYv/sqlite-mobile.png",
+            "sha256": "3b237d30aeb732fd96641a372edb8681a6382851118a7c4d89404d41b53b57f5",
+            "pixels": [
+              348,
+              3953
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "packed-final",
+      "argv": [
+        "node",
+        "scripts/verify-packed-packages.js"
+      ],
+      "started": "2026-10-21T19:19:18.531Z",
+      "finished": "2026-10-21T19:21:40.495Z",
+      "exit": 0,
+      "signal": null,
+      "log": "test-support/b6-logs/31-packed-final.log",
+      "sha256": "390c3017f747622d504704da50ae362c01d2c89bff18ab7dd35a8ac901f128ba",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "qualification": "observed completed command; test counts only where emitted",
+      "installedEvidence": {
+        "directory": "/tmp/wyd-i54-packed-OHXOmh",
+        "suites": [
+          {
+            "log": "/tmp/wyd-i54-packed-OHXOmh/five-library-tests.log",
+            "sha256": "629bb1516300f94275ace216a2f559431539583f8e5a472b72c96e2bc32620fc",
+            "tests": 696,
+            "pass": 696,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          {
+            "log": "/tmp/wyd-i54-packed-OHXOmh/provider-tests.log",
+            "sha256": "4b091166d8b5cb2fa2fd8a286fcd855775caa8d695af7ae43b2deaeeef303489",
+            "tests": 35,
+            "pass": 35,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          {
+            "log": "/tmp/wyd-i54-packed-OHXOmh/process-supervision.log",
+            "sha256": "aeb380f171facfc029e29b5fbd50ca2f6a78503b7cedae880d326407b0b5e1ff",
+            "tests": 20,
+            "pass": 20,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          {
+            "log": "/tmp/wyd-i54-packed-OHXOmh/linux-boundaries.log",
+            "sha256": "cf4c62688f7eab910e58b824465476eb85aaec074d57d3e07ead55362be4bffc",
+            "tests": 25,
+            "pass": 25,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        ],
+        "tarballs": [
+          {
+            "file": "/tmp/wyd-i54-packed-OHXOmh/tarballs/wydgine-0.3.0-alpha.28.tgz",
+            "sha256": "961b8526654d2396c728270f0322440d22894ecf5c2e1c0f6d210106ea0944c0"
+          },
+          {
+            "file": "/tmp/wyd-i54-packed-OHXOmh/tarballs/wydgit-files-0.1.0-alpha.1.tgz",
+            "sha256": "6118d928568d27f43b42070a628c528602122f437b4bea569b6ac31126095c54"
+          },
+          {
+            "file": "/tmp/wyd-i54-packed-OHXOmh/tarballs/wydgit-gate-0.1.0-alpha.7.tgz",
+            "sha256": "ecd4db56a1782a4b5e5707c08bd2f7b1211ad269d836c6ea21bc2d5dd7a8917f"
+          },
+          {
+            "file": "/tmp/wyd-i54-packed-OHXOmh/tarballs/wydgit-search-0.1.0-alpha.2.tgz",
+            "sha256": "ebedea8fdeb3fc8c6ceb25019e8386417807d1b0ea8d0809b8172ce16c5ffa5e"
+          },
+          {
+            "file": "/tmp/wyd-i54-packed-OHXOmh/tarballs/wydgit-store-0.1.0-alpha.8.tgz",
+            "sha256": "2fa7fc47a30366b81ad8df76e12ec337739f13fa79ae6ffc02f92500762e29b5"
+          },
+          {
+            "file": "/tmp/wyd-i54-packed-OHXOmh/tarballs/wydgit-stream-0.1.0-alpha.2.tgz",
+            "sha256": "89348a66a7af24c27d26acecc6844afb60e4bb6e11fcc3d69afb49d565d86409"
+          },
+          {
+            "file": "/tmp/wyd-i54-packed-OHXOmh/tarballs/wydhosting-0.3.0-alpha.28.tgz",
+            "sha256": "b36775389d2cf79203bb71a441cd27bf7fd534d9e33389415743e6343bb3b6b1"
+          }
+        ],
+        "checkoutRuntimeImportsRejected": true
+      }
+    },
+    {
+      "name": "installed-production-browser",
+      "cwd": "/tmp/wyd-i54-packed-OHXOmh/five-library",
+      "argv": [
+        "node",
+        "--import",
+        "/tmp/wyd-i54-packed-OHXOmh/five-library/proof-register.mjs",
+        "scripts/verify-backoffice-b6-browser.js"
+      ],
+      "started": "2026-10-21T19:22:00.235Z",
+      "finished": "2026-10-21T19:22:16.996Z",
+      "exit": 0,
+      "signal": null,
+      "log": "test-support/b6-logs/32-installed-production-browser.log",
+      "sha256": "ed85a12a374205f223e760043036a0c9335944ba3dbfd365d535d3e19fc84e90",
+      "qualification": "observed completed command; test counts only where emitted",
+      "browserEvidence": {
+        "file": "/tmp/wyd-i54-packed-OHXOmh/five-library/.fixtures/wyd-backoffice-b6-browser-mnu8Be/result.json",
+        "sha256": "a84a62319881e566fed21b7f7d6cf83ac164cb29e55a84700dbc26e1efd55c92",
+        "result": {
+          "ok": true,
+          "firefox": false,
+          "pointerOnly": false,
+          "headful": false,
+          "providers": [
+            {
+              "provider": "json",
+              "reviewPlanBytes": 22460,
+              "productionClient": true,
+              "keyboardOnly": true,
+              "disabledUntilLoad": true,
+              "revision": 3,
+              "deniedMutationAbsent": true,
+              "conflictRequiresReload": true,
+              "audit": {
+                "main": 1,
+                "unnamed": 0,
+                "dialogs": 0
+              },
+              "layouts": [
+                {
+                  "width": 320,
+                  "scroll": 305
+                },
+                {
+                  "width": 360,
+                  "scroll": 345
+                },
+                {
+                  "width": 768,
+                  "scroll": 753
+                },
+                {
+                  "width": 1280,
+                  "scroll": 1265
+                }
+              ],
+              "contrast": {
+                "light": 13.320950605055367,
+                "dark": 13.399258849587758
+              },
+              "focus": {
+                "active": "Result",
+                "outline": "solid",
+                "width": "3px"
+              },
+              "checks": [
+                "native login and skip link",
+                "typed load/edit/save with Markdown and layout persistence",
+                "linked validation and focus recovery",
+                "confirmation consumption and Shift-Tab",
+                "explicit dashboard refresh/table",
+                "concurrent revision conflict, reload and retained values",
+                "live revocation and expiry disable with focused recovery"
+              ]
+            },
+            {
+              "provider": "sqlite",
+              "reviewPlanBytes": 22460,
+              "productionClient": true,
+              "keyboardOnly": true,
+              "disabledUntilLoad": true,
+              "revision": 3,
+              "deniedMutationAbsent": true,
+              "conflictRequiresReload": true,
+              "audit": {
+                "main": 1,
+                "unnamed": 0,
+                "dialogs": 0
+              },
+              "layouts": [
+                {
+                  "width": 320,
+                  "scroll": 305
+                },
+                {
+                  "width": 360,
+                  "scroll": 345
+                },
+                {
+                  "width": 768,
+                  "scroll": 753
+                },
+                {
+                  "width": 1280,
+                  "scroll": 1265
+                }
+              ],
+              "contrast": {
+                "light": 13.320950605055367,
+                "dark": 13.399258849587758
+              },
+              "focus": {
+                "active": "Result",
+                "outline": "solid",
+                "width": "3px"
+              },
+              "checks": [
+                "native login and skip link",
+                "typed load/edit/save with Markdown and layout persistence",
+                "linked validation and focus recovery",
+                "confirmation consumption and Shift-Tab",
+                "explicit dashboard refresh/table",
+                "concurrent revision conflict, reload and retained values",
+                "live revocation and expiry disable with focused recovery"
+              ]
+            }
+          ],
+          "humanAT": false,
+          "limitations": [
+            "Human AT, actual zoom, forced colors and touch remain unqualified. No dialog/modal is introduced."
+          ],
+          "browser": "Google Chrome 156.0.8078.47",
+          "initialFocus": {
+            "hasFocus": true,
+            "hidden": false,
+            "active": "BODY"
+          },
+          "modules": [
+            {
+              "page": "members",
+              "productionClient": true,
+              "keyboardOnly": true,
+              "actualServiceResult": true
+            },
+            {
+              "page": "notices",
+              "productionClient": true,
+              "keyboardOnly": true,
+              "actualServiceResult": true
+            }
+          ]
+        },
+        "screenshots": [
+          {
+            "file": "/tmp/wyd-i54-packed-OHXOmh/five-library/.fixtures/wyd-backoffice-b6-browser-mnu8Be/json-dark.png",
+            "sha256": "38f4aef68be44e366b52eb3519cbdf16543365c94407f8ad3a4eabce1af6962d",
+            "pixels": [
+              1280,
+              3287
+            ]
+          },
+          {
+            "file": "/tmp/wyd-i54-packed-OHXOmh/five-library/.fixtures/wyd-backoffice-b6-browser-mnu8Be/json-light.png",
+            "sha256": "b0770b57826edce3e707a8f63f6098b24d00283ce4d790e2260cbcd450a12d25",
+            "pixels": [
+              1280,
+              3287
+            ]
+          },
+          {
+            "file": "/tmp/wyd-i54-packed-OHXOmh/five-library/.fixtures/wyd-backoffice-b6-browser-mnu8Be/json-mobile.png",
+            "sha256": "a03e0d8b219a2cfda5012c6a5f3e8819733ddf1f180ca0ddc579e4a720436e1e",
+            "pixels": [
+              360,
+              3951
+            ]
+          },
+          {
+            "file": "/tmp/wyd-i54-packed-OHXOmh/five-library/.fixtures/wyd-backoffice-b6-browser-mnu8Be/sqlite-dark.png",
+            "sha256": "38f4aef68be44e366b52eb3519cbdf16543365c94407f8ad3a4eabce1af6962d",
+            "pixels": [
+              1280,
+              3287
+            ]
+          },
+          {
+            "file": "/tmp/wyd-i54-packed-OHXOmh/five-library/.fixtures/wyd-backoffice-b6-browser-mnu8Be/sqlite-light.png",
+            "sha256": "b0770b57826edce3e707a8f63f6098b24d00283ce4d790e2260cbcd450a12d25",
+            "pixels": [
+              1280,
+              3287
+            ]
+          },
+          {
+            "file": "/tmp/wyd-i54-packed-OHXOmh/five-library/.fixtures/wyd-backoffice-b6-browser-mnu8Be/sqlite-mobile.png",
+            "sha256": "a03e0d8b219a2cfda5012c6a5f3e8819733ddf1f180ca0ddc579e4a720436e1e",
+            "pixels": [
+              360,
+              3951
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "documentation-check",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "argv": [
+        "python3",
+        "/tmp/b6-doc-check.py"
+      ],
+      "started": "2026-10-21T19:22:58.195Z",
+      "finished": "2026-10-21T19:22:58.252Z",
+      "exit": 0,
+      "signal": null,
+      "log": "test-support/b6-logs/33-documentation-check.log",
+      "sha256": "4387048de7ec4b379bc50b4b78ff6751960d334bdb8a921ce4d410d93f276372",
+      "qualification": "observed completed command; test counts only where emitted"
+    },
+    {
+      "name": "content-check",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "argv": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "started": "2026-10-21T19:23:10.377Z",
+      "finished": "2026-10-21T19:23:10.756Z",
+      "exit": 0,
+      "signal": null,
+      "log": "test-support/b6-logs/34-content-check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "qualification": "unqualified: zero captured output; no passing tests/checks inferred from exit code"
+    },
+    {
+      "name": "content-check-observed",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "argv": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "started": "2026-10-21T19:23:53.017Z",
+      "finished": "2026-10-21T19:23:53.397Z",
+      "exit": 0,
+      "signal": null,
+      "log": "test-support/b6-logs/35-content-check-observed.log",
+      "sha256": "1dcdec3effdcf658e3ba58a49d0e4da2c29bd4f126ca270ef5bce1e9acddf607",
+      "qualification": "observed completed command; test counts only where emitted"
+    },
+    {
+      "name": "check-final",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "argv": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "started": "2026-10-21T19:26:15.589Z",
+      "finished": "2026-10-21T19:26:16.637Z",
+      "exit": 0,
+      "signal": null,
+      "log": "test-support/b6-logs/37-check-final.log",
+      "sha256": "1dcdec3effdcf658e3ba58a49d0e4da2c29bd4f126ca270ef5bce1e9acddf607",
+      "qualification": "observed completed command; test counts only where emitted"
+    },
+    {
+      "name": "documentation-final",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "argv": [
+        "python3",
+        "/tmp/b6-doc-check.py"
+      ],
+      "started": "2026-10-21T19:26:16.803Z",
+      "finished": "2026-10-21T19:26:16.932Z",
+      "exit": 0,
+      "signal": null,
+      "log": "test-support/b6-logs/38-documentation-final.log",
+      "sha256": "46dda15212254b0b275e86aff9517d71ccceb946d8e6566c133649d214add872",
+      "qualification": "observed completed command; test counts only where emitted"
+    },
+    {
+      "name": "full-final",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "started": "2026-10-21T19:26:12.940Z",
+      "finished": "2026-10-21T19:28:03.096Z",
+      "exit": 0,
+      "signal": null,
+      "log": "test-support/b6-logs/39-full-final.log",
+      "sha256": "779d78906d649f9df56d6896fb334427d919634799d61e92713364c58dc93601",
+      "tests": 1967,
+      "pass": 1967,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "qualification": "observed completed command; test counts only where emitted"
+    }
+  ],
+  "environment": {
+    "node": "v24.21.0",
+    "platform": "linux",
+    "arch": "x64",
+    "kernel": "7.0.0-38-generic",
+    "os": "NAME=\"Linux Mint\"\nVERSION=\"22.2 (Zara)\"\nID=linuxmint\nID_LIKE=\"ubuntu debian\"\nPRETTY_NAME=\"Linux Mint 22.2\"\nVERSION_ID=\"22.2\"\nHOME_URL=\"https://www.linuxmint.com/\"\nSUPPORT_URL=\"https://forums.linuxmint.com/\"\nBUG_REPORT_URL=\"http://linuxmint-troubleshooting-guide.readthedocs.io/en/latest/\"\nPRIVACY_POLICY_URL=\"https://www.linuxmint.com/\"\nVERSION_CODENAME=zara\nUBUNTU_CODENAME=noble\n",
+    "chrome": "Google Chrome 156.0.8078.47",
+    "firefox": "Mozilla Firefox 158.0",
+    "display": ":0",
+    "immutableArtifacts": 31,
+    "versions": {
+      "package.json": "0.3.0-alpha.28",
+      "packages/wydgine/package.json": "0.3.0-alpha.28",
+      "packages/wydclient/package.json": "0.1.0-alpha.11"
+    }
+  },
+  "conformance": {
+    "inScope": 64,
+    "verified": 63,
+    "partial": 1,
+    "missing": 0,
+    "unverified": 0,
+    "deferred": 12,
+    "promoted": [
+      "BO-REU-06"
+    ],
+    "remainingPartial": [
+      "BO-HTTP-12"
+    ]
+  },
+  "completeFirefoxKeyboardQualified": false,
+  "foundationAssessment": "foundation incomplete: human AT acceptance not performed and native Firefox real-document-focus prerequisite remains unavailable",
+  "httpLimitIssue": {
+    "id": "WYDGINE-0.3-HTTP-LIMIT",
+    "status": "OPEN",
+    "deadlineMs": 1000,
+    "automaticIndeterminateRetry": false
+  },
+  "qualificationNotes": [
+    "No human AT performed; no WCAG conformance claim.",
+    "Native Firefox failure preserved despite successful pointer/DOM subset.",
+    "All browsers and Apps/profiles disposable. No production/external App or downstream project changed.",
+    "No version bump, frozen bundle mutation, tag, publication, release or deployment.",
+    "Raw logs/screenshots are local ignored or temporary artifacts; sanitized browser snapshots and hashes are embedded here.",
+    "Record generated after observed commands; no outcome inferred from a zero exit with empty output."
+  ],
+  "installedBrowserEnvironment": {
+    "cwd": "/tmp/wyd-i54-packed-OHXOmh/five-library",
+    "TMPDIR": "/tmp/wyd-i54-packed-OHXOmh/five-library/.fixtures",
+    "NODE_OPTIONS": "--import /tmp/wyd-i54-packed-OHXOmh/five-library/proof-register.mjs",
+    "stagedHarnessOnly": [
+      "scripts/verify-backoffice-b6-browser.js",
+      "scripts/firefox-protocol.js"
+    ],
+    "runtime": "local tarballs only; adapter-source fixture copies are comparison witnesses, never runtime imports"
+  },
+  "visualReview": {
+    "reviewed": [
+      "/tmp/wyd-backoffice-b6-browser-NKpXzy/json-mobile.png",
+      "/tmp/wyd-backoffice-b6-browser-NKpXzy/json-dark.png"
+    ],
+    "findings": "Readable controls/results and visible focus; column-layout preview and local reflow observed. This does not certify human AT, whole-skin contrast or WCAG."
+  },
+  "sourceHashes": {
+    "CHANGELOG.md": "2e38f8ae624cc0bd6191e3e595d14a30a0dcedcc3ebaf234626474fe7d158843",
+    "docs/backoffice-page-and-action-contracts.md": "51f8a9349179a1ac3f41f4247118b657832212dcebda43d56f80dcb7edcb27ea",
+    "docs/backoffice-ui-usability.md": "3f50e66d850fbd67b8c1ff1b9136da780cbb225a7216eff458e6bc704a8fe5e3",
+    "docs/work-in-progress/backoffice-b6-foundation-completion.md": "15f1bcee1dfde6ff21fee9a2369f7e2eaf33869c3b2d03d96788c0aff5f3dde5",
+    "docs/work-in-progress/backoffice-conformance-matrix.md": "c50f9baf655f79a693eeaceafb120e62be8a86ee511160ccbca517ec42163556",
+    "examples/backoffice-editors/README.md": "92ff095ea8d03323e2553fc27abc71a790b486a4f82a0ce246e8e178f3759e9b",
+    "examples/backoffice-editors/manifest.json": "4971377bd75c6e26018a1b4d34df8cd4af4169a31bfa920b8eba3d995ede9c68",
+    "examples/backoffice-editors/prepare.bas": "79e6776c146405d85f37132c859089fcfb5525d92c305e00e0d0dfbfaf767c07",
+    "examples/backoffice-editors/prototypes.json": "269738f250f86b77e1b16137a164da920d2d0d03a506ffca32cbabd83cc0d4ef",
+    "examples/backoffice-editors/section.json": "2cd773dfcdef995584086d0e0d3a603cd5b607afb6f0800c22e850815088b56f",
+    "packages/wydgine/runtime/backoffice/shell.css": "00333225de38156620324153565423421ee38171f50ab43e3ebda962ec707bf1",
+    "packages/wydgine/runtime/wydclient/backoffice-controls.js": "512a307246177383eeb8c51c35ba4ac37447691ba078c4fe1c30bbda7ecb848c",
+    "packages/wydgine/runtime/wydclient/backoffice.js": "08f5afe507240a6ae16a4d8d726c2200cdee00d6236b759ee9b5200017a1e2fd",
+    "packages/wydgine/src/engine/http/transport/hono.js": "81be50f228b12093258171864c3b68a0d71b62ab0af9e4d548facc750f82a81e",
+    "packages/wydgine/src/engine/packages/backoffice.js": "b507297361cd33e9b94aa752ccd2ab83bc725d4e01871c095729769ebe58f2d0",
+    "scripts/firefox-protocol.js": "e512823d23fc95950ee52fb3911970f25b2112975ed0a89f4006619ecdfbf34b",
+    "scripts/serve-backoffice-b6-review.js": "d65c078e46912ddd8f156cd31312bfe4cf1c25c50d456fa406a31095d7ce26ea",
+    "scripts/verify-backoffice-b6-browser.js": "526bc885d94b8cd560efe068f19b28a3803b8b241d8831512d58a801017ea4f5",
+    "scripts/verify-firefox-focus.js": "207097651f89253d5d6cc0375596964eaef42163b7e78442ad2c69bdb70643b6",
+    "scripts/verify-packed-packages.js": "dcb08d77daec2d3712fe87f802ab3bed1f9b6871c90227cb293bf869e72d399f",
+    "test-support/backoffice-b6.js": "4b11a16eb58b7ad50118fd9b13757a01d0ba8575dee107c270b9ceae3a61375a",
+    "test-support/local-browser.js": "a867e418bf291632bd9e8f8286d15f55fb1872eb5ec79770b5c9fa27551622db",
+    "test/backoffice-b6.test.js": "0ae0bab572a17768e98c3f6325828f2c594ca1aa3fe85735e92ba93600e864c1",
+    "test/backoffice-controls.test.js": "7637e9329aaa04657c3b59d07b227487dd34a1ceecad40b89b0914c09e4b033f",
+    "wydclient/backoffice-controls.js": "512a307246177383eeb8c51c35ba4ac37447691ba078c4fe1c30bbda7ecb848c",
+    "wydclient/backoffice.js": "08f5afe507240a6ae16a4d8d726c2200cdee00d6236b759ee9b5200017a1e2fd"
+  },
+  "gitHandoff": {
+    "baselineRemoteVerified": true,
+    "target": "origin/develop/0.3",
+    "commitPushAuthorized": true,
+    "method": "normal commit and push; independent git ls-remote and clean git status in final handoff; self commit hash cannot be embedded in this committed record",
+    "forcePush": false
+  },
+  "finalRequiredChecks": {
+    "full-final": {
+      "name": "full-final",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "started": "2026-10-21T19:26:12.940Z",
+      "finished": "2026-10-21T19:28:03.096Z",
+      "exit": 0,
+      "signal": null,
+      "log": "test-support/b6-logs/39-full-final.log",
+      "sha256": "779d78906d649f9df56d6896fb334427d919634799d61e92713364c58dc93601",
+      "tests": 1967,
+      "pass": 1967,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "qualification": "observed completed command; test counts only where emitted"
+    },
+    "check-final": {
+      "name": "check-final",
+      "cwd": "/home/brian/Projects/wydgit-platform",
+      "argv": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "started": "2026-10-21T19:26:15.589Z",
+      "finished": "2026-10-21T19:26:16.637Z",
+      "exit": 0,
+      "signal": null,
+      "log": "test-support/b6-logs/37-check-final.log",
+      "sha256": "1dcdec3effdcf658e3ba58a49d0e4da2c29bd4f126ca270ef5bce1e9acddf607",
+      "qualification": "observed completed command; test counts only where emitted"
+    }
+  },
+  "artifactMirrors": {
+    "backoffice.js": {
+      "source": "08f5afe507240a6ae16a4d8d726c2200cdee00d6236b759ee9b5200017a1e2fd",
+      "shippedRuntime": "08f5afe507240a6ae16a4d8d726c2200cdee00d6236b759ee9b5200017a1e2fd",
+      "installedRuntime": "08f5afe507240a6ae16a4d8d726c2200cdee00d6236b759ee9b5200017a1e2fd"
+    },
+    "backoffice-controls.js": {
+      "source": "512a307246177383eeb8c51c35ba4ac37447691ba078c4fe1c30bbda7ecb848c",
+      "shippedRuntime": "512a307246177383eeb8c51c35ba4ac37447691ba078c4fe1c30bbda7ecb848c",
+      "installedRuntime": "512a307246177383eeb8c51c35ba4ac37447691ba078c4fe1c30bbda7ecb848c"
+    }
+  }
+}

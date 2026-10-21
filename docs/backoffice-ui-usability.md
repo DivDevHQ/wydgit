@@ -1,3 +1,23 @@
+# B6 reusable canonical Page controls
+
+The trusted unbundled web adapter now consumes server-emitted
+`wydgit.backoffice-controls/1` presentation metadata for exact reviewed Page consumers.
+It shares the shell's typed fields, validation and safe result renderer. Compatible
+fixed-record get/update pairs add explicit load, typed property/content prefill,
+revisioned save and per-attempt confirmation. Long bounded strings use textarea;
+Markdown is rendered by the existing sanitized canonical Page renderer. Other read
+intents support explicit dashboard refresh and native result tables/disclosures.
+Failed saves preserve values and require loading current state; stale, denied and
+expired access disables controls and focuses a Page reload link. No automatic
+rebind, background refresh or uncertain-write retry occurs.
+
+The [installed example](../examples/backoffice-editors/README.md) exercises layout
+properties, content and dashboard persistence with the same production adapter used
+by Members and Notices. Read the [B6 report](work-in-progress/backoffice-b6-foundation-completion.md)
+for measured browser/provider/security evidence and remaining human AT/Firefox
+qualification. No frozen standalone bundle, package version or authority contract
+changes. The alpha.22 checkpoint below remains historical.
+
 # Generic BackOffice usability — alpha.22
 
 The trusted WydClient web adapter renders the existing closed bounded action

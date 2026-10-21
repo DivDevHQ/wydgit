@@ -1,0 +1,5 @@
+// Isolated browser/environment diagnostic; a zero exit only means probe execution.
+// Inspect hasFocus before claiming native keyboard qualification. No BackOffice code.
+import {localBrowser} from '../test-support/local-browser.js';
+import fs from 'node:fs/promises';import {execFileSync} from 'node:child_process';
+const root=await fs.mkdtemp('/tmp/b6-focus-'),clean=[];try{const b=await localBrowser({after:fn=>clean.push(fn)},root,{firefox:true});await b.navigate('data:text/html,<title>B6-focus-probe</title><input aria-label="one"><button>Go</button>');console.log('Before',await b.evaluate('({focus:document.hasFocus(),active:document.activeElement.tagName,hidden:document.hidden})'));console.log('X focus',execFileSync('xdotool',['getwindowfocus','getwindowname'],{encoding:'utf8'}));await b.key('Tab');console.log('After Tab',await b.evaluate('({focus:document.hasFocus(),active:document.activeElement.tagName})'));}finally{for(const f of clean.reverse())await f();await fs.rm(root,{recursive:true,force:true});}

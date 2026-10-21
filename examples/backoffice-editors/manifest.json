@@ -1,0 +1,415 @@
+{
+  "schema": "wydgit-package/0.1",
+  "id": "divdev/backoffice-editors",
+  "publisher": "divdev",
+  "version": "0.1.0",
+  "platform": ">=0.3.0-alpha.28 <0.4.0",
+  "runtime": [
+    "server"
+  ],
+  "resources": {
+    "prototypes": "prototypes.json",
+    "template": "section.json",
+    "sources": {
+      "prepare": "prepare.bas"
+    }
+  },
+  "requires": {
+    "schema": "wydgit.requirements/0.1",
+    "libraries": [
+      {
+        "library": "wydstore",
+        "version": "^0.1.0-alpha.5"
+      }
+    ]
+  },
+  "storage": [
+    {
+      "name": "workspace",
+      "fields": {
+        "title": {
+          "type": "string",
+          "required": true
+        },
+        "columns": {
+          "type": "boolean",
+          "required": true
+        },
+        "body": {
+          "type": "string",
+          "required": true
+        }
+      }
+    }
+  ],
+  "permissions": {
+    "capabilities": [
+      "store.records.read",
+      "store.records.create",
+      "store.records.write",
+      "object.instances.edit"
+    ],
+    "traversal": [
+      "children"
+    ],
+    "visible": [
+      "backoffice-editors",
+      "workspace-editor",
+      "workspace-dashboard",
+      "workspace-preview",
+      "workspace-help",
+      "workspace-title",
+      "workspace-body"
+    ],
+    "editable": [
+      "workspace-preview",
+      "workspace-title",
+      "workspace-body"
+    ],
+    "scopes": {
+      "wydstore": [
+        "workspace"
+      ]
+    }
+  },
+  "bindings": [
+    {
+      "owner": "backoffice-editors",
+      "event": "Page.PreRender",
+      "source": "prepare",
+      "kind": "handler"
+    }
+  ],
+  "installables": [
+    {
+      "id": "editors",
+      "kind": "section-template"
+    }
+  ],
+  "backofficeActions": [
+    {
+      "id": "get",
+      "owner": "backoffice-editors",
+      "title": "Load workspace",
+      "description": "Bounded site workspace records. Layout properties and Markdown content remain data.",
+      "category": "workspace",
+      "context": "BackOffice",
+      "permission": "content.workspace.read",
+      "capability": "store.records.read",
+      "scopes": {
+        "wydstore": [
+          "workspace"
+        ]
+      },
+      "service": {
+        "library": "wydstore",
+        "apiVersion": "1.0.0",
+        "operation": "get"
+      },
+      "effect": "read",
+      "input": {
+        "type": "object",
+        "fields": {
+          "store": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "collection": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "id": {
+            "type": "string",
+            "maxLength": 64
+          }
+        }
+      },
+      "output": {
+        "type": "object",
+        "fields": {
+          "id": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "version": {
+            "type": "integer",
+            "min": 1,
+            "max": 9007199254740991
+          },
+          "data": {
+            "type": "object",
+            "fields": {
+              "title": {
+                "type": "string",
+                "maxLength": 80
+              },
+              "columns": {
+                "type": "boolean"
+              },
+              "body": {
+                "type": "string",
+                "maxLength": 2048
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "update",
+      "owner": "backoffice-editors",
+      "title": "Workspace properties and content",
+      "description": "Bounded site workspace records. Layout properties and Markdown content remain data.",
+      "category": "workspace",
+      "context": "BackOffice",
+      "permission": "content.workspace.write",
+      "capability": "store.records.write",
+      "scopes": {
+        "wydstore": [
+          "workspace"
+        ]
+      },
+      "service": {
+        "library": "wydstore",
+        "apiVersion": "1.0.0",
+        "operation": "update"
+      },
+      "effect": "write",
+      "input": {
+        "type": "object",
+        "fields": {
+          "store": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "collection": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "id": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "data": {
+            "type": "object",
+            "fields": {
+              "title": {
+                "type": "string",
+                "maxLength": 80
+              },
+              "columns": {
+                "type": "boolean"
+              },
+              "body": {
+                "type": "string",
+                "maxLength": 2048
+              }
+            }
+          },
+          "version": {
+            "type": "integer",
+            "min": 1,
+            "max": 9007199254740991
+          }
+        }
+      },
+      "output": {
+        "type": "object",
+        "fields": {
+          "id": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "version": {
+            "type": "integer",
+            "min": 1,
+            "max": 9007199254740991
+          },
+          "data": {
+            "type": "object",
+            "fields": {
+              "title": {
+                "type": "string",
+                "maxLength": 80
+              },
+              "columns": {
+                "type": "boolean"
+              },
+              "body": {
+                "type": "string",
+                "maxLength": 2048
+              }
+            }
+          }
+        }
+      },
+      "confirmation": "Confirm workspace change"
+    },
+    {
+      "id": "create",
+      "owner": "backoffice-editors",
+      "title": "Create workspace",
+      "description": "Bounded site workspace records. Layout properties and Markdown content remain data.",
+      "category": "workspace",
+      "context": "BackOffice",
+      "permission": "content.workspace.write",
+      "capability": "store.records.create",
+      "scopes": {
+        "wydstore": [
+          "workspace"
+        ]
+      },
+      "service": {
+        "library": "wydstore",
+        "apiVersion": "1.0.0",
+        "operation": "create"
+      },
+      "effect": "write",
+      "input": {
+        "type": "object",
+        "fields": {
+          "store": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "collection": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "id": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "data": {
+            "type": "object",
+            "fields": {
+              "title": {
+                "type": "string",
+                "maxLength": 80
+              },
+              "columns": {
+                "type": "boolean"
+              },
+              "body": {
+                "type": "string",
+                "maxLength": 2048
+              }
+            }
+          }
+        }
+      },
+      "output": {
+        "type": "object",
+        "fields": {
+          "id": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "version": {
+            "type": "integer",
+            "min": 1,
+            "max": 9007199254740991
+          },
+          "data": {
+            "type": "object",
+            "fields": {
+              "title": {
+                "type": "string",
+                "maxLength": 80
+              },
+              "columns": {
+                "type": "boolean"
+              },
+              "body": {
+                "type": "string",
+                "maxLength": 2048
+              }
+            }
+          }
+        }
+      },
+      "confirmation": "Confirm workspace change"
+    },
+    {
+      "id": "query",
+      "owner": "backoffice-editors",
+      "title": "Workspace dashboard",
+      "description": "Bounded site workspace records. Layout properties and Markdown content remain data.",
+      "category": "workspace",
+      "context": "BackOffice",
+      "permission": "content.workspace.read",
+      "capability": "store.records.read",
+      "scopes": {
+        "wydstore": [
+          "workspace"
+        ]
+      },
+      "service": {
+        "library": "wydstore",
+        "apiVersion": "1.0.0",
+        "operation": "query"
+      },
+      "effect": "read",
+      "input": {
+        "type": "object",
+        "fields": {
+          "store": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "collection": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "limit": {
+            "type": "integer",
+            "min": 1,
+            "max": 10
+          },
+          "offset": {
+            "type": "integer",
+            "min": 0,
+            "max": 100
+          }
+        },
+        "optional": [
+          "offset"
+        ]
+      },
+      "output": {
+        "type": "array",
+        "maxItems": 10,
+        "items": {
+          "type": "object",
+          "fields": {
+            "id": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "version": {
+              "type": "integer",
+              "min": 1,
+              "max": 9007199254740991
+            },
+            "data": {
+              "type": "object",
+              "fields": {
+                "title": {
+                  "type": "string",
+                  "maxLength": 80
+                },
+                "columns": {
+                  "type": "boolean"
+                },
+                "body": {
+                  "type": "string",
+                  "maxLength": 2048
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -13,15 +13,8 @@ export function matchesValue(value,contract,depth=0){
   }
 }
 
-export function mountBackOffice({document,fetch:request}){
-  const nav=document.getElementById('bo-navigation'),content=document.getElementById('bo-action'),status=document.getElementById('bo-status'),refresh=document.getElementById('bo-refresh'),theme=document.getElementById('bo-theme');
-  let csrf=document.querySelector('meta[name="wydgit-backoffice-csrf"]')?.content,version=0,busy=false,actions=[];
+export function backOfficePresentation({document,fetch:request,prefix='bo-'}){
   const node=(tag,text,attrs={})=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;for(const [k,v]of Object.entries(attrs))n.setAttribute(k,String(v));return n;};
-  const say=(text,error=false)=>{status.setAttribute('role',error?'alert':'status');status.setAttribute('aria-live',error?'assertive':'polite');status.textContent=text;};
-  const selectTheme=()=>document.documentElement.setAttribute('data-wyd-theme',theme.value);
-  theme.addEventListener('change',selectTheme);
-  const lock=value=>{busy=value;content.setAttribute('aria-busy',String(value));refresh.disabled=value;for(const b of nav.querySelectorAll('button'))b.disabled=value;};
-  const clear=()=>{version++;actions=[];nav.replaceChildren();content.replaceChildren(node('h1','Site administration'),node('p','Select an installed action to begin.'));};
   const api=async(url,options={})=>{
     const response=await request(url,{...options,credentials:'same-origin',mode:'same-origin',cache:'no-store',redirect:'error'});
     // Server bounds bytes. Bound collection here as well if a proxy/host returns
@@ -37,8 +30,8 @@ export function mountBackOffice({document,fetch:request}){
   let nextField=0;
   function field(contract,label,depth=0){
     if(depth>6)throw Error('Unsupported contract depth');
-    const group=node('div',undefined,{class:'bo-field'}),caption=node('label',label),id='bo-field-'+(++nextField),error=node('small','',{id:id+'-error',class:'bo-field-error'});
-    group.append(caption);let control,rawRead,first=()=>control,rename=text=>{label=text;caption.firstChild.textContent=text;control?.setAttribute('aria-label',text);};
+    const group=node('div',undefined,{class:'bo-field'}),caption=node('label',label),id=prefix+'field-'+(++nextField),error=node('small','',{id:id+'-error',class:'bo-field-error'});
+    group.append(caption);let control,rawRead,rawWrite,first=()=>control,rename=text=>{label=text;caption.firstChild.textContent=text;control?.setAttribute('aria-label',text);};
     if(contract.type==='object'){
       const box=node('fieldset'),legend=node('legend',label),children=[];box.append(legend);caption.remove();rename=text=>{label=text;legend.textContent=text;};
       for(const [name,c]of Object.entries(contract.fields)){
@@ -47,29 +40,29 @@ export function mountBackOffice({document,fetch:request}){
         else{child.element.prepend(node('small','Required field'));box.append(child.element);}
         children.push({name,child,include});
       }
-      group.append(box);rawRead=()=>Object.fromEntries(children.filter(c=>!c.include||c.include.checked).map(c=>[c.name,c.child.read()]));first=()=>children.find(c=>!c.include||c.include.checked)?.child.focusTarget();
+      group.append(box);rawRead=()=>Object.fromEntries(children.filter(c=>!c.include||c.include.checked).map(c=>[c.name,c.child.read()]));rawWrite=value=>{for(const c of children){const included=Object.hasOwn(value,c.name);if(c.include){c.include.checked=included;c.include.dispatchEvent(new document.defaultView.Event('change'));}if(included)c.child.write(value[c.name]);}};first=()=>children.find(c=>!c.include||c.include.checked)?.child.focusTarget();
     }else if(contract.type==='array'){
       caption.remove();const box=node('fieldset'),legend=node('legend',label),count=node('p','',{class:'bo-array-count','aria-live':'polite'}),list=node('ol'),add=node('button','Add item',{type:'button','aria-label':'Add item to '+label});let items=[];
       rename=text=>{label=text;legend.textContent=text;add.setAttribute('aria-label','Add item to '+text);redraw();};
       const changed=()=>group.dispatchEvent(new document.defaultView.Event('input',{bubbles:true}));
       const redraw=()=>{count.textContent=`${items.length} of ${contract.maxItems} items`;add.disabled=items.length>=contract.maxItems;list.replaceChildren();items.forEach((entry,index)=>{entry.child.rename(`${label} item ${index+1}`);entry.remove.setAttribute('aria-label',`Remove ${label} item ${index+1}`);list.append(entry.row);});};
-      add.addEventListener('click',()=>{if(items.length>=contract.maxItems)return;const child=field(contract.items,`${label} item ${items.length+1}`,depth+1),row=node('li'),remove=node('button','Remove item',{type:'button'}),entry={child,row,remove};row.append(child.element,remove);remove.addEventListener('click',()=>{const index=items.indexOf(entry);items.splice(index,1);redraw();(items[index]?.remove??add).focus();changed();});items.push(entry);redraw();(child.focusTarget()??remove).focus();changed();});
+      const append=()=>{if(items.length>=contract.maxItems)return;const child=field(contract.items,`${label} item ${items.length+1}`,depth+1),row=node('li'),remove=node('button','Remove item',{type:'button'}),entry={child,row,remove};row.append(child.element,remove);remove.addEventListener('click',()=>{const index=items.indexOf(entry);items.splice(index,1);redraw();(items[index]?.remove??add).focus();changed();});items.push(entry);redraw();return child;};add.addEventListener('click',()=>{const child=append();child?.focusTarget()?.focus();changed();});rawWrite=value=>{items=[];for(const v of value)append().write(v);redraw();};
       box.append(legend,count,list,add);group.append(box);redraw();rawRead=()=>items.map(entry=>entry.child.read());first=()=>add;
-    }else if(contract.type==='null'){control=node('output','No value (null)');rawRead=()=>null;}
+    }else if(contract.type==='null'){control=node('output','No value (null)');rawRead=()=>null;rawWrite=()=>{};}
     else{
-      control=node('input',undefined,{type:contract.type==='boolean'?'checkbox':contract.type==='integer'?'number':'text','aria-label':label});
+      control=node(contract.type==='string'&&contract.maxLength>240?'textarea':'input',undefined,{type:contract.type==='boolean'?'checkbox':contract.type==='integer'?'number':'text','aria-label':label});
       if(contract.type==='integer'){control.min=String(contract.min);control.max=String(contract.max);control.step='1';control.required=true;}
       if(contract.type==='string')control.maxLength=contract.maxLength;
       const hint=node('small',contract.type==='integer'?`Whole number from ${contract.min} to ${contract.max}.`:contract.type==='string'?`Up to ${contract.maxLength} characters. Empty text is allowed.`:'Checked means true; unchecked means false.',{id:id+'-hint'});
       group.append(hint);control.setAttribute('aria-describedby',hint.id+' '+error.id);
-      rawRead=()=>contract.type==='boolean'?control.checked:contract.type==='integer'?(control.value===''?NaN:Number(control.value)):control.value;
+      rawWrite=value=>{if(contract.type==='boolean')control.checked=value;else control.value=String(value);};rawRead=()=>contract.type==='boolean'?control.checked:contract.type==='integer'?(control.value===''?NaN:Number(control.value)):control.value;
     }
     if(control){control.id=id;caption.append(control);}
     group.append(error);
     const read=()=>{const value=rawRead();if(!matchesValue(value,contract)){error.textContent=contract.type==='integer'?`${label}: enter a whole number from ${contract.min} to ${contract.max}.`:contract.type==='string'?`${label}: use at most ${contract.maxLength} valid characters.`:`Check ${label}.`;control?.setAttribute('aria-invalid','true');const invalid=Error('Invalid field');invalid.control=first();throw invalid;}error.textContent='';control?.removeAttribute('aria-invalid');return value;};
     control?.addEventListener('input',()=>{error.textContent='';control.removeAttribute('aria-invalid');});
     control?.addEventListener('blur',()=>{try{read();}catch{}});
-    return {element:group,read,rename,focusTarget:first};
+    return {element:group,read,rename,focusTarget:first,write(value){if(!matchesValue(value,contract))throw Error('Invalid field value');rawWrite(value);}};
   }
   function output(value){
     if(value===null||typeof value!=='object'){
@@ -89,6 +82,19 @@ export function mountBackOffice({document,fetch:request}){
     }
     const list=node('dl');for(const [k,v]of Object.entries(value)){list.append(node('dt',k));const dd=node('dd');dd.append(output(v));list.append(dd);}if(!list.children.length)return node('p','No values.');return list;
   }
+  return {node,api,field,output};
+}
+
+export function mountBackOffice({document,fetch:request}){
+  const nav=document.getElementById('bo-navigation'),content=document.getElementById('bo-action'),status=document.getElementById('bo-status'),refresh=document.getElementById('bo-refresh'),theme=document.getElementById('bo-theme');
+  let csrf=document.querySelector('meta[name="wydgit-backoffice-csrf"]')?.content,version=0,busy=false,actions=[];
+  const node=(tag,text,attrs={})=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;for(const [k,v]of Object.entries(attrs))n.setAttribute(k,String(v));return n;};
+  const say=(text,error=false)=>{status.setAttribute('role',error?'alert':'status');status.setAttribute('aria-live',error?'assertive':'polite');status.textContent=text;};
+  const selectTheme=()=>document.documentElement.setAttribute('data-wyd-theme',theme.value);
+  theme.addEventListener('change',selectTheme);
+  const lock=value=>{busy=value;content.setAttribute('aria-busy',String(value));refresh.disabled=value;for(const b of nav.querySelectorAll('button'))b.disabled=value;};
+  const clear=()=>{version++;actions=[];nav.replaceChildren();content.replaceChildren(node('h1','Site administration'),node('p','Select an installed action to begin.'));};
+  const {api,field,output}=backOfficePresentation({document,fetch:request});
   function select(action){
     if(busy)return;const selected=++version;content.replaceChildren();
     for(const b of nav.querySelectorAll('button'))b.setAttribute('aria-current',b.dataset.action===action.id?'page':'false');
@@ -145,4 +151,4 @@ export function mountBackOffice({document,fetch:request}){
   document.addEventListener('visibilitychange',visibility);
   return {ready:discover(),refresh:discover};
 }
-if(typeof document!=='undefined'&&document.getElementById('bo-navigation'))mountBackOffice({document,fetch:globalThis.fetch.bind(globalThis)});
+if(typeof document!=='undefined'&&document.getElementById('bo-navigation')&&!document.querySelector('meta[name="wydgit-backoffice-controls"]'))mountBackOffice({document,fetch:globalThis.fetch.bind(globalThis)});

@@ -15,7 +15,7 @@ import { errorDocument } from '../../index.js';
 const policy = "default-src 'none'; style-src 'self'; img-src 'self'; media-src 'self'; script-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'";
 // Explicit browser-safe dependency closure; no server/provider modules are exposed.
 const clientModules = [
-  'wydclient/uploads.js', 'wydclient/backoffice.js', 'wydclient/index.js', 'wydgine/events/runtime.js', 'wydgine/events/registry.js',
+  'wydclient/uploads.js', 'wydclient/backoffice-controls.js', 'wydclient/backoffice.js', 'wydclient/index.js', 'wydgine/events/runtime.js', 'wydgine/events/registry.js',
   'wydgine/object-model/class-contracts.js', 'wydgine/object-model/component-contracts.js', 'wydgine/object-model/interfaces.js', 'wydgine/object-model/members.js', 'wydgine/object-model/forms.js', 'wydgine/object-model/validation.js', 'wydgine/object-model/schema.js', 'wydgine/object-model/construction.js', 'wydgine/object-model/prototypes.js', 'wydgine/seam/context.js',
   'wydgine/execution/placement.js', 'wydgine/seam/capabilities.js', 'wydgine/http/input.js',
   'wydgine/sewn/schema.js', 'wydgine/sewn/validate.js',

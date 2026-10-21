@@ -7,8 +7,8 @@ import {firefoxProtocol} from '../scripts/firefox-protocol.js';
 export async function localBrowser(t,root,{firefox=false}={}){
   const binary=firefox?(process.env.WYDCLIENT_FIREFOX??'firefox'):(process.env.WYDCLIENT_CHROME??'google-chrome');
   const version=execFileSync(binary,['--version'],{encoding:'utf8'}).trim(),profile=path.join(root,'b5-browser-profile');
-  await fs.mkdir(profile);if(firefox)await fs.writeFile(path.join(profile,'user.js'),'user_pref("focusmanager.testmode", true);\n');
-  const child=spawn(binary,firefox?['--headless','--no-remote','--profile',profile,'--remote-debugging-port=0','about:blank']:
+  await fs.mkdir(profile);if(firefox)await fs.writeFile(path.join(profile,'user.js'),'user_pref("focusmanager.testmode", '+(process.env.WYDCLIENT_FIREFOX_FOCUS_TESTMODE==='0'?'false':'true')+');\n');
+  const child=spawn(binary,firefox?[...(process.env.WYDCLIENT_HEADFUL==='1'?[]:['--headless']),'--no-remote','--profile',profile,'--remote-debugging-port=0','about:blank']:
     ['--headless','--disable-gpu','--no-proxy-server','--remote-debugging-address=127.0.0.1','--remote-debugging-port=0','--user-data-dir='+profile,'about:blank'],{stdio:['ignore','ignore','pipe']});
   let ws,sequence=0;const calls=new Map();
   t.after(async()=>{ws?.close();for(const e of calls.values())clearTimeout(e.timer);child.kill('SIGTERM');await new Promise(r=>{if(child.exitCode!==null)r();else{child.once('exit',r);setTimeout(()=>{child.kill('SIGKILL');r();},3000).unref();}});await fs.rm(profile,{recursive:true,force:true,maxRetries:5,retryDelay:100});});
@@ -21,7 +21,7 @@ export async function localBrowser(t,root,{firefox=false}={}){
   const protocol=firefox?await firefoxProtocol(send):send;
   const evaluate=async expression=>{const r=await protocol('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(r.exceptionDetails)throw Error('Browser evaluation failed: '+JSON.stringify(r.exceptionDetails));return r.result.value;};
   const until=async expression=>{for(let i=0;i<240;i++){if(await evaluate(expression))return;await new Promise(r=>setTimeout(r,25));}throw Error('Browser condition failed: '+expression);};
-  const navigate=async url=>{await protocol('Page.navigate',{url});if(!firefox)await protocol('Page.bringToFront');await until("document.readyState==='complete'");};
+  const navigate=async url=>{await protocol('Page.navigate',{url});await protocol('Page.bringToFront');if(firefox&&process.env.WYDCLIENT_HEADFUL==='1'){const windows=execFileSync('xdotool',['search','--onlyvisible','--pid',String(child.pid)],{encoding:'utf8'}).trim().split('\n');execFileSync('xdotool',['windowfocus','--sync',windows.at(-1)]);}await until("document.readyState==='complete'");};
   const click=async selector=>{await evaluate('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');const p=await evaluate(`(()=>{const e=document.querySelector(${JSON.stringify(selector)});e.scrollIntoView({block:'center'});const r=e.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);await protocol('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,...p});await protocol('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,...p});};
   const key=async(key,code=key,windowsVirtualKeyCode=({Tab:9,Enter:13,' ':32})[key]??0,modifiers=0)=>{await protocol('Input.dispatchKeyEvent',{type:'keyDown',key,code,windowsVirtualKeyCode,modifiers,...(key==='Enter'?{text:'\r'}:{})});await protocol('Input.dispatchKeyEvent',{type:'keyUp',key,code,windowsVirtualKeyCode,modifiers});};
   await protocol('Page.enable');await protocol('Network.enable');
