@@ -37,7 +37,7 @@ export function createPipeline({root,libraries,execution={},lifecycle,guard=()=>
   const sessions=createSessionResolver({app,gate,lifecycle,sessionless:parking});let closed=false;
   const alive=()=>{check(!closed,'EVENT.DENIED','Application stopped');guard();};
   let ready;
-  const backoffice=createBackOfficeHttp({root,model,libraries,sessions,contextPolicy,ready:()=>ready,alive,parking,verifiedPackages:execution.verifiedPackages,runtimeSettings,requestMs:runtimeSettings.http.requestMs,readJson:(body,remainingMs)=>readBackOfficeJson(body,remainingMs)});
+  const backoffice=createBackOfficeHttp({root,model,libraries,sessions,contextPolicy,ready:()=>ready,alive,parking,verifiedPackages:execution.verifiedPackages,runtimeSettings,requestMs:runtimeSettings.http.requestMs,diagnostic,readJson:(body,remainingMs)=>readBackOfficeJson(body,remainingMs)});
   ready=lifecycle.start();
   const ownedLifecycle={...lifecycle,async stop(){closed=true;sessions.close();await lifecycle.stop();}};
   // Plain transport input and kernel output port only; no host request/context.

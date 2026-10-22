@@ -142,7 +142,7 @@ export function createTransport({ root, projectRoot, renderer, pipeline, logger,
         }
       }
       if(backofficePath(pathname)){
-        await pipeline.backoffice({method:request.method,path:pathname,query:url.search.slice(1),transport:route,cookie:request.headers.get('cookie')??'',body:request.body,headers:{origin:request.headers.get('origin'),fetchSite:request.headers.get('sec-fetch-site'),authorization:request.headers.get('authorization'),csrf:request.headers.get('x-wydgit-csrf'),type:request.headers.get('content-type'),encoding:request.headers.get('content-encoding')}},res);
+        await pipeline.backoffice({method:request.method,path:pathname,query:url.search.slice(1),transport:route,cookie:request.headers.get('cookie')??'',body:request.body,headers:{origin:request.headers.get('origin'),fetchSite:request.headers.get('sec-fetch-site'),fetchMode:request.headers.get('sec-fetch-mode'),fetchDest:request.headers.get('sec-fetch-dest'),fetchUser:request.headers.get('sec-fetch-user'),authorization:request.headers.get('authorization'),csrf:request.headers.get('x-wydgit-csrf'),type:request.headers.get('content-type'),encoding:request.headers.get('content-encoding')}},res);
         return RESPONSE_ALREADY_SENT;
       }
       if(pathname.startsWith('/_transfer/')) {

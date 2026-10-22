@@ -221,6 +221,21 @@ neither establishes qualifications nor replaces independent evaluation where nee
 Human speech, actual zoom, high contrast, magnification, touch, complete Firefox
 keyboard qualification and timed expiry remain unverified until actually observed.
 
+## Workspace origin blocker and preserved results
+
+The [origin-navigation correction](backoffice-b6h-origin-navigation-fix.md) fixes
+Firefox guide links that displayed HTTP.ORIGIN instead of the Workspace. The server
+now distinguishes an explicitly activated top-level Page navigation from API
+requests while retaining exact Origin, authentication, CSRF and Page/binding checks.
+The actual button is **Load current state**, under **Load Workspace properties and
+content**. Editor fields are disabled until that load succeeds.
+
+After stopping the old launcher, restart with the usual command and use the new
+printed guide URL. **Do not run cleanup on an interrupted acceptance session.** Use
+Results and export to revisit KEY-03 and KEY-04; save only what you actually observe.
+Earlier failed/incomplete attempts and notes remain evidence. Developer verification
+does not pass a human test or promote BO-HTTP-12.
+
 ## Interrupted sessions and conservative recovery
 
 Normal stop/resume needs no recovery. Ctrl+C during first installation waits for
@@ -257,6 +272,12 @@ It performs no human Orca
 or native Firefox acceptance. Failed developer runs remain in their log/artifact
 paths. Required repository checks remain `npm test` and `npm run check`; focused
 BackOffice authorization/adoption/body/deadline/security regressions remain intact.
+
+For actual guide-link navigation, run
+`WYDCLIENT_HEADFUL=1 WYDCLIENT_FIREFOX_FOCUS_TESTMODE=0 node scripts/verify-backoffice-human-navigation.js`.
+This separate regression follows the named test tab and verifies production binding
+load/edit/save and persistence on both providers. The earlier direct-navigation smoke
+alone does not qualify the guide-to-Page path. Both are developer simulation.
 
 The B6H qualification record is
 [test-support/backoffice-b6h-evidence-2026-10-21.json](../../test-support/backoffice-b6h-evidence-2026-10-21.json).

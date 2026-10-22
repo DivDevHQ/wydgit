@@ -26,7 +26,7 @@ export async function localBrowser(t,root,{firefox=false}={}){
   const key=async(key,code=key,windowsVirtualKeyCode=({Tab:9,Enter:13,' ':32})[key]??0,modifiers=0)=>{await protocol('Input.dispatchKeyEvent',{type:'keyDown',key,code,windowsVirtualKeyCode,modifiers,...(key==='Enter'?{text:'\r'}:{})});await protocol('Input.dispatchKeyEvent',{type:'keyUp',key,code,windowsVirtualKeyCode,modifiers});};
   await protocol('Page.enable');await protocol('Network.enable');
   await protocol('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
-  return {version,protocol,evaluate,until,navigate,click,key,type:async(selector,text)=>{await click(selector);await protocol('Input.insertText',{text});},async screenshot(file){
+  return {version,protocol,rawProtocol:send,evaluate,until,navigate,click,key,type:async(selector,text)=>{await click(selector);await protocol('Input.insertText',{text});},async screenshot(file){
     await evaluate('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');
     const clip=await evaluate('({x:0,y:0,width:Math.max(innerWidth,document.documentElement.scrollWidth),height:document.documentElement.scrollHeight,scale:1})');
     const {data}=await protocol('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip});await fs.writeFile(file,Buffer.from(data,'base64'));

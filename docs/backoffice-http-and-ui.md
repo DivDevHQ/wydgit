@@ -84,7 +84,12 @@ Use the existing trusted hostname routing boundary for HTTPS/proxy operation.
 It selects the canonical App before credentials and validates exact effective
 Origin, proxy peer and forwarded authority. No wildcard CORS or credential forwarding
 is added. Protected GET rejects a supplied foreign Origin; APIs also reject
-cross-site/same-site Fetch Metadata. POST additionally requires exact Origin and
+cross-site/same-site Fetch Metadata. Canonical HTML Page GET navigation from another
+site requires `Sec-Fetch-Mode: navigate`, `Sec-Fetch-Dest: document` and
+`Sec-Fetch-User: ?1`; a supplied foreign/null Origin still rejects. This does not
+admit fetches, subframes, discovery or invocation and grants no Page authority.
+See the [B6H origin correction](work-in-progress/backoffice-b6h-origin-navigation-fix.md).
+POST additionally requires exact Origin and
 `X-Wydgit-CSRF`. The CSRF token is the existing session-secret-derived HMAC binding
 for this App and the BackOffice invocation operation. It is returned in shell meta
 and authenticated discovery, never in URLs. It is not a session credential, package

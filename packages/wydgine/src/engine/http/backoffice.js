@@ -52,7 +52,7 @@ function shell(model,csrf){
 // Trusted host adapter only. The private acquisition context can select installed
 // execution, but never becomes the contributed caller or crosses HTTP. It has no
 // object edit, policy review, relocation or library-service authority.
-export function createBackOfficeHttp({root,model,libraries,sessions,contextPolicy,ready,alive,parking,readJson,verifiedPackages,runtimeSettings,requestMs}){
+export function createBackOfficeHttp({root,model,libraries,sessions,contextPolicy,ready,alive,parking,readJson,verifiedPackages,runtimeSettings,requestMs,diagnostic=()=>{}}){
   const app=model.runtime.rootId,head=stateFingerprint(root);
   const hasGate=!parking&&libraries?.list().some(l=>l.id==='wydgate');
   const actions=hasGate?createBackOfficeActions({root,libraries,verifiedPackages,
@@ -64,6 +64,7 @@ export function createBackOfficeHttp({root,model,libraries,sessions,contextPolic
     const execution={guard:checkDeadline,deadline,onStart:()=>{outcome='uncertain';}};
     const json=(status,data)=>{res.setHeader('X-Wydgit-Action-Outcome',outcome);res.statusCode=status;res.setHeader('Content-Type','application/json; charset=utf-8');res.end(JSON.stringify(data));};
     const reject=(status,code)=>json(status,failure(code));
+    const rejectOrigin=reason=>{try{diagnostic({schema:'wydgine.http-event/1',phase:'backoffice',code:'HTTP.ORIGIN',reason});}catch{}return reject(403,'HTTP.ORIGIN');};
     res.setHeader('Cache-Control','no-store');res.setHeader('Referrer-Policy','no-referrer');
     res.setHeader('Cross-Origin-Resource-Policy','same-origin');
     try{
@@ -75,8 +76,14 @@ export function createBackOfficeHttp({root,model,libraries,sessions,contextPolic
       if(req.method!==(invoke?'POST':'GET')){res.setHeader('Allow',invoke?'POST':'GET');return reject(405,'HTTP.METHOD');}
       if(!actions||!req.transport||req.transport.parking||req.transport.app!==app)return reject(503,'HTTP.UNAVAILABLE');
       const {origin,secure}=req.transport,h=req.headers;
-      if((h.origin!==null&&h.origin!==origin)||(!isShell&&['cross-site','same-site'].includes(h.fetchSite)))return reject(403,'HTTP.ORIGIN');
-      if(invoke&&h.origin!==origin)return reject(403,'HTTP.ORIGIN');
+      if(h.origin!==null&&h.origin!==origin)return rejectOrigin('origin-mismatch');
+      // An explicitly activated top-level HTML navigation may enter an approved
+      // Page from a different site. It is not a cross-origin API request: Page
+      // admission and read-only preparation still authorize below. Never extend
+      // this exception to fetches, subframes, discovery or mutation requests.
+      const pageNavigation=pageRoute&&h.fetchMode==='navigate'&&h.fetchDest==='document'&&h.fetchUser==='?1';
+      if(!isShell&&['cross-site','same-site'].includes(h.fetchSite)&&!pageNavigation)return rejectOrigin('fetch-site');
+      if(invoke&&h.origin!==origin)return rejectOrigin('invocation-origin');
       const cookies=parseCookies(req.cookie);
       // No bearer header, alternate-scheme auth cookie, query or body credentials.
       if(h.authorization!==null||Object.keys(cookies).some(k=>/^(?:__Host-|__Secure-)?wydgit-auth$/i.test(k)&&k!==policy.auth))return reject(400,'HTTP.REQUEST');

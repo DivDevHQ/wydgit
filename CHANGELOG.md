@@ -1,5 +1,11 @@
 ## Unreleased
 
+- Fix B6H guide-to-BackOffice Page navigation in Firefox by distinguishing activated
+  top-level HTML navigation from cross-origin API requests. Retain exact Origin,
+  CSRF and installed Page/binding authorization; add real guide-link load/edit/save
+  regressions on both providers and clarify the required load control. Preserve
+  human failures and partial accessibility acceptance.
+
 - B6H: add a one-command disposable human BackOffice acceptance environment with
   isolated Firefox, installed reviewed sample Pages, sequential keyboard/Orca
   guidance, persistent honest outcomes and sanitized evidence exports. Keep human

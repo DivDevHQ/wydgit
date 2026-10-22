@@ -12,16 +12,16 @@ export const cases=[
   'Use Ctrl+L to enter the exact Workspace URL shown below, then Enter. Try the skip link and Tab through the Page.'],
   'Sign-in completes. The approved Workspace Page opens, the skip link reaches main content, and focus is visible in a sensible order.','login'),
  item('KEY-02','Keyboard','Move forward and backward',[
-  'On Workspace, use Tab through the Editor and Dashboard links and the Load current state button. Use Shift+Tab to move back.',
+  'On Workspace, find the Load current state button under Load Workspace properties and content. The editing form below starts disabled. Tab through Editor, Dashboard and the load button; use Shift+Tab to move back.',
   'Activate Editor and Dashboard links with Enter. Return to Editor. Do not click or run focus scripts.'],
   'Every available control can be reached and left; focus is visible and no keyboard trap occurs.'),
  item('KEY-03','Keyboard','Load and edit an ordinary property',[
-  'Activate Load current state with Enter. Wait for Action completed. Tab into the enabled Workspace properties and content form.',
+  'Under Load Workspace properties and content, activate the Load current state button with Enter. Wait for Action completed. The Workspace properties and content form below should now be enabled; Tab into it.',
   'In title, select the old value with Ctrl+A and type Human workspace. Leave version unchanged.',
   'Tab to Confirm Workspace properties and content and press Space. Tab to Save changes and press Enter.'],
   'Editing starts only after loading. Space checks confirmation, Enter saves, Result receives focus and Action completed appears. Each save needs fresh confirmation.'),
  item('KEY-04','Keyboard','Change the layout',[
-  'In the same form, use Space on columns to select true. Keep title Human workspace.',
+  'If you reloaded or reopened Workspace, activate Load current state first. In the enabled Workspace properties and content form, use Space on columns to select true. Keep title Human workspace.',
   'Confirm with Space and Save changes with Enter. Reload with Ctrl+R and load current state again.'],
   'The columns value persists after reload, the preview uses columns, and focus remains usable after each update.'),
  item('KEY-05','Keyboard','Edit Markdown and confirm persistence',[
